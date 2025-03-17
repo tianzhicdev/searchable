@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # Run the provided Python scripts
 for script in "$@"; do
     echo "Running $script..."
-    ./venv/bin/python "$script"  # Using absolute path to venv's python
+    ./venv/bin/python3 "$script"  # Using absolute path to venv's python
 done
 
 Deactivate the virtual environment
