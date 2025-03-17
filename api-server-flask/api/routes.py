@@ -6,7 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 from datetime import datetime, timezone, timedelta
 
 from functools import wraps
-
+import geohash2
 from flask import request
 from flask_restx import Api, Resource, fields
 
@@ -134,8 +134,6 @@ class CreateSearchable(Resource):
                 latitude = float(data['latitude'])
                 longitude = float(data['longitude'])
                 
-                # Generate geohash (assuming geohash2 is imported elsewhere)
-                import geohash2
                 geo_hash = geohash2.encode(latitude, longitude, precision=9)
                 
                 # Insert into searchable table
