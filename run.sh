@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if a Python script was provided as an argument
+if [ $# -eq 0 ]; then
+    echo "Error: No Python script specified."
+    echo "Usage: $0 <python_script.py> [additional_scripts...]"
+    exit 1
+fi
+
 # Create a new virtual environment
 echo "Creating virtual environment..."
 python -m venv venv
@@ -12,9 +19,11 @@ source venv/bin/activate
 echo "Installing requirements..."
 pip install -r requirements.txt
 
-# Run the geo_search.py script
-echo "Running geo_search.py..."
-python geo_search.py
+# Run the provided Python scripts
+for script in "$@"; do
+    echo "Running $script..."
+    python "$script"
+done
 
 # Deactivate the virtual environment
 echo "Deactivating virtual environment..."
