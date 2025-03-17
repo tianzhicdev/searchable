@@ -22,11 +22,11 @@ pip install -r requirements.txt
 # Run the provided Python scripts
 for script in "$@"; do
     echo "Running $script..."
-    python "$script"
+    python3 "$script"
 done
 
 # Deactivate the virtual environment
-echo "Deactivating virtual environment..."
-deactivate
+# echo "Deactivating virtual environment..."
+# deactivate
 
 echo "Done!"
