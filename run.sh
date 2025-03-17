@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # Run the provided Python scripts
 for script in "$@"; do
     echo "Running $script..."
-    python3 "$script"  # Use the activated venv's python directly
+    python3.13 "$script" 
 done
 
 # Deactivate the virtual environment (note the comment symbol)
