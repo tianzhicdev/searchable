@@ -129,19 +129,25 @@ class CreateSearchable(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Insert directly into searchable table
+            # First insert into searchable_items table
+            cur.execute(
+                "INSERT INTO searchable_items (searchable_data) VALUES (%s) RETURNING searchable_id;",
+                (Json(data),)
+            )
+            searchable_id = cur.fetchone()[0]
+            
+            # Then insert geo data if available
             if 'latitude' in data and 'longitude' in data:
                 latitude = float(data['latitude'])
                 longitude = float(data['longitude'])
                 
                 geo_hash = geohash2.encode(latitude, longitude, precision=9)
                 
-                # Insert into searchable table
+                # Insert into searchable_geo table
                 cur.execute(
-                    "INSERT INTO searchable (searchable_data, latitude, longitude, geohash) VALUES (%s, %s, %s, %s) RETURNING searchable_id;",
-                    (Json(data), latitude, longitude, geo_hash)
+                    "INSERT INTO searchable_geo (searchable_id, latitude, longitude, geohash) VALUES (%s, %s, %s, %s);",
+                    (searchable_id, latitude, longitude, geo_hash)
                 )
-                searchable_id = cur.fetchone()[0]
                 print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
             else:
                 return {"error": "Latitude and longitude are required"}, 400
@@ -152,6 +158,9 @@ class CreateSearchable(Resource):
             return {"searchable_id": searchable_id}, 201
         except Exception as e:
             return {"error": str(e)}, 500
+
+
+
 
 @rest_api.route('/api/user_event', methods=['POST'])
 class UserEvent(Resource):
