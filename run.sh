@@ -9,7 +9,7 @@ fi
 
 # Create a new virtual environment
 echo "Creating virtual environment..."
-python -m venv venv
+python3 -m venv venv
 
 # Activate the virtual environment
 echo "Activating virtual environment..."
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # Run the provided Python scripts
 for script in "$@"; do
     echo "Running $script..."
-    python "$script"
+    python3 "$script"
 done
 
 # Deactivate the virtual environment
