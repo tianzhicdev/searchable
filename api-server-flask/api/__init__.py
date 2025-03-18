@@ -8,11 +8,11 @@ import os, json
 from flask import Flask
 from flask_cors import CORS
 
-# from .routes import rest_api
+from .routes import rest_api
 from .models import db
 from flask_restx import Api
 
-rest_api = Api(version="1.0", title="Users API")
+# rest_api = Api(version="1.0", title="Users API")
 
 app = Flask(__name__)
 

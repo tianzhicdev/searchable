@@ -18,7 +18,7 @@ import requests
 import math
 
 # Import rest_api from __init__.py
-from . import rest_api
+# from . import rest_api
 
 # from flask import Flask, request, jsonify, render_template
 import psycopg2
@@ -52,7 +52,7 @@ def get_db_connection():
         print(f"Client port: {connection_details[3]}")
     return conn
 
-# rest_api = Api(version="1.0", title="Users API")
+rest_api = Api(version="1.0", title="Users API")
 
 
 """
