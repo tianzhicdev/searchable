@@ -7,6 +7,7 @@ from flask import request
 from flask_restx import Resource
 from psycopg2.extras import Json
 import geohash2
+import math
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
@@ -56,3 +57,177 @@ class CreateSearchable(Resource):
             return {"searchable_id": searchable_id}, 201
         except Exception as e:
             return {"error": str(e)}, 500
+
+@rest_api.route('/api/searchable/search', methods=['GET'])
+class SearchSearchables(Resource):
+    """
+    Search for searchable items based on location and optional query terms
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10"
+    """
+
+    def get(self):
+        try:
+            # Parse and validate request parameters
+            params = self._parse_request_params()
+            if 'error' in params:
+                return params, 400
+            
+            # Determine geohash precision based on max_distance
+            precision = self._determine_geohash_precision(params['max_distance'])
+            
+            # Generate geohash for the search point with dynamic precision
+            search_geohash_prefix = geohash2.encode(params['lat'], params['lng'], precision=precision)
+            
+            # Query database for results
+            results, total_count = self._query_database(
+                search_geohash_prefix, 
+                params['lat'], 
+                params['lng'], 
+                params['max_distance'], 
+                params['page_size'], 
+                params['offset']
+            )
+            
+            # Format and return response
+            return self._format_response(results, params['page_number'], params['page_size'], total_count), 200
+            
+        except Exception as e:
+            return {"error": str(e)}, 500
+    
+    def _parse_request_params(self):
+        """Parse and validate request parameters"""
+        # Get parameters from request
+        lat = request.args.get('lat')
+        lng = request.args.get('long')
+        max_distance = request.args.get('max_distance', 10000)  # Default to 10km if not specified
+        page_number = int(request.args.get('page_number', 1))
+        page_size = int(request.args.get('page_size', 10))
+        query_term = request.args.get('query_term', '')  # todo: Not used yet as per instructions
+        
+        # Validate required parameters
+        if not lat or not lng:
+            return {"error": "Latitude and longitude are required"}
+        
+        try:
+            lat = float(lat)
+            lng = float(lng)
+            max_distance = float(max_distance)
+        except ValueError:
+            return {"error": "Invalid coordinate or distance format"}
+        
+        # Calculate offset for pagination
+        offset = (page_number - 1) * page_size
+        
+        return {
+            'lat': lat,
+            'lng': lng,
+            'max_distance': max_distance,
+            'page_number': page_number,
+            'page_size': page_size,
+            'query_term': query_term,
+            'offset': offset
+        }
+    
+    def _determine_geohash_precision(self, max_distance):
+        """Determine appropriate geohash precision based on max_distance"""
+        # Approximate precision mapping:
+        # 1: ~5000km, 2: ~1250km, 3: ~156km, 4: ~39km, 5: ~5km, 6: ~1.2km, 7: ~153m, 8: ~38m, 9: ~5m
+        if max_distance >= 5000000:  # 5000km
+            precision = 1
+        elif max_distance >= 1250000:  # 1250km
+            precision = 2
+        elif max_distance >= 156000:  # 156km
+            precision = 3
+        elif max_distance >= 39000:  # 39km
+            precision = 4
+        elif max_distance >= 5000:  # 5km
+            precision = 5
+        elif max_distance >= 1200:  # 1.2km
+            precision = 6
+        elif max_distance >= 153:  # 153m
+            precision = 7
+        elif max_distance >= 38:  # 38m
+            precision = 8
+        else:  # < 38m
+            precision = 9
+        return precision
+    
+    def _calculate_distance(self, lat1, lng1, lat2, lng2):
+        """Calculate distance between two points using Haversine formula"""
+        earth_radius = 6371000  # meters
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        lat_diff = math.radians(lat2 - lat1)
+        lng_diff = math.radians(lng2 - lng1)
+        
+        a = (math.sin(lat_diff/2) * math.sin(lat_diff/2) +
+             math.cos(lat1_rad) * math.cos(lat2_rad) *
+             math.sin(lng_diff/2) * math.sin(lng_diff/2))
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        return earth_radius * c  # in meters
+    
+    def _query_database(self, search_geohash_prefix, lat, lng, max_distance, page_size, offset):
+        """Query database for results and filter by actual distance"""
+        # Log query parameters for debugging
+        print(f"Search parameters:")
+        print(f"  Geohash prefix: {search_geohash_prefix}")
+        print(f"  Coordinates: ({lat}, {lng})")
+        print(f"  Max distance: {max_distance} meters")
+        print(f"  Pagination: page_size={page_size}, offset={offset}")
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # First get items with matching geohash prefix (rough filter)
+        query = """
+            SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude, sg.geohash
+            FROM searchable_items si
+            JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+            WHERE sg.geohash LIKE %s
+            LIMIT %s OFFSET %s;
+        """
+        
+        cur.execute(query, (search_geohash_prefix + '%', page_size, offset))
+        db_results = cur.fetchall()
+        
+        # Post-process results to filter by actual distance
+        filtered_results = []
+        for result in db_results:
+            searchable_id, searchable_data, item_lat, item_lng, geohash = result
+            
+            # Calculate actual distance
+            distance = self._calculate_distance(lat, lng, item_lat, item_lng)
+            
+            # Only include if within max_distance
+            if distance <= max_distance:
+                item_data = dict(searchable_data)
+                item_data['distance'] = distance
+                item_data['searchable_id'] = searchable_id
+                filtered_results.append(item_data)
+        
+        # Get total count for pagination info
+        cur.execute("""
+            SELECT COUNT(*) 
+            FROM searchable_items si
+            JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+            WHERE sg.geohash LIKE %s;
+        """, (search_geohash_prefix + '%',))
+        total_count = cur.fetchone()[0]
+        
+        cur.close()
+        conn.close()
+        
+        return filtered_results, total_count
+    
+    def _format_response(self, results, page_number, page_size, total_count):
+        """Format the response with results and pagination info"""
+        return {
+            "results": results,
+            "pagination": {
+                "page": page_number,
+                "page_size": page_size,
+                "total_count": total_count,
+                "total_pages": (total_count + page_size - 1) // page_size
+            }
+        }
