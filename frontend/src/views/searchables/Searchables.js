@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import './Searchables.css';
+
+import { LOGOUT } from './../../store/actions';
+import configData from '../../config';
 
 const Searchables = () => {
   // State variables
@@ -20,6 +23,7 @@ const Searchables = () => {
   const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
 
   const account = useSelector((state) => state.account);
+  const dispatcher = useDispatch();
 
   // Get user's location on component mount
   useEffect(() => {
@@ -60,7 +64,7 @@ const Searchables = () => {
     setError(null);
 
     try {
-      const response = await axios.get('https://2genders.dyndns.org/api/searchable/search', {
+      const response = await axios.get(configData.API_SERVER + 'searchable/search', {
         params: {
           lat: location.latitude,
           long: location.longitude,
@@ -101,7 +105,7 @@ const Searchables = () => {
     setError(null);
 
     try {
-      const response = await axios.get('https://2genders.dyndns.org/api/searchable/search', {
+      const response = await axios.get(configData.API_SERVER + 'searchable/search', {
         params: {
           lat: location.latitude,
           long: location.longitude,
@@ -211,8 +215,35 @@ const Searchables = () => {
     return buttons;
   };
 
+  // Function to handle logout
+  const handleLogout = () => {
+    console.log(account.token);
+    axios
+        .post(configData.API_SERVER + 'users/logout', {token: `${account.token}`}, { headers: { Authorization: `${account.token}` } })
+        .then(function (response) {
+            
+            // Force the LOGOUT
+            //if (response.data.success) {
+                dispatcher({ type: LOGOUT });
+            //} else {
+            //    console.log('response - ', response.data.msg);
+            //}
+        })
+        .catch(function (error) {
+            console.log('error - ', error);
+
+            dispatcher({ type: LOGOUT }); // log out anyway
+        });
+};
+
   return (
     <div className="searchables-container">
+      <div className="user-info">
+        <span>Welcome, {account.user.username}</span>
+        <button  onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
       <div className="search-header">
         <div className="search-bar">
           <input
@@ -233,7 +264,7 @@ const Searchables = () => {
           </select>
           <button 
             onClick={() => handleSearch(1)} 
-            disabled={loading || !location}
+            disabled={loading}
           >
             {loading ? 'Searching...' : 'Search'}
           </button>

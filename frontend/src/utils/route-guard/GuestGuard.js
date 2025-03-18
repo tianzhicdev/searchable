@@ -16,6 +16,12 @@ const GuestGuard = ({ children }) => {
     const account = useSelector((state) => state.account);
     const { isLoggedIn } = account;
 
+    // Log user guest access attempt
+    console.log('GuestGuard: Guest access check', { 
+        isLoggedIn,
+        timestamp: new Date().toISOString(),
+        path: window.location.pathname
+    });
     if (isLoggedIn) {
         return <Redirect to={config.dashboard} />;
     }

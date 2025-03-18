@@ -20,7 +20,7 @@ class CreateSearchable(Resource):
     """
     @token_required
     def post(self, current_user):
-        print(f"Creating searchable for user: {current_user.id}")
+        print(f"Creating searchable for user: {current_user}")
         data = request.get_json()  # Get JSON data from request
         if not data:
             return {"error": "Invalid input"}, 400
@@ -69,7 +69,7 @@ class SearchSearchables(Resource):
     """
     @token_required
     def get(self, current_user):
-        print(f"Searching for searchable items for user: {current_user.id}")
+        print(f"Searching for searchable items for user: {current_user}")
         try:
             # Parse and validate request parameters
             params = self._parse_request_params()

@@ -16,8 +16,6 @@ const AuthGuard = ({ children }) => {
 
     const account = useSelector((state) => state.account);
     const dispatcher = useDispatch();
-    // Log the account state for debugging
-    console.log('AuthGuard: Account state:', account);
     const { isLoggedIn, token } = account;
 
     // Function to check if JWT is expired
@@ -40,7 +38,13 @@ const AuthGuard = ({ children }) => {
     });
 
     if (!isLoggedIn || tokenExpired) { 
-        dispatcher({ type: LOGOUT });
+        // dispatcher({ type: LOGOUT });
+        // hard lesson: dispatcher can trigger a re-render, which can cause a loop
+        console.log('AuthGuard: Redirecting to login due to', {
+            reason: !isLoggedIn ? 'user not logged in' : 'token expired',
+            timestamp: new Date().toISOString(),
+            path: window.location.pathname
+        });
         return <Redirect to="/login" />;
     }
 

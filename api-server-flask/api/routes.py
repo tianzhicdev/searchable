@@ -70,7 +70,7 @@ user_edit_model = rest_api.model('UserEditModel', {"userID": fields.String(requi
 
 def token_required(f):
     @wraps(f)
-    def decorator(*args, **kwargs):
+    def decorator(self, *args, **kwargs):
         token = None
         if "authorization" in request.headers:
             token = request.headers["authorization"]
@@ -105,7 +105,7 @@ def token_required(f):
             print(f"Exception occurred: {e}")
             return {"success": False, "msg": "Token is invalid"}, 400
 
-        return f(current_user, *args, **kwargs)
+        return f(self, *args, current_user=current_user, **kwargs)
 
     return decorator
 
@@ -250,8 +250,8 @@ class LogoutUser(Resource):
         jwt_block = JWTTokenBlocklist(jwt_token=_jwt_token, created_at=datetime.now(timezone.utc))
         jwt_block.save()
 
-        self.set_jwt_auth_active(False)
-        self.save()
+        current_user.set_jwt_auth_active(False)
+        current_user.save()
 
         return {"success": True}, 200
 
