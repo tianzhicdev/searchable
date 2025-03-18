@@ -81,7 +81,12 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+
+            decoded_token = jwt.decode(token, BaseConfig.JWT_SECRET_KEY, algorithms=["HS256"])
+            print(f"Decoded JWT: {decoded_token}")
+            
             current_user = Users.get_by_email(data["email"])
+            print(f"User {current_user.username} with email {current_user.email} is making a request.")
 
             if not current_user:
                 return {"success": False,
