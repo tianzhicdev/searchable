@@ -4,28 +4,22 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 from datetime import datetime, timezone, timedelta
-
 from functools import wraps
 import geohash2
 from flask import request
-from flask_restx import Api, Resource, fields
-
+from flask_restx import Resource, fields
 import jwt
+import math
+import json
+import psycopg2
+from psycopg2.extras import Json
 
 from .models import db, Users, JWTTokenBlocklist
 from .config import BaseConfig
 import requests
-import math
 
-# Import rest_api from __init__.py
-# from . import rest_api
-
-# from flask import Flask, request, jsonify, render_template
-import psycopg2
-from psycopg2.extras import Json
-import json
-from .searchable_routes import *
-
+# Import rest_api from __init__
+from . import rest_api
 
 # Load database configuration from db_config.json
 with open('db_config.json') as config_file:
@@ -40,7 +34,6 @@ def get_db_connection():
         user=db_config['searchable']['db_user'],
         password=db_config['searchable']['db_password']
     )
-
     
     # Log connection details
     with conn.cursor() as cursor:
@@ -51,9 +44,6 @@ def get_db_connection():
         print(f"Client address: {connection_details[2]}")
         print(f"Client port: {connection_details[3]}")
     return conn
-
-rest_api = Api(version="1.0", title="Users API")
-
 
 """
     Flask-Restx models for api request and response data
@@ -79,7 +69,6 @@ user_edit_model = rest_api.model('UserEditModel', {"userID": fields.String(requi
 """
 
 def token_required(f):
-
     @wraps(f)
     def decorator(*args, **kwargs):
         token = None
@@ -116,8 +105,6 @@ def token_required(f):
 """
     Flask-Restx routes
 """
-
-
 
 @rest_api.route('/api/searchable/search', methods=['GET'])
 class SearchSearchables(Resource):
@@ -240,10 +227,6 @@ class SearchSearchables(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
-
-
-
-
 @rest_api.route('/api/user_event', methods=['POST'])
 class UserEvent(Resource):
     """
@@ -273,8 +256,6 @@ class UserEvent(Resource):
             return {"success": True, "event_id": event_id}, 201
         except Exception as e:
             return {"error": str(e)}, 500
-
-
 
 @rest_api.route('/api/users/register')
 class Register(Resource):

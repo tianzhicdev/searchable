@@ -1,8 +1,16 @@
+# -*- encoding: utf-8 -*-
+"""
+Copyright (c) 2019 - present AppSeed.us
+"""
+
 from flask import request
 from flask_restx import Resource
 from psycopg2.extras import Json
 import geohash2
-from .routes import rest_api, get_db_connection
+
+# Import rest_api and get_db_connection from __init__
+from . import rest_api
+from .routes import get_db_connection
 
 @rest_api.route('/api/searchable', methods=['POST'])
 class CreateSearchable(Resource):
