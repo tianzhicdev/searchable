@@ -57,6 +57,7 @@ class BaseConfig():
             ) 
 
             USE_SQLITE  = False
+            print('> Successfully connected to the database')
 
         except Exception as e:
 
