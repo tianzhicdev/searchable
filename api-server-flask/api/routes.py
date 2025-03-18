@@ -95,7 +95,8 @@ def token_required(f):
             if not current_user.check_jwt_auth_active():
                 return {"success": False, "msg": "Token expired."}, 400
 
-        except:
+        except Exception as e:
+            print(f"Exception occurred: {e}")
             return {"success": False, "msg": "Token is invalid"}, 400
 
         return f(current_user, *args, **kwargs)

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 import './Searchables.css';
 
 const Searchables = () => {
@@ -17,6 +18,8 @@ const Searchables = () => {
   });
   const [maxDistance, setMaxDistance] = useState(100000); // Default 100km
   const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
+
+  const account = useSelector((state) => state.account);
 
   // Get user's location on component mount
   useEffect(() => {
@@ -65,6 +68,9 @@ const Searchables = () => {
           page_number: 1,
           page_size: pagination.pageSize,
           query_term: '' // Empty query to get random items
+        },
+        headers: {
+          Authorization: `${account.token}`
         }
       });
 
@@ -103,6 +109,9 @@ const Searchables = () => {
           page_number: page,
           page_size: pagination.pageSize,
           query_term: searchTerm
+        },
+        headers: {
+          Authorization: `${account.token}`
         }
       });
 
