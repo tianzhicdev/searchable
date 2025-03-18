@@ -68,7 +68,8 @@ class SearchSearchables(Resource):
     curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10"
     """
     @token_required
-    def get(self):
+    def get(self, current_user):
+        print(f"Searching for searchable items for user: {current_user.id}")
         try:
             # Parse and validate request parameters
             params = self._parse_request_params()
