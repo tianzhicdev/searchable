@@ -67,7 +67,7 @@ class SearchSearchables(Resource):
     Example curl request:
     curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10"
     """
-
+    @token_required
     def get(self):
         try:
             # Parse and validate request parameters
