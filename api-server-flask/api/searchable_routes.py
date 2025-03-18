@@ -85,13 +85,14 @@ class SearchSearchables(Resource):
                 search_geohash_prefix, 
                 params['lat'], 
                 params['lng'], 
-                params['max_distance'], 
-                params['page_size'], 
-                params['offset']
+                params['max_distance']
             )
             
+            # Apply pagination after filtering by actual distance
+            paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
+            
             # Format and return response
-            return self._format_response(results, params['page_number'], params['page_size'], total_count), 200
+            return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
             
         except Exception as e:
             return {"error": str(e)}, 500
@@ -117,17 +118,13 @@ class SearchSearchables(Resource):
         except ValueError:
             return {"error": "Invalid coordinate or distance format"}
         
-        # Calculate offset for pagination
-        offset = (page_number - 1) * page_size
-        
         return {
             'lat': lat,
             'lng': lng,
             'max_distance': max_distance,
             'page_number': page_number,
             'page_size': page_size,
-            'query_term': query_term,
-            'offset': offset
+            'query_term': query_term
         }
     
     def _determine_geohash_precision(self, max_distance):
@@ -168,27 +165,26 @@ class SearchSearchables(Resource):
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         return earth_radius * c  # in meters
     
-    def _query_database(self, search_geohash_prefix, lat, lng, max_distance, page_size, offset):
+    def _query_database(self, search_geohash_prefix, lat, lng, max_distance):
         """Query database for results and filter by actual distance"""
         # Log query parameters for debugging
         print(f"Search parameters:")
         print(f"  Geohash prefix: {search_geohash_prefix}")
         print(f"  Coordinates: ({lat}, {lng})")
         print(f"  Max distance: {max_distance} meters")
-        print(f"  Pagination: page_size={page_size}, offset={offset}")
+        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # First get items with matching geohash prefix (rough filter)
+        # Get all items with matching geohash prefix (rough filter)
         query = """
             SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude, sg.geohash
             FROM searchable_items si
             JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-            WHERE sg.geohash LIKE %s
-            LIMIT %s OFFSET %s;
+            WHERE sg.geohash LIKE %s;
         """
         
-        cur.execute(query, (search_geohash_prefix + '%', page_size, offset))
+        cur.execute(query, (search_geohash_prefix + '%',))
         db_results = cur.fetchall()
         
         # Post-process results to filter by actual distance
@@ -206,19 +202,19 @@ class SearchSearchables(Resource):
                 item_data['searchable_id'] = searchable_id
                 filtered_results.append(item_data)
         
-        # Get total count for pagination info
-        cur.execute("""
-            SELECT COUNT(*) 
-            FROM searchable_items si
-            JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-            WHERE sg.geohash LIKE %s;
-        """, (search_geohash_prefix + '%',))
-        total_count = cur.fetchone()[0]
+        # Sort results by distance
+        filtered_results.sort(key=lambda x: x['distance'])
         
         cur.close()
         conn.close()
         
-        return filtered_results, total_count
+        return filtered_results, len(filtered_results)
+    
+    def _apply_pagination(self, results, page_number, page_size):
+        """Apply pagination to the filtered results"""
+        start_idx = (page_number - 1) * page_size
+        end_idx = start_idx + page_size
+        return results[start_idx:end_idx]
     
     def _format_response(self, results, page_number, page_size, total_count):
         """Format the response with results and pagination info"""
