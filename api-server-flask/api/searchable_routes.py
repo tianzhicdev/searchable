@@ -78,7 +78,11 @@ class SearchSearchables(Resource):
             precision = self._determine_geohash_precision(params['max_distance'])
             
             # Generate geohash for the search point with dynamic precision
-            search_geohash_prefix = geohash2.encode(params['lat'], params['lng'], precision=precision)
+            # Handle case where precision can be 0
+            if precision > 0:
+                search_geohash_prefix = geohash2.encode(params['lat'], params['lng'], precision=precision)
+            else:
+                search_geohash_prefix = ""
             
             # Query database for results
             results, total_count = self._query_database(
@@ -130,8 +134,10 @@ class SearchSearchables(Resource):
     def _determine_geohash_precision(self, max_distance):
         """Determine appropriate geohash precision based on max_distance"""
         # Approximate precision mapping:
-        # 1: ~5000km, 2: ~1250km, 3: ~156km, 4: ~39km, 5: ~5km, 6: ~1.2km, 7: ~153m, 8: ~38m, 9: ~5m
-        if max_distance >= 5000000:  # 5000km
+        # 0: ~20000km, 1: ~5000km, 2: ~1250km, 3: ~156km, 4: ~39km, 5: ~5km, 6: ~1.2km, 7: ~153m, 8: ~38m, 9: ~5m
+        if max_distance >= 20000000:  # 20000km (global scale)
+            precision = 0
+        elif max_distance >= 5000000:  # 5000km
             precision = 1
         elif max_distance >= 1250000:  # 1250km
             precision = 2
