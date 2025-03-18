@@ -37,7 +37,7 @@ class BaseConfig():
     DB_PASS     = '12345'
     DB_HOST     = 'marcus-mini.is-very-nice.org'
     DB_PORT     = '3005'
-    DB_NAME     = 'searchables'
+    DB_NAME     = 'searchable'
 
     USE_SQLITE  = True 
 
