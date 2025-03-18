@@ -18,6 +18,8 @@ class BaseConfig():
     if not JWT_SECRET_KEY:
         JWT_SECRET_KEY = ''.join(random.choice( string.ascii_lowercase  ) for i in range( 32 ))
 
+    print(f"SECRET_KEY: {SECRET_KEY}")
+    print(f"JWT_SECRET_KEY: {JWT_SECRET_KEY}")
     GITHUB_CLIENT_ID     = os.getenv('GITHUB_CLIENT_ID' , None)
     GITHUB_CLIENT_SECRET = os.getenv('GITHUB_SECRET_KEY', None)
     
@@ -45,7 +47,6 @@ class BaseConfig():
     if DB_ENGINE and DB_NAME and DB_USERNAME:
 
         try:
-            
             # Relational DBMS: PSQL, MySql
             SQLALCHEMY_DATABASE_URI = '{}://{}:{}@{}:{}/{}'.format(
                 DB_ENGINE,
@@ -57,7 +58,7 @@ class BaseConfig():
             ) 
 
             USE_SQLITE  = False
-            print('> Successfully connected to the database')
+            print(f'> Successfully connected to the database {SQLALCHEMY_DATABASE_URI}')
 
         except Exception as e:
 

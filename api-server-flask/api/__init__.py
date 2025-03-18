@@ -28,6 +28,14 @@ from .searchable_routes import *
 def initialize_database():
     try:
         db.create_all()
+        print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        print(f"Database Engine: {app.config['DB_ENGINE']}")
+        print(f"Database Username: {app.config['DB_USERNAME']}")
+        print(f"Database Host: {app.config['DB_HOST']}")
+        print(f"Database Port: {app.config['DB_PORT']}")
+        print(f"Database Name: {app.config['DB_NAME']}")
+        
+        print('> Successfully initialized the database')
     except Exception as e:
         print('> Error: DBMS Exception: ' + str(e) )
         # fallback to SQLite
