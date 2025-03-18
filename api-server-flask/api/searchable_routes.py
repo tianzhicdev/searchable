@@ -11,15 +11,16 @@ import math
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
-from .routes import get_db_connection
+from .routes import get_db_connection, token_required
 
 @rest_api.route('/api/searchable', methods=['POST'])
 class CreateSearchable(Resource):
     """
        Creates a new searchable by taking JSON input and adds to searchable database
     """
-
-    def post(self):
+    @token_required
+    def post(self, current_user):
+        print(f"Creating searchable for user: {current_user.id}")
         data = request.get_json()  # Get JSON data from request
         if not data:
             return {"error": "Invalid input"}, 400

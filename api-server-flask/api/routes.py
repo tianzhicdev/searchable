@@ -74,6 +74,7 @@ def token_required(f):
         token = None
         if "authorization" in request.headers:
             token = request.headers["authorization"]
+            print(f"Token: {token}")
 
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
