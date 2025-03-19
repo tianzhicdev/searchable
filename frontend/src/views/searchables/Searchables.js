@@ -243,12 +243,26 @@ const Searchables = () => {
     history.push('/publish-searchables');
   };
 
+  // Add this function to handle navigation to profile page
+  const handleProfileClick = () => {
+    history.push('/profile');
+  };
+
+  // Inside the Searchables component
+  // Add this function to handle clicking on an item
+  const handleItemClick = (itemId) => {
+    history.push(`/searchable-item/${itemId}`);
+  };
+
   return (
     <div className="searchables-container">
       <div className="user-info">
         <span>Welcome, {account.user.username}</span>
         <button onClick={handleLogout}>
           Logout
+        </button>
+        <button className="profile-button" onClick={handleProfileClick}>
+          Profile
         </button>
         <button className="add-new-button" onClick={handleAddNew}>
           Add New
@@ -301,7 +315,11 @@ const Searchables = () => {
 
           <div className="searchable-items">
             {searchResults.map((item) => (
-              <div key={item.searchable_id} className="searchable-item">
+              <div 
+                key={item.searchable_id} 
+                className="searchable-item"
+                onClick={() => handleItemClick(item.searchable_id)}
+              >
                 <h3>{item.title || `Item #${item.searchable_id}`}</h3>
                 {item.description && <p>{item.description}</p>}
                 <p className="distance">

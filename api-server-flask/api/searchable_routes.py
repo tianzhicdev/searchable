@@ -13,6 +13,51 @@ import math
 from . import rest_api
 from .routes import get_db_connection, token_required
 
+
+@rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
+class GetSearchableItem(Resource):
+    """
+    Retrieves a specific searchable item by its ID
+    """
+    @token_required
+    def get(self, current_user, searchable_id):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query to get the searchable item and its geo data
+            cur.execute("""
+                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
+                FROM searchable_items si
+                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+                WHERE si.searchable_id = %s
+            """, (searchable_id,))
+            
+            result = cur.fetchone()
+            
+            if not result:
+                return {"error": "Searchable item not found"}, 404
+                
+            searchable_id, searchable_data, latitude, longitude = result
+            
+            # Combine the data
+            item_data = searchable_data
+            item_data['searchable_id'] = searchable_id
+            
+            # Add geo data if available
+            if latitude is not None and longitude is not None:
+                item_data['latitude'] = latitude
+                item_data['longitude'] = longitude
+            
+            cur.close()
+            conn.close()
+            
+            return item_data, 200
+            
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
 @rest_api.route('/api/searchable', methods=['POST'])
 class CreateSearchable(Resource):
     """
@@ -28,6 +73,9 @@ class CreateSearchable(Resource):
         try:
             conn = get_db_connection()
             cur = conn.cursor()
+            
+            # Ensure user_id is part of the searchable data
+            data['user_id'] = current_user.id
             
             # First insert into searchable_items table
             cur.execute(
@@ -58,6 +106,59 @@ class CreateSearchable(Resource):
             return {"searchable_id": searchable_id}, 201
         except Exception as e:
             return {"error": str(e)}, 500
+
+@rest_api.route('/api/searchable/user', methods=['GET'])
+class UserSearchables(Resource):
+    """
+    Returns all searchable items posted by the current user
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/searchable/user" -H "Authorization: <token>"
+    """
+    @token_required
+    def get(self, current_user):
+        print(f"Fetching searchable items for user: {current_user}")
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query to get all searchable items created by this user
+            cur.execute("""
+                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
+                FROM searchable_items si
+                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+                WHERE si.searchable_data->>'user_id' = %s
+                ORDER BY si.searchable_id DESC
+            """, (str(current_user.id),))
+            
+            results = []
+            for row in cur.fetchall():
+                searchable_id, searchable_data, latitude, longitude = row
+                
+                # Combine the data
+                item = searchable_data.copy() if searchable_data else {}
+                item['searchable_id'] = searchable_id
+                
+                # Add geo data if available
+                if latitude is not None and longitude is not None:
+                    item['latitude'] = latitude
+                    item['longitude'] = longitude
+                
+                results.append(item)
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "success": True,
+                "count": len(results),
+                "results": results
+            }, 200
+            
+        except Exception as e:
+            print(f"Error fetching user searchables: {str(e)}")
+            return {"error": str(e)}, 500
+
 
 @rest_api.route('/api/searchable/search', methods=['GET'])
 class SearchSearchables(Resource):
@@ -235,3 +336,61 @@ class SearchSearchables(Resource):
                 "total_pages": (total_count + page_size - 1) // page_size
             }
         }
+
+@rest_api.route('/api/searchable/<int:searchable_id>', methods=['GET'])
+class GetSearchableItem(Resource):
+    """
+    Retrieves a single searchable item by ID
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/searchable/123" -H "Authorization: <token>"
+    """
+    @token_required
+    def get(self, current_user, searchable_id):
+        print(f"Fetching searchable item {searchable_id} for user: {current_user}")
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query to get the searchable item by ID
+            cur.execute("""
+                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
+                FROM searchable_items si
+                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+                WHERE si.searchable_id = %s
+            """, (searchable_id,))
+            
+            row = cur.fetchone()
+            if not row:
+                cur.close()
+                conn.close()
+                return {"error": "Searchable item not found"}, 404
+                
+            searchable_id, searchable_data, latitude, longitude = row
+            
+            # Combine the data
+            item = searchable_data.copy() if searchable_data else {}
+            item['searchable_id'] = searchable_id
+            
+            # Add geo data if available
+            if latitude is not None and longitude is not None:
+                item['latitude'] = latitude
+                item['longitude'] = longitude
+            
+            # Calculate distance if user's location is in searchable data
+            if current_user.id == int(item.get('user_id', -1)):
+                # It's the user's own item, so no need to calculate distance
+                pass
+            elif 'latitude' in item and 'longitude' in item:
+                # For other users viewing this item, we could calculate distance
+                # but we'd need their current location
+                pass
+                
+            cur.close()
+            conn.close()
+            
+            return item, 200
+            
+        except Exception as e:
+            print(f"Error fetching searchable item: {str(e)}")
+            return {"error": str(e)}, 500
