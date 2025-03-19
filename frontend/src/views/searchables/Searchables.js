@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import './Searchables.css';
+import { useHistory } from 'react-router-dom';
 
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
@@ -24,6 +25,7 @@ const Searchables = () => {
 
   const account = useSelector((state) => state.account);
   const dispatcher = useDispatch();
+  const history = useHistory();
 
   // Get user's location on component mount
   useEffect(() => {
@@ -236,12 +238,20 @@ const Searchables = () => {
         });
 };
 
+  // Add this function to handle navigation to publish page
+  const handleAddNew = () => {
+    history.push('/publish-searchables');
+  };
+
   return (
     <div className="searchables-container">
       <div className="user-info">
         <span>Welcome, {account.user.username}</span>
-        <button  onClick={handleLogout}>
+        <button onClick={handleLogout}>
           Logout
+        </button>
+        <button className="add-new-button" onClick={handleAddNew}>
+          Add New
         </button>
       </div>
       <div className="search-header">

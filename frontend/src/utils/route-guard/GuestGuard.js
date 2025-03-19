@@ -14,15 +14,20 @@ import config from '../../config';
  */
 const GuestGuard = ({ children }) => {
     const account = useSelector((state) => state.account);
-    const { isLoggedIn } = account;
+    const { isLoggedIn, token } = account;
 
-    // Log user guest access attempt
-    console.log('GuestGuard: Guest access check', { 
-        isLoggedIn,
-        timestamp: new Date().toISOString(),
-        path: window.location.pathname
-    });
-    if (isLoggedIn) {
+    // Function to check if JWT is expired
+    const isTokenExpired = (token) => {
+        if (!token) return true;
+        const [, payload] = token.split('.');
+        const decodedPayload = JSON.parse(atob(payload));
+        const expiryTime = decodedPayload.exp * 1000; // Convert to milliseconds
+        return Date.now() > expiryTime;
+    };
+
+    const tokenExpired = isTokenExpired(token);
+    
+    if (isLoggedIn && !tokenExpired) {
         return <Redirect to={config.dashboard} />;
     }
 

@@ -1,14 +1,14 @@
-import React, { lazy } from 'react';
+import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
-import Questions from '../views/questions/Questions';
+import NavMotion from '../layout/NavMotion';
+import Searchables from '../views/searchables/Searchables';
+import AuthGuard from './../utils/route-guard/AuthGuard';
+import PublishSearchables from '../views/publish-searchables/PublishSearchables';
+import TestComponent from '../views/publish-searchables/TestComponent';
 
 // // project imports
 // import GuestGuard from '../utils/route-guard/GuestGuard';
 // import MinimalLayout from '../layout/MinimalLayout';
-import NavMotion from '../layout/NavMotion';
-import Searchables from '../views/searchables/Searchables';
-import AuthGuard from './../utils/route-guard/AuthGuard';
-// import Loadable from '../ui-component/Loadable';
 
 // // login routing
 // const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/login')));
@@ -20,18 +20,18 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/searchables']}>
-            {/* <MinimalLayout> */}
-                <Switch location={location} key={location.pathname}>
+        <Route>
+            <Switch location={location} key={location.pathname}>
                 <AuthGuard>
                     <NavMotion>
                         {/* <GuestGuard> */}
-                            <Route path="/searchables" component={Searchables} />
+                        <Route exact path="/searchables" component={Searchables} />
+                        <Route exact path="/publish-searchables" component={PublishSearchables} />
+                        <Route exact path="/test-component" component={TestComponent} />
                         {/* </GuestGuard> */}
                     </NavMotion>
                 </AuthGuard>
-                </Switch>
-            {/* </MinimalLayout> */}
+            </Switch>
         </Route>
     );
 };
