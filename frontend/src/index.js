@@ -14,6 +14,7 @@ import config from './config';
 
 // style + assets
 import './assets/scss/style.scss';
+import 'leaflet/dist/leaflet.css';
 
 //-----------------------|| REACT DOM RENDER  ||-----------------------//
 

@@ -28,32 +28,26 @@ const MainRoutes = () => {
         <Route
             path={[
                 '/dashboard/default',
-
                 '/utils/util-typography',
                 '/utils/util-color',
                 '/utils/util-shadow',
                 '/icons/tabler-icons',
                 '/icons/material-icons',
-
                 '/sample-page'
             ]}
         >
             <MainLayout>
-                <Switch location={location} key={location.pathname}>
-                    <AuthGuard>
-                        {/* todo: make a landing page here */}
+                <AuthGuard>
+                    <Switch location={location} key={location.pathname}>
                         <Route path="/dashboard/default" component={DashboardDefault} />
-
-
                         <Route path="/utils/util-typography" component={UtilsTypography} />
                         <Route path="/utils/util-color" component={UtilsColor} />
                         <Route path="/utils/util-shadow" component={UtilsShadow} />
                         <Route path="/icons/tabler-icons" component={UtilsTablerIcons} />
                         <Route path="/icons/material-icons" component={UtilsMaterialIcons} />
-
                         <Route path="/sample-page" component={SamplePage} />
-                    </AuthGuard>
-                </Switch>
+                    </Switch>
+                </AuthGuard>
             </MainLayout>
         </Route>
     );

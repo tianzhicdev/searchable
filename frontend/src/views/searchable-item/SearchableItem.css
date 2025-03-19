@@ -99,9 +99,7 @@
 }
 
 .item-actions {
-  margin-top: 30px;
-  display: flex;
-  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .edit-button {
@@ -117,6 +115,26 @@
 
 .edit-button:hover {
   background-color: #388e3c;
+}
+
+.remove-item-btn {
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.remove-item-btn:hover {
+  background-color: #c9302c;
+}
+
+.remove-item-btn:disabled {
+  background-color: #999;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

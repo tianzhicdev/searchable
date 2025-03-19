@@ -9,6 +9,8 @@ const SearchableItem = () => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -17,6 +19,25 @@ const SearchableItem = () => {
   useEffect(() => {
     fetchItemDetails();
   }, [id]);
+  
+  useEffect(() => {
+    // Check if current user is the owner
+    const checkOwnership = async () => {
+      try {
+        console.log("User:", account.user);
+        console.log("Item:", item);
+        if (account && item && item.user_id === account.user._id) {
+          setIsOwner(true);
+        }
+      } catch (error) {
+        console.error("Error checking ownership:", error);
+      }
+    };
+
+    if (item) {
+      checkOwnership();
+    }
+  }, [item, account]);
   
   const fetchItemDetails = async () => {
     setLoading(true);
@@ -47,6 +68,33 @@ const SearchableItem = () => {
       return `${Math.round(meters)} m`;
     } else {
       return `${(meters / 1000).toFixed(1)} km`;
+    }
+  };
+  
+  const handleRemoveItem = async () => {
+    if (!window.confirm("Are you sure you want to remove this item?")) {
+      return;
+    }
+    
+    setIsRemoving(true);
+    try {
+      await axios.put(
+        `${configData.API_SERVER}remove-searchable-item/${id}`,
+        {},
+        {
+          headers: {
+            Authorization: `${account.token}`
+          }
+        }
+      );
+      alert("Item removed successfully");
+      // Redirect to searchables list page
+      history.push('/searchables');
+    } catch (error) {
+      console.error("Error removing item:", error);
+      alert("Failed to remove the item");
+    } finally {
+      setIsRemoving(false);
     }
   };
   
@@ -128,6 +176,18 @@ const SearchableItem = () => {
               <span className="info-value">{item.searchable_id}</span>
             </div>
           </div>
+          
+          {isOwner && (
+            <div className="item-actions">
+              <button 
+                className="remove-item-btn" 
+                onClick={handleRemoveItem}
+                disabled={isRemoving}
+              >
+                {isRemoving ? "Removing..." : "Remove Item"}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

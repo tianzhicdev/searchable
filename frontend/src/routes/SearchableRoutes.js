@@ -7,6 +7,7 @@ import PublishSearchables from '../views/publish-searchables/PublishSearchables'
 import TestComponent from '../views/publish-searchables/TestComponent';
 import Profile from '../views/profile/Profile';
 import SearchableItem from '../views/searchable-item/SearchableItem';
+import MainLayout from '../layout/MainLayout';
 // // project imports
 // import GuestGuard from '../utils/route-guard/GuestGuard';
 // import MinimalLayout from '../layout/MinimalLayout';
@@ -23,6 +24,7 @@ const SearchableRoutes = () => {
     return (
         <Route>
             <Switch location={location} key={location.pathname}>
+            {/* <MainLayout> */}
                 <AuthGuard>
                     <NavMotion>
                         {/* <GuestGuard> */}
@@ -34,6 +36,7 @@ const SearchableRoutes = () => {
                         {/* </GuestGuard> */}
                     </NavMotion>
                 </AuthGuard>
+            {/* </MainLayout> */}
             </Switch>
         </Route>
     );

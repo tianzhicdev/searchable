@@ -3,6 +3,7 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
+import re
 from flask import request
 from flask_restx import Resource
 from psycopg2.extras import Json
@@ -166,7 +167,7 @@ class SearchSearchables(Resource):
     Search for searchable items based on location and optional query terms
     
     Example curl request:
-    curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10"
+    curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10&query_term=coffee%20shop"
     """
     @token_required
     def get(self, current_user):
@@ -192,7 +193,8 @@ class SearchSearchables(Resource):
                 search_geohash_prefix, 
                 params['lat'], 
                 params['lng'], 
-                params['max_distance']
+                params['max_distance'],
+                params['query_term']
             )
             
             # Apply pagination after filtering by actual distance
@@ -212,7 +214,7 @@ class SearchSearchables(Resource):
         max_distance = request.args.get('max_distance', 10000)  # Default to 10km if not specified
         page_number = int(request.args.get('page_number', 1))
         page_size = int(request.args.get('page_size', 10))
-        query_term = request.args.get('query_term', '')  # todo: Not used yet as per instructions
+        query_term = request.args.get('query_term', '')
         
         # Validate required parameters
         if not lat or not lng:
@@ -274,13 +276,50 @@ class SearchSearchables(Resource):
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
         return earth_radius * c  # in meters
     
-    def _query_database(self, search_geohash_prefix, lat, lng, max_distance):
-        """Query database for results and filter by actual distance"""
+    def _tokenize_text(self, text):
+        """Tokenize text into individual words, removing punctuation and converting to lowercase"""
+        if not text:
+            return []
+        # Remove punctuation and convert to lowercase
+        text = re.sub(r'[^\w\s]', ' ', text.lower())
+        # Split by whitespace and filter out empty strings
+        return [word for word in text.split() if word]
+    
+    def _calculate_match_score(self, query_tokens, item_data):
+        """Calculate match score between query tokens and item data"""
+        if not query_tokens:
+            return 0
+            
+        score = 0
+        title = item_data.get('title', '')
+        description = item_data.get('description', '')
+        
+        title_tokens = self._tokenize_text(title)
+        description_tokens = self._tokenize_text(description)
+        
+        # Check for matches in title (weight: 3)
+        for query_token in query_tokens:
+            if query_token in title_tokens:
+                score += 3
+                
+        # Check for matches in description (weight: 1)
+        for query_token in query_tokens:
+            if query_token in description_tokens:
+                score += 1
+                
+        return score
+    
+    def _query_database(self, search_geohash_prefix, lat, lng, max_distance, query_term):
+        """Query database for results and filter by actual distance and search relevance"""
         # Log query parameters for debugging
         print(f"Search parameters:")
         print(f"  Geohash prefix: {search_geohash_prefix}")
         print(f"  Coordinates: ({lat}, {lng})")
         print(f"  Max distance: {max_distance} meters")
+        print(f"  Query term: {query_term}")
+        
+        # Tokenize query term
+        query_tokens = self._tokenize_text(query_term)
         
         conn = get_db_connection()
         cur = conn.cursor()
@@ -290,13 +329,14 @@ class SearchSearchables(Resource):
             SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude, sg.geohash
             FROM searchable_items si
             JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-            WHERE sg.geohash LIKE %s;
+            WHERE sg.geohash LIKE %s
+            AND (si.searchable_data->>'is_removed')::boolean IS NOT TRUE;
         """
         
         cur.execute(query, (search_geohash_prefix + '%',))
         db_results = cur.fetchall()
         
-        # Post-process results to filter by actual distance
+        # Post-process results to filter by actual distance and calculate match scores
         filtered_results = []
         for result in db_results:
             searchable_id, searchable_data, item_lat, item_lng, geohash = result
@@ -309,10 +349,15 @@ class SearchSearchables(Resource):
                 item_data = dict(searchable_data)
                 item_data['distance'] = distance
                 item_data['searchable_id'] = searchable_id
+                
+                # Calculate match score for search relevance
+                match_score = self._calculate_match_score(query_tokens, item_data)
+                item_data['match_score'] = match_score
+                
                 filtered_results.append(item_data)
         
-        # Sort results by distance
-        filtered_results.sort(key=lambda x: x['distance'])
+        # Sort results first by match score (descending), then by distance (ascending)
+        filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
         
         cur.close()
         conn.close()
@@ -337,27 +382,84 @@ class SearchSearchables(Resource):
             }
         }
 
-@rest_api.route('/api/searchable/<int:searchable_id>', methods=['GET'])
-class GetSearchableItem(Resource):
+# @rest_api.route('/api/searchable/<int:searchable_id>', methods=['GET'])
+# class GetSearchableItem(Resource):
+#     """
+#     Retrieves a single searchable item by ID
+    
+#     Example curl request:
+#     curl -X GET "http://localhost:5000/api/searchable/123" -H "Authorization: <token>"
+#     """
+#     @token_required
+#     def get(self, current_user, searchable_id):
+#         print(f"Fetching searchable item {searchable_id} for user: {current_user}")
+#         try:
+#             conn = get_db_connection()
+#             cur = conn.cursor()
+            
+#             # Query to get the searchable item by ID
+#             cur.execute("""
+#                 SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
+#                 FROM searchable_items si
+#                 LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
+#                 WHERE si.searchable_id = %s
+#             """, (searchable_id,))
+            
+#             row = cur.fetchone()
+#             if not row:
+#                 cur.close()
+#                 conn.close()
+#                 return {"error": "Searchable item not found"}, 404
+                
+#             searchable_id, searchable_data, latitude, longitude = row
+            
+#             # Combine the data
+#             item = searchable_data.copy() if searchable_data else {}
+#             item['searchable_id'] = searchable_id
+            
+#             # Add geo data if available
+#             if latitude is not None and longitude is not None:
+#                 item['latitude'] = latitude
+#                 item['longitude'] = longitude
+            
+#             # Calculate distance if user's location is in searchable data
+#             if current_user.id == int(item.get('user_id', -1)):
+#                 # It's the user's own item, so no need to calculate distance
+#                 pass
+#             elif 'latitude' in item and 'longitude' in item:
+#                 # For other users viewing this item, we could calculate distance
+#                 # but we'd need their current location
+#                 pass
+                
+#             cur.close()
+#             conn.close()
+            
+#             return item, 200
+            
+#         except Exception as e:
+#             print(f"Error fetching searchable item: {str(e)}")
+#             return {"error": str(e)}, 500
+
+@rest_api.route('/api/remove-searchable-item/<int:searchable_id>', methods=['PUT'])
+class RemoveSearchableItem(Resource):
     """
-    Retrieves a single searchable item by ID
+    Soft removes a searchable item by setting is_removed flag to true
     
     Example curl request:
-    curl -X GET "http://localhost:5000/api/searchable/123" -H "Authorization: <token>"
+    curl -X PUT "http://localhost:5000/api/searchable/123/remove" -H "Authorization: <token>"
     """
     @token_required
-    def get(self, current_user, searchable_id):
-        print(f"Fetching searchable item {searchable_id} for user: {current_user}")
+    def put(self, current_user, searchable_id):
+        print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
         try:
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Query to get the searchable item by ID
+            # First check if the item exists and belongs to the current user
             cur.execute("""
-                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
-                FROM searchable_items si
-                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-                WHERE si.searchable_id = %s
+                SELECT searchable_data
+                FROM searchable_items
+                WHERE searchable_id = %s
             """, (searchable_id,))
             
             row = cur.fetchone()
@@ -366,31 +468,30 @@ class GetSearchableItem(Resource):
                 conn.close()
                 return {"error": "Searchable item not found"}, 404
                 
-            searchable_id, searchable_data, latitude, longitude = row
+            searchable_data = row[0]
             
-            # Combine the data
-            item = searchable_data.copy() if searchable_data else {}
-            item['searchable_id'] = searchable_id
+            # Check if the item belongs to the current user
+            if int(searchable_data.get('user_id', -1)) != current_user.id:
+                cur.close()
+                conn.close()
+                return {"error": "You don't have permission to remove this item"}, 403
             
-            # Add geo data if available
-            if latitude is not None and longitude is not None:
-                item['latitude'] = latitude
-                item['longitude'] = longitude
+            # Update the searchable_data to mark it as removed
+            searchable_data['is_removed'] = True
             
-            # Calculate distance if user's location is in searchable data
-            if current_user.id == int(item.get('user_id', -1)):
-                # It's the user's own item, so no need to calculate distance
-                pass
-            elif 'latitude' in item and 'longitude' in item:
-                # For other users viewing this item, we could calculate distance
-                # but we'd need their current location
-                pass
-                
+            # Update the record in the database
+            cur.execute("""
+                UPDATE searchable_items
+                SET searchable_data = %s
+                WHERE searchable_id = %s
+            """, (Json(searchable_data), searchable_id))
+            
+            conn.commit()
             cur.close()
             conn.close()
             
-            return item, 200
+            return {"success": True, "message": "Item has been removed"}, 200
             
         except Exception as e:
-            print(f"Error fetching searchable item: {str(e)}")
+            print(f"Error removing searchable item: {str(e)}")
             return {"error": str(e)}, 500
