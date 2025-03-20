@@ -37,7 +37,7 @@ const MainRoutes = () => {
             ]}
         >
             <MainLayout>
-                <AuthGuard>
+                {/* <AuthGuard> */}
                     <Switch location={location} key={location.pathname}>
                         <Route path="/dashboard/default" component={DashboardDefault} />
                         <Route path="/utils/util-typography" component={UtilsTypography} />
@@ -47,7 +47,7 @@ const MainRoutes = () => {
                         <Route path="/icons/material-icons" component={UtilsMaterialIcons} />
                         <Route path="/sample-page" component={SamplePage} />
                     </Switch>
-                </AuthGuard>
+                {/* </AuthGuard> */}
             </MainLayout>
         </Route>
     );

@@ -18,10 +18,11 @@ const Routes = () => {
             <Redirect exact from="/" to={config.defaultPath} />
             <React.Fragment>
                 {/* Routes for searchables */}
+
+                <LoginRoutes />
                 <SearchableRoutes />
                 
                 {/* Route for login */}
-                <LoginRoutes />
 
                 {/* Routes for main layouts */}
                 <MainRoutes />

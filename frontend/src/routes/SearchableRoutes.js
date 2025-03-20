@@ -22,21 +22,15 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route>
+        <Route path={['/searchables', '/publish-searchables', '/profile', '/test-component', '/searchable-item/:id']}>
             <Switch location={location} key={location.pathname}>
-            {/* <MainLayout> */}
                 <AuthGuard>
-                    <NavMotion>
-                        {/* <GuestGuard> */}
                         <Route exact path="/searchables" component={Searchables} />
                         <Route exact path="/publish-searchables" component={PublishSearchables} />
                         <Route exact path="/profile" component={Profile} />
                         <Route exact path="/test-component" component={TestComponent} />
                         <Route exact path="/searchable-item/:id" component={SearchableItem} />
-                        {/* </GuestGuard> */}
-                    </NavMotion>
                 </AuthGuard>
-            {/* </MainLayout> */}
             </Switch>
         </Route>
     );

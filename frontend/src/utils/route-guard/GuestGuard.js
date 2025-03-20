@@ -26,8 +26,17 @@ const GuestGuard = ({ children }) => {
     };
 
     const tokenExpired = isTokenExpired(token);
+    // Log token status for debugging
+    console.log('GuestGuard Token status:', {
+        isLoggedIn,
+        hasToken: !!token,
+        tokenExpired,
+        currentTime: Date.now(),
+        expiryTime: token ? JSON.parse(atob(token.split('.')[1])).exp * 1000 : null
+    });
     
     if (isLoggedIn && !tokenExpired) {
+        console.log('User is logged in and token is valid, redirecting to dashboard');
         return <Redirect to={config.dashboard} />;
     }
 

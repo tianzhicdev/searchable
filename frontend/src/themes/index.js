@@ -33,6 +33,19 @@ export function theme(customization) {
     return createTheme({
         direction: 'ltr',
         palette: themePalette(themeOption),
+        borders: {
+            main: `1px solid ${color.orangeMain}`,
+            light: `1px solid ${color.orangeLight}`,
+            dark: `1px solid ${color.orangeDark}`,
+            primary: `1px solid ${color.primaryMain}`,
+            secondary: `1px solid ${color.secondaryMain}`,
+            error: `1px solid ${color.errorMain}`,
+            success: `1px solid ${color.successMain}`,
+            warning: `1px solid ${color.warningMain}`
+        },
+        shape: {
+            borderRadius: 0
+        },
         mixins: {
             toolbar: {
                 minHeight: '48px',
