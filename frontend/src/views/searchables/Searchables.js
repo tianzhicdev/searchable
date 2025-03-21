@@ -9,13 +9,16 @@ import {
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
+import SearchIcon from '@material-ui/icons/Search';
 
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
+import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
 const Searchables = () => {
-  const classes = useComponentStyles();
+  
   // State variables
   const [searchTerm, setSearchTerm] = useState('');
   const [location, setLocation] = useState(null);
@@ -82,6 +85,7 @@ const Searchables = () => {
   // Function to get user's geolocation
   const getUserLocation = () => {
     setError(null);
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -201,10 +205,9 @@ const Searchables = () => {
         <Button 
           key="prev" 
           onClick={() => handlePageChange(page - 1)}
-          className={classes.paginationButton}
           size="small"
         >
-          &laquo;
+          <ChevronLeftIcon />
         </Button>
       );
     }
@@ -213,7 +216,6 @@ const Searchables = () => {
     buttons.push(
       <Button 
         key={page} 
-        className={`${classes.paginationButton} ${classes.activeButton}`}
         size="small"
       >
         {page}
@@ -226,10 +228,9 @@ const Searchables = () => {
         <Button 
           key="next" 
           onClick={() => handlePageChange(page + 1)}
-          className={classes.paginationButton}
           size="small"
         >
-          &raquo;
+          <ChevronRightIcon />
         </Button>
       );
     }
@@ -240,6 +241,7 @@ const Searchables = () => {
   // Function to handle logout
   const handleLogout = () => {
     console.log(account.token);
+    
     axios
         .post(configData.API_SERVER + 'users/logout', {token: `${account.token}`}, { headers: { Authorization: `${account.token}` } })
         .then(function (response) {
@@ -266,95 +268,90 @@ const Searchables = () => {
   const handleItemClick = (itemId) => {
     history.push(`/searchable-item/${itemId}`);
   };
-
   return (
-    <Grid container className={classes.container}>
-      <Grid item xs={12} className={classes.header}>
-        <Box className={classes.userInfo}>
-          <Box className={classes.leftButtons}>
+    <Grid container spacing={2}>
+      <Grid item xs={12}>
+        <Box mb={2}>
             <Button 
               variant="contained" 
-              className={classes.iconButton} 
               onClick={handleProfileClick}
             >
               <PersonIcon />
             </Button>
+            
             <Button 
               variant="contained" 
-              className={classes.iconButton} 
               onClick={handleLogout}
             >
               <ExitToAppIcon />
             </Button>
-          </Box>
-          
-          <Box className={classes.rightButtons}>
+            
             <Button 
               variant="contained" 
-              color="primary" 
-              className={classes.iconButton} 
               onClick={handleAddNew}
+              style={{ float: 'right' }}
             >
               <AddIcon />
             </Button>
-          </Box>
         </Box>
       </Grid>
       
-      <Grid item xs={12} className={classes.formGroup}>
-        <Paper elevation={2}>
-            <Box className={classes.searchBar}>
-              <TextField
-                className={classes.searchInput}
-                size="small"
-                placeholder="Search for items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Button 
-                onClick={() => handleSearch(1)} 
-                disabled={loading}
-                className={classes.actionButton}
-              >
-                Search
-              </Button>
-              <FormControl variant="outlined" size="small" className={classes.select}>
-                <Select
-                  labelId="distance-select-label"
-                  value={maxDistance}
-                  onChange={(e) => {
-                    const newDistance = Number(e.target.value);
-                    setMaxDistance(newDistance);
-                    // Trigger search with page 1 when distance changes
-                    setTimeout(() => handleSearch(1), 0);
-                  }}
+      <Grid item xs={12}>
+        <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+          <TextField
+            placeholder="Search for items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, marginRight: '16px' }}
+            InputProps={{
+              endAdornment: (
+                <Button 
+                  onClick={() => handleSearch(1)} 
+                  disabled={loading}
+                  style={{ padding: '4px', minWidth: 'unset' }}
                 >
-                  <MenuItem value={1000}>1 km</MenuItem>
-                  <MenuItem value={5000}>5 km</MenuItem>
-                  <MenuItem value={10000}>10 km</MenuItem>
-                  <MenuItem value={50000}>50 km</MenuItem>
-                  <MenuItem value={100000}>100 km</MenuItem>
-                  <MenuItem value={1000000}>1000 km</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-        </Paper>
+                  <SearchIcon/>
+                </Button>
+              ),
+            }}
+          />
+          
+          <Select
+            labelId="distance-select-label"
+            value={maxDistance}
+            onChange={(e) => {
+              const newDistance = Number(e.target.value);
+              setMaxDistance(newDistance);
+              // Trigger search with page 1 when distance changes
+              setTimeout(() => handleSearch(1), 0);
+            }}
+            style={{ minWidth: '100px' }}
+          >
+            <MenuItem value={1000}>1 km</MenuItem>
+            <MenuItem value={5000}>5 km</MenuItem>
+            <MenuItem value={10000}>10 km</MenuItem>
+            <MenuItem value={50000}>50 km</MenuItem>
+            <MenuItem value={100000}>100 km</MenuItem>
+            <MenuItem value={1000000}>1000 km</MenuItem>
+          </Select>
+        </Box>
       </Grid>
 
       {error && (
         <Grid item xs={12}>
-          <Paper className={classes.errorMessage}>
+          <Paper>
             <Typography variant="body1">{error}</Typography>
           </Paper>
         </Grid>
       )}
 
-      {loading && (
-        <Grid item xs={12} className={classes.loading}>
-          <CircularProgress />
-          <Typography variant="body1" style={{ marginLeft: 16 }}>
-            Loading results...
-          </Typography>
+      {
+      loading &&
+       (
+        <Grid item xs={12}>
+          <Box my={2} display="flex" alignItems="center" justifyContent="center">
+            <CircularProgress />
+          </Box>
         </Grid>
       )}
 
@@ -364,30 +361,33 @@ const Searchables = () => {
             {searchResults.map((item) => (
               <Paper 
                 key={item.searchable_id} 
-                className={classes.searchableItem}
                 onClick={() => handleItemClick(item.searchable_id)}
-                elevation={2}
+                style={{ marginBottom: '16px' }}
               >
-                <Typography variant="h6" className={classes.itemTitle}>
-                  {item.title || `Item #${item.searchable_id}`}
+                <Typography variant="h4">
+                  {item.title}
                 </Typography>
-                {item.description && (
-                  <Typography variant="body2" className={classes.itemDescription}>
-                    {item.description}
+                
+                <Divider />
+                
+                <Box>
+                {item.username && (
+                  <Typography variant="body2">
+                    Posted by: {item.username}
                   </Typography>
                 )}
-                <Divider style={{ margin: '8px 0' }} />
-                <Box className={classes.itemInfo}>
-                  <Typography variant="body2" className={classes.infoItem}>
+                  <Typography variant="body2">
                     Distance: {formatDistance(item.distance)}
                   </Typography>
+                  
                   {item.category && (
-                    <Typography variant="body2" className={classes.infoItem}>
+                    <Typography variant="body2">
                       Category: {item.category}
                     </Typography>
                   )}
+                  
                   {item.price && (
-                    <Typography variant="body2" className={classes.infoItem}>
+                    <Typography variant="body2">
                       Price: ${item.price}
                     </Typography>
                   )}
@@ -396,15 +396,17 @@ const Searchables = () => {
             ))}
           </Grid>
 
-          <Grid item xs={12} className={classes.pagination}>
-            {renderPaginationButtons()}
+          <Grid item xs={12}>
+            <Box mt={2} mb={3} display="flex" justifyContent="center">
+              {renderPaginationButtons()}
+            </Box>
           </Grid>
         </>
       )}
 
       {!loading && searchResults.length === 0 && !initialItemsLoaded && (
         <Grid item xs={12}>
-          <Paper className={classes.noResults} elevation={2}>
+          <Paper elevation={2}>
             <Typography variant="body1">
               {pagination.totalCount === 0 ? 
                 "No items found. Try adjusting your search criteria or increasing the distance." : 

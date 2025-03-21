@@ -7,12 +7,12 @@ import { makeStyles } from '@material-ui/styles';
  */
 const useComponentStyles = makeStyles((theme) => ({
   // Layout and containers
-  container: {
-    padding: theme.spacing(2)
-  },
-  gridItem: {
-    marginBottom: theme.spacing(3)
-  },
+//   container: {
+//     padding: theme.spacing(2)
+//   },
+//   gridItem: {
+//     marginBottom: theme.spacing(3)
+//   },
   // Headers and sections
   header: {
     marginBottom: theme.spacing(3),
@@ -33,56 +33,6 @@ const useComponentStyles = makeStyles((theme) => ({
     textDecoration: 'none'
   },
   
-  // Buttons
-  button: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  iconButton: {
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(1),
-    minWidth: 'unset'
-  },
-  backButton: {
-    // marginRight: theme.spacing(2),
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  actionButton: {
-    marginRight: theme.spacing(1),
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    minWidth: 'unset',
-    padding: theme.spacing(1)
-  },
-  primaryButton: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-    '&:hover': {
-      backgroundColor: theme.palette.primary.dark,
-    }
-  },
-  secondaryButton: {
-    backgroundColor: theme.palette.secondary.main,
-    color: theme.palette.secondary.contrastText,
-    '&:hover': {
-      backgroundColor: theme.palette.secondary.dark,
-    }
-  },
-  dangerButton: {
-    backgroundColor: theme.palette.error.main,
-    color: theme.palette.error.contrastText,
-    '&:hover': {
-      backgroundColor: theme.palette.error.dark,
-    }
-  },
   
   // Form elements
   formGroup: {
@@ -114,95 +64,6 @@ const useComponentStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
     marginBottom: theme.spacing(2)
   },
-  
-  // Text fields and inputs
-  textInput: {
-    flexGrow: 1,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 0,
-      backgroundColor: theme.palette.background.paper
-    },
-    '& .MuiOutlinedInput-input': {
-      backgroundColor: theme.palette.background.paper,
-      width: '100%',
-      borderRadius: 0
-    },
-    '& .MuiInputBase-root': {
-      borderRadius: 0,
-      border: theme.borders.main
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: 'none',
-    },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-    },
-    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: theme.borders.main,
-    },
-    '& input[type="text"], & input[type="number"], & textarea': {
-      width: '100%',
-      border: '0px solid #ddd',
-      borderRadius: 0
-    },
-    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
-      '-webkit-box-shadow': '0 0 0 1000px black inset !important',
-      'box-shadow': '0 0 0 1000px black inset !important',
-      '-webkit-text-fill-color': `${theme.palette.text.primary} !important`,
-    //   fontFamily: `${theme.fonts.fontFamily.primary} !important`
-    }
-  },
-  searchInput: {
-    flexGrow: 1,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 0
-    },
-    '& .MuiOutlinedInput-input': {
-      backgroundColor: theme.palette.background.paper,
-      width: '100%',
-      borderRadius: 0
-    },
-    '& .MuiInputBase-root': {
-      borderRadius: 0,
-      border: theme.borders.main
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-    },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-    },
-    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: theme.borders.main,
-    }
-  },
-  select: {
-    '& .MuiFormControl-root': {
-      borderRadius: 0,
-      border: theme.borders.main
-    },
-    '& .MuiOutlinedInput-input': {
-      backgroundColor: theme.palette.background.paper,
-      borderRadius: 0
-    },
-    '& .MuiInputBase-root': {
-      borderRadius: 0
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0
-    },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0
-    },
-    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: theme.borders.main,
-    }
-  },
-  
   // File inputs
   fileInput: {
     display: 'none'
@@ -309,18 +170,7 @@ const useComponentStyles = makeStyles((theme) => ({
     borderRadius: theme.shape.borderRadius,
     marginBottom: theme.spacing(2)
   },
-  
-  // Searchable items
-  searchableItem: {
-    cursor: 'pointer',
-    padding: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover
-    }
-  },
+
   itemTitle: {
     marginBottom: theme.spacing(1),
     color: theme.palette.text.primary,

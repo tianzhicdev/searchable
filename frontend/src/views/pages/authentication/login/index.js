@@ -23,12 +23,10 @@ const Login = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-        <AuthWrapper1>
-            <Grid container direction="column" justifyContent="flex-end" sx={{ minHeight: '100vh' }}>
                 <Grid item xs={12}>
-                    <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 'calc(100vh - 68px)' }}>
+                    <Grid container style={{ height: '100vh' }} alignItems="center" justifyContent="center">
                         <Grid item sx={{ m: { xs: 1, sm: 3 }, mb: 0 }}>
-                            <AuthCardWrapper className={classes.container}>
+                            {/* <AuthCardWrapper className={classes.container}> */}
                                 <Grid container spacing={2} alignItems="center" justifyContent="center">
                                     <Grid item sx={{ mb: 3 }}>
                                         <RouterLink to="#">
@@ -75,15 +73,10 @@ const Login = () => {
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                            </AuthCardWrapper>
+                            {/* </AuthCardWrapper> */}
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item xs={12} sx={{ m: 3, mt: 1 }}>
-                    {/* <AuthFooter /> */}
-                </Grid>
-            </Grid>
-        </AuthWrapper1>
     );
 };
 
