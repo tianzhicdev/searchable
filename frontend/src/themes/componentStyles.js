@@ -39,12 +39,10 @@ const useComponentStyles = makeStyles((theme) => ({
   
   // Buttons
   button: {
-    fontWeight: 500,
+    fontWeight: 'bold',
     color: theme.palette.text.primary,
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
-    textTransform: 'none',
-    padding: theme.spacing(0.75, 2),
   },
   iconButton: {
     color: theme.palette.text.primary,
@@ -152,6 +150,11 @@ const useComponentStyles = makeStyles((theme) => ({
       width: '100%',
       border: '0px solid #ddd',
       borderRadius: 0,
+    },
+    '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
+      '-webkit-box-shadow': '0 0 0 1000px black inset !important',
+      'box-shadow': '0 0 0 1000px black inset !important',
+      '-webkit-text-fill-color': `${theme.palette.text.primary} !important`,
     }
   },
   searchInput: {

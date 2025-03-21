@@ -1,23 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-
+import { TextField } from '@material-ui/core';
 import configData from '../../../../config';
 
 // material-ui
 import {
     Box,
     Button,
-    Checkbox,
     FormControl,
-    FormControlLabel,
     FormHelperText,
     IconButton,
     InputAdornment,
     InputLabel,
-    OutlinedInput,
-    Stack,
-    Typography
 } from '@material-ui/core';
 
 // third party
@@ -109,15 +104,14 @@ const RestLogin = (props, { ...others }) => {
                 {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                     <form noValidate onSubmit={handleSubmit} {...others}>
                         <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
-                            <InputLabel htmlFor="outlined-adornment-email-login">Email</InputLabel>
-                            <OutlinedInput
+                            <TextField
                                 id="outlined-adornment-email-login"
                                 type="email"
                                 value={values.email}
                                 name="email"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
-                                label="Email Address"
+                                placeholder="Enter your email"
                                 className={classes.textInput}
                             />
                             {touched.email && errors.email && (
@@ -128,14 +122,14 @@ const RestLogin = (props, { ...others }) => {
                         </FormControl>
 
                         <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
-                            <InputLabel htmlFor="outlined-adornment-password-login">Password</InputLabel>
-                            <OutlinedInput
+                            <TextField
                                 id="outlined-adornment-password-login"
                                 type={showPassword ? 'text' : 'password'}
                                 value={values.password}
                                 name="password"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
+                                placeholder="Enter your password"
                                 className={classes.textInput}
                                 endAdornment={
                                     <InputAdornment position="end">
@@ -150,7 +144,6 @@ const RestLogin = (props, { ...others }) => {
                                         </IconButton>
                                     </InputAdornment>
                                 }
-                                label="Password"
                             />
                             {touched.password && errors.password && (
                                 <FormHelperText error id="standard-weight-helper-text-password-login" className={classes.formHelp}>
@@ -185,11 +178,9 @@ const RestLogin = (props, { ...others }) => {
                                     fullWidth
                                     size="large"
                                     type="submit"
-                                    variant="contained"
-                                    color="secondary"
-                                    className={`${classes.button} ${classes.primaryButton}`}
+                                    className={classes.button}
                                 >
-                                    Sign IN
+                                    Sign In
                                 </Button>
                             </AnimateButton>
                         </Box>

@@ -2,7 +2,7 @@ import React from 'react';
 
 // material-ui
 import { useTheme } from '@material-ui/styles';
-import landing_small from './../assets/images/landing_small.jpeg';
+import bitbid_logo from './../assets/images/bit-bid.png';
 /**
  * if you want to use image instead of <svg> uncomment following.
  *
@@ -14,18 +14,7 @@ import landing_small from './../assets/images/landing_small.jpeg';
 //-----------------------|| LOGO SVG ||-----------------------//
 
 const Logo = () => {
-    const theme = useTheme();
-
-    return (
-        /**
-         * if you want to use image instead of svg uncomment following, and comment out <svg> element.
-         *
-         * <img src={logo} alt="Berry" width="100" />
-         *
-         */
-        <img src={landing_small} alt="Berry" width="100" />
-        
-    );
+    return ( <img src={bitbid_logo} alt="Berry" width="100%" />  );
 };
 
 export default Logo;

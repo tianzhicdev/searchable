@@ -119,13 +119,13 @@ const RestRegister = ({ ...others }) => {
                             <Grid item xs={12}>
                                 <TextField
                                     fullWidth
-                                    label="Username"
                                     margin="normal"
                                     name="username"
                                     id="username"
                                     type="text"
                                     value={values.username}
                                     onBlur={handleBlur}
+                                    placeholder="Enter your username"
                                     onChange={handleChange}
                                     className={classes.textInput}
                                     error={touched.username && Boolean(errors.username)}
@@ -138,12 +138,13 @@ const RestRegister = ({ ...others }) => {
                             </Grid>
                         </Grid>
                         <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
-                            <InputLabel htmlFor="outlined-adornment-email-register">Email</InputLabel>
-                            <OutlinedInput
+                            {/* <InputLabel htmlFor="outlined-adornment-email-register">Email</InputLabel> */}
+                            <TextField
                                 id="outlined-adornment-email-register"
                                 type="email"
                                 value={values.email}
                                 name="email"
+                                placeholder="Enter your email"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
                                 className={classes.textInput}
@@ -156,32 +157,33 @@ const RestRegister = ({ ...others }) => {
                         </FormControl>
 
                         <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
-                            <InputLabel htmlFor="outlined-adornment-password-register">Password</InputLabel>
-                            <OutlinedInput
+                            {/* <InputLabel htmlFor="outlined-adornment-password-register">Password</InputLabel> */}
+                            <TextField
                                 id="outlined-adornment-password-register"
                                 type={showPassword ? 'text' : 'password'}
                                 value={values.password}
                                 name="password"
-                                label="Password"
+                                placeholder="Enter your password"
+                                // label="Password"
                                 onBlur={handleBlur}
                                 onChange={(e) => {
                                     handleChange(e);
                                     changePassword(e.target.value);
                                 }}
                                 className={classes.textInput}
-                                endAdornment={
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            aria-label="toggle password visibility"
-                                            onClick={handleClickShowPassword}
-                                            onMouseDown={handleMouseDownPassword}
-                                            edge="end"
-                                            className={classes.iconButton}
-                                        >
-                                            {showPassword ? <Visibility /> : <VisibilityOff />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                }
+                                // endAdornment={
+                                //     <InputAdornment position="end">
+                                //         <IconButton
+                                //             aria-label="toggle password visibility"
+                                //             onClick={handleClickShowPassword}
+                                //             onMouseDown={handleMouseDownPassword}
+                                //             edge="end"
+                                //             className={classes.iconButton}
+                                //         >
+                                //             {showPassword ? <Visibility /> : <VisibilityOff />}
+                                //         </IconButton>
+                                //     </InputAdornment>
+                                // }
                             />
                             {touched.password && errors.password && (
                                 <FormHelperText error id="standard-weight-helper-text-password-register" className={classes.formHelp}>
@@ -254,11 +256,9 @@ const RestRegister = ({ ...others }) => {
                                     fullWidth
                                     size="large"
                                     type="submit"
-                                    variant="contained"
-                                    color="secondary"
-                                    className={`${classes.button} ${classes.primaryButton}`}
+                                    className={classes.button}
                                 >
-                                    Sign UP
+                                    Sign Up
                                 </Button>
                             </AnimateButton>
                         </Box>

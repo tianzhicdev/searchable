@@ -504,10 +504,10 @@ const PublishSearchables = () => {
                   <Button 
                     type="submit" 
                     variant="contained" 
-                    className={`${classes.button} ${classes.primaryButton}`}
+                    className={classes.button}
                     disabled={loading}
                   >
-                    {loading ? 'Publishing...' : 'Publish'}
+                    Publish
                   </Button>
                 </Box>
               </Grid>
