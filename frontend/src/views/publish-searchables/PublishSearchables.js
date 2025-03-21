@@ -7,8 +7,15 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import './PublishSearchables.css';
 import configData from '../../config';
+import { makeStyles } from '@material-ui/styles';
+import { 
+  Grid, Typography, Button, Paper, Box, TextField, 
+  CircularProgress, Divider, IconButton
+} from '@material-ui/core';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import DeleteIcon from '@material-ui/icons/Delete';
+import LocationOnIcon from '@material-ui/icons/LocationOn';
 
 // Fix for default icon issue in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,6 +24,208 @@ L.Icon.Default.mergeOptions({
   iconUrl: icon,
   shadowUrl: iconShadow
 });
+
+const useStyles = makeStyles((theme) => ({
+  container: {
+    padding: theme.spacing(2)
+  },
+  header: {
+    marginBottom: theme.spacing(3),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  backButton: {
+    fontWeight: 'bold',
+    color: theme.palette.text.primary,
+    marginRight: theme.spacing(2),
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius,
+  },
+  title: {
+    color: theme.palette.text.primary,
+    fontWeight: 500
+  },
+  formPaper: {
+    padding: theme.spacing(3),
+    marginBottom: theme.spacing(3)
+  },
+  formGroup: {
+    marginBottom: theme.spacing(3)
+  },
+  formLabel: {
+    marginBottom: theme.spacing(1),
+    display: 'block',
+    color: theme.palette.text.secondary,
+    fontWeight: 500
+  },
+  formHelp: {
+    fontSize: '0.75rem',
+    color: theme.palette.text.secondary,
+    marginTop: theme.spacing(0.5)
+  },
+  formRow: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    marginBottom: theme.spacing(2),
+    '& > *': {
+      marginRight: theme.spacing(2),
+      flex: '1 1 calc(50% - 16px)',
+      minWidth: '250px'
+    }
+  },
+  inputWithStatus: {
+    position: 'relative'
+  },
+  loadingIndicator: {
+    position: 'absolute',
+    right: theme.spacing(1),
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    alignItems: 'center',
+    color: theme.palette.text.secondary,
+    fontSize: '0.75rem'
+  },
+  mapContainer: {
+    height: '400px',
+    width: '100%',
+    marginBottom: theme.spacing(2),
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius
+  },
+  mapLoading: {
+    height: '400px',
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.palette.background.paper,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius
+  },
+  mapInstruction: {
+    marginBottom: theme.spacing(2),
+    color: theme.palette.text.secondary
+  },
+  imagePreviewContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    marginTop: theme.spacing(2),
+    gap: theme.spacing(2)
+  },
+  imagePreview: {
+    position: 'relative',
+    width: '100px',
+    height: '100px',
+    overflow: 'hidden',
+    borderRadius: theme.shape.borderRadius,
+    border: theme.borders.main
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    color: 'white',
+    padding: 0,
+    minWidth: 'unset',
+    width: '24px',
+    height: '24px'
+  },
+  formActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: theme.spacing(3),
+    '& > *': {
+      marginLeft: theme.spacing(2)
+    }
+  },
+  submitButton: {
+    fontWeight: 'bold',
+    color: theme.palette.text.primary,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius
+  },
+  cancelButton: {
+    fontWeight: 'bold',
+    color: theme.palette.text.primary,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius
+  },
+  errorMessage: {
+    padding: theme.spacing(2),
+    backgroundColor: theme.palette.error.light,
+    color: theme.palette.error.dark,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius,
+    marginBottom: theme.spacing(2)
+  },
+  successMessage: {
+    padding: theme.spacing(2),
+    backgroundColor: theme.palette.success.light,
+    color: theme.palette.success.dark,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius,
+    marginBottom: theme.spacing(2)
+  },
+  fileInput: {
+    display: 'none'
+  },
+  fileInputLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: theme.spacing(1, 2),
+    backgroundColor: theme.palette.background.paper,
+    color: theme.palette.text.primary,
+    border: theme.borders.main,
+    borderRadius: theme.shape.borderRadius,
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover
+    }
+  },
+  textInput: {
+    flexGrow: 1,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 0,
+      backgroundColor: theme.palette.background.paper,
+    },
+    '& .MuiOutlinedInput-input': {
+      backgroundColor: theme.palette.background.paper,
+      width: '100%',
+      borderRadius: 0,
+    },
+    '& .MuiInputBase-root': {
+      borderRadius: 0,
+      border: theme.borders.main,
+    },
+    '& .css-snakna-MuiInputBase-root-MuiOutlinedInput-root': {
+      borderRadius: 0,
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderRadius: 0,
+      border: 'none',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderRadius: 0,
+    },
+    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderRadius: 0,
+      border: theme.borders.main,
+    },
+    '& input[type="text"], & input[type="number"], & textarea': {
+      width: '100%',
+      border: '0px solid #ddd',
+      borderRadius: 0,
+    }
+  }
+}));
 
 // This component handles map recenter when userLocation changes
 const MapUpdater = ({ userLocation }) => {
@@ -34,6 +243,7 @@ const MapUpdater = ({ userLocation }) => {
 
 const PublishSearchables = () => {
   console.log("PublishSearchables component is being rendered");
+  const classes = useStyles();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -57,6 +267,7 @@ const PublishSearchables = () => {
   
   const account = useSelector((state) => state.account);
   const history = useHistory();
+  const fileInputRef = useRef(null);
   
   // Get user's location on component mount
   useEffect(() => {
@@ -306,138 +517,210 @@ const PublishSearchables = () => {
   };
   
   return (
-    <div className="publish-searchables-container">
-      <div className="publish-header">
-        <h1>Publish New Searchable</h1>
-        <button className="back-button" onClick={() => history.push('/searchables')}>
-          Back to Search
-        </button>
-      </div>
+    <Grid container className={classes.container}>
+      <Grid item xs={12} className={classes.header}>
+        <Button 
+          variant="contained" 
+          className={classes.backButton} 
+          startIcon={<ArrowBackIcon />}
+          onClick={() => history.push('/searchables')}
+        >
+          Back
+        </Button>
+      </Grid>
       
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">Successfully published! Redirecting...</div>}
+      {error && (
+        <Grid item xs={12}>
+          <Box className={classes.errorMessage}>
+            <Typography variant="body1">{error}</Typography>
+          </Box>
+        </Grid>
+      )}
       
-      <form onSubmit={handleSubmit} className="publish-form">
-        <div className="form-group">
-          <label htmlFor="title">Title *</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            rows="4"
-          />
-        </div>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="price">Price</label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              min="0"
-              step="0.01"
-            />
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="meetupLocation">Meet-up Location</label>
-          <div className="input-with-status">
-            <input
-              type="text"
-              id="meetupLocation"
-              name="meetupLocation"
-              value={formData.meetupLocation}
-              onChange={handleInputChange}
-              placeholder="Select a location on the map or enter manually"
-            />
-            {geocodingLoading && <span className="loading-indicator">Finding address...</span>}
-          </div>
-          <small className="form-help-text">This will be suggested as the meeting point for exchanges</small>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="images">Images (Max 200KB each)</label>
-          <input
-            type="file"
-            id="images"
-            name="images"
-            onChange={handleImageUpload}
-            accept="image/*"
-            multiple
-          />
-          <div className="image-preview-container">
-            {previewImages.map((src, index) => (
-              <div key={index} className="image-preview">
-                <img src={src} alt={`Preview ${index}`} />
-                <button 
-                  type="button" 
-                  className="remove-image" 
-                  onClick={() => removeImage(index)}
-                >
-                  &#215;
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+      {success && (
+        <Grid item xs={12}>
+          <Box className={classes.successMessage}>
+            <Typography variant="body1">Successfully published! Redirecting...</Typography>
+          </Box>
+        </Grid>
+      )}
+      
+      <Grid item xs={12}>
+        <Paper elevation={3} className={classes.formPaper}>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Title *
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  size="small"
+                  required
+                  className={classes.textInput}
+                />
+              </Grid>
+              
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Description
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  multiline
+                  rows={4}
+                  className={classes.textInput}
+                />
+              </Grid>
+              
+              <Grid item xs={12} md={6} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Price
+                </Typography>
+                <TextField
+                  fullWidth
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  size="small"
+                  type="number"
+                  inputProps={{ min: 0, step: 0.01 }}
+                  className={classes.textInput}
+                />
+              </Grid>
+              
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Meet-up Location
+                </Typography>
+                <Box className={classes.inputWithStatus}>
+                  <TextField
+                    fullWidth
+                    id="meetupLocation"
+                    name="meetupLocation"
+                    value={formData.meetupLocation}
+                    onChange={handleInputChange}
+                    variant="outlined"
+                    size="small"
+                    placeholder="Select a location on the map or enter manually"
+                    className={classes.textInput}
+                  />
+                  {geocodingLoading && (
+                    <Box className={classes.loadingIndicator}>
+                      <CircularProgress size={16} style={{ marginRight: 8 }} />
+                      <Typography variant="caption">Finding address...</Typography>
+                    </Box>
+                  )}
+                </Box>
+                <Typography variant="caption" className={classes.formHelp}>
+                  This will be suggested as the meeting point for exchanges
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Images (Max 200KB each)
+                </Typography>
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  ref={fileInputRef}
+                  className={classes.fileInput}
+                />
+                <label htmlFor="images" className={classes.fileInputLabel}>
+                  Choose Files
+                </label>
+                <Box className={classes.imagePreviewContainer}>
+                  {previewImages.map((src, index) => (
+                    <Box key={index} className={classes.imagePreview}>
+                      <img src={src} alt={`Preview ${index}`} className={classes.previewImage} />
+                      <IconButton 
+                        size="small"
+                        className={classes.removeImageButton} 
+                        onClick={() => removeImage(index)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
 
-        <div className="form-group">
-          <label>Select Location on Map</label>
-          <p className="map-instruction">Your current location is shown on the map. Click anywhere to select a meeting location for your item.</p>
-          
-          {mapLoading ? (
-            <div className="map-loading">Loading map with your location...</div>
-          ) : (
-            <MapContainer 
-              center={userLocation ? [userLocation.latitude, userLocation.longitude] : [51.505, -0.09]} 
-              zoom={13} 
-              style={{ height: "400px", width: "100%" }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              <LocationMarker />
-              <MapUpdater userLocation={userLocation} />
-            </MapContainer>
-          )}
-        </div>
-        
-        <div className="form-actions">
-          <button 
-            type="button" 
-            className="cancel-button" 
-            onClick={() => history.push('/searchables')}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="submit-button" 
-            disabled={loading}
-          >
-            {loading ? 'Publishing...' : 'Publish'}
-          </button>
-        </div>
-      </form>
-    </div>
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Select Location on Map
+                </Typography>
+                <Typography variant="body2" className={classes.mapInstruction}>
+                  <LocationOnIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                  Your current location is shown on the map. Click anywhere to select a meeting location for your item.
+                </Typography>
+                
+                {mapLoading ? (
+                  <Box className={classes.mapLoading}>
+                    <CircularProgress size={24} style={{ marginRight: 16 }} />
+                    <Typography variant="body2">Loading map with your location...</Typography>
+                  </Box>
+                ) : (
+                  <Box className={classes.mapContainer}>
+                    <MapContainer 
+                      center={userLocation ? [userLocation.latitude, userLocation.longitude] : [51.505, -0.09]} 
+                      zoom={13} 
+                      style={{ height: "100%", width: "100%" }}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      />
+                      <LocationMarker />
+                      <MapUpdater userLocation={userLocation} />
+                    </MapContainer>
+                  </Box>
+                )}
+              </Grid>
+              
+              <Grid item xs={12}>
+                {/* <Divider /> */}
+                <Box className={classes.formActions}>
+                  <Button 
+                    type="button" 
+                    variant="outlined"
+                    className={classes.cancelButton} 
+                    onClick={() => history.push('/searchables')}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    className={classes.submitButton} 
+                    disabled={loading}
+                  >
+                    {loading ? 'Publishing...' : 'Publish'}
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+          </form>
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 

@@ -537,7 +537,12 @@ const Searchables = () => {
                 <Select
                   labelId="distance-select-label"
                   value={maxDistance}
-                  onChange={(e) => setMaxDistance(Number(e.target.value))}
+                  onChange={(e) => {
+                    const newDistance = Number(e.target.value);
+                    setMaxDistance(newDistance);
+                    // Trigger search with page 1 when distance changes
+                    setTimeout(() => handleSearch(1), 0);
+                  }}
                 >
                   <MenuItem value={1000}>1 km</MenuItem>
                   <MenuItem value={5000}>5 km</MenuItem>
