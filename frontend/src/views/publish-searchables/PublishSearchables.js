@@ -8,7 +8,7 @@ import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import configData from '../../config';
-import { makeStyles } from '@material-ui/styles';
+import useComponentStyles from '../../themes/componentStyles';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
   CircularProgress, Divider, IconButton
@@ -24,208 +24,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: icon,
   shadowUrl: iconShadow
 });
-
-const useStyles = makeStyles((theme) => ({
-  container: {
-    padding: theme.spacing(2)
-  },
-  header: {
-    marginBottom: theme.spacing(3),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  backButton: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    marginRight: theme.spacing(2),
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-  },
-  title: {
-    color: theme.palette.text.primary,
-    fontWeight: 500
-  },
-  formPaper: {
-    padding: theme.spacing(3),
-    marginBottom: theme.spacing(3)
-  },
-  formGroup: {
-    marginBottom: theme.spacing(3)
-  },
-  formLabel: {
-    marginBottom: theme.spacing(1),
-    display: 'block',
-    color: theme.palette.text.secondary,
-    fontWeight: 500
-  },
-  formHelp: {
-    fontSize: '0.75rem',
-    color: theme.palette.text.secondary,
-    marginTop: theme.spacing(0.5)
-  },
-  formRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    marginBottom: theme.spacing(2),
-    '& > *': {
-      marginRight: theme.spacing(2),
-      flex: '1 1 calc(50% - 16px)',
-      minWidth: '250px'
-    }
-  },
-  inputWithStatus: {
-    position: 'relative'
-  },
-  loadingIndicator: {
-    position: 'absolute',
-    right: theme.spacing(1),
-    top: '50%',
-    transform: 'translateY(-50%)',
-    display: 'flex',
-    alignItems: 'center',
-    color: theme.palette.text.secondary,
-    fontSize: '0.75rem'
-  },
-  mapContainer: {
-    height: '400px',
-    width: '100%',
-    marginBottom: theme.spacing(2),
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  mapLoading: {
-    height: '400px',
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.palette.background.paper,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  mapInstruction: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.text.secondary
-  },
-  imagePreviewContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    marginTop: theme.spacing(2),
-    gap: theme.spacing(2)
-  },
-  imagePreview: {
-    position: 'relative',
-    width: '100px',
-    height: '100px',
-    overflow: 'hidden',
-    borderRadius: theme.shape.borderRadius,
-    border: theme.borders.main
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-    padding: 0,
-    minWidth: 'unset',
-    width: '24px',
-    height: '24px'
-  },
-  formActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: theme.spacing(3),
-    '& > *': {
-      marginLeft: theme.spacing(2)
-    }
-  },
-  submitButton: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  cancelButton: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  errorMessage: {
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.error.light,
-    color: theme.palette.error.dark,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(2)
-  },
-  successMessage: {
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.success.light,
-    color: theme.palette.success.dark,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(2)
-  },
-  fileInput: {
-    display: 'none'
-  },
-  fileInputLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: theme.spacing(1, 2),
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover
-    }
-  },
-  textInput: {
-    flexGrow: 1,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 0,
-      backgroundColor: theme.palette.background.paper,
-    },
-    '& .MuiOutlinedInput-input': {
-      backgroundColor: theme.palette.background.paper,
-      width: '100%',
-      borderRadius: 0,
-    },
-    '& .MuiInputBase-root': {
-      borderRadius: 0,
-      border: theme.borders.main,
-    },
-    '& .css-snakna-MuiInputBase-root-MuiOutlinedInput-root': {
-      borderRadius: 0,
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: 'none',
-    },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-    },
-    '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderRadius: 0,
-      border: theme.borders.main,
-    },
-    '& input[type="text"], & input[type="number"], & textarea': {
-      width: '100%',
-      border: '0px solid #ddd',
-      borderRadius: 0,
-    }
-  }
-}));
 
 // This component handles map recenter when userLocation changes
 const MapUpdater = ({ userLocation }) => {
@@ -243,7 +41,7 @@ const MapUpdater = ({ userLocation }) => {
 
 const PublishSearchables = () => {
   console.log("PublishSearchables component is being rendered");
-  const classes = useStyles();
+  const classes = useComponentStyles();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -521,11 +319,10 @@ const PublishSearchables = () => {
       <Grid item xs={12} className={classes.header}>
         <Button 
           variant="contained" 
-          className={classes.backButton} 
-          startIcon={<ArrowBackIcon />}
+          className={classes.iconButton} 
           onClick={() => history.push('/searchables')}
         >
-          Back
+          <ArrowBackIcon />
         </Button>
       </Grid>
       
@@ -546,7 +343,7 @@ const PublishSearchables = () => {
       )}
       
       <Grid item xs={12}>
-        <Paper elevation={3} className={classes.formPaper}>
+        <Paper elevation={3} >
           <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
               <Grid item xs={12} className={classes.formGroup}>
@@ -695,12 +492,11 @@ const PublishSearchables = () => {
               </Grid>
               
               <Grid item xs={12}>
-                {/* <Divider /> */}
                 <Box className={classes.formActions}>
                   <Button 
                     type="button" 
                     variant="outlined"
-                    className={classes.cancelButton} 
+                    className={classes.button} 
                     onClick={() => history.push('/searchables')}
                   >
                     Cancel
@@ -708,8 +504,7 @@ const PublishSearchables = () => {
                   <Button 
                     type="submit" 
                     variant="contained" 
-                    color="primary" 
-                    className={classes.submitButton} 
+                    className={`${classes.button} ${classes.primaryButton}`}
                     disabled={loading}
                   >
                     {loading ? 'Publishing...' : 'Publish'}

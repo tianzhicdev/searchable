@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import './Profile.css';
+// Remove Profile.css import
 import configData from '../../config';
+import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
+import { 
+  Grid, Typography, Button, Paper, Box, CircularProgress, Divider 
+} from '@material-ui/core';
+import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 
 const Profile = () => {
+  const classes = useComponentStyles(); // Use shared component styles
   const [userSearchables, setUserSearchables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,65 +60,121 @@ const Profile = () => {
   };
   
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <h1>User Profile</h1>
-        <button className="back-button" onClick={() => history.push('/searchables')}>
-          Back to Search
-        </button>
-      </div>
-      
-      <div className="profile-info">
-        <h2>Personal Information</h2>
-        <div className="info-item">
-          <span className="info-label">Username:</span>
-          <span className="info-value">{account.user.username}</span>
+    <Grid container className={classes.container}>
+      {/* Header Section */}
+      <Grid item xs={12} className={classes.header}>
+        <div className={classes.leftButtons}>
+          <Button 
+            variant="contained" 
+            className={classes.iconButton}
+            onClick={() => history.push('/searchables')}
+          >
+            <ArrowBackIcon />
+          </Button>
         </div>
-        <div className="info-item">
-          <span className="info-label">Email:</span>
-          <span className="info-value">{account.user.email}</span>
-        </div>
-      </div>
+      </Grid>
       
-      <div className="user-searchables">
-        <h2>Your Posted Items</h2>
-        
-        {loading && <div className="loading">Loading your items...</div>}
-        
-        {error && <div className="error-message">{error}</div>}
-        
-        {!loading && userSearchables.length === 0 && (
-          <div className="no-items">
-            You haven't posted any items yet. 
-            <button onClick={() => history.push('/publish-searchables')}>
-              Post an Item
-            </button>
-          </div>
-        )}
-        
-        {userSearchables.length > 0 && (
-          <div className="searchable-items">
-            {userSearchables.map((item) => (
-              <div 
-                key={item.searchable_id} 
-                className="searchable-item"
-                onClick={() => handleItemClick(item.searchable_id)}
+      {/* Personal Information Section */}
+      <Grid item xs={12} className={classes.gridItem}>
+        <Paper elevation={3} className={classes.paper}>
+          <Typography variant="h6" className={classes.sectionTitle}>
+            Personal Information
+          </Typography>
+          <Box className={classes.infoRow}>
+            <Typography variant="body1">
+              <span className={classes.infoLabel}>Username:</span>
+              <span className={classes.infoValue}>{account.user.username}</span>
+            </Typography>
+          </Box>
+          <Box className={classes.infoRow}>
+            <Typography variant="body1">
+              <span className={classes.infoLabel}>Email:</span>
+              <span className={classes.infoValue}>{account.user.email}</span>
+            </Typography>
+          </Box>
+        </Paper>
+      </Grid>
+      
+      {/* Posted Items Section */}
+      <Grid item xs={12} className={classes.gridItem}>
+        <Paper elevation={3} className={classes.paper}>
+          <Typography variant="h6" className={classes.sectionTitle}>
+            Your Posted Items
+          </Typography>
+          
+          {loading && (
+            <Box className={classes.loading}>
+              <CircularProgress size={24} style={{ marginRight: 16 }} />
+              <Typography variant="body1">Loading your items...</Typography>
+            </Box>
+          )}
+          
+          {error && (
+            <Box className={classes.errorMessage}>
+              <Typography variant="body1">{error}</Typography>
+            </Box>
+          )}
+          
+          {!loading && userSearchables.length === 0 && (
+            <Box className={classes.noResults}>
+              <Typography variant="body1" gutterBottom>
+                You haven't posted any items yet.
+              </Typography>
+              <Button
+                variant="contained"
+                className={`${classes.button} ${classes.primaryButton}`}
+                onClick={() => history.push('/publish-searchables')}
               >
-                <h3>{item.title || `Item #${item.searchable_id}`}</h3>
-                {item.description && <p>{item.description}</p>}
-                {item.distance && (
-                  <p className="distance">
-                    Distance: {formatDistance(item.distance)}
-                  </p>
-                )}
-                {item.category && <p>Category: {item.category}</p>}
-                {item.price && <p>Price: ${item.price}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                Post an Item
+              </Button>
+            </Box>
+          )}
+          
+          {userSearchables.length > 0 && (
+            <Grid container spacing={2}>
+              {userSearchables.map((item) => (
+                <Grid item xs={12} key={item.searchable_id}>
+                  <Box 
+                    className={classes.searchableItem}
+                    onClick={() => handleItemClick(item.searchable_id)}
+                  >
+                    <Typography variant="h6" className={classes.itemTitle}>
+                      {item.title || `Item #${item.searchable_id}`}
+                    </Typography>
+                    
+                    {item.description && (
+                      <Typography variant="body2" className={classes.itemDescription}>
+                        {item.description}
+                      </Typography>
+                    )}
+                    
+                    <Box className={classes.itemInfo}>
+                      {item.distance && (
+                        <Typography variant="body2" className={classes.infoItem}>
+                          Distance: {formatDistance(item.distance)}
+                        </Typography>
+                      )}
+                      
+                      {item.category && (
+                        <Typography variant="body2" className={classes.infoItem}>
+                          Category: {item.category}
+                        </Typography>
+                      )}
+                      
+                      {item.price && (
+                        <Typography variant="body2" className={classes.infoItem}>
+                          Price: ${item.price}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 

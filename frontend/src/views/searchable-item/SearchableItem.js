@@ -4,73 +4,11 @@ import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 // import './SearchableItem.css';
 import configData from '../../config';
-import { makeStyles } from '@material-ui/styles';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider } from '@material-ui/core';
-
-const useStyles = makeStyles((theme) => ({
-  container: {
-    padding: theme.spacing(2)
-  },
-  header: {
-    marginBottom: theme.spacing(3)
-  },
-  backButton: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    marginRight: theme.spacing(2),
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-  },
-  loading: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing(4)
-  },
-  error: {
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.error.light,
-    color: theme.palette.error.dark,
-    border: theme.borders.main
-  },
-  itemTitle: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.primary.dark,
-    fontWeight: 500,
-
-    color: theme.palette.text.primary
-  },
-  imageContainer: {
-    marginBottom: theme.spacing(2)
-  },
-  image: {
-    width: '100%',
-    height: 'auto',
-    borderRadius: theme.shape.borderRadius,
-    border: theme.borders.main
-  },
-  infoRow: {
-    marginBottom: theme.spacing(1)
-  },
-  infoLabel: {
-    fontWeight: 500,
-    marginRight: theme.spacing(1),
-    color: theme.palette.text.secondary
-  },
-  infoValue: {
-    color: theme.palette.text.primary
-  },
-  actionButton: {
-    marginTop: theme.spacing(3),
-    // border: theme.borders.main
-  },
-  componentBorder: {
-    border: theme.borders.main
-  }
-}));
+import useComponentStyles from '../../themes/componentStyles';
 
 const SearchableItem = () => {
-  const classes = useStyles();
+  const classes = useComponentStyles();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -165,7 +103,7 @@ const SearchableItem = () => {
   
   
   return (
-    <Grid container className={`${classes.container} `}>
+    <Grid container className={classes.container}>
       <Grid item xs={12} className={classes.header}>
         <Grid container alignItems="center">
           <Grid item>
@@ -183,7 +121,7 @@ const SearchableItem = () => {
       
       {loading && (
         <Grid item xs={12} className={classes.loading}>
-          <CircularProgress className={classes.componentBorder} />
+          <CircularProgress />
           <Typography variant="body1" style={{ marginLeft: 16 }}>
             Loading item details...
           </Typography>
@@ -192,7 +130,7 @@ const SearchableItem = () => {
       
       {error && (
         <Grid item xs={12}>
-          <Paper className={classes.error}>
+          <Paper className={classes.errorMessage}>
             <Typography variant="body1">{error}</Typography>
           </Paper>
         </Grid>
@@ -200,25 +138,24 @@ const SearchableItem = () => {
       
       {!loading && item && (
         <Grid item xs={12}>
-          <Paper elevation={3} 
-          >
+          <Paper elevation={3} className={classes.paper}>
             <Box p={3}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Typography variant="h4" className={classes.itemTitle}>
                     {item.title || `Item #${item.searchable_id}`}
                   </Typography>
-                  <Divider className={classes.componentBorder} />
+                  <Divider />
                 </Grid>
                 
                 {/* Display images if available */}
                 {item.images && item.images.length > 0 && (
-                  <Grid item xs={12} md={6} className={classes.imageContainer}>
+                  <Grid item xs={12} md={6} className={classes.imagePreviewContainer}>
                     <Grid container spacing={1}>
                       {item.images.map((image, index) => (
                         <Grid item xs={12} sm={6} key={index}>
                           <img 
-                            className={classes.image}
+                            className={classes.previewImage}
                             src={`data:image/jpeg;base64,${image}`} 
                             alt={`${item.title} - image ${index + 1}`} 
                           />
@@ -295,13 +232,13 @@ const SearchableItem = () => {
                   </Grid>
                   
                   {isOwner && (
-                    <Grid item xs={12} className={classes.actionButton}>
+                    <Grid item xs={12} className={classes.formActions}>
                       <Button
                         variant="contained"
                         color="secondary"
                         onClick={handleRemoveItem}
                         disabled={isRemoving}
-                        // className={classes.componentBorder}
+                        className={classes.dangerButton}
                       >
                         {isRemoving ? "Removing..." : "Remove Item"}
                       </Button>

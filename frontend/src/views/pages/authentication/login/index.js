@@ -11,6 +11,7 @@ import Logo from './../../../../ui-component/Logo';
 import AuthCardWrapper from './../AuthCardWrapper';
 import RestLogin from './RestLogin';
 import AuthFooter from './../../../../ui-component/cards/AuthFooter';
+import useComponentStyles from '../../../../themes/componentStyles';
 
 // assets
 
@@ -18,6 +19,7 @@ import AuthFooter from './../../../../ui-component/cards/AuthFooter';
 
 const Login = () => {
     const theme = useTheme();
+    const classes = useComponentStyles();
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
@@ -26,7 +28,7 @@ const Login = () => {
                 <Grid item xs={12}>
                     <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 'calc(100vh - 68px)' }}>
                         <Grid item sx={{ m: { xs: 1, sm: 3 }, mb: 0 }}>
-                            <AuthCardWrapper>
+                            <AuthCardWrapper className={classes.paper}>
                                 <Grid container spacing={2} alignItems="center" justifyContent="center">
                                     <Grid item sx={{ mb: 3 }}>
                                         <RouterLink to="#">
@@ -46,6 +48,7 @@ const Login = () => {
                                                         color={theme.palette.secondary.main}
                                                         gutterBottom
                                                         variant={matchDownSM ? 'h3' : 'h2'}
+                                                        className={classes.sectionTitle}
                                                     >
                                                         Hi, Welcome Back
                                                     </Typography>
@@ -60,7 +63,7 @@ const Login = () => {
                                         <RestLogin />
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <Divider />
+                                        <Divider className={classes.divider} />
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Grid item container direction="column" alignItems="center" xs={12}>

@@ -4,7 +4,6 @@ import { Link, useHistory } from 'react-router-dom';
 import configData from '../../../../config';
 
 // material-ui
-import { makeStyles } from '@material-ui/styles';
 import {
     Box,
     Button,
@@ -31,54 +30,16 @@ import axios from 'axios';
 import useScriptRef from '../../../../hooks/useScriptRef';
 import AnimateButton from './../../../../ui-component/extended/AnimateButton';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
+import useComponentStyles from '../../../../themes/componentStyles';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
-// style constant
-const useStyles = makeStyles((theme) => ({
-    redButton: {
-        fontSize: '1rem',
-        fontWeight: 500,
-        backgroundColor: theme.palette.grey[50],
-        border: '1px solid',
-        borderColor: theme.palette.grey[100],
-        color: theme.palette.grey[700],
-        textTransform: 'none',
-        '&:hover': {
-            backgroundColor: theme.palette.primary.light
-        },
-        [theme.breakpoints.down('sm')]: {
-            fontSize: '0.875rem'
-        }
-    },
-    signDivider: {
-        flexGrow: 1
-    },
-    signText: {
-        cursor: 'unset',
-        margin: theme.spacing(2),
-        padding: '5px 56px',
-        borderColor: theme.palette.grey[100] + ' !important',
-        color: theme.palette.grey[900] + '!important',
-        fontWeight: 500
-    },
-    loginIcon: {
-        marginRight: '16px',
-        [theme.breakpoints.down('sm')]: {
-            marginRight: '8px'
-        }
-    },
-    loginInput: {
-        ...theme.typography.customInput
-    }
-}));
-
 //===========================|| API JWT - REGISTER ||===========================//
 
 const RestRegister = ({ ...others }) => {
-    const classes = useStyles();
+    const classes = useComponentStyles();
     let history = useHistory();
     const scriptedRef = useScriptRef();
     const matchDownSM = useMediaQuery((theme) => theme.breakpoints.down('sm'));
@@ -166,17 +127,17 @@ const RestRegister = ({ ...others }) => {
                                     value={values.username}
                                     onBlur={handleBlur}
                                     onChange={handleChange}
-                                    className={classes.loginInput}
+                                    className={classes.textInput}
                                     error={touched.username && Boolean(errors.username)}
                                 />
                                 {touched.username && errors.username && (
-                                    <FormHelperText error id="standard-weight-helper-text--register">
+                                    <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
                                         {errors.username}
                                     </FormHelperText>
                                 )}
                             </Grid>
                         </Grid>
-                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.loginInput}>
+                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
                             <InputLabel htmlFor="outlined-adornment-email-register">Email</InputLabel>
                             <OutlinedInput
                                 id="outlined-adornment-email-register"
@@ -185,21 +146,16 @@ const RestRegister = ({ ...others }) => {
                                 name="email"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
-                                inputProps={{
-                                    classes: {
-                                        notchedOutline: classes.notchedOutline
-                                    }
-                                }}
+                                className={classes.textInput}
                             />
                             {touched.email && errors.email && (
-                                <FormHelperText error id="standard-weight-helper-text--register">
-                                    {' '}
-                                    {errors.email}{' '}
+                                <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
+                                    {errors.email}
                                 </FormHelperText>
                             )}
                         </FormControl>
 
-                        <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.loginInput}>
+                        <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
                             <InputLabel htmlFor="outlined-adornment-password-register">Password</InputLabel>
                             <OutlinedInput
                                 id="outlined-adornment-password-register"
@@ -212,6 +168,7 @@ const RestRegister = ({ ...others }) => {
                                     handleChange(e);
                                     changePassword(e.target.value);
                                 }}
+                                className={classes.textInput}
                                 endAdornment={
                                     <InputAdornment position="end">
                                         <IconButton
@@ -219,19 +176,15 @@ const RestRegister = ({ ...others }) => {
                                             onClick={handleClickShowPassword}
                                             onMouseDown={handleMouseDownPassword}
                                             edge="end"
+                                            className={classes.iconButton}
                                         >
                                             {showPassword ? <Visibility /> : <VisibilityOff />}
                                         </IconButton>
                                     </InputAdornment>
                                 }
-                                inputProps={{
-                                    classes: {
-                                        notchedOutline: classes.notchedOutline
-                                    }
-                                }}
                             />
                             {touched.password && errors.password && (
-                                <FormHelperText error id="standard-weight-helper-text-password-register">
+                                <FormHelperText error id="standard-weight-helper-text-password-register" className={classes.formHelp}>
                                     {errors.password}
                                 </FormHelperText>
                             )}
@@ -288,20 +241,12 @@ const RestRegister = ({ ...others }) => {
                             </Grid>
                         </Grid>
                         {errors.submit && (
-                            <Box
-                                sx={{
-                                    mt: 3
-                                }}
-                            >
+                            <Box sx={{ mt: 3 }} className={classes.errorMessage}>
                                 <FormHelperText error>{errors.submit}</FormHelperText>
                             </Box>
                         )}
 
-                        <Box
-                            sx={{
-                                mt: 2
-                            }}
-                        >
+                        <Box sx={{ mt: 2 }} className={classes.formActions}>
                             <AnimateButton>
                                 <Button
                                     disableElevation
@@ -311,6 +256,7 @@ const RestRegister = ({ ...others }) => {
                                     type="submit"
                                     variant="contained"
                                     color="secondary"
+                                    className={`${classes.button} ${classes.primaryButton}`}
                                 >
                                     Sign UP
                                 </Button>
