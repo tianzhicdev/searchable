@@ -2,7 +2,6 @@ import { createTheme } from '@material-ui/core/styles';
 
 // assets
 import colors from '../assets/scss/_themes-vars.module.scss';
-import EightBitDragon from '../assets/fonts/EightBitDragon-anqx.ttf';
 // project imports
 import { componentStyleOverrides } from './compStyleOverride';
 import { themePalette } from './palette';
@@ -27,46 +26,7 @@ export function theme(customization) {
         menuSelected: color.secondaryDark,
         menuSelectedBack: color.secondaryLight,
         divider: color.grey200,
-        customization: customization
-    };
-
-    return createTheme({
-        direction: 'ltr',
-        palette: themePalette(themeOption),
-        borders: {
-            main: `1px solid ${color.orangeMain}`,
-            light: `1px solid ${color.orangeLight}`,
-            dark: `1px solid ${color.orangeDark}`,
-            primary: `1px solid ${color.primaryMain}`,
-            secondary: `1px solid ${color.secondaryMain}`,
-            error: `1px solid ${color.errorMain}`,
-            success: `1px solid ${color.successMain}`,
-            warning: `1px solid ${color.warningMain}`
-        },
-        shape: {
-            borderRadius: 0
-        },
-        mixins: {
-            toolbar: {
-                minHeight: '48px',
-                padding: '16px',
-                '@media (min-width: 600px)': {
-                    minHeight: '48px'
-                }
-            }
-        },
-        breakpoints: {
-            values: {
-                xs: 0,
-                sm: 600,
-                md: 960,
-                lg: 1280,
-                xl: 1920
-            }
-        },
-        typography: themeTypography(themeOption),
-        components: componentStyleOverrides(themeOption),
-        // Custom fonts can be managed here
+        customization: customization,
         fonts: {
             // Define font families
             fontFamily: {
@@ -90,6 +50,42 @@ export function theme(customization) {
                 xl: '1.5rem'
             }
         }
+    };
+
+    return createTheme({
+        direction: 'ltr',
+        palette: themePalette(themeOption),
+        borders: {
+            main: `1px solid ${color.orangeMain}`,
+            light: `1px solid ${color.orangeLight}`,
+            dark: `1px solid ${color.orangeDark}`,
+            primary: `1px solid ${color.primaryMain}`,
+            secondary: `1px solid ${color.secondaryMain}`,
+            error: `1px solid ${color.errorMain}`,
+            success: `1px solid ${color.successMain}`,
+            warning: `1px solid ${color.warningMain}`
+        },
+        mixins: {
+            toolbar: {
+                minHeight: '48px',
+                padding: '16px',
+                '@media (min-width: 600px)': {
+                    minHeight: '48px'
+                }
+            }
+        },
+        breakpoints: {
+            values: {
+                xs: 0,
+                sm: 600,
+                md: 960,
+                lg: 1280,
+                xl: 1920
+            }
+        },
+        typography: themeTypography(themeOption),
+        components: componentStyleOverrides(themeOption),
+        
     });
 }
 

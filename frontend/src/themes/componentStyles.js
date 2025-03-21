@@ -8,54 +8,29 @@ import { makeStyles } from '@material-ui/styles';
 const useComponentStyles = makeStyles((theme) => ({
   // Layout and containers
   container: {
-    padding: theme.spacing(2),
-    fontFamily: theme.fonts.fontFamily.primary
+    padding: theme.spacing(2)
   },
   gridItem: {
-    marginBottom: theme.spacing(3),
-    fontFamily: theme.fonts.fontFamily.primary
-  },
-  Checkbox: {
-    '& .MuiIconButton-root': {
-      color: theme.palette.text.primary,
-      border: theme.borders.main,
-      borderRadius: theme.shape.borderRadius
-    },
-    '& .MuiSvgIcon-root': {
-      fontSize: '1.1rem'
-    },
-    '&.Mui-checked': {
-      '& .MuiIconButton-root': {
-        color: theme.palette.primary.main,
-        border: theme.borders.primary,
-        backgroundColor: theme.palette.primary.main
-      }
-    },
-    '& .css-6h0ib6-MuiButtonBase-root-MuiCheckbox-root.Mui-checked, .css-6h0ib6-MuiButtonBase-root-MuiCheckbox-root.MuiCheckbox-indeterminate': {
-      color: theme.palette.primary.main
-    }
+    marginBottom: theme.spacing(3)
   },
   // Headers and sections
   header: {
     marginBottom: theme.spacing(3),
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    fontFamily: theme.fonts.fontFamily.primary
+    justifyContent: 'space-between'
   },
   sectionTitle: {
     marginBottom: theme.spacing(2),
     color: theme.palette.text.primary,
-    fontWeight: 500,
-    fontFamily: theme.fonts.fontFamily.primary
+    fontWeight: 500
   },
   divider: {
     margin: theme.spacing(2, 0),
     border: theme.borders.main
   },
   textLink: {
-    textDecoration: 'none',
-    fontFamily: theme.fonts.fontFamily.primary
+    textDecoration: 'none'
   },
   
   // Buttons
@@ -63,24 +38,21 @@ const useComponentStyles = makeStyles((theme) => ({
     fontWeight: 'bold',
     color: theme.palette.text.primary,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    fontFamily: theme.fonts.fontFamily.primary
+    borderRadius: theme.shape.borderRadius
   },
   iconButton: {
     color: theme.palette.text.primary,
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(1),
-    minWidth: 'unset',
-    fontFamily: theme.fonts.fontFamily.primary
+    minWidth: 'unset'
   },
   backButton: {
     // marginRight: theme.spacing(2),
     fontWeight: 'bold',
     color: theme.palette.text.primary,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    fontFamily: theme.fonts.fontFamily.primary
+    borderRadius: theme.shape.borderRadius
   },
   actionButton: {
     marginRight: theme.spacing(1),
@@ -88,13 +60,11 @@ const useComponentStyles = makeStyles((theme) => ({
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
     minWidth: 'unset',
-    padding: theme.spacing(1),
-    fontFamily: theme.fonts.fontFamily.primary
+    padding: theme.spacing(1)
   },
   primaryButton: {
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
-    fontFamily: theme.fonts.fontFamily.primary,
     '&:hover': {
       backgroundColor: theme.palette.primary.dark,
     }
@@ -102,7 +72,6 @@ const useComponentStyles = makeStyles((theme) => ({
   secondaryButton: {
     backgroundColor: theme.palette.secondary.main,
     color: theme.palette.secondary.contrastText,
-    fontFamily: theme.fonts.fontFamily.primary,
     '&:hover': {
       backgroundColor: theme.palette.secondary.dark,
     }
@@ -110,7 +79,6 @@ const useComponentStyles = makeStyles((theme) => ({
   dangerButton: {
     backgroundColor: theme.palette.error.main,
     color: theme.palette.error.contrastText,
-    fontFamily: theme.fonts.fontFamily.primary,
     '&:hover': {
       backgroundColor: theme.palette.error.dark,
     }
@@ -118,27 +86,23 @@ const useComponentStyles = makeStyles((theme) => ({
   
   // Form elements
   formGroup: {
-    marginBottom: theme.spacing(3),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(3)
   },
   formLabel: {
     marginBottom: theme.spacing(1),
     display: 'block',
     color: theme.palette.text.secondary,
-    fontWeight: 500,
-    fontFamily: theme.fonts.fontFamily.primary
+    fontWeight: 500
   },
   formHelp: {
     fontSize: '0.75rem',
     color: theme.palette.text.secondary,
-    marginTop: theme.spacing(0.5),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginTop: theme.spacing(0.5)
   },
   formActions: {
     display: 'flex',
     justifyContent: 'flex-end',
     marginTop: theme.spacing(3),
-    fontFamily: theme.fonts.fontFamily.primary,
     '& > *': {
       marginLeft: theme.spacing(2)
     }
@@ -148,29 +112,24 @@ const useComponentStyles = makeStyles((theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing(2),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(2)
   },
   
   // Text fields and inputs
   textInput: {
     flexGrow: 1,
-    fontFamily: theme.fonts.fontFamily.primary,
     '& .MuiOutlinedInput-root': {
       borderRadius: 0,
-      backgroundColor: theme.palette.background.paper,
-      fontFamily: theme.fonts.fontFamily.primary
+      backgroundColor: theme.palette.background.paper
     },
     '& .MuiOutlinedInput-input': {
       backgroundColor: theme.palette.background.paper,
       width: '100%',
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& .MuiInputBase-root': {
       borderRadius: 0,
-      border: theme.borders.main,
-      fontFamily: theme.fonts.fontFamily.primary
+      border: theme.borders.main
     },
     '& .MuiOutlinedInput-notchedOutline': {
       borderRadius: 0,
@@ -186,33 +145,28 @@ const useComponentStyles = makeStyles((theme) => ({
     '& input[type="text"], & input[type="number"], & textarea': {
       width: '100%',
       border: '0px solid #ddd',
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active': {
       '-webkit-box-shadow': '0 0 0 1000px black inset !important',
       'box-shadow': '0 0 0 1000px black inset !important',
       '-webkit-text-fill-color': `${theme.palette.text.primary} !important`,
-      fontFamily: `${theme.fonts.fontFamily.primary} !important`
+    //   fontFamily: `${theme.fonts.fontFamily.primary} !important`
     }
   },
   searchInput: {
     flexGrow: 1,
-    fontFamily: theme.fonts.fontFamily.primary,
     '& .MuiOutlinedInput-root': {
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& .MuiOutlinedInput-input': {
       backgroundColor: theme.palette.background.paper,
       width: '100%',
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& .MuiInputBase-root': {
       borderRadius: 0,
-      border: theme.borders.main,
-      fontFamily: theme.fonts.fontFamily.primary
+      border: theme.borders.main
     },
     '& .MuiOutlinedInput-notchedOutline': {
       borderRadius: 0,
@@ -226,20 +180,16 @@ const useComponentStyles = makeStyles((theme) => ({
     }
   },
   select: {
-    fontFamily: theme.fonts.fontFamily.primary,
     '& .MuiFormControl-root': {
       borderRadius: 0,
-      border: theme.borders.main,
-      fontFamily: theme.fonts.fontFamily.primary
+      border: theme.borders.main
     },
     '& .MuiOutlinedInput-input': {
       backgroundColor: theme.palette.background.paper,
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& .MuiInputBase-root': {
-      borderRadius: 0,
-      fontFamily: theme.fonts.fontFamily.primary
+      borderRadius: 0
     },
     '& .MuiOutlinedInput-notchedOutline': {
       borderRadius: 0
@@ -266,7 +216,6 @@ const useComponentStyles = makeStyles((theme) => ({
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
     cursor: 'pointer',
-    fontFamily: theme.fonts.fontFamily.primary,
     '&:hover': {
       backgroundColor: theme.palette.action.hover
     }
@@ -301,8 +250,7 @@ const useComponentStyles = makeStyles((theme) => ({
     padding: 0,
     minWidth: 'unset',
     width: '24px',
-    height: '24px',
-    fontFamily: theme.fonts.fontFamily.primary
+    height: '24px'
   },
   
   // Maps
@@ -321,13 +269,11 @@ const useComponentStyles = makeStyles((theme) => ({
     justifyContent: 'center',
     backgroundColor: theme.palette.background.paper,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    fontFamily: theme.fonts.fontFamily.primary
+    borderRadius: theme.shape.borderRadius
   },
   mapInstruction: {
     marginBottom: theme.spacing(2),
-    color: theme.palette.text.secondary,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.text.secondary
   },
   
   // Loading and status indicators
@@ -335,8 +281,7 @@ const useComponentStyles = makeStyles((theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing(4),
-    fontFamily: theme.fonts.fontFamily.primary
+    padding: theme.spacing(4)
   },
   loadingIndicator: {
     position: 'absolute',
@@ -346,8 +291,7 @@ const useComponentStyles = makeStyles((theme) => ({
     display: 'flex',
     alignItems: 'center',
     color: theme.palette.text.secondary,
-    fontSize: '0.75rem',
-    fontFamily: theme.fonts.fontFamily.primary
+    fontSize: '0.75rem'
   },
   errorMessage: {
     padding: theme.spacing(2),
@@ -355,8 +299,7 @@ const useComponentStyles = makeStyles((theme) => ({
     color: theme.palette.error.dark,
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(2),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(2)
   },
   successMessage: {
     padding: theme.spacing(2),
@@ -364,8 +307,7 @@ const useComponentStyles = makeStyles((theme) => ({
     color: theme.palette.success.dark,
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
-    marginBottom: theme.spacing(2),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(2)
   },
   
   // Searchable items
@@ -375,7 +317,6 @@ const useComponentStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
     border: theme.borders.main,
     borderRadius: theme.shape.borderRadius,
-    fontFamily: theme.fonts.fontFamily.primary,
     '&:hover': {
       backgroundColor: theme.palette.action.hover
     }
@@ -383,85 +324,71 @@ const useComponentStyles = makeStyles((theme) => ({
   itemTitle: {
     marginBottom: theme.spacing(1),
     color: theme.palette.text.primary,
-    fontWeight: 500,
-    fontFamily: theme.fonts.fontFamily.primary
+    fontWeight: 500
   },
   itemDescription: {
     color: theme.palette.text.secondary,
-    marginBottom: theme.spacing(1),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(1)
   },
   itemInfo: {
     display: 'flex',
     flexWrap: 'wrap',
-    marginTop: theme.spacing(1),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginTop: theme.spacing(1)
   },
   infoItem: {
     marginRight: theme.spacing(2),
     marginBottom: theme.spacing(1),
-    color: theme.palette.text.secondary,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.text.secondary
   },
   infoRow: {
-    marginBottom: theme.spacing(1),
-    fontFamily: theme.fonts.fontFamily.primary
+    marginBottom: theme.spacing(1)
   },
   infoLabel: {
     fontWeight: 500,
     marginRight: theme.spacing(1),
-    color: theme.palette.text.secondary,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.text.secondary
   },
   infoValue: {
-    color: theme.palette.text.primary,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.text.primary
   },
   
   // Misc and utilities
   noResults: {
     textAlign: 'center',
     padding: theme.spacing(4),
-    color: theme.palette.text.secondary,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.text.secondary
   },
   pagination: {
     display: 'flex',
     justifyContent: 'center',
-    margin: theme.spacing(2, 0),
-    fontFamily: theme.fonts.fontFamily.primary
+    margin: theme.spacing(2, 0)
   },
   paginationButton: {
     fontWeight: 'bold',
     color: theme.palette.text.primary,
     marginRight: theme.spacing(1),
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
-    fontFamily: theme.fonts.fontFamily.primary
+    borderRadius: theme.shape.borderRadius
   },
   activeButton: {
     backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-    fontFamily: theme.fonts.fontFamily.primary
+    color: theme.palette.primary.contrastText
   },
   leftButtons: {
-    display: 'flex',
-    fontFamily: theme.fonts.fontFamily.primary
+    display: 'flex'
   },
   rightButtons: {
     display: 'flex',
     marginLeft: 'auto',
     justifyContent: 'flex-end',
-    alignItems: 'center',
-    fontFamily: theme.fonts.fontFamily.primary
+    alignItems: 'center'
   },
   userInfo: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: theme.spacing(3),
-    width: '100%',
-    fontFamily: theme.fonts.fontFamily.primary
+    width: '100%'
   },
 }));
 
