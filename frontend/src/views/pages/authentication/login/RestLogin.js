@@ -131,19 +131,6 @@ const RestLogin = (props, { ...others }) => {
                                 onChange={handleChange}
                                 placeholder="Enter your password"
                                 className={classes.textInput}
-                                endAdornment={
-                                    <InputAdornment position="end">
-                                        <IconButton
-                                            aria-label="toggle password visibility"
-                                            onClick={handleClickShowPassword}
-                                            onMouseDown={handleMouseDownPassword}
-                                            edge="end"
-                                            className={classes.iconButton}
-                                        >
-                                            {showPassword ? <Visibility /> : <VisibilityOff />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                }
                             />
                             {touched.password && errors.password && (
                                 <FormHelperText error id="standard-weight-helper-text-password-login" className={classes.formHelp}>
@@ -151,19 +138,6 @@ const RestLogin = (props, { ...others }) => {
                                 </FormHelperText>
                             )}
                         </FormControl>
-                        {/* <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={checked}
-                                        onChange={(event) => setChecked(event.target.checked)}
-                                        name="checked"
-                                        color="primary"
-                                    />
-                                }
-                                label="Remember me"
-                            />
-                        </Stack> */}
                         {errors.submit && (
                             <Box sx={{ mt: 3 }} className={classes.errorMessage}>
                                 <FormHelperText error>{errors.submit}</FormHelperText>

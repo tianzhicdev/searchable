@@ -4,12 +4,23 @@
  */
 export function componentStyleOverrides(theme) {
     return {
+        MuiCssBaseline: {
+            styleOverrides: `
+              @font-face {
+                font-family: 'FreePixel';
+                src: url('/fonts/FreePixel.ttf') format('truetype');
+                font-weight: normal;
+                font-style: normal;
+                font-display: swap;
+              }
+            `,
+          },
         MuiButton: {
             styleOverrides: {
                 root: {
                     fontWeight: 500,
                     textTransform: 'capitalize',
-                    borderRadius: '4px'
+                    borderRadius: '4px',
                 }
             }
         },
@@ -19,7 +30,7 @@ export function componentStyleOverrides(theme) {
             },
             styleOverrides: {
                 root: {
-                    backgroundImage: 'none'
+                    backgroundImage: 'none',
                 },
                 rounded: {
                     borderRadius: theme.customization.borderRadius + 'px'
@@ -30,24 +41,28 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     color: theme.colors.textDark,
-                    padding: '24px'
+                    padding: '24px',
+                    
                 },
                 title: {
-                    fontSize: '1.125rem'
+                    fontSize: '1.125rem',
+                    
                 }
             }
         },
         MuiCardContent: {
             styleOverrides: {
                 root: {
-                    padding: '24px'
+                    padding: '24px',
+                    
                 }
             }
         },
         MuiCardActions: {
             styleOverrides: {
                 root: {
-                    padding: '24px'
+                    padding: '24px',
+                    
                 }
             }
         },
@@ -88,7 +103,8 @@ export function componentStyleOverrides(theme) {
         MuiListItemText: {
             styleOverrides: {
                 primary: {
-                    color: theme.textDark
+                    color: theme.textDark,
+                    
                 }
             }
         },
@@ -96,9 +112,11 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 input: {
                     color: theme.textDark,
+                    
                     '&::placeholder': {
                         color: theme.darkTextSecondary,
-                        fontSize: '0.875rem'
+                        fontSize: '0.875rem',
+                        
                     }
                 }
             }
@@ -108,6 +126,7 @@ export function componentStyleOverrides(theme) {
                 root: {
                     background: theme.colors.grey50,
                     borderRadius: theme.customization.borderRadius + 'px',
+                    
                     '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: theme.colors.grey400
                     },
@@ -141,6 +160,7 @@ export function componentStyleOverrides(theme) {
         MuiSlider: {
             styleOverrides: {
                 root: {
+                    
                     '&.Mui-disabled': {
                         color: theme.colors.grey300
                     }
@@ -150,7 +170,8 @@ export function componentStyleOverrides(theme) {
                     width: '4px'
                 },
                 valueLabel: {
-                    color: theme.colors.primaryLight
+                    color: theme.colors.primaryLight,
+                    
                 }
             }
         },
@@ -166,13 +187,15 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     color: theme.colors.primaryDark,
-                    background: theme.colors.primary200
+                    background: theme.colors.primary200,
+                    
                 }
             }
         },
         MuiChip: {
             styleOverrides: {
                 root: {
+                    
                     '&.MuiChip-deletable .MuiChip-deleteIcon': {
                         color: 'inherit'
                     }
@@ -183,7 +206,15 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 tooltip: {
                     color: theme.paper,
-                    background: theme.colors.grey700
+                    background: theme.colors.grey700,
+                    
+                }
+            }
+        },
+        MuiTypography: {
+            styleOverrides: {
+                root: {
+                    
                 }
             }
         }

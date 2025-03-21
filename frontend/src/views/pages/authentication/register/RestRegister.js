@@ -78,7 +78,7 @@ const RestRegister = ({ ...others }) => {
                 }}
                 validationSchema={Yup.object().shape({
                     email: Yup.string().email('Must be a valid email').max(255).required('Email is required'),
-                    username: Yup.string().required('Username is required'),
+                    username: Yup.string().max(255).required('Username is required'),
                     password: Yup.string().max(255).required('Password is required')
                 })}
                 onSubmit={(values, { setErrors, setStatus, setSubmitting }) => {
@@ -115,8 +115,9 @@ const RestRegister = ({ ...others }) => {
             >
                 {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                     <form noValidate onSubmit={handleSubmit} {...others}>
-                        <Grid container spacing={matchDownSM ? 0 : 2}>
-                            <Grid item xs={12}>
+                        
+                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
+
                                 <TextField
                                     fullWidth
                                     margin="normal"
@@ -135,11 +136,11 @@ const RestRegister = ({ ...others }) => {
                                         {errors.username}
                                     </FormHelperText>
                                 )}
-                            </Grid>
-                        </Grid>
+                        </FormControl>
                         <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
-                            {/* <InputLabel htmlFor="outlined-adornment-email-register">Email</InputLabel> */}
                             <TextField
+                                fullWidth
+                                margin="normal"
                                 id="outlined-adornment-email-register"
                                 type="email"
                                 value={values.email}
@@ -148,6 +149,7 @@ const RestRegister = ({ ...others }) => {
                                 onBlur={handleBlur}
                                 onChange={handleChange}
                                 className={classes.textInput}
+                                error={touched.email && Boolean(errors.email)}
                             />
                             {touched.email && errors.email && (
                                 <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
@@ -157,33 +159,21 @@ const RestRegister = ({ ...others }) => {
                         </FormControl>
 
                         <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
-                            {/* <InputLabel htmlFor="outlined-adornment-password-register">Password</InputLabel> */}
                             <TextField
+                                fullWidth
+                                margin="normal"
                                 id="outlined-adornment-password-register"
                                 type={showPassword ? 'text' : 'password'}
                                 value={values.password}
                                 name="password"
                                 placeholder="Enter your password"
-                                // label="Password"
                                 onBlur={handleBlur}
                                 onChange={(e) => {
                                     handleChange(e);
                                     changePassword(e.target.value);
                                 }}
                                 className={classes.textInput}
-                                // endAdornment={
-                                //     <InputAdornment position="end">
-                                //         <IconButton
-                                //             aria-label="toggle password visibility"
-                                //             onClick={handleClickShowPassword}
-                                //             onMouseDown={handleMouseDownPassword}
-                                //             edge="end"
-                                //             className={classes.iconButton}
-                                //         >
-                                //             {showPassword ? <Visibility /> : <VisibilityOff />}
-                                //         </IconButton>
-                                //     </InputAdornment>
-                                // }
+                                error={touched.password && Boolean(errors.password)}
                             />
                             {touched.password && errors.password && (
                                 <FormHelperText error id="standard-weight-helper-text-password-register" className={classes.formHelp}>
@@ -229,16 +219,14 @@ const RestRegister = ({ ...others }) => {
                                             onChange={(event) => setChecked(event.target.checked)}
                                             name="checked"
                                             color="primary"
+                                            className={classes.Checkbox}
                                         />
                                     }
                                     label={
-                                        <Typography variant="subtitle1">
-                                            Agree with &nbsp;
-                                            <Typography variant="subtitle1" component={Link} to="#">
-                                                Terms & Condition.
+                                            <Typography variant="subtitle1" component={Link} to="#" className={classes.textLink}>
+                                            Agree with Terms & Condition.
                                             </Typography>
-                                        </Typography>
-                                    }
+                                    }   
                                 />
                             </Grid>
                         </Grid>

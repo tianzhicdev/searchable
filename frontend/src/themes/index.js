@@ -2,7 +2,7 @@ import { createTheme } from '@material-ui/core/styles';
 
 // assets
 import colors from '../assets/scss/_themes-vars.module.scss';
-
+import EightBitDragon from '../assets/fonts/EightBitDragon-anqx.ttf';
 // project imports
 import { componentStyleOverrides } from './compStyleOverride';
 import { themePalette } from './palette';
@@ -65,7 +65,31 @@ export function theme(customization) {
             }
         },
         typography: themeTypography(themeOption),
-        components: componentStyleOverrides(themeOption)
+        components: componentStyleOverrides(themeOption),
+        // Custom fonts can be managed here
+        fonts: {
+            // Define font families
+            fontFamily: {
+                primary: '"FreePixel", sans-serif', 
+                secondary: '"Open Sans", "Helvetica", "Arial", sans-serif',
+                code: '"Fira Code", "Consolas", monospace'
+            },
+            // Define custom font weights
+            fontWeight: {
+                light: 300,
+                regular: 400,
+                medium: 500,
+                bold: 700
+            },
+            // Define custom font sizes
+            fontSize: {
+                xs: '0.75rem',
+                sm: '0.875rem',
+                md: '1rem',
+                lg: '1.25rem',
+                xl: '1.5rem'
+            }
+        }
     });
 }
 

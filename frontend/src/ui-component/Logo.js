@@ -14,7 +14,8 @@ import bitbid_logo from './../assets/images/bit-bid.png';
 //-----------------------|| LOGO SVG ||-----------------------//
 
 const Logo = () => {
-    return ( <img src={bitbid_logo} alt="Berry" width="100%" />  );
+    return (
+        <img src={bitbid_logo} alt="Berry" width="100%" />  );
 };
 
 export default Logo;

@@ -68,7 +68,7 @@ const Login = () => {
                                                 component={RouterLink}
                                                 to="/register"
                                                 variant="subtitle1"
-                                                sx={{ textDecoration: 'none' }}
+                                                className={classes.textLink}
                                             >
                                                 Don't have an account?
                                             </Typography>
