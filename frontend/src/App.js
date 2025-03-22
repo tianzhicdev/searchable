@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { CssBaseline, StyledEngineProvider } from '@material-ui/core';
-
+import config from './config';
 // routing
 import Routes from './routes';
 
@@ -22,7 +22,7 @@ const App = () => {
         <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
-                <StateDebugger />
+                {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <NavigationScroll>
                     <Routes />
                 </NavigationScroll>
