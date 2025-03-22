@@ -21,8 +21,8 @@ export const setLocationLoading = (isLoading) => ({
 
 // Initial State
 const initialState = {
-    latitude: 51.5074,
-    longitude: -0.1278,
+    latitude: null,
+    longitude: null,
     error: null,
     isLoading: false
 };
