@@ -17,18 +17,18 @@ import useComponentStyles from '../../themes/componentStyles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import SearchablesProfile from './SearchablesProfile';
+import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 
 const Searchables = () => {
   
   // State variables
   const [searchTerm, setSearchTerm] = useState('');
-  const [location, setLocation] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    pageSize: 10, // This will be calculated dynamically
+    pageSize: 10,
     totalCount: 0,
     totalPages: 0
   });
@@ -36,8 +36,10 @@ const Searchables = () => {
   const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
+  // Get location from Redux store instead of local state
   const account = useSelector((state) => state.account);
-  const dispatcher = useDispatch();
+  const location = useSelector((state) => state.location);
+  const dispatch = useDispatch();
   const history = useHistory();
 
   const classes = useComponentStyles();
@@ -80,30 +82,31 @@ const Searchables = () => {
 
   // Load initial random items when location is available
   useEffect(() => {
-    if (location && !initialItemsLoaded) {
+    if (location.latitude && location.longitude && !initialItemsLoaded) {
       loadRandomItems();
     }
-  }, [location, initialItemsLoaded]);
+  }, [location.latitude, location.longitude, initialItemsLoaded]);
 
   // Function to get user's geolocation
   const getUserLocation = () => {
-    setError(null);
+    dispatch(setLocationError(null));
+    dispatch(setLocationLoading(true));
     
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
+          dispatch(setLocation(
+            position.coords.latitude,
+            position.coords.longitude
+          ));
         },
         (error) => {
           console.error("Error getting location:", error);
-          setError("Unable to retrieve your location. Please enable location services.");
+          dispatch(setLocationError("Unable to retrieve your location. Please enable location services."));
         }
       );
     } else {
-      setError("Geolocation is not supported by your browser.");
+      dispatch(setLocationError("Geolocation is not supported by your browser."));
     }
   };
 
@@ -119,7 +122,7 @@ const Searchables = () => {
           long: location.longitude,
           max_distance: maxDistance,
           page_number: 1,
-          page_size: calculateOptimalPageSize(), // Use calculated size instead of fixed
+          page_size: calculateOptimalPageSize(),
           query_term: '' // Empty query to get random items
         },
         headers: {
@@ -145,7 +148,7 @@ const Searchables = () => {
 
   // Function to handle search
   const handleSearch = async (page = 1) => {
-    if (!location) {
+    if (!location.latitude || !location.longitude) {
       setError("Location is required to search. Please enable location services.");
       return;
     }
@@ -160,7 +163,7 @@ const Searchables = () => {
           long: location.longitude,
           max_distance: maxDistance,
           page_number: page,
-          page_size: calculateOptimalPageSize(), // Use calculated size instead of fixed
+          page_size: calculateOptimalPageSize(),
           query_term: searchTerm
         },
         headers: {
@@ -248,11 +251,11 @@ const Searchables = () => {
     axios
         .post(configData.API_SERVER + 'users/logout', {token: `${account.token}`}, { headers: { Authorization: `${account.token}` } })
         .then(function (response) {
-            dispatcher({ type: LOGOUT });
+            dispatch({ type: LOGOUT });
         })
         .catch(function (error) {
             console.log('error - ', error);
-            dispatcher({ type: LOGOUT }); // log out anyway
+            dispatch({ type: LOGOUT }); // log out anyway
         });
   };
 
@@ -274,17 +277,16 @@ const Searchables = () => {
   return (
     <Grid container spacing={2}>
       
-
-      // we need to remove it later, this is for debugging
+      {/* Location debugging information */}
       <Grid item xs={12}>
         <Box mb={2} display="flex" justifyContent="center" alignItems="center">
-          {location ? (
+          {(location.latitude && location.longitude) ? (
             <Typography variant="body1">
               Your current location: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
             </Typography>
-          ) : error ? (
+          ) : location.error ? (
             <Typography variant="body1" color="error">
-              {error}
+              {location.error}
             </Typography>
           ) : (
             <Box display="flex" alignItems="center">
