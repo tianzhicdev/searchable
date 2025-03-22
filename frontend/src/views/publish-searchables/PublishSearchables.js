@@ -17,6 +17,7 @@ import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
 import LocationOnIcon from '@material-ui/icons/LocationOn';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
+import { compressImage, fileToDataURL } from '../../utils/imageCompression';
 
 // Fix for default icon issue in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -213,31 +214,36 @@ const PublishSearchables = () => {
   };
   
   // Handle image uploads
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     const validFiles = [];
     const validPreviews = [];
+    setError(null); // Clear previous errors
     
-    files.forEach(file => {
-      // Check file size (200KB = 200 * 1024 bytes)
-      if (file.size <= 200 * 1024) {
-        validFiles.push(file);
+    try {
+      for (const file of files) {
+        // Only process image files
+        if (!file.type.startsWith('image/')) {
+          setError(`File "${file.name}" is not an image.`);
+          continue;
+        }
+        
+        // Compress image if needed
+        const processedFile = await compressImage(file);
+        validFiles.push(processedFile);
         
         // Create preview URL
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          validPreviews.push(reader.result);
-          if (validPreviews.length === validFiles.length) {
-            setPreviewImages([...previewImages, ...validPreviews]);
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setError(`File "${file.name}" exceeds the 200KB size limit and was not added.`);
+        const dataUrl = await fileToDataURL(processedFile);
+        validPreviews.push(dataUrl);
       }
-    });
-    
-    setImages([...images, ...validFiles]);
+      
+      setImages([...images, ...validFiles]);
+      setPreviewImages([...previewImages, ...validPreviews]);
+      
+    } catch (error) {
+      console.error("Error processing images:", error);
+      setError("An error occurred while processing images. Please try again.");
+    }
   };
   
   // Remove an image
@@ -421,6 +427,40 @@ const PublishSearchables = () => {
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
+                  Images
+                </Typography>
+                <input
+                  type="file"
+                  id="images"
+                  name="images"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  ref={fileInputRef}
+                  className={classes.fileInput}
+                />
+                <label htmlFor="images" className={classes.fileInputLabel}>
+                  Choose Files
+                </label>
+
+                <Box className={classes.imagePreviewContainer}>
+                  {previewImages.map((src, index) => (
+                    <Box key={index} className={classes.imagePreview}>
+                      <img src={src} alt={`Preview ${index}`} className={classes.previewImage} />
+                      <IconButton 
+                        size="small"
+                        className={classes.removeImageButton} 
+                        onClick={() => removeImage(index)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
                   Meet-up Location
                 </Typography>
                 <Box className={classes.inputWithStatus}>
@@ -439,39 +479,6 @@ const PublishSearchables = () => {
                 <Typography variant="caption" className={classes.formHelp}>
                   This will be suggested as the meeting point for exchanges
                 </Typography>
-              </Grid>
-              
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Images (Max 200KB each)
-                </Typography>
-                <input
-                  type="file"
-                  id="images"
-                  name="images"
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  multiple
-                  ref={fileInputRef}
-                  className={classes.fileInput}
-                />
-                <label htmlFor="images" className={classes.fileInputLabel}>
-                  Choose Files
-                </label>
-                <Box className={classes.imagePreviewContainer}>
-                  {previewImages.map((src, index) => (
-                    <Box key={index} className={classes.imagePreview}>
-                      <img src={src} alt={`Preview ${index}`} className={classes.previewImage} />
-                      <IconButton 
-                        size="small"
-                        className={classes.removeImageButton} 
-                        onClick={() => removeImage(index)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Box>
               </Grid>
 
               <Grid item xs={12} className={classes.formGroup}>
