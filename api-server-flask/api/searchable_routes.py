@@ -50,6 +50,15 @@ class GetSearchableItem(Resource):
                 item_data['latitude'] = latitude
                 item_data['longitude'] = longitude
             
+            # Get username for the user_id
+            if 'user_id' in item_data:
+                cur.execute("""
+                    SELECT username FROM users WHERE id = %s
+                """, (item_data['user_id'],))
+                user_result = cur.fetchone()
+                if user_result:
+                    item_data['username'] = user_result[0]
+            
             cur.close()
             conn.close()
             
@@ -145,6 +154,9 @@ class UserSearchables(Resource):
                     item['latitude'] = latitude
                     item['longitude'] = longitude
                 
+                # Add username (we already know it's the current user)
+                item['username'] = current_user.username
+                
                 results.append(item)
             
             cur.close()
@@ -199,6 +211,9 @@ class SearchSearchables(Resource):
             
             # Apply pagination after filtering by actual distance
             paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
+            
+            # Enrich paginated results with usernames
+            self._enrich_results_with_usernames(paginated_results)
             
             # Format and return response
             return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
@@ -326,7 +341,12 @@ class SearchSearchables(Resource):
         
         # Get all items with matching geohash prefix (rough filter)
         query = """
-            SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude, sg.geohash
+            SELECT 
+              si.searchable_id,
+              si.searchable_data, 
+              sg.latitude, 
+              sg.longitude, 
+              sg.geohash
             FROM searchable_items si
             JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
             WHERE sg.geohash LIKE %s
@@ -381,64 +401,42 @@ class SearchSearchables(Resource):
                 "total_pages": (total_count + page_size - 1) // page_size
             }
         }
-
-# @rest_api.route('/api/searchable/<int:searchable_id>', methods=['GET'])
-# class GetSearchableItem(Resource):
-#     """
-#     Retrieves a single searchable item by ID
     
-#     Example curl request:
-#     curl -X GET "http://localhost:5000/api/searchable/123" -H "Authorization: <token>"
-#     """
-#     @token_required
-#     def get(self, current_user, searchable_id):
-#         print(f"Fetching searchable item {searchable_id} for user: {current_user}")
-#         try:
-#             conn = get_db_connection()
-#             cur = conn.cursor()
+    def _enrich_results_with_usernames(self, results):
+        """Enrich the paginated results with usernames"""
+        if not results:
+            return
             
-#             # Query to get the searchable item by ID
-#             cur.execute("""
-#                 SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
-#                 FROM searchable_items si
-#                 LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-#                 WHERE si.searchable_id = %s
-#             """, (searchable_id,))
-            
-#             row = cur.fetchone()
-#             if not row:
-#                 cur.close()
-#                 conn.close()
-#                 return {"error": "Searchable item not found"}, 404
+        # Get all unique user_ids from the paginated results
+        user_ids = set()
+        for item in results:
+            if 'user_id' in item:
+                user_ids.add(item['user_id'])
                 
-#             searchable_id, searchable_data, latitude, longitude = row
+        if not user_ids:
+            return
             
-#             # Combine the data
-#             item = searchable_data.copy() if searchable_data else {}
-#             item['searchable_id'] = searchable_id
+        # Fetch usernames for these user_ids
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        user_ids_list = list(user_ids)
+        placeholders = ','.join(['%s'] * len(user_ids_list))
+        cur.execute(f"SELECT id, username FROM users WHERE id IN ({placeholders})", user_ids_list)
+        
+        # Create a mapping of user_id to username
+        usernames = {}
+        for user_id, username in cur.fetchall():
+            usernames[user_id] = username
             
-#             # Add geo data if available
-#             if latitude is not None and longitude is not None:
-#                 item['latitude'] = latitude
-#                 item['longitude'] = longitude
-            
-#             # Calculate distance if user's location is in searchable data
-#             if current_user.id == int(item.get('user_id', -1)):
-#                 # It's the user's own item, so no need to calculate distance
-#                 pass
-#             elif 'latitude' in item and 'longitude' in item:
-#                 # For other users viewing this item, we could calculate distance
-#                 # but we'd need their current location
-#                 pass
-                
-#             cur.close()
-#             conn.close()
-            
-#             return item, 200
-            
-#         except Exception as e:
-#             print(f"Error fetching searchable item: {str(e)}")
-#             return {"error": str(e)}, 500
+        cur.close()
+        conn.close()
+        
+        # Add username to each result
+        for item in results:
+            if 'user_id' in item and item['user_id'] in usernames:
+                item['username'] = usernames[item['user_id']]
+
 
 @rest_api.route('/api/remove-searchable-item/<int:searchable_id>', methods=['PUT'])
 class RemoveSearchableItem(Resource):

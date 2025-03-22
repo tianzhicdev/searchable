@@ -6,14 +6,18 @@ import { makeStyles } from '@material-ui/styles';
  * @returns {Object} - The styles object containing all component styles
  */
 const useComponentStyles = makeStyles((theme) => ({
-  // Layout and containers
-//   container: {
-//     padding: theme.spacing(2)
-//   },
-//   gridItem: {
-//     marginBottom: theme.spacing(3)
-//   },
-  // Headers and sections
+
+    // Item profile image
+    itemProfileImage: {
+        maxWidth: '80px',
+        maxHeight: '80px',
+        objectFit: 'contain',
+        border: `1px solid ${theme.borders.main} !important`,
+        borderRadius: '0px'
+    },
+    
+
+
   header: {
     marginBottom: theme.spacing(3),
     display: 'flex',

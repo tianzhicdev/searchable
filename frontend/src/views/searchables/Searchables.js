@@ -16,6 +16,7 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import SearchablesProfile from './SearchablesProfile';
 
 const Searchables = () => {
   
@@ -38,6 +39,8 @@ const Searchables = () => {
   const account = useSelector((state) => state.account);
   const dispatcher = useDispatch();
   const history = useHistory();
+
+  const classes = useComponentStyles();
 
   // Calculate optimal page size based on viewport height
   const calculateOptimalPageSize = () => {
@@ -357,42 +360,14 @@ const Searchables = () => {
 
       {searchResults.length > 0 && (
         <>
-          <Grid item xs={12}>
+          <Grid item xs={12} >
             {searchResults.map((item) => (
-              <Paper 
-                key={item.searchable_id} 
-                onClick={() => handleItemClick(item.searchable_id)}
-                style={{ marginBottom: '16px' }}
-              >
-                <Typography variant="h4">
-                  {item.title}
-                </Typography>
-                
-                <Divider />
-                
-                <Box>
-                {item.username && (
-                  <Typography variant="body2">
-                    Posted by: {item.username}
-                  </Typography>
-                )}
-                  <Typography variant="body2">
-                    Distance: {formatDistance(item.distance)}
-                  </Typography>
-                  
-                  {item.category && (
-                    <Typography variant="body2">
-                      Category: {item.category}
-                    </Typography>
-                  )}
-                  
-                  {item.price && (
-                    <Typography variant="body2">
-                      Price: ${item.price}
-                    </Typography>
-                  )}
-                </Box>
-              </Paper>
+              <SearchablesProfile 
+                key={item.searchable_id}
+                item={item}
+                onClick={() => handleItemClick(item.searchable_id)} 
+                formatDistance={formatDistance}
+              />
             ))}
           </Grid>
 

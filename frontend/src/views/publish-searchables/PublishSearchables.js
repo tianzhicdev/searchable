@@ -46,7 +46,6 @@ const PublishSearchables = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    address: '',
     meetupLocation: '',
     latitude: '',
     longitude: '',
@@ -382,7 +381,7 @@ const PublishSearchables = () => {
               
               <Grid item xs={12} md={6} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
-                  Price
+                  Price in Sats
                 </Typography>
                 <TextField
                   fullWidth
@@ -390,11 +389,8 @@ const PublishSearchables = () => {
                   name="price"
                   value={formData.price}
                   onChange={handleInputChange}
-                  variant="outlined"
                   size="small"
                   type="number"
-                  inputProps={{ min: 0, step: 0.01 }}
-                  className={classes.textInput}
                 />
               </Grid>
               

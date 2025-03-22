@@ -9,6 +9,7 @@ import {
   Grid, Typography, Button, Paper, Box, CircularProgress, Divider 
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import SearchablesProfile from '../searchables/SearchablesProfile'; // Import SearchablesProfile component
 
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
@@ -97,7 +98,6 @@ const Profile = () => {
       
       {/* Posted Items Section */}
       <Grid item xs={12} className={classes.gridItem}>
-        <Paper elevation={3} className={classes.paper}>
           <Typography variant="h6" className={classes.sectionTitle}>
             Your Posted Items
           </Typography>
@@ -134,45 +134,15 @@ const Profile = () => {
             <Grid container spacing={2}>
               {userSearchables.map((item) => (
                 <Grid item xs={12} key={item.searchable_id}>
-                  <Box 
-                    className={classes.searchableItem}
+                  <SearchablesProfile 
+                    item={item}
                     onClick={() => handleItemClick(item.searchable_id)}
-                  >
-                    <Typography variant="h6" className={classes.itemTitle}>
-                      {item.title || `Item #${item.searchable_id}`}
-                    </Typography>
-                    
-                    {item.description && (
-                      <Typography variant="body2" className={classes.itemDescription}>
-                        {item.description}
-                      </Typography>
-                    )}
-                    
-                    <Box className={classes.itemInfo}>
-                      {item.distance && (
-                        <Typography variant="body2" className={classes.infoItem}>
-                          Distance: {formatDistance(item.distance)}
-                        </Typography>
-                      )}
-                      
-                      {item.category && (
-                        <Typography variant="body2" className={classes.infoItem}>
-                          Category: {item.category}
-                        </Typography>
-                      )}
-                      
-                      {item.price && (
-                        <Typography variant="body2" className={classes.infoItem}>
-                          Price: ${item.price}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
+                    formatDistance={formatDistance}
+                  />
                 </Grid>
               ))}
             </Grid>
           )}
-        </Paper>
       </Grid>
     </Grid>
   );
