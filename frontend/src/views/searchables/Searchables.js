@@ -273,6 +273,28 @@ const Searchables = () => {
   };
   return (
     <Grid container spacing={2}>
+      
+
+      // we need to remove it later, this is for debugging
+      <Grid item xs={12}>
+        <Box mb={2} display="flex" justifyContent="center" alignItems="center">
+          {location ? (
+            <Typography variant="body1">
+              Your current location: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+            </Typography>
+          ) : error ? (
+            <Typography variant="body1" color="error">
+              {error}
+            </Typography>
+          ) : (
+            <Box display="flex" alignItems="center">
+              <CircularProgress size={20} style={{ marginRight: 8 }} />
+              <Typography variant="body1">Detecting your location...</Typography>
+            </Box>
+          )}
+        </Box>
+      </Grid>
+
       <Grid item xs={12}>
         <Box mb={2}>
             <Button 
