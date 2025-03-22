@@ -11,6 +11,7 @@ import theme from './themes';
 
 // project imports
 import NavigationScroll from './layout/NavigationScroll';
+import StateDebugger from './components/StateDebugger';
 
 //-----------------------|| APP ||-----------------------//
 
@@ -21,6 +22,7 @@ const App = () => {
         <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
+                <StateDebugger />
                 <NavigationScroll>
                     <Routes />
                 </NavigationScroll>
