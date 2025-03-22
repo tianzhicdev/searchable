@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -16,6 +16,7 @@ import {
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
 import LocationOnIcon from '@material-ui/icons/LocationOn';
+import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 
 // Fix for default icon issue in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -30,7 +31,7 @@ const MapUpdater = ({ userLocation }) => {
   const map = useMap();
   
   useEffect(() => {
-    if (userLocation) {
+    if (userLocation && userLocation.latitude && userLocation.longitude) {
       console.log("Updating map view to user location:", userLocation);
       map.setView([userLocation.latitude, userLocation.longitude], 13);
     }
@@ -42,6 +43,7 @@ const MapUpdater = ({ userLocation }) => {
 const PublishSearchables = () => {
   console.log("PublishSearchables component is being rendered");
   const classes = useComponentStyles();
+  const dispatch = useDispatch();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -54,7 +56,6 @@ const PublishSearchables = () => {
   
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -63,6 +64,7 @@ const PublishSearchables = () => {
   const [geocodingLoading, setGeocodingLoading] = useState(false);
   
   const account = useSelector((state) => state.account);
+  const location = useSelector((state) => state.location);
   const history = useHistory();
   const fileInputRef = useRef(null);
   
@@ -74,8 +76,8 @@ const PublishSearchables = () => {
   
   // Function to get user's geolocation
   const getUserLocation = () => {
-    setError(null);
-    setMapLoading(true);
+    dispatch(setLocationError(null));
+    dispatch(setLocationLoading(true));
     
     if (navigator.geolocation) {
       console.log("Browser supports geolocation, requesting position...");
@@ -86,19 +88,25 @@ const PublishSearchables = () => {
             longitude: position.coords.longitude
           };
           console.log("User's current location received:", newLocation);
-          setUserLocation(newLocation);
+          dispatch(setLocation(
+            position.coords.latitude,
+            position.coords.longitude
+          ));
           setSelectedLocation(newLocation);
           setMapLoading(false);
         },
         (error) => {
           console.error("Error getting location:", error);
-          setError("Unable to retrieve your location. Using default location for map.");
+          dispatch(setLocationError("Unable to retrieve your location. Using default location for map."));
           // Set a default location if user refuses
           const defaultLocation = {
             latitude: 51.505,
             longitude: -0.09
           };
-          setUserLocation(defaultLocation);
+          dispatch(setLocation(
+            defaultLocation.latitude,
+            defaultLocation.longitude
+          ));
           setSelectedLocation(defaultLocation);
           setMapLoading(false);
         },
@@ -111,13 +119,16 @@ const PublishSearchables = () => {
       );
     } else {
       console.error("Geolocation not supported");
-      setError("Geolocation is not supported by your browser. Using default location for map.");
+      dispatch(setLocationError("Geolocation is not supported by your browser. Using default location for map."));
       // Set a default location if geolocation is not supported
       const defaultLocation = {
         latitude: 51.505,
         longitude: -0.09
       };
-      setUserLocation(defaultLocation);
+      dispatch(setLocation(
+        defaultLocation.latitude,
+        defaultLocation.longitude
+      ));
       setSelectedLocation(defaultLocation);
       setMapLoading(false);
     }
@@ -410,12 +421,6 @@ const PublishSearchables = () => {
                     placeholder="Select a location on the map or enter manually"
                     className={classes.textInput}
                   />
-                  {geocodingLoading && (
-                    <Box className={classes.loadingIndicator}>
-                      <CircularProgress size={16} style={{ marginRight: 8 }} />
-                      <Typography variant="caption">Finding address...</Typography>
-                    </Box>
-                  )}
                 </Box>
                 <Typography variant="caption" className={classes.formHelp}>
                   This will be suggested as the meeting point for exchanges
@@ -472,7 +477,9 @@ const PublishSearchables = () => {
                 ) : (
                   <Box className={classes.mapContainer}>
                     <MapContainer 
-                      center={userLocation ? [userLocation.latitude, userLocation.longitude] : [51.505, -0.09]} 
+                      center={location.latitude && location.longitude ? 
+                             [location.latitude, location.longitude] : 
+                             [51.505, -0.09]} 
                       zoom={13} 
                       style={{ height: "100%", width: "100%" }}
                     >
@@ -481,7 +488,7 @@ const PublishSearchables = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
                       <LocationMarker />
-                      <MapUpdater userLocation={userLocation} />
+                      <MapUpdater userLocation={location} />
                     </MapContainer>
                   </Box>
                 )}
