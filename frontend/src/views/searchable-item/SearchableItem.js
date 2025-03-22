@@ -176,16 +176,15 @@ const SearchableItem = () => {
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
                           <span>Price:</span>
-                          <span>${item.price}</span>
+                          <span>{item.price} Sats</span>
                         </Typography>
                       </Grid>
                     )}
-                    
-                    {item.address && (
-                      <Grid item xs={12}>
+                    {item.username && (
+                      <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
-                          <span>Address:</span>
-                          <span>{item.address}</span>
+                          <span>Posted by:</span>
+                          <span>{item.username}</span>
                         </Typography>
                       </Grid>
                     )}
@@ -217,6 +216,33 @@ const SearchableItem = () => {
                       </Grid>
                     )}
                   </Grid>
+
+                  {item.latitude && item.longitude && (
+                      <Grid item xs={12}>
+                        <Typography variant="body1">
+                          <span>Map Location:</span>
+                        </Typography>
+                        <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
+                          <iframe
+                            title="Item Location"
+                            width="100%"
+                            height="100%"
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${item.longitude-0.002}%2C${item.latitude-0.002}%2C${item.longitude+0.002}%2C${item.latitude+0.002}&layer=mapnik&marker=${item.latitude}%2C${item.longitude}&zoom=17`}
+                            scrolling="no"
+                            frameBorder="0"
+                            style={{ pointerEvents: 'none' }}
+                          />
+                        </Box>
+                      </Grid>
+                    )}
+                    {item.meetupLocation && (
+                      <Grid item xs={12}>
+                        <Typography variant="body1">
+                          <span>Meeting Location:</span>
+                          <span>{item.meetupLocation}</span>
+                        </Typography>
+                      </Grid>
+                    )}
                   
                   {isOwner && (
                     <Grid item xs={12}>
