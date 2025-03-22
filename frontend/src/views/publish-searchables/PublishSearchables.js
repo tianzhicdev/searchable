@@ -97,18 +97,25 @@ const PublishSearchables = () => {
         },
         (error) => {
           console.error("Error getting location:", error);
-          dispatch(setLocationError("Unable to retrieve your location. Using default location for map."));
-          // Set a default location if user refuses
-          const defaultLocation = {
-            latitude: 51.505,
-            longitude: -0.09
-          };
-          dispatch(setLocation(
-            defaultLocation.latitude,
-            defaultLocation.longitude
-          ));
-          setSelectedLocation(defaultLocation);
+          dispatch(setLocationError("Unable to retrieve your location. Using existing location for map."));
+          // Don't override existing location, just finish loading the map
           setMapLoading(false);
+          
+          // If we don't have a selected location yet, use the current Redux state
+          if (!selectedLocation && location.latitude && location.longitude) {
+            setSelectedLocation({
+              latitude: location.latitude,
+              longitude: location.longitude
+            });
+          }
+          // If we still don't have a location, use default as fallback only
+          else if (!selectedLocation) {
+            const defaultLocation = {
+              latitude: 51.505,
+              longitude: -0.09
+            };
+            setSelectedLocation(defaultLocation);
+          }
         },
         // Adding options to get a faster response
         { 
@@ -119,18 +126,25 @@ const PublishSearchables = () => {
       );
     } else {
       console.error("Geolocation not supported");
-      dispatch(setLocationError("Geolocation is not supported by your browser. Using default location for map."));
-      // Set a default location if geolocation is not supported
-      const defaultLocation = {
-        latitude: 51.505,
-        longitude: -0.09
-      };
-      dispatch(setLocation(
-        defaultLocation.latitude,
-        defaultLocation.longitude
-      ));
-      setSelectedLocation(defaultLocation);
+      dispatch(setLocationError("Geolocation is not supported by your browser. Using existing location for map."));
+      // Don't override existing location, just finish loading the map
       setMapLoading(false);
+      
+      // If we don't have a selected location yet, use the current Redux state
+      if (!selectedLocation && location.latitude && location.longitude) {
+        setSelectedLocation({
+          latitude: location.latitude,
+          longitude: location.longitude
+        });
+      }
+      // If we still don't have a location, use default as fallback only
+      else if (!selectedLocation) {
+        const defaultLocation = {
+          latitude: 51.505,
+          longitude: -0.09
+        };
+        setSelectedLocation(defaultLocation);
+      }
     }
   };
   

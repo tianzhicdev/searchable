@@ -102,11 +102,15 @@ const Searchables = () => {
         },
         (error) => {
           console.error("Error getting location:", error);
-          dispatch(setLocationError("Unable to retrieve your location. Please enable location services."));
+          // Only set error message, don't change the existing location
+          dispatch(setLocationError("Unable to update your location. Using existing location data if available."));
+          dispatch(setLocationLoading(false));
         }
       );
     } else {
-      dispatch(setLocationError("Geolocation is not supported by your browser."));
+      // Only set error message, don't change the existing location
+      dispatch(setLocationError("Geolocation is not supported by your browser. Using existing location data if available."));
+      dispatch(setLocationLoading(false));
     }
   };
 
