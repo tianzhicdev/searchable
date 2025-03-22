@@ -64,6 +64,11 @@ const PublishSearchables = () => {
   const [mapLoading, setMapLoading] = useState(true);
   const [geocodingLoading, setGeocodingLoading] = useState(false);
   
+  // Add new state variables for USD conversion
+  const [usdPrice, setUsdPrice] = useState(null);
+  const [btcPrice, setBtcPrice] = useState(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  
   const account = useSelector((state) => state.account);
   const location = useSelector((state) => state.location);
   const history = useHistory();
@@ -344,6 +349,50 @@ const PublishSearchables = () => {
     );
   };
   
+  // Add effect to fetch BTC price when component mounts
+  useEffect(() => {
+    fetchBtcPrice();
+  }, []);
+  
+  // Add effect to update USD price when price or BTC rate changes
+  useEffect(() => {
+    if (formData.price && btcPrice) {
+      // Convert satoshis to USD (1 BTC = 100,000,000 sats)
+      const usdValue = (parseFloat(formData.price) / 100000000) * btcPrice;
+      setUsdPrice(usdValue);
+    } else {
+      setUsdPrice(null);
+    }
+  }, [formData.price, btcPrice]);
+  
+  // Function to fetch current BTC price
+  const fetchBtcPrice = async () => {
+    setPriceLoading(true);
+    try {
+      const response = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+      );
+      
+      if (response.data && response.data.bitcoin && response.data.bitcoin.usd) {
+        setBtcPrice(response.data.bitcoin.usd);
+      }
+    } catch (error) {
+      console.error("Error fetching BTC price:", error);
+    } finally {
+      setPriceLoading(false);
+    }
+  };
+  
+  // Function to format USD price
+  const formatUSD = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+  };
+  
   return (
     <Grid container className={classes.container}>
       <Grid item xs={12} className={classes.header}>
@@ -423,6 +472,15 @@ const PublishSearchables = () => {
                   size="small"
                   type="number"
                 />
+                {usdPrice !== null && (
+                  <Typography variant="caption" className={classes.formHelp} style={{ marginTop: 4 }}>
+                    {priceLoading ? (
+                      <CircularProgress size={12} style={{ marginRight: 8 }} />
+                    ) : (
+                      `≈ ${formatUSD(usdPrice)} USD`
+                    )}
+                  </Typography>
+                )}
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>

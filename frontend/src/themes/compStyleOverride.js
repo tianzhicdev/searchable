@@ -282,6 +282,10 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: theme.fonts.fontFamily.primary
+                },
+                caption: {
+                    color: theme.colors.lightBlue,
+                    fontFamily: theme.fonts.fontFamily.primary
                 }
             }
         }

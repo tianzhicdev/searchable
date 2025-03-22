@@ -12,6 +12,8 @@ const SearchableItem = () => {
   const [error, setError] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [usdPrice, setUsdPrice] = useState(null);
+  const [priceLoading, setPriceLoading] = useState(false);
   
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -40,6 +42,12 @@ const SearchableItem = () => {
     }
   }, [item, account]);
   
+  useEffect(() => {
+    if (item && item.price) {
+      convertSatsToUSD(item.price);
+    }
+  }, [item]);
+  
   const fetchItemDetails = async () => {
     setLoading(true);
     setError(null);
@@ -63,6 +71,27 @@ const SearchableItem = () => {
     }
   };
   
+  // Function to convert sats to USD
+  const convertSatsToUSD = async (sats) => {
+    setPriceLoading(true);
+    try {
+      const response = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+      );
+      
+      if (response.data && response.data.bitcoin && response.data.bitcoin.usd) {
+        const btcPrice = response.data.bitcoin.usd;
+        // Convert satoshis to USD (1 BTC = 100,000,000 sats)
+        const usdValue = (sats / 100000000) * btcPrice;
+        setUsdPrice(usdValue);
+      }
+    } catch (error) {
+      console.error("Error fetching BTC price:", error);
+    } finally {
+      setPriceLoading(false);
+    }
+  };
+  
   // Function to format distance
   const formatDistance = (meters) => {
     if (meters < 1000) {
@@ -70,6 +99,16 @@ const SearchableItem = () => {
     } else {
       return `${(meters / 1000).toFixed(1)} km`;
     }
+  };
+  
+  // Function to format USD price
+  const formatUSD = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
   };
   
   const handleRemoveItem = async () => {
@@ -118,10 +157,9 @@ const SearchableItem = () => {
       
       {loading && (
         <Grid item xs={12}>
-          <CircularProgress />
-          <Typography variant="body1" style={{ marginLeft: 16 }}>
-            Loading item details...
-          </Typography>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
         </Grid>
       )}
       
@@ -134,6 +172,7 @@ const SearchableItem = () => {
       )}
       
       {!loading && item && (
+        <Paper>
         <Grid item xs={12}>
             <Box p={3}>
               <Grid container spacing={3}>
@@ -163,40 +202,43 @@ const SearchableItem = () => {
                 
                 <Grid item xs={12} md={item.images && item.images.length > 0 ? 6 : 12}>
                   <Grid container spacing={2}>
-                    {item.distance && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body1">
-                          <span>Distance:</span>
-                          <span>{formatDistance(item.distance)}</span>
-                        </Typography>
-                      </Grid>
-                    )}
                     
                     {item.price && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
-                          <span>Price:</span>
+                          <span>Price: </span>
                           <span>{item.price} Sats</span>
+                          
+                          {usdPrice !== null && (
+                            <Typography variant="body2" style={{ marginTop: 4 }}>
+                              {priceLoading ? (
+                                <CircularProgress size={12} style={{ marginLeft: 8 }} />
+                              ) : (
+                                `≈ ${formatUSD(usdPrice)}`
+                              )}
+                            </Typography>
+                          )}
                         </Typography>
                       </Grid>
                     )}
                     {item.username && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
-                          <span>Posted by:</span>
+                          <span>Posted by: </span>
                           <span>{item.username}</span>
                         </Typography>
                       </Grid>
                     )}
-                    
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1">
-                        <span>Location:</span>
-                        <span>
-                          {item.latitude}, {item.longitude}
-                        </span>
-                      </Typography>
-                    </Grid>
+
+
+                    {item.distance && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body1">
+                          <span>Distance: </span>
+                          <span>{formatDistance(item.distance)}</span>
+                        </Typography>
+                      </Grid>
+                    )}
                     
                     <Grid item xs={12} sm={6}>
                       <Typography variant="body1">
@@ -210,7 +252,7 @@ const SearchableItem = () => {
                         <Typography variant="body1">
                           Description:
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
                           {item.description}
                         </Typography>
                       </Grid>
@@ -220,7 +262,7 @@ const SearchableItem = () => {
                   {item.latitude && item.longitude && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span>Map Location:</span>
+                          <span>Proposed Meeting Location:</span>
                         </Typography>
                         <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
                           <iframe
@@ -238,7 +280,6 @@ const SearchableItem = () => {
                     {item.meetupLocation && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span>Meeting Location:</span>
                           <span>{item.meetupLocation}</span>
                         </Typography>
                       </Grid>
@@ -261,7 +302,9 @@ const SearchableItem = () => {
               </Grid>
             </Box>
         </Grid>
+        </Paper>
       )}
+
     </Grid>
   );
 };
