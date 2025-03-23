@@ -3,8 +3,9 @@
 console.log('All process.env:', process.env);
 
 let BACKEND_SERVER = null;
-if (process.env.REACT_APP_BACKEND_SERVER) {
-  BACKEND_SERVER = process.env.REACT_APP_BACKEND_SERVER;
+
+if (process.env.REACT_APP_ENV === 'local') {
+  BACKEND_SERVER = "http://localhost:3006/api/";
 } else {
   BACKEND_SERVER = "https://bit-bid.com/api/";
 }

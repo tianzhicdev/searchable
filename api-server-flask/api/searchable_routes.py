@@ -7,7 +7,6 @@ import re
 from flask import request
 from flask_restx import Resource
 from psycopg2.extras import Json
-import geohash2
 import math
 
 # Import rest_api and get_db_connection from __init__
@@ -26,12 +25,11 @@ class GetSearchableItem(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Query to get the searchable item and its geo data
+            # Query to get the searchable item
             cur.execute("""
-                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
-                FROM searchable_items si
-                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-                WHERE si.searchable_id = %s
+                SELECT searchable_id, searchable_data
+                FROM searchables
+                WHERE searchable_id = %s
             """, (searchable_id,))
             
             result = cur.fetchone()
@@ -39,16 +37,11 @@ class GetSearchableItem(Resource):
             if not result:
                 return {"error": "Searchable item not found"}, 404
                 
-            searchable_id, searchable_data, latitude, longitude = result
+            searchable_id, searchable_data = result
             
             # Combine the data
             item_data = searchable_data
             item_data['searchable_id'] = searchable_id
-            
-            # Add geo data if available
-            if latitude is not None and longitude is not None:
-                item_data['latitude'] = latitude
-                item_data['longitude'] = longitude
             
             # Get username for the user_id
             if 'user_id' in item_data:
@@ -84,31 +77,29 @@ class CreateSearchable(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Ensure user_id is part of the searchable data
-            data['user_id'] = current_user.id
+            # Add terminal info to the searchable data
+            data['terminal_id'] = current_user.id
             
-            # First insert into searchable_items table
+            # Extract geo data from public payload
+            latitude = None
+            longitude = None
+            if 'payloads' in data and 'public' in data['payloads']:
+                public_payload = data['payloads']['public']
+                if 'latitude' in public_payload and 'longitude' in public_payload:
+                    latitude = float(public_payload['latitude'])
+                    longitude = float(public_payload['longitude'])
+            
+            if latitude is None or longitude is None:
+                return {"error": "Latitude and longitude are required in public payload"}, 400
+            
+            # Insert into searchable_items table
             cur.execute(
-                "INSERT INTO searchable_items (searchable_data) VALUES (%s) RETURNING searchable_id;",
+                "INSERT INTO searchables (searchable_data) VALUES (%s) RETURNING searchable_id;",
                 (Json(data),)
             )
             searchable_id = cur.fetchone()[0]
             
-            # Then insert geo data if available
-            if 'latitude' in data and 'longitude' in data:
-                latitude = float(data['latitude'])
-                longitude = float(data['longitude'])
-                
-                geo_hash = geohash2.encode(latitude, longitude, precision=9)
-                
-                # Insert into searchable_geo table
-                cur.execute(
-                    "INSERT INTO searchable_geo (searchable_id, latitude, longitude, geohash) VALUES (%s, %s, %s, %s);",
-                    (searchable_id, latitude, longitude, geo_hash)
-                )
-                print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
-            else:
-                return {"error": "Latitude and longitude are required"}, 400
+            print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
             
             conn.commit()
             cur.close()
@@ -134,25 +125,19 @@ class UserSearchables(Resource):
             
             # Query to get all searchable items created by this user
             cur.execute("""
-                SELECT si.searchable_id, si.searchable_data, sg.latitude, sg.longitude
-                FROM searchable_items si
-                LEFT JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-                WHERE si.searchable_data->>'user_id' = %s
-                ORDER BY si.searchable_id DESC
+                SELECT searchable_id, searchable_data
+                FROM searchables
+                WHERE searchable_data->>'user_id' = %s
+                ORDER BY searchable_id DESC
             """, (str(current_user.id),))
             
             results = []
             for row in cur.fetchall():
-                searchable_id, searchable_data, latitude, longitude = row
+                searchable_id, searchable_data = row
                 
                 # Combine the data
                 item = searchable_data.copy() if searchable_data else {}
                 item['searchable_id'] = searchable_id
-                
-                # Add geo data if available
-                if latitude is not None and longitude is not None:
-                    item['latitude'] = latitude
-                    item['longitude'] = longitude
                 
                 # Add username (we already know it's the current user)
                 item['username'] = current_user.username
@@ -190,19 +175,8 @@ class SearchSearchables(Resource):
             if 'error' in params:
                 return params, 400
             
-            # Determine geohash precision based on max_distance
-            precision = self._determine_geohash_precision(params['max_distance'])
-            
-            # Generate geohash for the search point with dynamic precision
-            # Handle case where precision can be 0
-            if precision > 0:
-                search_geohash_prefix = geohash2.encode(params['lat'], params['lng'], precision=precision)
-            else:
-                search_geohash_prefix = ""
-            
             # Query database for results
             results, total_count = self._query_database(
-                search_geohash_prefix, 
                 params['lat'], 
                 params['lng'], 
                 params['max_distance'],
@@ -251,32 +225,6 @@ class SearchSearchables(Resource):
             'query_term': query_term
         }
     
-    def _determine_geohash_precision(self, max_distance):
-        """Determine appropriate geohash precision based on max_distance"""
-        # Approximate precision mapping:
-        # 0: ~20000km, 1: ~5000km, 2: ~1250km, 3: ~156km, 4: ~39km, 5: ~5km, 6: ~1.2km, 7: ~153m, 8: ~38m, 9: ~5m
-        if max_distance >= 20000000:  # 20000km (global scale)
-            precision = 0
-        elif max_distance >= 5000000:  # 5000km
-            precision = 1
-        elif max_distance >= 1250000:  # 1250km
-            precision = 2
-        elif max_distance >= 156000:  # 156km
-            precision = 3
-        elif max_distance >= 39000:  # 39km
-            precision = 4
-        elif max_distance >= 5000:  # 5km
-            precision = 5
-        elif max_distance >= 1200:  # 1.2km
-            precision = 6
-        elif max_distance >= 153:  # 153m
-            precision = 7
-        elif max_distance >= 38:  # 38m
-            precision = 8
-        else:  # < 38m
-            precision = 9
-        return precision
-    
     def _calculate_distance(self, lat1, lng1, lat2, lng2):
         """Calculate distance between two points using Haversine formula"""
         earth_radius = 6371000  # meters
@@ -306,8 +254,10 @@ class SearchSearchables(Resource):
             return 0
             
         score = 0
-        title = item_data.get('title', '')
-        description = item_data.get('description', '')
+        # Extract data from the new structure
+        public_data = item_data.get('payloads', {}).get('public', {})
+        title = public_data.get('title', '')
+        description = public_data.get('description', '')
         
         title_tokens = self._tokenize_text(title)
         description_tokens = self._tokenize_text(description)
@@ -324,11 +274,10 @@ class SearchSearchables(Resource):
                 
         return score
     
-    def _query_database(self, search_geohash_prefix, lat, lng, max_distance, query_term):
+    def _query_database(self, lat, lng, max_distance, query_term):
         """Query database for results and filter by actual distance and search relevance"""
         # Log query parameters for debugging
         print(f"Search parameters:")
-        print(f"  Geohash prefix: {search_geohash_prefix}")
         print(f"  Coordinates: ({lat}, {lng})")
         print(f"  Max distance: {max_distance} meters")
         print(f"  Query term: {query_term}")
@@ -339,27 +288,35 @@ class SearchSearchables(Resource):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Get all items with matching geohash prefix (rough filter)
+        # Get all items from searchable_items
         query = """
             SELECT 
-              si.searchable_id,
-              si.searchable_data, 
-              sg.latitude, 
-              sg.longitude, 
-              sg.geohash
-            FROM searchable_items si
-            JOIN searchable_geo sg ON si.searchable_id = sg.searchable_id
-            WHERE sg.geohash LIKE %s
-            AND (si.searchable_data->>'is_removed')::boolean IS NOT TRUE;
+              searchable_id,
+              searchable_data
+            FROM searchables
+            WHERE (searchable_data->>'is_removed')::boolean IS NOT TRUE;
         """
         
-        cur.execute(query, (search_geohash_prefix + '%',))
+        cur.execute(query)
         db_results = cur.fetchall()
         
         # Post-process results to filter by actual distance and calculate match scores
         filtered_results = []
         for result in db_results:
-            searchable_id, searchable_data, item_lat, item_lng, geohash = result
+            searchable_id, searchable_data = result
+            
+            # Extract latitude and longitude from searchable_data
+            item_lat = None
+            item_lng = None
+            if 'payloads' in searchable_data and 'public' in searchable_data['payloads']:
+                public_payload = searchable_data['payloads']['public']
+                if 'latitude' in public_payload and 'longitude' in public_payload:
+                    item_lat = float(public_payload['latitude'])
+                    item_lng = float(public_payload['longitude'])
+            
+            # Skip if no valid coordinates
+            if item_lat is None or item_lng is None:
+                continue
             
             # Calculate actual distance
             distance = self._calculate_distance(lat, lng, item_lat, item_lng)
@@ -407,35 +364,35 @@ class SearchSearchables(Resource):
         if not results:
             return
             
-        # Get all unique user_ids from the paginated results
-        user_ids = set()
+        # Get all unique terminal_ids from the paginated results
+        terminal_ids = set()
         for item in results:
-            if 'user_id' in item:
-                user_ids.add(item['user_id'])
+            if 'terminal_id' in item:
+                terminal_ids.add(item['terminal_id'])
                 
-        if not user_ids:
+        if not terminal_ids:
             return
             
-        # Fetch usernames for these user_ids
+        # Fetch usernames for these terminal_ids
         conn = get_db_connection()
         cur = conn.cursor()
         
-        user_ids_list = list(user_ids)
-        placeholders = ','.join(['%s'] * len(user_ids_list))
-        cur.execute(f"SELECT id, username FROM users WHERE id IN ({placeholders})", user_ids_list)
+        terminal_ids_list = list(terminal_ids)
+        placeholders = ','.join(['%s'] * len(terminal_ids_list))
+        cur.execute(f"SELECT id, username FROM users WHERE id IN ({placeholders})", terminal_ids_list)
         
-        # Create a mapping of user_id to username
+        # Create a mapping of terminal_id to username
         usernames = {}
-        for user_id, username in cur.fetchall():
-            usernames[user_id] = username
+        for terminal_id, username in cur.fetchall():
+            usernames[terminal_id] = username
             
         cur.close()
         conn.close()
         
         # Add username to each result
         for item in results:
-            if 'user_id' in item and item['user_id'] in usernames:
-                item['username'] = usernames[item['user_id']]
+            if 'terminal_id' in item and item['terminal_id'] in usernames:
+                item['username'] = usernames[item['terminal_id']]
 
 
 @rest_api.route('/api/remove-searchable-item/<int:searchable_id>', methods=['PUT'])
@@ -456,7 +413,7 @@ class RemoveSearchableItem(Resource):
             # First check if the item exists and belongs to the current user
             cur.execute("""
                 SELECT searchable_data
-                FROM searchable_items
+                FROM searchables
                 WHERE searchable_id = %s
             """, (searchable_id,))
             
@@ -479,7 +436,7 @@ class RemoveSearchableItem(Resource):
             
             # Update the record in the database
             cur.execute("""
-                UPDATE searchable_items
+                UPDATE searchables
                 SET searchable_data = %s
                 WHERE searchable_id = %s
             """, (Json(searchable_data), searchable_id))

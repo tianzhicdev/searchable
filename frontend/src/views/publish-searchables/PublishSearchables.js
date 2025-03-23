@@ -269,32 +269,32 @@ const PublishSearchables = () => {
     setSuccess(false);
     
     try {
-      // Create JSON data instead of FormData
-      const submitData = {
-        title: formData.title,
-        description: formData.description,
-        address: formData.address,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        meetupLocation: formData.meetupLocation
+      // Create searchable data following the Terminal/Searchable paradigm
+      const searchableData = {
+        payloads: {
+          "public": {
+            "title": formData.title,
+            "description": formData.description,
+            "meetupLocation": formData.meetupLocation,
+            "latitude": formData.latitude,
+            "longitude": formData.longitude,
+            "price": formData.price ? formData.price : null,
+            "images": previewImages.map(base64String => {
+              // Remove the data:image/xxx;base64, prefix
+              return base64String.split(',')[1];
+            }),
+            "visibility": {
+              "udf": "always_true",
+              "data": {}
+            }
+          }
+        }
       };
-      
-      if (formData.price) {
-        submitData.price = formData.price;
-      }
-      
-      // Convert images to base64 strings and add to JSON
-      if (images.length > 0) {
-        submitData.images = previewImages.map(base64String => {
-          // Remove the data:image/xxx;base64, prefix
-          return base64String.split(',')[1];
-        });
-      }
       
       // Send the request with JSON data
       const response = await axios.post(
         configData.API_SERVER + 'searchable',
-        submitData,
+        searchableData,
         {
           headers: {
             'Authorization': `${account.token}`,

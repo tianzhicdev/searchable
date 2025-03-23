@@ -29,7 +29,7 @@ const SearchableItem = () => {
       try {
         console.log("User:", account.user);
         console.log("Item:", item);
-        if (account && item && item.user_id === account.user._id) {
+        if (account && item && item.terminal_id === account.user._id) {
           setIsOwner(true);
         }
       } catch (error) {
@@ -43,8 +43,8 @@ const SearchableItem = () => {
   }, [item, account]);
   
   useEffect(() => {
-    if (item && item.price) {
-      convertSatsToUSD(item.price);
+    if (item && item.payloads && item.payloads.public && item.payloads.public.price) {
+      convertSatsToUSD(item.payloads.public.price);
     }
   }, [item]);
   
@@ -178,20 +178,20 @@ const SearchableItem = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Typography variant="h4">
-                    {item.title || `Item #${item.searchable_id}`}
+                    {item.payloads.public.title || `Item #${item.searchable_id}`}
                   </Typography>
                   <Divider />
                 </Grid>
                 
                 {/* Display images if available */}
-                {item.images && item.images.length > 0 && (
+                {item.payloads.public.images && item.payloads.public.images.length > 0 && (
                   <Grid item xs={12} md={6}>
                     <Grid container spacing={1}>
-                      {item.images.map((image, index) => (
+                      {item.payloads.public.images.map((image, index) => (
                         <Grid item xs={12} sm={6} key={index}>
                           <img 
                             src={`data:image/jpeg;base64,${image}`} 
-                            alt={`${item.title} - image ${index + 1}`} 
+                            alt={`${item.payloads.public.title} - image ${index + 1}`} 
                             style={{ maxWidth: '100%', height: 'auto' }}
                           />
                         </Grid>
@@ -200,14 +200,15 @@ const SearchableItem = () => {
                   </Grid>
                 )}
                 
-                <Grid item xs={12} md={item.images && item.images.length > 0 ? 6 : 12}>
+                <Grid item xs={12} md={item.payloads.public.images && item.payloads.public.images.length > 0 ? 6 : 12}>
                   <Grid container spacing={2}>
                     
-                    {item.price && (
+                    {/* Only show price if user is owner or price is in public payload */}
+                    {(isOwner && item.payloads.public && item.payloads.public.price) && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
                           <span>Price: </span>
-                          <span>{item.price} Sats</span>
+                          <span>{item.payloads.public.price} Sats</span>
                           
                           {usdPrice !== null && (
                             <Typography variant="body2" style={{ marginTop: 4 }}>
@@ -221,6 +222,7 @@ const SearchableItem = () => {
                         </Typography>
                       </Grid>
                     )}
+                    
                     {item.username && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
@@ -229,7 +231,6 @@ const SearchableItem = () => {
                         </Typography>
                       </Grid>
                     )}
-
 
                     {item.distance && (
                       <Grid item xs={12} sm={6}>
@@ -247,19 +248,19 @@ const SearchableItem = () => {
                       </Typography>
                     </Grid>
                     
-                    {item.description && (
+                    {item.payloads.public.description && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
                           Description:
                         </Typography>
                         <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
-                          {item.description}
+                          {item.payloads.public.description}
                         </Typography>
                       </Grid>
                     )}
                   </Grid>
 
-                  {item.latitude && item.longitude && (
+                  {item.payloads.public.latitude && item.payloads.public.longitude && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
                           <span>Proposed Meeting Location:</span>
@@ -269,7 +270,7 @@ const SearchableItem = () => {
                             title="Item Location"
                             width="100%"
                             height="100%"
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${item.longitude-0.002}%2C${item.latitude-0.002}%2C${item.longitude+0.002}%2C${item.latitude+0.002}&layer=mapnik&marker=${item.latitude}%2C${item.longitude}&zoom=17`}
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${item.payloads.public.longitude}%2C${item.payloads.public.latitude}%2C${item.payloads.public.longitude}%2C${item.payloads.public.latitude}&layer=mapnik&marker=${item.payloads.public.latitude}%2C${item.payloads.public.longitude}&zoom=17`}
                             scrolling="no"
                             frameBorder="0"
                             style={{ pointerEvents: 'none' }}
@@ -277,10 +278,10 @@ const SearchableItem = () => {
                         </Box>
                       </Grid>
                     )}
-                    {item.meetupLocation && (
+                    {item.payloads.public.meetupLocation && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span>{item.meetupLocation}</span>
+                          <span>{item.payloads.public.meetupLocation}</span>
                         </Typography>
                       </Grid>
                     )}

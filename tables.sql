@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS searchable_items (
+CREATE TABLE IF NOT EXISTS searchables (
     searchable_id SERIAL PRIMARY KEY,
     searchable_data JSONB NOT NULL
 );
