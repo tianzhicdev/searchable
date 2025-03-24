@@ -4,14 +4,21 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 import re
-from flask import request
+from flask import request, Response
 from flask_restx import Resource
 from psycopg2.extras import Json
 import math
+from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
 from .routes import get_db_connection, token_required
+
+# Define Prometheus metrics
+searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
+searchable_latency = Histogram('searchable_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
+search_results_count = Summary('search_results_count', 'Number of search results returned')
+search_distance = Histogram('search_distance_meters', 'Search distance in meters', buckets=[100, 500, 1000, 5000, 10000, 50000])
 
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
@@ -21,44 +28,48 @@ class GetSearchableItem(Resource):
     """
     @token_required
     def get(self, current_user, searchable_id):
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Query to get the searchable item
-            cur.execute("""
-                SELECT searchable_id, searchable_data
-                FROM searchables
-                WHERE searchable_id = %s
-            """, (searchable_id,))
-            
-            result = cur.fetchone()
-            
-            if not result:
-                return {"error": "Searchable item not found"}, 404
+        with searchable_latency.labels('get_searchable_item').time():
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
                 
-            searchable_id, searchable_data = result
-            
-            # Combine the data
-            item_data = searchable_data
-            item_data['searchable_id'] = searchable_id
-            
-            # Get username for the user_id
-            if 'user_id' in item_data:
+                # Query to get the searchable item
                 cur.execute("""
-                    SELECT username FROM users WHERE id = %s
-                """, (item_data['user_id'],))
-                user_result = cur.fetchone()
-                if user_result:
-                    item_data['username'] = user_result[0]
-            
-            cur.close()
-            conn.close()
-            
-            return item_data, 200
-            
-        except Exception as e:
-            return {"error": str(e)}, 500
+                    SELECT searchable_id, searchable_data
+                    FROM searchables
+                    WHERE searchable_id = %s
+                """, (searchable_id,))
+                
+                result = cur.fetchone()
+                
+                if not result:
+                    searchable_requests.labels('get_searchable_item', 'GET', 404).inc()
+                    return {"error": "Searchable item not found"}, 404
+                    
+                searchable_id, searchable_data = result
+                
+                # Combine the data
+                item_data = searchable_data
+                item_data['searchable_id'] = searchable_id
+                
+                # Get username for the user_id
+                if 'user_id' in item_data:
+                    cur.execute("""
+                        SELECT username FROM users WHERE id = %s
+                    """, (item_data['user_id'],))
+                    user_result = cur.fetchone()
+                    if user_result:
+                        item_data['username'] = user_result[0]
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('get_searchable_item', 'GET', 200).inc()
+                return item_data, 200
+                
+            except Exception as e:
+                searchable_requests.labels('get_searchable_item', 'GET', 500).inc()
+                return {"error": str(e)}, 500
 
 
 @rest_api.route('/api/searchable', methods=['POST'])
@@ -68,45 +79,50 @@ class CreateSearchable(Resource):
     """
     @token_required
     def post(self, current_user):
-        print(f"Creating searchable for user: {current_user}")
-        data = request.get_json()  # Get JSON data from request
-        if not data:
-            return {"error": "Invalid input"}, 400
+        with searchable_latency.labels('create_searchable').time():
+            print(f"Creating searchable for user: {current_user}")
+            data = request.get_json()  # Get JSON data from request
+            if not data:
+                searchable_requests.labels('create_searchable', 'POST', 400).inc()
+                return {"error": "Invalid input"}, 400
 
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Add terminal info to the searchable data
-            data['terminal_id'] = current_user.id
-            
-            # Extract geo data from public payload
-            latitude = None
-            longitude = None
-            if 'payloads' in data and 'public' in data['payloads']:
-                public_payload = data['payloads']['public']
-                if 'latitude' in public_payload and 'longitude' in public_payload:
-                    latitude = float(public_payload['latitude'])
-                    longitude = float(public_payload['longitude'])
-            
-            if latitude is None or longitude is None:
-                return {"error": "Latitude and longitude are required in public payload"}, 400
-            
-            # Insert into searchable_items table
-            cur.execute(
-                "INSERT INTO searchables (searchable_data) VALUES (%s) RETURNING searchable_id;",
-                (Json(data),)
-            )
-            searchable_id = cur.fetchone()[0]
-            
-            print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            return {"searchable_id": searchable_id}, 201
-        except Exception as e:
-            return {"error": str(e)}, 500
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Add terminal info to the searchable data
+                data['terminal_id'] = current_user.id
+                
+                # Extract geo data from public payload
+                latitude = None
+                longitude = None
+                if 'payloads' in data and 'public' in data['payloads']:
+                    public_payload = data['payloads']['public']
+                    if 'latitude' in public_payload and 'longitude' in public_payload:
+                        latitude = float(public_payload['latitude'])
+                        longitude = float(public_payload['longitude'])
+                
+                if latitude is None or longitude is None:
+                    searchable_requests.labels('create_searchable', 'POST', 400).inc()
+                    return {"error": "Latitude and longitude are required in public payload"}, 400
+                
+                # Insert into searchable_items table
+                cur.execute(
+                    "INSERT INTO searchables (searchable_data) VALUES (%s) RETURNING searchable_id;",
+                    (Json(data),)
+                )
+                searchable_id = cur.fetchone()[0]
+                
+                print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
+                
+                conn.commit()
+                cur.close()
+                conn.close()
+                searchable_requests.labels('create_searchable', 'POST', 201).inc()
+                return {"searchable_id": searchable_id}, 201
+            except Exception as e:
+                searchable_requests.labels('create_searchable', 'POST', 500).inc()
+                return {"error": str(e)}, 500
 
 @rest_api.route('/api/searchable/user', methods=['GET'])
 class UserSearchables(Resource):
@@ -118,44 +134,47 @@ class UserSearchables(Resource):
     """
     @token_required
     def get(self, current_user):
-        print(f"Fetching searchable items for user: {current_user}")
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Query to get all searchable items created by this user
-            cur.execute("""
-                SELECT searchable_id, searchable_data
-                FROM searchables
-                WHERE searchable_data->>'user_id' = %s
-                ORDER BY searchable_id DESC
-            """, (str(current_user.id),))
-            
-            results = []
-            for row in cur.fetchall():
-                searchable_id, searchable_data = row
+        with searchable_latency.labels('user_searchables').time():
+            print(f"Fetching searchable items for user: {current_user}")
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
                 
-                # Combine the data
-                item = searchable_data.copy() if searchable_data else {}
-                item['searchable_id'] = searchable_id
+                # Query to get all searchable items created by this user
+                cur.execute("""
+                    SELECT searchable_id, searchable_data
+                    FROM searchables
+                    WHERE searchable_data->>'user_id' = %s
+                    ORDER BY searchable_id DESC
+                """, (str(current_user.id),))
                 
-                # Add username (we already know it's the current user)
-                item['username'] = current_user.username
+                results = []
+                for row in cur.fetchall():
+                    searchable_id, searchable_data = row
+                    
+                    # Combine the data
+                    item = searchable_data.copy() if searchable_data else {}
+                    item['searchable_id'] = searchable_id
+                    
+                    # Add username (we already know it's the current user)
+                    item['username'] = current_user.username
+                    
+                    results.append(item)
                 
-                results.append(item)
-            
-            cur.close()
-            conn.close()
-            
-            return {
-                "success": True,
-                "count": len(results),
-                "results": results
-            }, 200
-            
-        except Exception as e:
-            print(f"Error fetching user searchables: {str(e)}")
-            return {"error": str(e)}, 500
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('user_searchables', 'GET', 200).inc()
+                return {
+                    "success": True,
+                    "count": len(results),
+                    "results": results
+                }, 200
+                
+            except Exception as e:
+                print(f"Error fetching user searchables: {str(e)}")
+                searchable_requests.labels('user_searchables', 'GET', 500).inc()
+                return {"error": str(e)}, 500
 
 
 @rest_api.route('/api/searchable/search', methods=['GET'])
@@ -168,32 +187,42 @@ class SearchSearchables(Resource):
     """
     @token_required
     def get(self, current_user):
-        print(f"Searching for searchable items for user: {current_user}")
-        try:
-            # Parse and validate request parameters
-            params = self._parse_request_params()
-            if 'error' in params:
-                return params, 400
-            
-            # Query database for results
-            results, total_count = self._query_database(
-                params['lat'], 
-                params['lng'], 
-                params['max_distance'],
-                params['query_term']
-            )
-            
-            # Apply pagination after filtering by actual distance
-            paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
-            
-            # Enrich paginated results with usernames
-            self._enrich_results_with_usernames(paginated_results)
-            
-            # Format and return response
-            return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
-            
-        except Exception as e:
-            return {"error": str(e)}, 500
+        with searchable_latency.labels('search_searchables').time():
+            print(f"Searching for searchable items for user: {current_user}")
+            try:
+                # Parse and validate request parameters
+                params = self._parse_request_params()
+                if 'error' in params:
+                    searchable_requests.labels('search_searchables', 'GET', 400).inc()
+                    return params, 400
+                
+                # Record search distance metric
+                search_distance.observe(params['max_distance'])
+                
+                # Query database for results
+                results, total_count = self._query_database(
+                    params['lat'], 
+                    params['lng'], 
+                    params['max_distance'],
+                    params['query_term']
+                )
+                
+                # Record search results count
+                search_results_count.observe(total_count)
+                
+                # Apply pagination after filtering by actual distance
+                paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
+                
+                # Enrich paginated results with usernames
+                self._enrich_results_with_usernames(paginated_results)
+                
+                # Format and return response
+                searchable_requests.labels('search_searchables', 'GET', 200).inc()
+                return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
+                
+            except Exception as e:
+                searchable_requests.labels('search_searchables', 'GET', 500).inc()
+                return {"error": str(e)}, 500
     
     def _parse_request_params(self):
         """Parse and validate request parameters"""
@@ -405,48 +434,62 @@ class RemoveSearchableItem(Resource):
     """
     @token_required
     def put(self, current_user, searchable_id):
-        print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # First check if the item exists and belongs to the current user
-            cur.execute("""
-                SELECT searchable_data
-                FROM searchables
-                WHERE searchable_id = %s
-            """, (searchable_id,))
-            
-            row = cur.fetchone()
-            if not row:
-                cur.close()
-                conn.close()
-                return {"error": "Searchable item not found"}, 404
+        with searchable_latency.labels('remove_searchable_item').time():
+            print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
                 
-            searchable_data = row[0]
-            
-            # Check if the item belongs to the current user
-            if int(searchable_data.get('user_id', -1)) != current_user.id:
+                # First check if the item exists and belongs to the current user
+                cur.execute("""
+                    SELECT searchable_data
+                    FROM searchables
+                    WHERE searchable_id = %s
+                """, (searchable_id,))
+                
+                row = cur.fetchone()
+                if not row:
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 404).inc()
+                    cur.close()
+                    conn.close()
+                    return {"error": "Searchable item not found"}, 404
+                    
+                searchable_data = row[0]
+                
+                # Check if the item belongs to the current user
+                if int(searchable_data.get('user_id', -1)) != current_user.id:
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 403).inc()
+                    cur.close()
+                    conn.close()
+                    return {"error": "You don't have permission to remove this item"}, 403
+                
+                # Update the searchable_data to mark it as removed
+                searchable_data['is_removed'] = True
+                
+                # Update the record in the database
+                cur.execute("""
+                    UPDATE searchables
+                    SET searchable_data = %s
+                    WHERE searchable_id = %s
+                """, (Json(searchable_data), searchable_id))
+                
+                conn.commit()
                 cur.close()
                 conn.close()
-                return {"error": "You don't have permission to remove this item"}, 403
-            
-            # Update the searchable_data to mark it as removed
-            searchable_data['is_removed'] = True
-            
-            # Update the record in the database
-            cur.execute("""
-                UPDATE searchables
-                SET searchable_data = %s
-                WHERE searchable_id = %s
-            """, (Json(searchable_data), searchable_id))
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            return {"success": True, "message": "Item has been removed"}, 200
-            
-        except Exception as e:
-            print(f"Error removing searchable item: {str(e)}")
-            return {"error": str(e)}, 500
+                
+                searchable_requests.labels('remove_searchable_item', 'PUT', 200).inc()
+                return {"success": True, "message": "Item has been removed"}, 200
+                
+            except Exception as e:
+                searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
+                print(f"Error removing searchable item: {str(e)}")
+                return {"error": str(e)}, 500
+
+@rest_api.route('/metrics')
+class MetricsResource(Resource):
+    """
+    Exposes Prometheus metrics for monitoring
+    """
+    def get(self):
+        metrics_data = generate_latest(REGISTRY)
+        return Response(metrics_data, mimetype='text/plain; charset=utf-8')

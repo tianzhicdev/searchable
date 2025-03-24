@@ -3,9 +3,12 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
-import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider } from '@material-ui/core';
+import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 
+const BTC_PAY_URL = "https://generous-purpose.metalseed.io";
+const STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn";
+const BTCPAY_SERVER_GREENFIELD_API_KEY = "d156aa1e4b5f921260818d95f03755808481dc11";
 const SearchableItem = () => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,6 +17,12 @@ const SearchableItem = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [usdPrice, setUsdPrice] = useState(null);
   const [priceLoading, setPriceLoading] = useState(false);
+  
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [invoice, setInvoice] = useState(null);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
   
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -24,7 +33,6 @@ const SearchableItem = () => {
   }, [id]);
   
   useEffect(() => {
-    // Check if current user is the owner
     const checkOwnership = async () => {
       try {
         console.log("User:", account.user);
@@ -71,7 +79,6 @@ const SearchableItem = () => {
     }
   };
   
-  // Function to convert sats to USD
   const convertSatsToUSD = async (sats) => {
     setPriceLoading(true);
     try {
@@ -81,7 +88,6 @@ const SearchableItem = () => {
       
       if (response.data && response.data.bitcoin && response.data.bitcoin.usd) {
         const btcPrice = response.data.bitcoin.usd;
-        // Convert satoshis to USD (1 BTC = 100,000,000 sats)
         const usdValue = (sats / 100000000) * btcPrice;
         setUsdPrice(usdValue);
       }
@@ -92,7 +98,88 @@ const SearchableItem = () => {
     }
   };
   
-  // Function to format distance
+  const createInvoice = async () => {
+    if (!item || !item.payloads.public.price) return;
+    
+    setCreatingInvoice(true);
+    setPaymentStatus(null);
+    try {
+      const payload = {
+        amount: item.payloads.public.price,
+        currency: "SATS",
+        metadata: {
+          orderId: id,
+          itemName: item.payloads.public.title || `Item #${item.searchable_id}`,
+          buyerName: account?.user?.username || "Anonymous",
+        },
+        checkout: {
+          expirationMinutes: 60,
+          monitoringMinutes: 60,
+          paymentMethods: ["BTC-LightningNetwork"],
+          redirectURL: window.location.href,
+        }
+      };
+      
+      const response = await axios.post(
+        `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
+          }
+        }
+      );
+      
+      setInvoice(response.data);
+      setPaymentDialogOpen(true);
+      
+      checkPaymentStatus(response.data.id);
+    } catch (err) {
+      console.error("Error creating invoice:", err);
+      alert("Failed to create payment invoice. Please try again.");
+    } finally {
+      setCreatingInvoice(false);
+    }
+  };
+  
+  const checkPaymentStatus = async (invoiceId) => {
+    if (!invoiceId) return;
+    
+    setCheckingPayment(true);
+    
+    try {
+      const response = await axios.get(
+        `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoiceId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
+          }
+        }
+      );
+      
+      setPaymentStatus(response.data.status);
+      
+      if (response.data.status === 'New' || response.data.status === 'Processing') {
+        setTimeout(() => checkPaymentStatus(invoiceId), 5000);
+      } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
+        alert("Payment successful! The seller has been notified.");
+        setPaymentDialogOpen(false);
+      }
+    } catch (err) {
+      console.error("Error checking payment status:", err);
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+  
+  const handleClosePaymentDialog = () => {
+    setPaymentDialogOpen(false);
+    setInvoice(null);
+    setPaymentStatus(null);
+  };
+  
   const formatDistance = (meters) => {
     if (meters < 1000) {
       return `${Math.round(meters)} m`;
@@ -101,7 +188,6 @@ const SearchableItem = () => {
     }
   };
   
-  // Function to format USD price
   const formatUSD = (price) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -128,7 +214,6 @@ const SearchableItem = () => {
         }
       );
       alert("Item removed successfully");
-      // Redirect to searchables list page
       history.push('/searchables');
     } catch (error) {
       console.error("Error removing item:", error);
@@ -137,7 +222,6 @@ const SearchableItem = () => {
       setIsRemoving(false);
     }
   };
-  
   
   return (
     <Grid container>
@@ -183,7 +267,6 @@ const SearchableItem = () => {
                   <Divider />
                 </Grid>
                 
-                {/* Display images if available */}
                 {item.payloads.public.images && item.payloads.public.images.length > 0 && (
                   <Grid item xs={12} md={6}>
                     <Grid container spacing={1}>
@@ -203,8 +286,7 @@ const SearchableItem = () => {
                 <Grid item xs={12} md={item.payloads.public.images && item.payloads.public.images.length > 0 ? 6 : 12}>
                   <Grid container spacing={2}>
                     
-                    {/* Only show price if user is owner or price is in public payload */}
-                    {(isOwner && item.payloads.public && item.payloads.public.price) && (
+                    {item.payloads.public && item.payloads.public.price && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
                           <span>Price: </span>
@@ -286,6 +368,25 @@ const SearchableItem = () => {
                       </Grid>
                     )}
                   
+                  { item.payloads.public && item.payloads.public.price && (
+                    <Grid item xs={12}>
+                      <Box mt={3} display="flex" justifyContent="center">
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={createInvoice}
+                          disabled={creatingInvoice}
+                        >
+                          {creatingInvoice ? (
+                            <CircularProgress size={24} />
+                          ) : (
+                            "Pay with Lightning"
+                          )}
+                        </Button>
+                      </Box>
+                    </Grid>
+                  )}
+                  
                   {isOwner && (
                     <Grid item xs={12}>
                       <Box mt={3} display="flex" justifyContent="center">
@@ -306,6 +407,62 @@ const SearchableItem = () => {
         </Paper>
       )}
 
+      <Dialog open={paymentDialogOpen} onClose={handleClosePaymentDialog} maxWidth="md">
+        <DialogTitle>Pay with Lightning</DialogTitle>
+        <DialogContent>
+          {invoice ? (
+            <Box display="flex" flexDirection="column" alignItems="center" p={2}>
+              <Typography variant="h6" gutterBottom>
+                {item?.payloads?.public?.title || `Item #${item?.searchable_id}`}
+              </Typography>
+              
+              <Typography variant="body1" gutterBottom>
+                Amount: {invoice.amount} Sats
+              </Typography>
+              
+              {invoice.id && (
+                <Box my={2} border="1px solid #ccc" p={2}>
+                  <img 
+                    src={`${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoice.id}/payment-request`} 
+                    alt="Lightning Payment QR Code"
+                    style={{ width: '100%', maxWidth: '300px' }}
+                  />
+                </Box>
+              )}
+              
+              <Typography variant="body1" gutterBottom style={{ marginTop: 16 }}>
+                Status: {paymentStatus || 'Waiting for payment...'}
+                {checkingPayment && <CircularProgress size={16} style={{ marginLeft: 8 }} />}
+              </Typography>
+              
+              {invoice.checkoutLink && (
+                <Button 
+                  variant="contained" 
+                  color="primary"
+                  href={invoice.checkoutLink}
+                  target="_blank"
+                  style={{ marginTop: 16 }}
+                >
+                  Open in Lightning Wallet
+                </Button>
+              )}
+              
+              <Typography variant="body2" color="textSecondary" style={{ marginTop: 16, textAlign: 'center' }}>
+                This payment request will expire in 60 minutes. After payment, the seller will be notified automatically.
+              </Typography>
+            </Box>
+          ) : (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePaymentDialog} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 };

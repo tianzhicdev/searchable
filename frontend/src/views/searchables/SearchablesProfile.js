@@ -7,6 +7,10 @@ import useComponentStyles from '../../themes/componentStyles';
 const SearchablesProfile = ({ item, onClick, formatDistance }) => {
   const classes = useComponentStyles();
 
+  // Extract data from the new structure
+  const publicData = item.payloads?.public || {};
+  const privateData = item.payloads?.private || {};
+
   return (
     <Paper 
       id="searchable-profile"
@@ -16,7 +20,7 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
       <Box display="flex" flexDirection="row">
         <Box id="item-details" flex="1 1 auto">
           <Typography variant="h4">
-            {item.title}
+            {publicData.title}
           </Typography>
           
           <Divider />
@@ -27,34 +31,35 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
                 Posted by: {item.username}
               </Typography>
             )}
-            {item.price && (
+            
+            {/* Only show price if it's in public payload */}
+            {publicData.price && (
               <Typography variant="body2">
-                Price: {item.price} Sats
+                Price: {publicData.price} Sats
               </Typography>
             )}
-
 
             <Typography variant="body2">
               Distance: {formatDistance(item.distance)}
             </Typography>
             
-            {item.category && (
+            {publicData.category && (
               <Typography variant="body2">
-                Category: {item.category}
+                Category: {publicData.category}
               </Typography>
             )}
             
             <Typography variant="body2">
-              Description: {item.description}
+              Description: {publicData.description}
             </Typography>
           </Box>
         </Box>
         <Box id="item-profile-image" flex="0 0 auto" mr={2}>
-          {item.images && item.images.length > 0 && (
+          {publicData.images && publicData.images.length > 0 && (
             <Box p={1} display="flex" justifyContent="center" style={{border: `1px solid #ff3c00`, margin: '16px'}}>
               <img 
-                src={`data:image/jpeg;base64,${item.images[0]}`} 
-                alt={item.title || `Item #${item.searchable_id}`}
+                src={`data:image/jpeg;base64,${publicData.images[0]}`} 
+                alt={publicData.title || `Item #${item.searchable_id}`}
                 className={classes.itemProfileImage}
               />
             </Box>
