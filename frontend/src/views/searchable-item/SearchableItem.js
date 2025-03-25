@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
-import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@material-ui/core';
+import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 
 const BTC_PAY_URL = "https://generous-purpose.metalseed.io";
@@ -223,6 +223,12 @@ const SearchableItem = () => {
     }
   };
   
+  // Helper function to truncate text
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+  
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
@@ -260,10 +266,20 @@ const SearchableItem = () => {
             <Box p={3}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Typography variant="h4">
-                    {item.payloads.public.title || `Item #${item.searchable_id}`}
-                  </Typography>
-                  <Divider />
+                  <Box
+                    sx={{
+                      '@media (max-width:600px)': {
+                        padding: '8px',
+                      },
+                    }}
+                  >
+                    <Tooltip title={item.payloads.public.title || `Item #${item.searchable_id}`}>
+                      <Typography variant="h4" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                        {item.payloads.public.title || `Item #${item.searchable_id}`}
+                      </Typography>
+                    </Tooltip>
+                    <Divider style={{ width: '100%' }} />
+                  </Box>
                 </Grid>
                 
                 {item.payloads.public.images && item.payloads.public.images.length > 0 && (
@@ -308,7 +324,9 @@ const SearchableItem = () => {
                       <Grid item xs={12} sm={6}>
                         <Typography variant="body1">
                           <span>Posted by: </span>
-                          <span>{item.username}</span>
+                          <Tooltip title={item.username}>
+                            <span>{truncateText(item.username, 25)}</span>
+                          </Tooltip>
                         </Typography>
                       </Grid>
                     )}
@@ -334,7 +352,14 @@ const SearchableItem = () => {
                         <Typography variant="body1">
                           Description:
                         </Typography>
-                        <Typography variant="body2" style={{ whiteSpace: 'pre-line' }}>
+                        <Typography 
+                          variant="body2" 
+                          style={{ 
+                            whiteSpace: 'pre-line', 
+                            wordBreak: 'break-word', 
+                            overflowWrap: 'break-word' 
+                          }}
+                        >
                           {item.payloads.public.description}
                         </Typography>
                       </Grid>
@@ -362,7 +387,10 @@ const SearchableItem = () => {
                     {item.payloads.public.meetupLocation && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span>{item.payloads.public.meetupLocation}</span>
+                          <span>Meetup Location: </span>
+                          <Tooltip title={item.payloads.public.meetupLocation}>
+                            <span>{truncateText(item.payloads.public.meetupLocation, 50)}</span>
+                          </Tooltip>
                         </Typography>
                       </Grid>
                     )}
@@ -412,9 +440,11 @@ const SearchableItem = () => {
         <DialogContent>
           {invoice ? (
             <Box display="flex" flexDirection="column" alignItems="center" p={2}>
-              <Typography variant="h6" gutterBottom>
-                {item?.payloads?.public?.title || `Item #${item?.searchable_id}`}
-              </Typography>
+              <Tooltip title={item?.payloads?.public?.title || `Item #${item?.searchable_id}`}>
+                <Typography variant="h6" gutterBottom>
+                  {truncateText(item?.payloads?.public?.title || `Item #${item?.searchable_id}`, 40)}
+                </Typography>
+              </Tooltip>
               
               <Typography variant="body1" gutterBottom>
                 Amount: {invoice.amount} Sats
