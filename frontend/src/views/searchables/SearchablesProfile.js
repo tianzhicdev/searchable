@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Typography, Paper, Box, Divider
+  Typography, Paper, Box, Divider, Tooltip
 } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 
@@ -11,6 +11,12 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
   const publicData = item.payloads?.public || {};
   const privateData = item.payloads?.private || {};
 
+  // Helper function to truncate text
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
   return (
     <Paper 
       id="searchable-profile"
@@ -19,16 +25,18 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
     >
       <Box display="flex" flexDirection="row">
         <Box id="item-details" flex="1 1 auto">
-          <Typography variant="h4">
-            {publicData.title}
-          </Typography>
+          <Tooltip title={publicData.title || ''} placement="top">
+            <Typography variant="h4">
+              {truncateText(publicData.title, 50)}
+            </Typography>
+          </Tooltip>
           
           <Divider />
           
           <Box>
             {item.username && (
               <Typography variant="body2">
-                Posted by: {item.username}
+                Posted by: {truncateText(item.username, 30)}
               </Typography>
             )}
             
@@ -45,13 +53,15 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
             
             {publicData.category && (
               <Typography variant="body2">
-                Category: {publicData.category}
+                Category: {truncateText(publicData.category, 30)}
               </Typography>
             )}
             
-            <Typography variant="body2">
-              Description: {publicData.description}
-            </Typography>
+            <Tooltip title={publicData.description || ''} placement="top">
+              <Typography variant="body2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                Description: {truncateText(publicData.description, 150)}
+              </Typography>
+            </Tooltip>
           </Box>
         </Box>
         <Box id="item-profile-image" flex="0 0 auto" mr={2}>
