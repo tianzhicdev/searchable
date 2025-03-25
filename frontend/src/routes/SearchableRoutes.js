@@ -6,6 +6,8 @@ import AuthGuard from './../utils/route-guard/AuthGuard';
 import PublishSearchables from '../views/publish-searchables/PublishSearchables';
 import Profile from '../views/profile/Profile';
 import SearchableItem from '../views/searchable-item/SearchableItem';
+import Logo from '../ui-component/Logo';
+import { Box } from '@material-ui/core';
 
 // // login routing
 // const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/login')));
@@ -18,6 +20,11 @@ const SearchableRoutes = () => {
 
     return (
         <Route path={['/searchables', '/publish-searchables', '/profile', '/test-component', '/searchable-item/:id']}>
+            {/* <Box display="flex" justifyContent="center" mb={2}>
+                <Box width="10px" height="10px">
+                    <Logo />
+                </Box>
+            </Box> */}
             <Switch location={location} key={location.pathname}>
                 <AuthGuard>
                         <Route exact path="/searchables" component={Searchables} />
