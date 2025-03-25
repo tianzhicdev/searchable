@@ -27,12 +27,12 @@ const Searchables = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
-    page: 1,
+    page: parseInt(localStorage.getItem('searchablesPage')) || 1,
     pageSize: 10,
     totalCount: 0,
     totalPages: 0
   });
-  const [maxDistance, setMaxDistance] = useState(100000); // Default 100km
+  const [maxDistance, setMaxDistance] = useState(parseInt(localStorage.getItem('searchablesMaxDistance')) || 100000); // Default 100km
   const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
@@ -83,7 +83,18 @@ const Searchables = () => {
   // Load initial random items when location is available
   useEffect(() => {
     if (location.latitude && location.longitude && !initialItemsLoaded) {
-      loadRandomItems();
+      // Restore previous search term if available
+      const savedSearchTerm = localStorage.getItem('searchablesTerm') || '';
+      if (savedSearchTerm) {
+        setSearchTerm(savedSearchTerm);
+      }
+      
+      // Load items with the saved page or random items if no previous search
+      if (localStorage.getItem('searchablesPage')) {
+        handleSearch(parseInt(localStorage.getItem('searchablesPage')));
+      } else {
+        loadRandomItems();
+      }
     }
   }, [location.latitude, location.longitude, initialItemsLoaded]);
 
@@ -125,7 +136,7 @@ const Searchables = () => {
           lat: location.latitude,
           long: location.longitude,
           max_distance: maxDistance,
-          page_number: 1,
+          page_number: pagination.page,
           page_size: calculateOptimalPageSize(),
           query_term: '' // Empty query to get random items
         },
@@ -142,6 +153,9 @@ const Searchables = () => {
         totalPages: response.data.pagination.total_pages
       });
       setInitialItemsLoaded(true);
+      
+      // Save current page to localStorage
+      localStorage.setItem('searchablesPage', response.data.pagination.page);
     } catch (err) {
       console.error("Error loading initial items:", err);
       setError("An error occurred while loading initial items. Please try again.");
@@ -182,6 +196,12 @@ const Searchables = () => {
         totalCount: response.data.pagination.total_count,
         totalPages: response.data.pagination.total_pages
       });
+      setInitialItemsLoaded(true);
+      
+      // Save current search state to localStorage
+      localStorage.setItem('searchablesPage', response.data.pagination.page);
+      localStorage.setItem('searchablesTerm', searchTerm);
+      localStorage.setItem('searchablesMaxDistance', maxDistance);
     } catch (err) {
       console.error("Error searching:", err);
       setError("An error occurred while searching. Please try again.");
@@ -255,10 +275,18 @@ const Searchables = () => {
     axios
         .post(configData.API_SERVER + 'users/logout', {token: `${account.token}`}, { headers: { Authorization: `${account.token}` } })
         .then(function (response) {
+            // Clear search state on logout
+            localStorage.removeItem('searchablesPage');
+            localStorage.removeItem('searchablesTerm');
+            localStorage.removeItem('searchablesMaxDistance');
             dispatch({ type: LOGOUT });
         })
         .catch(function (error) {
             console.log('error - ', error);
+            // Clear search state on logout
+            localStorage.removeItem('searchablesPage');
+            localStorage.removeItem('searchablesTerm');
+            localStorage.removeItem('searchablesMaxDistance');
             dispatch({ type: LOGOUT }); // log out anyway
         });
   };
@@ -343,6 +371,7 @@ const Searchables = () => {
             <MenuItem value={50000}>50 km</MenuItem>
             <MenuItem value={100000}>100 km</MenuItem>
             <MenuItem value={1000000}>1000 km</MenuItem>
+            <MenuItem value={100000000}>Unlimited</MenuItem>
           </Select>
         </Box>
       </Grid>

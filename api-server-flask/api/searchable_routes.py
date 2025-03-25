@@ -72,7 +72,7 @@ class GetSearchableItem(Resource):
                 return {"error": str(e)}, 500
 
 
-@rest_api.route('/api/searchable', methods=['POST'])
+@rest_api.route('/api/searchable', methods=['POST'], strict_slashes=False)
 class CreateSearchable(Resource):
     """
        Creates a new searchable by taking JSON input and adds to searchable database
@@ -81,39 +81,30 @@ class CreateSearchable(Resource):
     def post(self, current_user):
         with searchable_latency.labels('create_searchable').time():
             print(f"Creating searchable for user: {current_user}")
-            data = request.get_json()  # Get JSON data from request
-            if not data:
-                searchable_requests.labels('create_searchable', 'POST', 400).inc()
-                return {"error": "Invalid input"}, 400
-
+            conn = None
             try:
+                data = request.get_json()  # Get JSON data from request
+                print(f"Received data: {data}")
+                
+                if not data:
+                    searchable_requests.labels('create_searchable', 'POST', 400).inc()
+                    return {"error": "Invalid input"}, 400
+
                 conn = get_db_connection()
                 cur = conn.cursor()
                 
                 # Add terminal info to the searchable data
                 data['terminal_id'] = current_user.id
                 
-                # Extract geo data from public payload
-                latitude = None
-                longitude = None
-                if 'payloads' in data and 'public' in data['payloads']:
-                    public_payload = data['payloads']['public']
-                    if 'latitude' in public_payload and 'longitude' in public_payload:
-                        latitude = float(public_payload['latitude'])
-                        longitude = float(public_payload['longitude'])
-                
-                if latitude is None or longitude is None:
-                    searchable_requests.labels('create_searchable', 'POST', 400).inc()
-                    return {"error": "Latitude and longitude are required in public payload"}, 400
-                
                 # Insert into searchable_items table
+                print("Executing database insert...")
                 cur.execute(
                     "INSERT INTO searchables (searchable_data) VALUES (%s) RETURNING searchable_id;",
                     (Json(data),)
                 )
                 searchable_id = cur.fetchone()[0]
                 
-                print(f"Added searchable {searchable_id} with coordinates ({latitude}, {longitude})")
+                print(f"Added searchable {searchable_id} with")
                 
                 conn.commit()
                 cur.close()
@@ -121,8 +112,22 @@ class CreateSearchable(Resource):
                 searchable_requests.labels('create_searchable', 'POST', 201).inc()
                 return {"searchable_id": searchable_id}, 201
             except Exception as e:
+                # Enhanced error logging
+                import traceback
+                error_traceback = traceback.format_exc()
+                print(f"Error creating searchable: {str(e)}")
+                print(f"Traceback: {error_traceback}")
+                
+                # Ensure database connection is closed
+                if conn:
+                    try:
+                        conn.rollback()
+                        conn.close()
+                    except:
+                        pass
+                
                 searchable_requests.labels('create_searchable', 'POST', 500).inc()
-                return {"error": str(e)}, 500
+                return {"error": str(e), "error_details": error_traceback}, 500
 
 @rest_api.route('/api/searchable/user', methods=['GET'])
 class UserSearchables(Resource):
@@ -338,7 +343,7 @@ class SearchSearchables(Resource):
             item_lat = None
             item_lng = None
             if 'payloads' in searchable_data and 'public' in searchable_data['payloads']:
-                public_payload = searchable_data['payloads']['public']
+                public_payload = searchable_data['payloads']['public'] # public is hardcoded. there is no such thing as public. just filter to true
                 if 'latitude' in public_payload and 'longitude' in public_payload:
                     item_lat = float(public_payload['latitude'])
                     item_lng = float(public_payload['longitude'])

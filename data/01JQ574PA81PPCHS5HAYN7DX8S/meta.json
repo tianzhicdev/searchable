@@ -1,0 +1,17 @@
+{
+	"ulid": "01JQ574PA81PPCHS5HAYN7DX8S",
+	"minTime": 1742847443406,
+	"maxTime": 1742853600000,
+	"stats": {
+		"numSamples": 13940,
+		"numSeries": 34,
+		"numChunks": 104
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JQ574PA81PPCHS5HAYN7DX8S"
+		]
+	},
+	"version": 1
+}
