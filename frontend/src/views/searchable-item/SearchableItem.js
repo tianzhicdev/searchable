@@ -224,10 +224,9 @@ const SearchableItem = () => {
   };
   
   return (
-    <Grid container>
+    <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Grid container alignItems="center">
-          <Grid item>
+        <Box mb={2}>
             <Button 
               variant="contained" 
               color="primary" 
@@ -235,8 +234,7 @@ const SearchableItem = () => {
             >
               <ChevronLeftIcon /> 
             </Button>
-          </Grid>
-        </Grid>
+        </Box>
       </Grid>
       
       {loading && (
@@ -256,7 +254,8 @@ const SearchableItem = () => {
       )}
       
       {!loading && item && (
-        <Paper>
+        <Grid item xs={12}>
+        <Paper elevation={3}>
         <Grid item xs={12}>
             <Box p={3}>
               <Grid container spacing={3}>
@@ -405,6 +404,7 @@ const SearchableItem = () => {
             </Box>
         </Grid>
         </Paper>
+        </Grid>
       )}
 
       <Dialog open={paymentDialogOpen} onClose={handleClosePaymentDialog} maxWidth="md">
