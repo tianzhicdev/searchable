@@ -37,13 +37,13 @@ const Logo = () => {
     
     return (
         <div style={{ textAlign: 'center' }}>
-            <img 
-                src={getLogo()} 
-                alt={config.APP_BRANDING === 'eccentricprotocol' ? 'Eccentric Protocol' : 'Silk Road on Lightning'} 
-                width="100%" 
-                style={{ 
+            <img
+                src={getLogo()}
+                alt={config.APP_BRANDING === 'eccentricprotocol' ? 'Eccentric Protocol' : 'Silk Road on Lightning'}
+                width="100%"
+                style={{
                     maxWidth: '320px'
-                }} 
+                }}
             />
             {(config.APP_BRANDING !== 'silkroadonlightning' && config.APP_BRANDING !== 'eccentricprotocol') && (
                 <div>
