@@ -478,21 +478,6 @@ const SearchableItem = () => {
                 Amount: {invoice.amount} Sats
               </Typography>
               
-              {invoice.id && (
-                <Box my={2} border="1px solid #ccc" p={2}>
-                  <img 
-                    src={`${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoice.id}/qrcode`} 
-                    alt="Lightning Payment QR Code"
-                    style={{ width: '100%', maxWidth: '300px' }}
-                    onError={(e) => {
-                      if (invoice.checkoutLink) {
-                        e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoice.checkoutLink)}`;
-                      }
-                    }}
-                  />
-                </Box>
-              )}
-              
               <Typography variant="body1" gutterBottom style={{ marginTop: 16 }}>
                 Status: {paymentStatus || 'Waiting for payment...'}
                 {/* {checkingPayment && <CircularProgress size={16} style={{ marginLeft: 8 }} />} */}
