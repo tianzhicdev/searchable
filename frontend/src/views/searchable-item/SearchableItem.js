@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
@@ -8,7 +8,7 @@ import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 
 const BTC_PAY_URL = "https://generous-purpose.metalseed.io";
 const STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn";
-const BTCPAY_SERVER_GREENFIELD_API_KEY = "d156aa1e4b5f921260818d95f03755808481dc11";
+const BTCPAY_SERVER_GREENFIELD_API_KEY = "b449024ea5a4c365d8631a9f00b92e9cd2f6e1f7";
 const SearchableItem = () => {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,9 @@ const SearchableItem = () => {
   const { id } = useParams();
   const account = useSelector((state) => state.account);
   const history = useHistory();
+  
+  const paymentCheckRef = useRef(null);
+  const isMountedRef = useRef(true);
   
   useEffect(() => {
     fetchItemDetails();
@@ -55,6 +58,15 @@ const SearchableItem = () => {
       convertSatsToUSD(item.payloads.public.price);
     }
   }, [item]);
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (paymentCheckRef.current) {
+        clearTimeout(paymentCheckRef.current);
+      }
+    };
+  }, []);
   
   const fetchItemDetails = async () => {
     setLoading(true);
@@ -144,9 +156,11 @@ const SearchableItem = () => {
   };
   
   const checkPaymentStatus = async (invoiceId) => {
-    if (!invoiceId) return;
+    if (!invoiceId || !isMountedRef.current) return;
     
-    setCheckingPayment(true);
+    if (!paymentCheckRef.current) {
+      setCheckingPayment(true);
+    }
     
     try {
       const response = await axios.get(
@@ -159,25 +173,39 @@ const SearchableItem = () => {
         }
       );
       
-      setPaymentStatus(response.data.status);
-      
-      if (response.data.status === 'New' || response.data.status === 'Processing') {
-        setTimeout(() => checkPaymentStatus(invoiceId), 5000);
-      } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
-        alert("Payment successful! The seller has been notified.");
-        setPaymentDialogOpen(false);
+      if (isMountedRef.current) {
+        setPaymentStatus(response.data.status);
+        
+        if (response.data.status === 'New' || response.data.status === 'Processing') {
+          paymentCheckRef.current = setTimeout(() => checkPaymentStatus(invoiceId), 5000);
+        } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
+          alert("Payment successful! The seller has been notified.");
+          setPaymentDialogOpen(false);
+          setCheckingPayment(false);
+          paymentCheckRef.current = null;
+        } else {
+          setCheckingPayment(false);
+          paymentCheckRef.current = null;
+        }
       }
     } catch (err) {
       console.error("Error checking payment status:", err);
-    } finally {
-      setCheckingPayment(false);
+      if (isMountedRef.current) {
+        setCheckingPayment(false);
+        paymentCheckRef.current = null;
+      }
     }
   };
   
   const handleClosePaymentDialog = () => {
+    if (paymentCheckRef.current) {
+      clearTimeout(paymentCheckRef.current);
+      paymentCheckRef.current = null;
+    }
     setPaymentDialogOpen(false);
     setInvoice(null);
     setPaymentStatus(null);
+    setCheckingPayment(false);
   };
   
   const formatDistance = (meters) => {
@@ -453,16 +481,21 @@ const SearchableItem = () => {
               {invoice.id && (
                 <Box my={2} border="1px solid #ccc" p={2}>
                   <img 
-                    src={`${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoice.id}/payment-request`} 
+                    src={`${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoice.id}/qrcode`} 
                     alt="Lightning Payment QR Code"
                     style={{ width: '100%', maxWidth: '300px' }}
+                    onError={(e) => {
+                      if (invoice.checkoutLink) {
+                        e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(invoice.checkoutLink)}`;
+                      }
+                    }}
                   />
                 </Box>
               )}
               
               <Typography variant="body1" gutterBottom style={{ marginTop: 16 }}>
                 Status: {paymentStatus || 'Waiting for payment...'}
-                {checkingPayment && <CircularProgress size={16} style={{ marginLeft: 8 }} />}
+                {/* {checkingPayment && <CircularProgress size={16} style={{ marginLeft: 8 }} />} */}
               </Typography>
               
               {invoice.checkoutLink && (

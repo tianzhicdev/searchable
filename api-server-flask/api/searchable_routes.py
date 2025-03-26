@@ -96,15 +96,24 @@ class CreateSearchable(Resource):
                 # Add terminal info to the searchable data
                 data['terminal_id'] = current_user.id
                 
-                # Insert into searchable_items table
+                # Extract latitude and longitude from the data for dedicated columns
+                latitude = None
+                longitude = None
+                if 'payloads' in data and 'public' in data['payloads']:
+                    public_payload = data['payloads']['public']
+                    if 'latitude' in public_payload and 'longitude' in public_payload:
+                        latitude = float(public_payload['latitude'])
+                        longitude = float(public_payload['longitude'])
+                
+                # Insert into searchables table with dedicated lat/long columns
                 print("Executing database insert...")
                 cur.execute(
-                    "INSERT INTO searchables (searchable_data) VALUES (%s) RETURNING searchable_id;",
-                    (Json(data),)
+                    "INSERT INTO searchables (searchable_data, latitude, longitude) VALUES (%s, %s, %s) RETURNING searchable_id;",
+                    (Json(data), latitude, longitude)
                 )
                 searchable_id = cur.fetchone()[0]
                 
-                print(f"Added searchable {searchable_id} with")
+                print(f"Added searchable {searchable_id}")
                 
                 conn.commit()
                 cur.close()
@@ -322,50 +331,56 @@ class SearchSearchables(Resource):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Get all items from searchable_items
+        # Use a more efficient query using a WITH clause to calculate distance first
         query = """
-            SELECT 
-              searchable_id,
-              searchable_data
-            FROM searchables
-            WHERE (searchable_data->>'is_removed')::boolean IS NOT TRUE;
+            WITH distance_calc AS (
+                SELECT 
+                  searchable_id,
+                  searchable_data,
+                  latitude,
+                  longitude,
+                  ( 6371000 * acos( cos( radians(%s) ) * 
+                    cos( radians( latitude ) ) * 
+                    cos( radians( longitude ) - radians(%s) ) + 
+                    sin( radians(%s) ) * 
+                    sin( radians( latitude ) ) 
+                  ) ) AS distance
+                FROM searchables
+                WHERE (searchable_data->>'is_removed')::boolean IS NOT TRUE
+                -- Pre-filter by bounding box (much faster than calculating exact distances for all rows)
+                AND latitude BETWEEN %s - (%s / 111111) AND %s + (%s / 111111)
+                AND longitude BETWEEN %s - (%s / (111111 * cos(radians(%s)))) AND %s + (%s / (111111 * cos(radians(%s))))
+            )
+            SELECT * FROM distance_calc
+            WHERE distance <= %s
+            ORDER BY distance
         """
         
-        cur.execute(query)
+        # Parameters for the query
+        query_params = [
+            lat, lng, lat,                              # Distance calculation (first part)
+            lat, max_distance, lat, max_distance,       # Latitude bounds
+            lng, max_distance, lat, lng, max_distance, lat,  # Longitude bounds
+            max_distance                                # Final distance filter
+        ]
+        
+        cur.execute(query, query_params)
         db_results = cur.fetchall()
         
-        # Post-process results to filter by actual distance and calculate match scores
+        # Process results and calculate match scores
         filtered_results = []
         for result in db_results:
-            searchable_id, searchable_data = result
+            searchable_id, searchable_data, item_lat, item_lng, distance = result
             
-            # Extract latitude and longitude from searchable_data
-            item_lat = None
-            item_lng = None
-            if 'payloads' in searchable_data and 'public' in searchable_data['payloads']:
-                public_payload = searchable_data['payloads']['public'] # public is hardcoded. there is no such thing as public. just filter to true
-                if 'latitude' in public_payload and 'longitude' in public_payload:
-                    item_lat = float(public_payload['latitude'])
-                    item_lng = float(public_payload['longitude'])
+            item_data = dict(searchable_data)
+            item_data['distance'] = distance
+            item_data['searchable_id'] = searchable_id
             
-            # Skip if no valid coordinates
-            if item_lat is None or item_lng is None:
-                continue
+            # Calculate match score for search relevance
+            match_score = self._calculate_match_score(query_tokens, item_data)
+            item_data['match_score'] = match_score
             
-            # Calculate actual distance
-            distance = self._calculate_distance(lat, lng, item_lat, item_lng)
-            
-            # Only include if within max_distance
-            if distance <= max_distance:
-                item_data = dict(searchable_data)
-                item_data['distance'] = distance
-                item_data['searchable_id'] = searchable_id
-                
-                # Calculate match score for search relevance
-                match_score = self._calculate_match_score(query_tokens, item_data)
-                item_data['match_score'] = match_score
-                
-                filtered_results.append(item_data)
+            filtered_results.append(item_data)
         
         # Sort results first by match score (descending), then by distance (ascending)
         filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))

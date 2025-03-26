@@ -12,7 +12,6 @@ import bitbid_logo from './../assets/images/statue.gif';
  */
 
 //-----------------------|| LOGO SVG ||-----------------------//
-
 const Logo = () => {
     const theme = useTheme();
     
@@ -23,6 +22,7 @@ const Logo = () => {
             width="100%" 
             style={{ 
                 filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
+                maxWidth: '180px'
             }} 
         />
     );
