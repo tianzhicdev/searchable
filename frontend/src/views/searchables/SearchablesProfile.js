@@ -47,9 +47,11 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
               </Typography>
             )}
 
-            <Typography variant="body2">
-              Distance: {formatDistance(item.distance)}
-            </Typography>
+            {item.distance && (
+              <Typography variant="body2">
+                Distance: {formatDistance(item.distance)}
+              </Typography>
+            )}
             
             {publicData.category && (
               <Typography variant="body2">

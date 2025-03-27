@@ -158,7 +158,7 @@ class UserSearchables(Resource):
                 cur.execute("""
                     SELECT searchable_id, searchable_data
                     FROM searchables
-                    WHERE searchable_data->>'user_id' = %s
+                    WHERE (searchable_data->>'terminal_id') = %s
                     ORDER BY searchable_id DESC
                 """, (str(current_user.id),))
                 
@@ -504,6 +504,106 @@ class RemoveSearchableItem(Resource):
                 searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
                 print(f"Error removing searchable item: {str(e)}")
                 return {"error": str(e)}, 500
+
+
+@rest_api.route('/api/kv', methods=['GET', 'PUT'])
+class KvResource(Resource):
+    """
+    Key-value store for arbitrary data
+    """
+    @token_required
+    def get(self, current_user):
+        """
+        Retrieve data from key-value store
+        """
+        try:
+            type = request.args.get('type')
+            pkey = request.args.get('pkey')
+            fkey = request.args.get('fkey')
+            
+            # Build query dynamically based on provided parameters
+            query = "SELECT data, pkey, fkey FROM kv WHERE 1=1"
+            params = []
+            
+            if type:
+                query += " AND type = %s"
+                params.append(type)
+                
+            if pkey:
+                query += " AND pkey = %s"
+                params.append(pkey)
+                
+            if fkey:
+                query += " AND fkey = %s"
+                params.append(fkey)
+            
+            # If no parameters provided, return error
+            if not (type or pkey or fkey):
+                return {"error": "At least one parameter (type, pkey, fkey) is required"}, 400
+                
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            cur.execute(query, tuple(params))
+            
+            rows = cur.fetchall()
+            cur.close()
+            conn.close()
+            
+            if not rows:
+                return {"error": "No matching records found"}, 404
+                
+            # Return all matching records with pkey and fkey
+            result = []
+            for row in rows:
+                data = row[0]
+                data['pkey'] = row[1]
+                data['fkey'] = row[2]
+                result.append(data)
+                
+            return {"data": result}, 200
+            
+        except Exception as e:
+            print(f"Error retrieving from KV store: {str(e)}")
+            return {"error": str(e)}, 500
+    
+    @token_required
+    def put(self, current_user):
+        """
+        Insert or update data in key-value store
+        """
+        try:
+            type = request.args.get('type')
+            pkey = request.args.get('pkey')
+            fkey = request.args.get('fkey')
+            
+            if not all([type, pkey, fkey]):
+                return {"error": "Missing required parameters (type, pkey, fkey)"}, 400
+                
+            data = request.get_json()
+            if not data:
+                return {"error": "No data provided"}, 400
+                
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Upsert operation (insert or update)
+            cur.execute("""
+                INSERT INTO kv (type, pkey, fkey, data)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (pkey, fkey) 
+                DO UPDATE SET data = %s, type = %s
+            """, (type, pkey, fkey, Json(data), Json(data), type))
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            return {"success": True, "message": "Data stored successfully"}, 200
+            
+        except Exception as e:
+            print(f"Error storing in KV store: {str(e)}")
+            return {"error": str(e)}, 500
 
 @rest_api.route('/metrics')
 class MetricsResource(Resource):
