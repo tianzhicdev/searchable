@@ -3,8 +3,7 @@ import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
-  Grid, Typography, Button, Paper, Box, CircularProgress, Divider,
-  TextField, MenuItem, Select, FormControl, InputLabel, Tooltip
+  Grid, Typography, Button, Box, TextField, MenuItem, Select
 } from '@material-ui/core';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
@@ -14,89 +13,38 @@ import SearchIcon from '@material-ui/icons/Search';
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
-import SearchablesProfile from './SearchablesProfile';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
+import SearchableList from './SearchableList';
 
 const Searchables = () => {
   
   // State variables
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: parseInt(localStorage.getItem('searchablesPage')) || 1,
-    pageSize: 10,
-    totalCount: 0,
-    totalPages: 0
+  const [searchTerm, setSearchTerm] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('searchTerm') || localStorage.getItem('searchTerm') || '';
   });
-  const [maxDistance, setMaxDistance] = useState(parseInt(localStorage.getItem('searchablesMaxDistance')) || 100000); // Default 100km
-  const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
+  const [internalSearchTerm, setInternalSearchTerm] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('internalSearchTerm') || localStorage.getItem('internalSearchTerm') || '';
+  });
+
+  const [maxDistance, setMaxDistance] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDistance = urlParams.get('maxDistance');
+    return urlDistance ? parseInt(urlDistance) :  null; // Default 100km
+  });
   // Get location from Redux store instead of local state
   const account = useSelector((state) => state.account);
-  const location = useSelector((state) => state.location);
   const dispatch = useDispatch();
   const history = useHistory();
 
   const classes = useComponentStyles();
 
-  // Calculate optimal page size based on viewport height
-  const calculateOptimalPageSize = () => {
-    // Estimate the height of a single item (including margins)
-    const estimatedItemHeight = 180; // pixels, adjust based on your actual item heights
-    // Calculate how many items can fit in viewport with some padding for header and footer
-    const availableHeight = viewportHeight - 200; // subtract space for header, search bar, pagination
-    let optimalPageSize = Math.max(3, Math.floor(availableHeight / estimatedItemHeight));
-    
-    // Cap it at reasonable limits
-    if (optimalPageSize > 15) optimalPageSize = 15;
-    if (optimalPageSize < 3) optimalPageSize = 3;
-    
-    return optimalPageSize;
-  };
-
-  // Update viewport height on resize
-  useEffect(() => {
-    const handleResize = () => {
-      setViewportHeight(window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Update page size when viewport height changes
-  useEffect(() => {
-    const newPageSize = calculateOptimalPageSize();
-    setPagination(prev => ({...prev, pageSize: newPageSize}));
-  }, [viewportHeight]);
-
   // Get user's location on component mount
   useEffect(() => {
     getUserLocation();
   }, []);
-
-  // Load initial random items when location is available
-  useEffect(() => {
-    if (location.latitude && location.longitude && !initialItemsLoaded) {
-      // Restore previous search term if available
-      const savedSearchTerm = localStorage.getItem('searchablesTerm') || '';
-      if (savedSearchTerm) {
-        setSearchTerm(savedSearchTerm);
-      }
-      
-      // Load items with the saved page or random items if no previous search
-      if (localStorage.getItem('searchablesPage')) {
-        handleSearch(parseInt(localStorage.getItem('searchablesPage')));
-      } else {
-        loadRandomItems();
-      }
-    }
-  }, [location.latitude, location.longitude, initialItemsLoaded]);
 
   // Function to get user's geolocation
   const getUserLocation = () => {
@@ -125,149 +73,6 @@ const Searchables = () => {
     }
   };
 
-  // Function to load random items initially
-  const loadRandomItems = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(configData.API_SERVER + 'searchable/search', {
-        params: {
-          lat: location.latitude,
-          long: location.longitude,
-          max_distance: maxDistance,
-          page_number: pagination.page,
-          page_size: calculateOptimalPageSize(),
-          query_term: '' // Empty query to get random items
-        },
-        headers: {
-          Authorization: `${account.token}`
-        }
-      });
-
-      setSearchResults(response.data.results);
-      setPagination({
-        page: response.data.pagination.page,
-        pageSize: response.data.pagination.page_size,
-        totalCount: response.data.pagination.total_count,
-        totalPages: response.data.pagination.total_pages
-      });
-      setInitialItemsLoaded(true);
-      
-      // Save current page to localStorage
-      localStorage.setItem('searchablesPage', response.data.pagination.page);
-    } catch (err) {
-      console.error("Error loading initial items:", err);
-      setError("An error occurred while loading initial items. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to handle search
-  const handleSearch = async (page = 1) => {
-    if (!location.latitude || !location.longitude) {
-      setError("Location is required to search. Please enable location services.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await axios.get(configData.API_SERVER + 'searchable/search', {
-        params: {
-          lat: location.latitude,
-          long: location.longitude,
-          max_distance: maxDistance,
-          page_number: page,
-          page_size: calculateOptimalPageSize(),
-          query_term: searchTerm
-        },
-        headers: {
-          Authorization: `${account.token}`
-        }
-      });
-
-      setSearchResults(response.data.results);
-      setPagination({
-        page: response.data.pagination.page,
-        pageSize: response.data.pagination.page_size,
-        totalCount: response.data.pagination.total_count,
-        totalPages: response.data.pagination.total_pages
-      });
-      setInitialItemsLoaded(true);
-      
-      // Save current search state to localStorage
-      localStorage.setItem('searchablesPage', response.data.pagination.page);
-      localStorage.setItem('searchablesTerm', searchTerm);
-      localStorage.setItem('searchablesMaxDistance', maxDistance);
-    } catch (err) {
-      console.error("Error searching:", err);
-      setError("An error occurred while searching. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Function to handle page change
-  const handlePageChange = (newPage) => {
-    handleSearch(newPage);
-  };
-
-  // Function to format distance
-  const formatDistance = (meters) => {
-    if (meters < 1000) {
-      return `${Math.round(meters)} m`;
-    } else {
-      return `${(meters / 1000).toFixed(1)} km`;
-    }
-  };
-
-  // Generate pagination buttons
-  const renderPaginationButtons = () => {
-    const buttons = [];
-    const { page, totalPages } = pagination;
-
-    // Previous button - only show if not on first page
-    if (page > 1) {
-      buttons.push(
-        <Button 
-          key="prev" 
-          onClick={() => handlePageChange(page - 1)}
-          size="small"
-        >
-          <ChevronLeftIcon />
-        </Button>
-      );
-    }
-
-    // Current page button
-    buttons.push(
-      <Button 
-        key={page} 
-        size="small"
-      >
-        {page}
-      </Button>
-    );
-
-    // Next button - only show if not on last page
-    if (page < totalPages) {
-      buttons.push(
-        <Button 
-          key="next" 
-          onClick={() => handlePageChange(page + 1)}
-          size="small"
-        >
-          <ChevronRightIcon />
-        </Button>
-      );
-    }
-
-    return buttons;
-  };
-
   // Function to handle logout
   const handleLogout = () => {
     console.log(account.token);
@@ -277,7 +82,7 @@ const Searchables = () => {
         .then(function (response) {
             // Clear search state on logout
             localStorage.removeItem('searchablesPage');
-            localStorage.removeItem('searchablesTerm');
+            localStorage.removeItem('searchTerm');
             localStorage.removeItem('searchablesMaxDistance');
             dispatch({ type: LOGOUT });
         })
@@ -285,27 +90,35 @@ const Searchables = () => {
             console.log('error - ', error);
             // Clear search state on logout
             localStorage.removeItem('searchablesPage');
-            localStorage.removeItem('searchablesTerm');
+            localStorage.removeItem('searchTerm');
             localStorage.removeItem('searchablesMaxDistance');
             dispatch({ type: LOGOUT }); // log out anyway
         });
   };
 
-  // Add this function to handle navigation to publish page
+  // Handle navigation to publish page
   const handleAddNew = () => {
     history.push('/publish-searchables');
   };
 
-  // Add this function to handle navigation to profile page
+  // Handle navigation to profile page
   const handleProfileClick = () => {
     history.push('/profile');
   };
 
-  // Inside the Searchables component
-  // Add this function to handle clicking on an item
-  const handleItemClick = (itemId) => {
-    history.push(`/searchable-item/${itemId}`);
+  // Handle search button click
+  const handleSearchButtonClick = () => {
+    localStorage.setItem('searchTerm', searchTerm);
+    localStorage.setItem('internalSearchTerm', internalSearchTerm);
+    localStorage.setItem('searchablesMaxDistance', maxDistance);
+    // Force re-render of SearchableList by updating the search criteria
+    setSearchTerm(prevTerm => {
+      // This is a trick to force the re-render even if the term didn't change
+      const currentTerm = prevTerm;
+      return currentTerm;
+    });
   };
+
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
@@ -344,8 +157,7 @@ const Searchables = () => {
             InputProps={{
               endAdornment: (
                 <Button 
-                  onClick={() => handleSearch(1)} 
-                  disabled={loading}
+                  onClick={handleSearchButtonClick} 
                   style={{ padding: '4px', minWidth: 'unset' }}
                 >
                   <SearchIcon/>
@@ -360,8 +172,7 @@ const Searchables = () => {
             onChange={(e) => {
               const newDistance = Number(e.target.value);
               setMaxDistance(newDistance);
-              // Trigger search with page 1 when distance changes
-              setTimeout(() => handleSearch(1), 0);
+              localStorage.setItem('searchablesMaxDistance', newDistance);
             }}
             style={{ minWidth: '100px' }}
           >
@@ -371,61 +182,18 @@ const Searchables = () => {
             <MenuItem value={50000}>50 km</MenuItem>
             <MenuItem value={100000}>100 km</MenuItem>
             <MenuItem value={1000000}>1000 km</MenuItem>
-            <MenuItem value={100000000}>Unlimited</MenuItem>
+            <MenuItem value={null}>Unlimited</MenuItem>
           </Select>
         </Box>
       </Grid>
 
-      {error && (
-        <Grid item xs={12}>
-          <Paper>
-            <Typography variant="body1">{error}</Typography>
-          </Paper>
-        </Grid>
-      )}
-
-      {
-      loading &&
-       (
-        <Grid item xs={12}>
-          <Box my={2} display="flex" alignItems="center" justifyContent="center">
-            <CircularProgress />
-          </Box>
-        </Grid>
-      )}
-
-      {searchResults.length > 0 && (
-        <>
-          <Grid item xs={12} >
-            {searchResults.map((item) => (
-              <SearchablesProfile 
-                key={item.searchable_id}
-                item={item}
-                onClick={() => handleItemClick(item.searchable_id)} 
-                formatDistance={formatDistance}
-              />
-            ))}
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box mt={2} mb={3} display="flex" justifyContent="center">
-              {renderPaginationButtons()}
-            </Box>
-          </Grid>
-        </>
-      )}
-
-      {!loading && searchResults.length === 0 && !initialItemsLoaded && (
-        <Grid item xs={12}>
-          <Paper elevation={2}>
-            <Typography variant="body1">
-              {pagination.totalCount === 0 ? 
-                "No items found. Try adjusting your search criteria or increasing the distance." : 
-                "Use the search button to find items near you."}
-            </Typography>
-          </Paper>
-        </Grid>
-      )}
+      <SearchableList 
+        criteria={{
+          searchTerm: searchTerm,
+          distance: maxDistance,
+          internalSearchTerm: internalSearchTerm
+        }}
+      />
     </Grid>
   );
 };

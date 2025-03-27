@@ -25,7 +25,6 @@ const SearchableDetails = () => {
   const [checkingPayment, setCheckingPayment] = useState(false);
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  // Price related
   const [usdPrice, setUsdPrice] = useState(null); //todo: perhaps we cache it in the backend
 
   

@@ -46,7 +46,7 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
                 Price: {publicData.price} Sats
               </Typography>
             )}
-
+            
             {item.distance && (
               <Typography variant="body2">
                 Distance: {formatDistance(item.distance)}

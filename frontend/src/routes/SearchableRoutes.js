@@ -3,9 +3,9 @@ import { Route, Switch, useLocation } from 'react-router-dom';
 import NavMotion from '../layout/NavMotion';
 import Searchables from '../views/searchables/Searchables';
 import AuthGuard from './../utils/route-guard/AuthGuard';
-import PublishSearchables from '../views/publish-searchables/PublishSearchables';
+import PublishSearchables from '../views/searchables/PublishSearchables';
 import Profile from '../views/profile/Profile';
-import SearchableDetails from '../views/searchable-details/SearchableDetails';
+import SearchableDetails from '../views/searchables/SearchableDetails';
 
 // // login routing
 // const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/login')));

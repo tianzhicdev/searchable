@@ -18,7 +18,19 @@ from .routes import get_db_connection, token_required
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
 searchable_latency = Histogram('searchable_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
 search_results_count = Summary('search_results_count', 'Number of search results returned')
-search_distance = Histogram('search_distance_meters', 'Search distance in meters', buckets=[100, 500, 1000, 5000, 10000, 50000])
+
+
+BTCPAY_SERVER_GREENFIELD_API_KEY = "todo" # todo
+
+def execute_sql(cursor, sql, commit=False, connection=None):
+    """
+    Execute SQL with logging and return results if applicable
+    """
+    print(f"Executing SQL: {sql}")
+    cursor.execute(sql)
+    if commit and connection:
+        connection.commit()
+    return cursor
 
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
@@ -34,11 +46,11 @@ class GetSearchableItem(Resource):
                 cur = conn.cursor()
                 
                 # Query to get the searchable item
-                cur.execute("""
+                execute_sql(cur, f"""
                     SELECT searchable_id, searchable_data
                     FROM searchables
-                    WHERE searchable_id = %s
-                """, (searchable_id,))
+                    WHERE searchable_id = {searchable_id}
+                """)
                 
                 result = cur.fetchone()
                 
@@ -54,9 +66,9 @@ class GetSearchableItem(Resource):
                 
                 # Get username for the user_id
                 if 'user_id' in item_data:
-                    cur.execute("""
-                        SELECT username FROM users WHERE id = %s
-                    """, (item_data['user_id'],))
+                    execute_sql(cur, f"""
+                        SELECT username FROM users WHERE id = {item_data['user_id']}
+                    """)
                     user_result = cur.fetchone()
                     if user_result:
                         item_data['username'] = user_result[0]
@@ -94,7 +106,7 @@ class CreateSearchable(Resource):
                 cur = conn.cursor()
                 
                 # Add terminal info to the searchable data
-                data['terminal_id'] = current_user.id
+                data['terminal_id'] = str(current_user.id)
                 
                 # Extract latitude and longitude from the data for dedicated columns
                 latitude = None
@@ -107,10 +119,8 @@ class CreateSearchable(Resource):
                 
                 # Insert into searchables table with dedicated lat/long columns
                 print("Executing database insert...")
-                cur.execute(
-                    "INSERT INTO searchables (searchable_data, latitude, longitude) VALUES (%s, %s, %s) RETURNING searchable_id;",
-                    (Json(data), latitude, longitude)
-                )
+                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ('{Json(data)}', {latitude}, {longitude}) RETURNING searchable_id;"
+                execute_sql(cur, sql)
                 searchable_id = cur.fetchone()[0]
                 
                 print(f"Added searchable {searchable_id}")
@@ -155,12 +165,12 @@ class UserSearchables(Resource):
                 cur = conn.cursor()
                 
                 # Query to get all searchable items created by this user
-                cur.execute("""
+                execute_sql(cur, f"""
                     SELECT searchable_id, searchable_data
                     FROM searchables
-                    WHERE (searchable_data->>'terminal_id') = %s
+                    WHERE (searchable_data->>'terminal_id') = '{str(current_user.id)}'
                     ORDER BY searchable_id DESC
-                """, (str(current_user.id),))
+                """)
                 
                 results = []
                 for row in cur.fetchall():
@@ -196,8 +206,6 @@ class SearchSearchables(Resource):
     """
     Search for searchable items based on location and optional query terms
     
-    Example curl request:
-    curl -X GET "http://localhost:5000/api/searchable/search?lat=37.7749&long=-122.4194&max_distance=5000&page_number=1&page_size=10&query_term=coffee%20shop"
     """
     @token_required
     def get(self, current_user):
@@ -210,15 +218,13 @@ class SearchSearchables(Resource):
                     searchable_requests.labels('search_searchables', 'GET', 400).inc()
                     return params, 400
                 
-                # Record search distance metric
-                search_distance.observe(params['max_distance'])
-                
                 # Query database for results
                 results, total_count = self._query_database(
                     params['lat'], 
                     params['lng'], 
                     params['max_distance'],
-                    params['query_term']
+                    params['query_term'],
+                    params['internal_search_term']
                 )
                 
                 # Record search results count
@@ -238,26 +244,40 @@ class SearchSearchables(Resource):
                 searchable_requests.labels('search_searchables', 'GET', 500).inc()
                 return {"error": str(e)}, 500
     
+    
     def _parse_request_params(self):
         """Parse and validate request parameters"""
         # Get parameters from request
         lat = request.args.get('lat')
         lng = request.args.get('long')
-        max_distance = request.args.get('max_distance', 10000)  # Default to 10km if not specified
+        max_distance_str = request.args.get('max_distance')  # Get as string first
         page_number = int(request.args.get('page_number', 1))
         page_size = int(request.args.get('page_size', 10))
         query_term = request.args.get('query_term', '')
+        internal_search_term = request.args.get('internal_search_term', '')
         
-        # Validate required parameters
-        if not lat or not lng:
-            return {"error": "Latitude and longitude are required"}
+
+        # Parse max_distance, setting to None if not provided
+        max_distance = None
+        if max_distance_str:
+            try:
+                max_distance = float(max_distance_str)
+            except ValueError:
+                return {"error": "Invalid distance format"}
         
-        try:
-            lat = float(lat)
-            lng = float(lng)
-            max_distance = float(max_distance)
-        except ValueError:
-            return {"error": "Invalid coordinate or distance format"}
+        # Only validate lat/lng if max_distance is specified
+        if max_distance is not None:
+            if not lat or not lng:
+                return {"error": "Latitude and longitude are required when max_distance is specified"}
+            try:
+                lat = float(lat)
+                lng = float(lng)
+            except ValueError:
+                return {"error": "Invalid coordinate format"}
+        else:
+            # No location search, set to None
+            lat = None
+            lng = None
         
         return {
             'lat': lat,
@@ -265,8 +285,36 @@ class SearchSearchables(Resource):
             'max_distance': max_distance,
             'page_number': page_number,
             'page_size': page_size,
-            'query_term': query_term
+            'query_term': query_term,
+            'internal_search_term': internal_search_term
         }
+    
+    def _parse_internal_search_term(self, internal_search_term):
+        """Parse internal search term format: fielda.fieldb.fieldc:value,fieldd.fielde.fieldf:value2"""
+        if not internal_search_term:
+            return []
+        
+        field_conditions = []
+        
+        # Split by comma to get individual field:value pairs
+        pairs = internal_search_term.strip(',').split(',')
+        
+        for pair in pairs:
+            if ':' not in pair:
+                continue
+            
+            field_path, value = pair.split(':', 1)
+            if not field_path or not value:
+                continue
+            
+            # Split the field path by dots
+            field_parts = field_path.split('.')
+            field_conditions.append({
+                'path': field_parts,
+                'value': value
+            })
+        
+        return field_conditions
     
     def _calculate_distance(self, lat1, lng1, lat2, lng2):
         """Calculate distance between two points using Haversine formula"""
@@ -317,54 +365,96 @@ class SearchSearchables(Resource):
                 
         return score
     
-    def _query_database(self, lat, lng, max_distance, query_term):
+    def _query_database(self, lat, lng, max_distance, query_term, internal_search_term=None):
         """Query database for results and filter by actual distance and search relevance"""
         # Log query parameters for debugging
         print(f"Search parameters:")
-        print(f"  Coordinates: ({lat}, {lng})")
-        print(f"  Max distance: {max_distance} meters")
         print(f"  Query term: {query_term}")
+        print(f"  Internal search term: {internal_search_term}")
+        
+        # Using location-based search?
+        using_location = lat is not None and lng is not None and max_distance is not None
+        if using_location:
+            print(f"  Coordinates: ({lat}, {lng})")
+            print(f"  Max distance: {max_distance} meters")
+        else:
+            print("  Not using location-based filtering")
         
         # Tokenize query term
         query_tokens = self._tokenize_text(query_term)
         
+        # Parse internal search term
+        field_conditions = self._parse_internal_search_term(internal_search_term)
+        print(f"  Field conditions: {field_conditions}")
+        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Use a more efficient query using a WITH clause to calculate distance first
-        query = """
-            WITH distance_calc AS (
+        # Base query with support for internal field search
+        base_conditions = ["(searchable_data->>'is_removed')::boolean IS NOT TRUE"]
+        
+        # Add field conditions for internal search
+        for condition in field_conditions:
+            path = condition['path']
+            value = condition['value']
+            
+            # Build the JSON path expression correctly for PostgreSQL
+            json_path = 'searchable_data'
+            for i, part in enumerate(path):
+                if i == len(path) - 1:
+                    # For the last part, use ->> to get text
+                    json_path += f"->>'{part}'"
+                else:
+                    # For other parts, use -> to navigate
+                    json_path += f"->'{part}'"
+            
+            # Add the condition with the value directly in the query
+            base_conditions.append(f"{json_path} = '{value}'")
+        
+        # Join all conditions
+        where_clause = " AND ".join(base_conditions)
+        
+        if using_location:
+            # Use a more efficient query using a WITH clause to calculate distance first
+            query = f"""
+                WITH distance_calc AS (
+                    SELECT 
+                      searchable_id,
+                      searchable_data,
+                      latitude,
+                      longitude,
+                      ( 6371000 * acos( cos( radians({lat}) ) * 
+                        cos( radians( latitude ) ) * 
+                        cos( radians( longitude ) - radians({lng}) ) + 
+                        sin( radians({lat}) ) * 
+                        sin( radians( latitude ) ) 
+                      ) ) AS distance
+                    FROM searchables
+                    WHERE {where_clause}
+                    -- Pre-filter by bounding box (much faster than calculating exact distances for all rows)
+                    AND latitude BETWEEN {lat} - ({max_distance} / 111111) AND {lat} + ({max_distance} / 111111)
+                    AND longitude BETWEEN {lng} - ({max_distance} / (111111 * cos(radians({lat})))) AND {lng} + ({max_distance} / (111111 * cos(radians({lat}))))
+                )
+                SELECT * FROM distance_calc
+                WHERE distance <= {max_distance}
+                ORDER BY distance
+            """
+        else:
+            # Query without location filtering
+            query = f"""
                 SELECT 
                   searchable_id,
                   searchable_data,
                   latitude,
                   longitude,
-                  ( 6371000 * acos( cos( radians(%s) ) * 
-                    cos( radians( latitude ) ) * 
-                    cos( radians( longitude ) - radians(%s) ) + 
-                    sin( radians(%s) ) * 
-                    sin( radians( latitude ) ) 
-                  ) ) AS distance
+                  NULL as distance
                 FROM searchables
-                WHERE (searchable_data->>'is_removed')::boolean IS NOT TRUE
-                -- Pre-filter by bounding box (much faster than calculating exact distances for all rows)
-                AND latitude BETWEEN %s - (%s / 111111) AND %s + (%s / 111111)
-                AND longitude BETWEEN %s - (%s / (111111 * cos(radians(%s)))) AND %s + (%s / (111111 * cos(radians(%s))))
-            )
-            SELECT * FROM distance_calc
-            WHERE distance <= %s
-            ORDER BY distance
-        """
+                WHERE {where_clause}
+                ORDER BY searchable_id DESC
+            """
         
-        # Parameters for the query
-        query_params = [
-            lat, lng, lat,                              # Distance calculation (first part)
-            lat, max_distance, lat, max_distance,       # Latitude bounds
-            lng, max_distance, lat, lng, max_distance, lat,  # Longitude bounds
-            max_distance                                # Final distance filter
-        ]
-        
-        cur.execute(query, query_params)
+        # Execute the query
+        execute_sql(cur, query)
         db_results = cur.fetchall()
         
         # Process results and calculate match scores
@@ -373,17 +463,26 @@ class SearchSearchables(Resource):
             searchable_id, searchable_data, item_lat, item_lng, distance = result
             
             item_data = dict(searchable_data)
-            item_data['distance'] = distance
+            if distance is not None:
+                item_data['distance'] = distance
             item_data['searchable_id'] = searchable_id
             
             # Calculate match score for search relevance
             match_score = self._calculate_match_score(query_tokens, item_data)
             item_data['match_score'] = match_score
             
+            # Only include results with a match score if we have a query term
+            if query_term and match_score == 0:
+                continue
+                
             filtered_results.append(item_data)
         
-        # Sort results first by match score (descending), then by distance (ascending)
-        filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
+        # Sort results - by match score (if query provided), then by distance (if location provided)
+        if query_term and using_location:
+            filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
+        elif query_term:
+            filtered_results.sort(key=lambda x: -x['match_score'])
+        # If using location but no query, already sorted by distance in SQL
         
         cur.close()
         conn.close()
@@ -426,9 +525,9 @@ class SearchSearchables(Resource):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        terminal_ids_list = list(terminal_ids)
-        placeholders = ','.join(['%s'] * len(terminal_ids_list))
-        cur.execute(f"SELECT id, username FROM users WHERE id IN ({placeholders})", terminal_ids_list)
+        # Convert terminal_ids set to a comma-separated string for SQL IN clause
+        terminal_ids_str = ','.join([f"'{tid}'" for tid in terminal_ids])
+        execute_sql(cur, f"SELECT id, username FROM users WHERE id IN ({terminal_ids_str})")
         
         # Create a mapping of terminal_id to username
         usernames = {}
@@ -461,11 +560,11 @@ class RemoveSearchableItem(Resource):
                 cur = conn.cursor()
                 
                 # First check if the item exists and belongs to the current user
-                cur.execute("""
+                execute_sql(cur, f"""
                     SELECT searchable_data
                     FROM searchables
-                    WHERE searchable_id = %s
-                """, (searchable_id,))
+                    WHERE searchable_id = {searchable_id}
+                """)
                 
                 row = cur.fetchone()
                 if not row:
@@ -487,13 +586,12 @@ class RemoveSearchableItem(Resource):
                 searchable_data['is_removed'] = True
                 
                 # Update the record in the database
-                cur.execute("""
+                execute_sql(cur, f"""
                     UPDATE searchables
-                    SET searchable_data = %s
-                    WHERE searchable_id = %s
-                """, (Json(searchable_data), searchable_id))
+                    SET searchable_data = '{Json(searchable_data)}'
+                    WHERE searchable_id = {searchable_id}
+                """, commit=True, connection=conn)
                 
-                conn.commit()
                 cur.close()
                 conn.close()
                 
@@ -523,19 +621,15 @@ class KvResource(Resource):
             
             # Build query dynamically based on provided parameters
             query = "SELECT data, pkey, fkey FROM kv WHERE 1=1"
-            params = []
             
             if type:
-                query += " AND type = %s"
-                params.append(type)
+                query += f" AND type = '{type}'"
                 
             if pkey:
-                query += " AND pkey = %s"
-                params.append(pkey)
+                query += f" AND pkey = '{pkey}'"
                 
             if fkey:
-                query += " AND fkey = %s"
-                params.append(fkey)
+                query += f" AND fkey = '{fkey}'"
             
             # If no parameters provided, return error
             if not (type or pkey or fkey):
@@ -544,7 +638,7 @@ class KvResource(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            cur.execute(query, tuple(params))
+            execute_sql(cur, query)
             
             rows = cur.fetchall()
             cur.close()
@@ -588,14 +682,13 @@ class KvResource(Resource):
             cur = conn.cursor()
             
             # Upsert operation (insert or update)
-            cur.execute("""
+            execute_sql(cur, f"""
                 INSERT INTO kv (type, pkey, fkey, data)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (pkey, fkey) 
-                DO UPDATE SET data = %s, type = %s
-            """, (type, pkey, fkey, Json(data), Json(data), type))
+                VALUES ('{type}', '{pkey}', '{fkey}', '{Json(data)}')
+                ON CONFLICT (pkey, fkey, type) 
+                DO UPDATE SET data = '{Json(data)}'
+            """, commit=True, connection=conn)
             
-            conn.commit()
             cur.close()
             conn.close()
             
@@ -605,6 +698,181 @@ class KvResource(Resource):
             print(f"Error storing in KV store: {str(e)}")
             return {"error": str(e)}, 500
 
+@rest_api.route('/api/balance', methods=['GET'])
+class BalanceResource(Resource):
+    """
+    Get user's balance by calculating payments and withdrawals
+    """
+    @token_required
+    def get(self, current_user):
+        """
+        Calculate user balance from payments and withdrawals
+        """
+        try:
+            user_id = current_user.id
+            
+            # Step 1: Get all searchables published by this user
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query searchables with terminal_id matching the user
+            execute_sql(cur, f"""
+                SELECT searchable_id, searchable_data
+                FROM searchables
+                WHERE searchable_data->>'terminal_id' = '{str(user_id)}'
+            """)
+            
+            searchable_ids = [row[0] for row in cur.fetchall()]
+            
+            # Step 2: Calculate balance from payments and withdrawals
+            balance = 0
+            
+            # If user has searchables, look for payments
+            if searchable_ids:
+                # Get all payments for user's searchables
+                searchable_ids_str = ','.join([f"'{str(sid)}'" for sid in searchable_ids])
+                execute_sql(cur, f"""
+                    SELECT data->>'amount' as amount
+                    FROM kv
+                    WHERE type = 'payment'
+                    AND fkey IN ({searchable_ids_str if len(searchable_ids) > 1 else f"'{str(searchable_ids[0])}'"})
+                """)
+                
+                payment_rows = cur.fetchall()
+                for row in payment_rows:
+                    amount = row[0]
+                    # Add payment amount to balance
+                    if amount is not None:
+                        balance += float(amount)
+            
+            # Get all withdrawals for this user
+            # for withdraw, the fkey is the user_id, pkey is the withdraw_id
+            execute_sql(cur, f"""
+                SELECT data->>'amount' as amount
+                FROM kv
+                WHERE type = 'withdraw'
+                AND fkey = '{str(user_id)}'
+            """)
+            
+            withdrawal_rows = cur.fetchall()
+            for row in withdrawal_rows:
+                amount = row[0]
+                # Subtract withdrawal amount from balance
+                if amount is not None:
+                    balance -= float(amount)
+            
+            cur.close()
+            conn.close()
+            
+            return {"balance": balance}, 200
+            
+        except Exception as e:
+            print(f"Error calculating balance: {str(e)}")
+            return {"error": str(e)}, 500
+
+
+
+@rest_api.route('/api/withdraw', methods=['POST'])
+class WithdrawFunds(Resource):
+    """
+    Processes a withdrawal request via Lightning Network
+    """
+    @token_required
+    def post(self, current_user):
+        with searchable_latency.labels('withdraw').time():
+            try:
+                data = request.get_json()
+                
+                if not data or 'lightning_invoice' not in data:
+                    searchable_requests.labels('withdraw', 'POST', 400).inc()
+                    return {"error": "Lightning invoice is required"}, 400
+                
+                lightning_invoice = data['lightning_invoice']
+                
+                # Generate withdraw_id from last 10 chars of the invoice
+                withdraw_id = lightning_invoice[-10:] if len(lightning_invoice) >= 10 else lightning_invoice
+                
+                # Record the withdrawal in the database first
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Extract amount from request if available, default to 0
+                amount = data.get('amount', 0)
+                
+                # Prepare withdrawal data
+                withdrawal_data = {
+                    'lightning_invoice': lightning_invoice,
+                    'amount': amount,
+                    'status': 'pending',
+                    'created_at': str(math.floor(math.time())),
+                    'user_id': current_user['id']
+                }
+                
+                # Store withdrawal record
+                execute_sql(cur, f"""
+                    INSERT INTO kv (type, fkey, pkey, data)
+                    VALUES ('withdraw', '{current_user['id']}', '{withdraw_id}', '{Json(withdrawal_data)}')
+                    RETURNING pkey
+                """, commit=True, connection=conn)
+                
+                # Create a payment through BTCPay Server
+                import requests
+                import json
+                
+                # BTCPay Server payment endpoint
+                btcpay_url = "https://generous-purpose.metalseed.io"
+                store_id = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
+                
+                # Prepare the payment request
+                payment_payload = {
+                    "destination": lightning_invoice,
+                    "allowPayout": True
+                }
+                
+                # Send the payment request to BTCPay Server
+                response = requests.post(
+                    f"{btcpay_url}/api/v1/stores/{store_id}/lightning/BTC/payments",
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
+                    },
+                    data=json.dumps(payment_payload)
+                )
+                
+                payment_response = {}
+                # if response.status_code == 200:
+                #     # todo: check if the payment is successful offline
+                #     payment_response = response.json()
+                    
+                #     # Update the withdrawal record with payment response
+                #     withdrawal_data['btcpay_response'] = payment_response
+                #     withdrawal_data['status'] = payment_response.get('status', 'processing')
+                    
+                #     execute_sql(cur, f"""
+                #         UPDATE kv 
+                #         SET data = '{Json(withdrawal_data)}'
+                #         WHERE type = 'withdraw' AND pkey = '{withdraw_id}'
+                #     """, commit=True, connection=conn)
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('withdraw', 'POST', 200).inc()
+                return {
+                    "success": True,
+                    "withdraw_id": withdraw_id,
+                    "payment_id": payment_response.get('id', ''),
+                    "amount": amount,
+                    "status": withdrawal_data.get('status', 'pending')
+                }, 200
+                
+            except Exception as e:
+                print(f"Error processing withdrawal: {str(e)}")
+                searchable_requests.labels('withdraw', 'POST', 500).inc()
+                return {"error": str(e)}, 500
+
+
+
 @rest_api.route('/metrics')
 class MetricsResource(Resource):
     """
@@ -613,3 +881,31 @@ class MetricsResource(Resource):
     def get(self):
         metrics_data = generate_latest(REGISTRY)
         return Response(metrics_data, mimetype='text/plain; charset=utf-8')
+
+    # try {
+    #   const payload = {
+    #     amount: SearchableItem.payloads.public.price,
+    #     currency: "SATS",
+    #     metadata: {
+    #       orderId: id,
+    #       itemName: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
+    #       buyerName: account?.user?.username || "Anonymous",
+    #     },
+    #     checkout: {
+    #       expirationMinutes: 60,
+    #       monitoringMinutes: 60,
+    #       paymentMethods: ["BTC-LightningNetwork"],
+    #       redirectURL: window.location.href,
+    #     }
+    #   };
+      
+    #   const response = await axios.post(
+    #     `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices`,
+    #     payload,
+    #     {
+    #       headers: {
+    #         'Content-Type': 'application/json',
+    #         'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
+    #       }
+    #     }
+    #   );

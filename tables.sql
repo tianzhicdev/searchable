@@ -24,3 +24,20 @@ CREATE INDEX IF NOT EXISTS idx_searchable_geo_geohash ON searchable_geo(geohash)
 
 -- Index for coordinates to support direct lat/long queries
 CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
+
+
+
+CREATE TABLE IF NOT EXISTS kv (
+    pkey TEXT NOT NULL,
+    fkey TEXT NOT NULL,
+    data JSONB NOT NULL,
+    PRIMARY KEY (pkey, fkey)
+);
+
+-- Index on pkey for faster lookups
+CREATE INDEX IF NOT EXISTS idx_kv_pkey ON kv(pkey);
+
+-- Index on fkey for faster lookups
+CREATE INDEX IF NOT EXISTS idx_kv_fkey ON kv(fkey);
+
+
