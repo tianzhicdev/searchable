@@ -31,6 +31,45 @@ print("BTCPAY_SERVER_GREENFIELD_API_KEY len:" + BTCPAY_SERVER_GREENFIELD_API_KEY
 BTC_PAY_URL = "https://generous-purpose.metalseed.io"
 STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
 
+def check_balance(user_id):
+    """
+    Calculate user balance from payments and withdrawals
+    
+    Args:
+        user_id: The user ID to check balance for
+        
+    Returns:
+        float: The user's current balance in sats
+    """
+    try:
+        # Step 1: Get all searchables published by this user using utility function
+        searchable_ids = get_searchableIds_by_user(user_id)
+        
+        # Step 2: Calculate balance from payments and withdrawals
+        balance = 0
+        
+        # If user has searchables, look for payments in a single query
+        if searchable_ids:
+            payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
+            for record in payment_records:
+                amount = record.get('amount')
+                # Add payment amount to balance
+                if amount is not None:
+                    balance += float(amount)
+        
+        # Get all withdrawals for this user using utility function
+        withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(user_id))
+        for record in withdrawal_records:
+            amount = record.get('amount')
+            # Subtract withdrawal amount from balance
+            if amount is not None:
+                balance -= float(amount)
+        
+        return balance
+    except Exception as e:
+        print(f"Error calculating balance: {str(e)}")
+        return 0
+
 def execute_sql(cursor, sql, commit=False, connection=None):
     """
     Execute SQL with logging and return results if applicable
@@ -820,31 +859,7 @@ class BalanceResource(Resource):
         Calculate user balance from payments and withdrawals
         """
         try:
-            user_id = current_user.id
-            
-            # Step 1: Get all searchables published by this user using utility function
-            searchable_ids = get_searchableIds_by_user(user_id)
-            
-            # Step 2: Calculate balance from payments and withdrawals
-            balance = 0
-            
-            # If user has searchables, look for payments in a single query
-            if searchable_ids:
-                payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
-                for record in payment_records:
-                    amount = record.get('amount')
-                    # Add payment amount to balance
-                    if amount is not None:
-                        balance += float(amount)
-            
-            # Get all withdrawals for this user using utility function
-            withdrawal_records = get_data_from_kv(type='withdraw', fkey=str(user_id))
-            for record in withdrawal_records:
-                amount = record.get('amount')
-                # Subtract withdrawal amount from balance
-                if amount is not None:
-                    balance -= float(amount)
-            
+            balance = check_balance(current_user.id)
             return {"balance": balance}, 200
             
         except Exception as e:
@@ -861,7 +876,6 @@ class WithdrawFunds(Resource):
     @token_required
     def post(self, current_user):
         with searchable_latency.labels('withdrawal').time():
-            # todo: verify that the user has enough balance
             try:
                 data = request.get_json()
                 
@@ -870,10 +884,32 @@ class WithdrawFunds(Resource):
                     return {"error": "Lightning invoice is required"}, 400
                 
                 invoice = data['invoice']
+                
+                # Decode the invoice to get the amount
+                try:
+                    # Use our Lightning client to decode the invoice and get amount
+                    decoded_invoice = pay_lightning_invoice(invoice, decode_only=True)
+                    amount_to_withdraw = decoded_invoice.get('value_sat', 0) + decoded_invoice.get('fee_sat', 0)
+                except Exception as e:
+                    print(f"Error decoding invoice: {str(e)}")
+                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
+                    return {"error": "Invalid invoice format or unable to decode"}, 400
+                
+                # Check if user has enough balance
+                current_balance = check_balance(current_user.id)
+                print(f"Current balance: {current_balance} for user {current_user.id}")
+                
+                if current_balance < amount_to_withdraw:
+                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
+                    return {
+                        "error": "Insufficient funds", 
+                        "available_balance": current_balance, 
+                        "withdrawal_amount": amount_to_withdraw
+                    }, 400
+                
                 # Record the withdrawal in the database first
                 conn = get_db_connection()
                 cur = conn.cursor()
-                
                 
                 # Prepare withdrawal data
                 withdrawal_data = {
@@ -932,34 +968,6 @@ class MetricsResource(Resource):
     def get(self):
         metrics_data = generate_latest(REGISTRY)
         return Response(metrics_data, mimetype='text/plain; charset=utf-8')
-
-    # try {
-    #   const payload = {
-    #     amount: SearchableItem.payloads.public.price,
-    #     currency: "SATS",
-    #     metadata: {
-    #       orderId: id,
-    #       itemName: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
-    #       buyerName: account?.user?.username || "Anonymous",
-    #     },
-    #     checkout: {
-    #       expirationMinutes: 60,
-    #       monitoringMinutes: 60,
-    #       paymentMethods: ["BTC-LightningNetwork"],
-    #       redirectURL: window.location.href,
-    #     }
-    #   };
-      
-    #   const response = await axios.post(
-    #     `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices`,
-    #     payload,
-    #     {
-    #       headers: {
-    #         'Content-Type': 'application/json',
-    #         'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
-    #       }
-    #     }
-    #   );
 
 @rest_api.route('/api/create-invoice', methods=['POST'])
 class CreateInvoice(Resource):

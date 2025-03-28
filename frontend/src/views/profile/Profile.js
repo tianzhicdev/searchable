@@ -58,6 +58,9 @@ const Profile = () => {
         if (tx.type === 'payment') {
           return total + (parseInt(tx.amount) || 0);
         }
+        if (tx.type === 'withdrawal') {
+          return total - (parseInt(tx.amount) || 0);
+        }
         return total;
       }, 0);
       
@@ -125,9 +128,13 @@ const Profile = () => {
         amount = `+${transaction.amount}`;
       }
       
-      // Truncate ID to first 22 characters
-      const truncatedId = transaction.id ? transaction.id.substring(0, 10) : 'missing';
-      
+      // Truncate ID based on transaction type
+      let truncatedId;
+      if (transaction.type === 'withdrawal') {
+        truncatedId = transaction.invoice ? transaction.invoice.substring(0, 10) : 'missing';
+      } else {
+        truncatedId = transaction.invoice_id ? transaction.invoice_id.substring(0, 10) : 'missing';
+      }
       transaction.type === 'withdrawal' ? transaction.type = 'out' : transaction.type = 'in';
       
       // Set transaction type based on status
@@ -290,16 +297,16 @@ const Profile = () => {
             >
               View Your Items
             </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.button}
-              onClick={handleWithdrawalClick}
-              disabled={!balance || balance <= 0 || loading}
-              style={{ marginLeft: '10px' }}
-            >
-              Withdraw
-            </Button>
+            {balance && balance > 0 && !loading && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleWithdrawalClick}
+                style={{ marginLeft: '10px' }}
+              >
+                Withdraw
+              </Button>
+            )}
           </Box>
       </Grid>
       
