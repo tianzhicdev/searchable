@@ -74,7 +74,7 @@ def execute_sql(cursor, sql, commit=False, connection=None):
     """
     Execute SQL with logging and return results if applicable
     """
-    print(f"Executing SQL: {sql}")
+    print(f"Executing SQL: {sql.replace('\n', ' ')}")
     cursor.execute(sql)
     if commit and connection:
         connection.commit()
