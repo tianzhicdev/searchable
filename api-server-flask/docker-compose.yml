@@ -3,11 +3,15 @@ services:
   flask_api:
     container_name: flask_api
     restart: always
-    env_file: .env
+    env_file: 
+      - .env
+      - /usr/local/.secrets.env
     build: .
     networks:
       - db_network
       - web_network
+    volumes:
+      - /usr/local/.secrets.json:/app/secrets/tokens.json
   nginx:
     container_name: nginx
     restart: always

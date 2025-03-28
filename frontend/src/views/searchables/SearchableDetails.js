@@ -6,9 +6,6 @@ import configData from '../../config';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 
-const BTC_PAY_URL = "https://generous-purpose.metalseed.io";
-const STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn";
-const BTCPAY_SERVER_GREENFIELD_API_KEY = "b449024ea5a4c365d8631a9f00b92e9cd2f6e1f7";
 const SearchableDetails = () => {
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
@@ -129,38 +126,26 @@ const SearchableDetails = () => {
     setCreatingInvoice(true);
     setPaymentStatus(null);
     try {
+      // Instead of calling BTCPay Server directly, call our backend API
       const payload = {
         amount: SearchableItem.payloads.public.price,
-        currency: "SATS",
-        metadata: {
-          orderId: id,
-          itemName: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
-          buyerName: account?.user?.username || "Anonymous",
-        },
-        checkout: {
-          expirationMinutes: 60,
-          monitoringMinutes: 60,
-          paymentMethods: ["BTC-LightningNetwork"],
-          redirectURL: window.location.href,
-        }
+        searchable_id: id,
+        item_name: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
+        buyer_name: account?.user?.username || "Anonymous",
+        redirect_url: window.location.href
       };
       
-      const response = await axios.post(
-        `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices`,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
-          }
+      const response = await axios({
+        method: 'post',
+        url: `${configData.API_SERVER}create-invoice`,
+        data: payload,
+        headers: {
+          Authorization: `${account.token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
       
       setInvoice(response.data);
-      
-      // Record the invoice in the backend before opening payment dialog
-      await recordInvoiceInBackend(response.data.id, response.data);
-      
       setPaymentDialogOpen(true);
       checkPaymentStatus(response.data.id);
     } catch (err) {
@@ -168,33 +153,6 @@ const SearchableDetails = () => {
       alert("Failed to create payment invoice. Please try again.");
     } finally {
       setCreatingInvoice(false);
-    }
-  };
-  
-  const recordInvoiceInBackend = async (invoiceId, invoiceData) => {
-    try {
-      await axios({
-        method: 'put',
-        url: `${configData.API_SERVER}kv`,
-        params: {
-          type: "invoice",
-          pkey: invoiceId,
-          fkey: id
-        },
-        data: {
-          amount: invoiceData.amount,
-          buyer: account?.user?._id || "Unknown",
-          timestamp: new Date().toISOString(),
-          searchable_id: SearchableItem?.searchable_id
-        },
-        headers: {
-          Authorization: `${account.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log("Invoice recorded successfully in backend");
-    } catch (error) {
-      console.error("Error recording invoice in backend:", error);
     }
   };
   
@@ -209,16 +167,14 @@ const SearchableDetails = () => {
     }
     
     try {
-      console.log("Fetching invoice data from BTCPay Server");
-      const response = await axios.get(
-        `${BTC_PAY_URL}/api/v1/stores/${STORE_ID}/invoices/${invoiceId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `token ${BTCPAY_SERVER_GREENFIELD_API_KEY}`
-          }
+      console.log("Fetching invoice data from backend");
+      const response = await axios({
+        method: 'get',
+        url: `${configData.API_SERVER}check-payment/${invoiceId}`,
+        headers: {
+          Authorization: `${account.token}`
         }
-      );
+      });
       
       console.log("Received payment status:", response.data.status);
       
@@ -230,10 +186,8 @@ const SearchableDetails = () => {
           console.log("Payment still in progress, scheduling next check in 2 seconds");
           paymentCheckRef.current = setTimeout(() => checkPaymentStatus(invoiceId), 3000);
         } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
-          console.log("Payment completed successfully, recording in backend");
-          await recordPaymentInBackend(invoiceId, response.data); // todo: backend should be checking for payment status
+          console.log("Payment completed successfully");
           
-          console.log("Notifying user and cleaning up payment UI");
           alert("Payment successful! The seller has been notified.");
           setPaymentDialogOpen(false);
         } else {
@@ -248,36 +202,6 @@ const SearchableDetails = () => {
     } finally {
       setCheckingPayment(false);
       paymentCheckRef.current = null;
-    }
-    
-  };
-  
-  const recordPaymentInBackend = async (invoiceId, invoiceData) => {
-    try {
-      await axios({
-        method: 'put',
-        url: `${configData.API_SERVER}kv`,
-        params: {
-          type: "payment",
-          pkey: invoiceId,
-          fkey: id
-        },
-        data: {
-          // TODO: add visiter id or somehting for visitors to keep track of them
-          amount: invoiceData.amount,
-          status: invoiceData.status,
-          buyer_id: account?.user?.id || null,
-          timestamp: new Date().toISOString(),
-          searchable_id: SearchableItem?.searchable_id
-        },
-        headers: {
-          Authorization: `${account.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log("Payment recorded successfully in backend");
-    } catch (error) {
-      console.error("Error recording payment in backend:", error);
     }
   };
   

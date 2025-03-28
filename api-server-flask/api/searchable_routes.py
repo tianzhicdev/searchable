@@ -5,22 +5,31 @@ Copyright (c) 2019 - present AppSeed.us
 
 import re
 from flask import request, Response
+# from dbm.sqlite3 import STORE_KV
 from flask_restx import Resource
 from psycopg2.extras import Json
 import math
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
+import datetime
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
 from .routes import get_db_connection, token_required
-
+from .helper import pay_lightning_invoice
+import json
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
 searchable_latency = Histogram('searchable_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
 search_results_count = Summary('search_results_count', 'Number of search results returned')
 
 
-BTCPAY_SERVER_GREENFIELD_API_KEY = "todo" # todo
+import os
+
+BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
+print("BTCPAY_SERVER_GREENFIELD_API_KEY len:" + BTCPAY_SERVER_GREENFIELD_API_KEY)
+
+BTC_PAY_URL = "https://generous-purpose.metalseed.io"
+STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
 
 def execute_sql(cursor, sql, commit=False, connection=None):
     """
@@ -119,7 +128,7 @@ class CreateSearchable(Resource):
                 
                 # Insert into searchables table with dedicated lat/long columns
                 print("Executing database insert...")
-                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ('{Json(data)}', {latitude}, {longitude}) RETURNING searchable_id;"
+                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ({Json(data)}, {latitude}, {longitude}) RETURNING searchable_id;"
                 execute_sql(cur, sql)
                 searchable_id = cur.fetchone()[0]
                 
@@ -588,7 +597,7 @@ class RemoveSearchableItem(Resource):
                 # Update the record in the database
                 execute_sql(cur, f"""
                     UPDATE searchables
-                    SET searchable_data = '{Json(searchable_data)}'
+                    SET searchable_data = {Json(searchable_data)}
                     WHERE searchable_id = {searchable_id}
                 """, commit=True, connection=conn)
                 
@@ -684,9 +693,9 @@ class KvResource(Resource):
             # Upsert operation (insert or update)
             execute_sql(cur, f"""
                 INSERT INTO kv (type, pkey, fkey, data)
-                VALUES ('{type}', '{pkey}', '{fkey}', '{Json(data)}')
+                VALUES ('{type}', '{pkey}', '{fkey}', {Json(data)})
                 ON CONFLICT (pkey, fkey, type) 
-                DO UPDATE SET data = '{Json(data)}'
+                DO UPDATE SET data = {Json(data)}
             """, commit=True, connection=conn)
             
             cur.close()
@@ -780,17 +789,18 @@ class WithdrawFunds(Resource):
     @token_required
     def post(self, current_user):
         with searchable_latency.labels('withdraw').time():
+            # todo: verify that the user has enough balance
             try:
                 data = request.get_json()
                 
-                if not data or 'lightning_invoice' not in data:
+                if not data or 'invoice' not in data:
                     searchable_requests.labels('withdraw', 'POST', 400).inc()
                     return {"error": "Lightning invoice is required"}, 400
                 
-                lightning_invoice = data['lightning_invoice']
+                lightning_invoice = data['invoice']
                 
                 # Generate withdraw_id from last 10 chars of the invoice
-                withdraw_id = lightning_invoice[-10:] if len(lightning_invoice) >= 10 else lightning_invoice
+                withdraw_id = lightning_invoice[-20:] if len(lightning_invoice) >= 20 else lightning_invoice
                 
                 # Record the withdrawal in the database first
                 conn = get_db_connection()
@@ -801,58 +811,31 @@ class WithdrawFunds(Resource):
                 
                 # Prepare withdrawal data
                 withdrawal_data = {
-                    'lightning_invoice': lightning_invoice,
+                    'invoice': lightning_invoice,
                     'amount': amount,
                     'status': 'pending',
-                    'created_at': str(math.floor(math.time())),
-                    'user_id': current_user['id']
+                    'user_id': current_user.id
                 }
                 
                 # Store withdrawal record
                 execute_sql(cur, f"""
                     INSERT INTO kv (type, fkey, pkey, data)
-                    VALUES ('withdraw', '{current_user['id']}', '{withdraw_id}', '{Json(withdrawal_data)}')
+                    VALUES ('withdraw', '{current_user.id}', '{withdraw_id}', {Json(withdrawal_data)})
                     RETURNING pkey
                 """, commit=True, connection=conn)
                 
-                # Create a payment through BTCPay Server
-                import requests
-                import json
+                # Process payment using the helper function
+                payment_response = pay_lightning_invoice(lightning_invoice)
                 
-                # BTCPay Server payment endpoint
-                btcpay_url = "https://generous-purpose.metalseed.io"
-                store_id = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
-                
-                # Prepare the payment request
-                payment_payload = {
-                    "destination": lightning_invoice,
-                    "allowPayout": True
-                }
-                
-                # Send the payment request to BTCPay Server
-                response = requests.post(
-                    f"{btcpay_url}/api/v1/stores/{store_id}/lightning/BTC/payments",
-                    headers={
-                        'Content-Type': 'application/json',
-                        'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-                    },
-                    data=json.dumps(payment_payload)
-                )
-                
-                payment_response = {}
-                # if response.status_code == 200:
-                #     # todo: check if the payment is successful offline
-                #     payment_response = response.json()
+                # Update the withdrawal record with payment response if available
+                if payment_response:
+                    withdrawal_data['btcpay_response'] = payment_response
                     
-                #     # Update the withdrawal record with payment response
-                #     withdrawal_data['btcpay_response'] = payment_response
-                #     withdrawal_data['status'] = payment_response.get('status', 'processing')
-                    
-                #     execute_sql(cur, f"""
-                #         UPDATE kv 
-                #         SET data = '{Json(withdrawal_data)}'
-                #         WHERE type = 'withdraw' AND pkey = '{withdraw_id}'
-                #     """, commit=True, connection=conn)
+                    execute_sql(cur, f"""
+                        UPDATE kv 
+                        SET data = {Json(withdrawal_data)}
+                        WHERE type = 'withdraw' AND pkey = '{withdraw_id}'
+                    """, commit=True, connection=conn)
                 
                 cur.close()
                 conn.close()
@@ -909,3 +892,149 @@ class MetricsResource(Resource):
     #       }
     #     }
     #   );
+
+@rest_api.route('/api/create-invoice', methods=['POST'])
+class CreateInvoice(Resource):
+    """
+    Creates a Lightning Network invoice via BTCPay Server
+    """
+    @token_required
+    def post(self, current_user):
+        try:
+            data = request.get_json()
+            
+            if not data or 'amount' not in data or 'searchable_id' not in data:
+                return {"error": "Amount and searchable_id are required"}, 400
+            
+            # Get the data from the request
+            amount = data['amount']
+            searchable_id = data['searchable_id']
+            item_name = data.get('item_name', f"Item #{searchable_id}")
+            buyer_name = data.get('buyer_name', "Anonymous")
+            
+            # Prepare payload for BTCPay Server
+            payload = {
+                "amount": amount,
+                "currency": "SATS",
+                "metadata": {
+                    "orderId": searchable_id,
+                    "itemName": item_name,
+                    "buyerName": buyer_name,
+                },
+                "checkout": {
+                    "expirationMinutes": 60,
+                    "monitoringMinutes": 60,
+                    "paymentMethods": ["BTC-LightningNetwork"],
+                    "redirectURL": data.get('redirect_url', '')
+                }
+            }
+            
+            # Make request to BTCPay Server
+            import requests
+            response = requests.post(
+                f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
+                json=payload,
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
+                }
+            )
+            
+            if response.status_code != 200:
+                return {"error": f"Failed to create invoice: {response.text}"}, 500
+                
+            invoice_data = response.json()
+            
+            # Record the invoice in our database
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Store invoice record
+            invoice_record = {
+                "amount": amount,
+                "buyer": current_user.id,
+                "timestamp": str(datetime.datetime.now()),
+                "searchable_id": searchable_id
+            }
+            
+            execute_sql(cur, f"""
+                INSERT INTO kv (type, pkey, fkey, data)
+                VALUES ('invoice', '{invoice_data['id']}', '{searchable_id}', {Json(invoice_record)})
+            """, commit=True, connection=conn)
+            
+            cur.close()
+            conn.close()
+            
+            # Return the invoice data to the client
+            return invoice_data, 200
+            
+        except Exception as e:
+            print(f"Error creating invoice: {str(e)}")
+            return {"error": str(e)}, 500
+
+
+@rest_api.route('/api/check-payment/<string:invoice_id>', methods=['GET'])
+class CheckPayment(Resource):
+    """
+    Checks the status of a payment via BTCPay Server
+    """
+    @token_required
+    def get(self, current_user, invoice_id):
+        try:
+            # BTC Pay Server configuration
+            # Make request to BTCPay Server to check payment status
+            import requests
+            response = requests.get(
+                f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices/{invoice_id}",
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
+                }
+            )
+            
+            if response.status_code != 200:
+                return {"error": f"Failed to check payment status: {response.text}"}, 500
+                
+            invoice_data = response.json()
+            
+            # If payment is settled, record it in our database
+            if invoice_data['status'] == 'Settled' or invoice_data['status'] == 'Complete':
+                # Get the searchable_id from the invoice record
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                execute_sql(cur, f"""
+                    SELECT fkey, data FROM kv
+                    WHERE type = 'invoice' AND pkey = '{invoice_id}'
+                """)
+                
+                result = cur.fetchone()
+                if result:
+                    searchable_id = result[0]
+                    invoice_record = result[1]
+                    
+                    # Store payment record
+                    payment_record = {
+                        "amount": invoice_data.get('amount', invoice_record.get('amount')),
+                        "status": invoice_data['status'],
+                        "buyer_id": current_user.id,
+                        "timestamp": str(datetime.datetime.now()),
+                        "searchable_id": searchable_id
+                    }
+                    
+                    execute_sql(cur, f"""
+                        INSERT INTO kv (type, pkey, fkey, data)
+                        VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
+                        ON CONFLICT (type, pkey, fkey) 
+                        DO UPDATE SET data = {Json(payment_record)}
+                    """, commit=True, connection=conn)
+                
+                cur.close()
+                conn.close()
+            
+            # Return the payment status to the client
+            return invoice_data, 200
+            
+        except Exception as e:
+            print(f"Error checking payment status: {str(e)}")
+            return {"error": str(e)}, 500
