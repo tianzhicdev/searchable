@@ -9,12 +9,14 @@ import {
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import axios from 'axios';
+import CompactTable from '../../components/common/CompactTable'; // Import CompactTable component
 
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [transactions, setTransactions] = useState([]);
   
   // Withdrawal states
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -37,20 +39,113 @@ const Profile = () => {
     setError(null);
     
     try {
-      // Fetch withdrawal records
-      const balanceResponse = await axios.get(`${configData.API_SERVER}balance`, {
+      // Fetch user transactions (payments and withdrawals) using KV endpoint
+      const transactionsResponse = await axios.get(`${configData.API_SERVER}transactions`, {
         params: {
+          // fkey: account.user._id,
+          // type: 'payment' // Get both payment and withdraw transactions
         },
         headers: { Authorization: `${account.token}` }
       });
-      // Set balance from response
-      setBalance(balanceResponse.data.balance);
+
+      console.log("Transactions response:", transactionsResponse.data);
+      
+      // Set transactions data from KV response
+      setTransactions(transactionsResponse.data.transactions || []);
+      
+      // Calculate balance from transactions
+      const calculatedBalance = (transactionsResponse.data.transactions || []).reduce((total, tx) => {
+        if (tx.type === 'payment') {
+          return total + (parseInt(tx.amount) || 0);
+        }
+        return total;
+      }, 0);
+      
+      // Set calculated balance
+      setBalance(calculatedBalance);
     } catch (err) {
-      console.error('Error fetching balance data:', err);
-      setError('Failed to load balance information');
+      console.error('Error fetching user transaction data:', err);
+      setError('Failed to load transaction information');
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatDate = (epoch) => {
+    // todo: use user timezone
+    let date = new Date(epoch * 1000).toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'UTC'
+    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
+    return date;
+  }
+
+  
+  // Format transactions for the CompactTable
+  const formatTransactionsForTable = () => {
+
+    // Map transactions to the format expected by CompactTable
+    return transactions.map(transaction => {
+      // Handle withdrawal status which is an array of [status, timestamp] pairs
+      let status = 'unknown';
+      // todo: move this out as a util function and we should use local timezone
+      let date = formatDate(transaction.timestamp);
+      
+      if (transaction.type === 'withdrawal' && Array.isArray(transaction.status)) {
+        // Find the status entry with the highest timestamp
+        let highestTimestamp = 0;
+        transaction.status.forEach(statusEntry => {
+          if (Array.isArray(statusEntry) && statusEntry.length === 2 && statusEntry[1] > highestTimestamp) {
+            highestTimestamp = statusEntry[1];
+            status = statusEntry[0];
+          }
+        });
+        
+        // Convert the epoch timestamp to a readable date
+        if (highestTimestamp > 0) {
+          date = formatDate(highestTimestamp);
+        }
+      } else {
+        status = transaction.status || 'unknown';
+      }
+      
+      // Calculate amount for withdrawals (value_sat + fee_sat)
+      let amount;
+      if (transaction.type === 'withdrawal') {
+        const valueSat = parseInt(transaction.value_sat) || 0;
+        const feeSat = parseInt(transaction.fee_sat) || 0;
+        amount = `-${valueSat + feeSat} (${feeSat} fee)`;
+      } else {
+        amount = `+${transaction.amount}`;
+      }
+      
+      // Truncate ID to first 22 characters
+      const truncatedId = transaction.id ? transaction.id.substring(0, 10) : 'missing';
+      
+      transaction.type === 'withdrawal' ? transaction.type = 'out' : transaction.type = 'in';
+      
+      // Set transaction type based on status
+      
+      if(status === 'Settled' || status === 'SUCCEEDED') {
+        status = 'ok';
+      } else {
+        status = 'pending';
+      }
+
+      return {
+        invoice: truncatedId,
+        type: transaction.type,
+        amount: amount,
+        status: status,
+        date: date,
+      };
+    });
   };
   
   const handleWithdrawalClick = () => {
@@ -78,7 +173,7 @@ const Profile = () => {
     
     try {
       const response = await axios.post(
-        `${configData.API_SERVER}withdraw`,
+        `${configData.API_SERVER}withdrawal`,
         { invoice: invoice.trim() },
         {
           headers: {
@@ -158,6 +253,31 @@ const Profile = () => {
         </Paper>
       </Grid>
       
+      {/* Transaction History Section */}
+      <Grid item xs={12} className={classes.gridItem}>
+          
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={2}>
+              <CircularProgress />
+            </Box>
+          ) : error ? (
+            <Typography variant="body1" color="error" align="center">
+              {error}
+            </Typography>
+          ) : transactions.length === 0 ? (
+            <Typography variant="body1" align="center" p={2}>
+              No transaction history found.
+            </Typography>
+          ) : (
+            <>
+              <CompactTable 
+                title="Transaction History"
+                data={formatTransactionsForTable()} 
+                size="small"
+              />
+            </>
+          )}
+      </Grid>
       
       {/* Posted Items Section */}
       <Grid item xs={12} className={classes.gridItem}>

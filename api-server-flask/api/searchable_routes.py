@@ -2,9 +2,11 @@
 """
 Copyright (c) 2019 - present AppSeed.us
 """
-
+import requests
+import os
 import re
 from flask import request, Response
+import time
 # from dbm.sqlite3 import STORE_KV
 from flask_restx import Resource
 from psycopg2.extras import Json
@@ -21,9 +23,7 @@ import json
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
 searchable_latency = Histogram('searchable_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
 search_results_count = Summary('search_results_count', 'Number of search results returned')
-
-
-import os
+            # Make request to BTCPay Server
 
 BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
 print("BTCPAY_SERVER_GREENFIELD_API_KEY len:" + BTCPAY_SERVER_GREENFIELD_API_KEY)
@@ -40,6 +40,108 @@ def execute_sql(cursor, sql, commit=False, connection=None):
     if commit and connection:
         connection.commit()
     return cursor
+
+
+def get_searchableIds_by_user(user_id):
+    """
+    Retrieves all searchable IDs for a specific user
+    
+    Args:
+        user_id: The user ID to query for
+        
+    Returns:
+        List of searchable IDs belonging to the user
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Query searchables with terminal_id matching the user
+        execute_sql(cur, f"""
+            SELECT searchable_id
+            FROM searchables
+            WHERE searchable_data->>'terminal_id' = '{str(user_id)}'
+        """)
+        
+        searchable_ids = [row[0] for row in cur.fetchall()]
+        
+        cur.close()
+        conn.close()
+        
+        return searchable_ids
+    except Exception as e:
+        print(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
+        return []
+
+
+def get_data_from_kv(type=None, pkey=None, fkey=None):
+    """
+    Retrieves data from the key-value store based on specified parameters
+    
+    Args:
+        type: The type of data to retrieve (required) - can be a single value or list
+        pkey: The primary key to filter by (optional) - can be a single value or list
+        fkey: The foreign key to filter by (optional) - can be a single value or list
+        
+    Returns:
+        List of data records matching the criteria, or empty list if none found
+    """
+    try:
+        if not type:
+            print("Error: type parameter is required for get_data_from_kv")
+            return []
+        
+        # Build query dynamically based on provided parameters
+        query = "SELECT data, pkey, fkey FROM kv WHERE "
+        
+        # Handle type parameter (single value or list)
+        if isinstance(type, list):
+            if not type:  # Empty list check
+                print("Error: type list cannot be empty")
+                return []
+            type_values = "', '".join([str(t) for t in type])
+            query += f"type IN ('{type_values}')"
+        else:
+            query += f"type = '{type}'"
+        
+        # Handle pkey parameter (single value or list)
+        if pkey:
+            if isinstance(pkey, list):
+                if pkey:  # Only if list is not empty
+                    pkey_values = "', '".join([str(p) for p in pkey])
+                    query += f" AND pkey IN ('{pkey_values}')"
+            else:
+                query += f" AND pkey = '{pkey}'"
+        
+        # Handle fkey parameter (single value or list)
+        if fkey:
+            if isinstance(fkey, list):
+                if fkey:  # Only if list is not empty
+                    fkey_values = "', '".join([str(f) for f in fkey])
+                    query += f" AND fkey IN ('{fkey_values}')"
+            else:
+                query += f" AND fkey = '{fkey}'"
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Execute the query with string interpolation
+        execute_sql(cur, query)
+        
+        results = []
+        for row in cur.fetchall():
+            data = row[0].copy() if row[0] else {}  # Make a copy to avoid modifying the original
+            data['pkey'] = row[1]
+            data['fkey'] = row[2]
+            results.append(data)
+            
+        cur.close()
+        conn.close()
+        
+        return results
+    except Exception as e:
+        print(f"Error retrieving data from KV store: {str(e)}")
+        return []
 
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
@@ -720,58 +822,28 @@ class BalanceResource(Resource):
         try:
             user_id = current_user.id
             
-            # Step 1: Get all searchables published by this user
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Query searchables with terminal_id matching the user
-            execute_sql(cur, f"""
-                SELECT searchable_id, searchable_data
-                FROM searchables
-                WHERE searchable_data->>'terminal_id' = '{str(user_id)}'
-            """)
-            
-            searchable_ids = [row[0] for row in cur.fetchall()]
+            # Step 1: Get all searchables published by this user using utility function
+            searchable_ids = get_searchableIds_by_user(user_id)
             
             # Step 2: Calculate balance from payments and withdrawals
             balance = 0
             
-            # If user has searchables, look for payments
+            # If user has searchables, look for payments in a single query
             if searchable_ids:
-                # Get all payments for user's searchables
-                searchable_ids_str = ','.join([f"'{str(sid)}'" for sid in searchable_ids])
-                execute_sql(cur, f"""
-                    SELECT data->>'amount' as amount
-                    FROM kv
-                    WHERE type = 'payment'
-                    AND fkey IN ({searchable_ids_str if len(searchable_ids) > 1 else f"'{str(searchable_ids[0])}'"})
-                """)
-                
-                payment_rows = cur.fetchall()
-                for row in payment_rows:
-                    amount = row[0]
+                payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
+                for record in payment_records:
+                    amount = record.get('amount')
                     # Add payment amount to balance
                     if amount is not None:
                         balance += float(amount)
             
-            # Get all withdrawals for this user
-            # for withdraw, the fkey is the user_id, pkey is the withdraw_id
-            execute_sql(cur, f"""
-                SELECT data->>'amount' as amount
-                FROM kv
-                WHERE type = 'withdraw'
-                AND fkey = '{str(user_id)}'
-            """)
-            
-            withdrawal_rows = cur.fetchall()
-            for row in withdrawal_rows:
-                amount = row[0]
+            # Get all withdrawals for this user using utility function
+            withdrawal_records = get_data_from_kv(type='withdraw', fkey=str(user_id))
+            for record in withdrawal_records:
+                amount = record.get('amount')
                 # Subtract withdrawal amount from balance
                 if amount is not None:
                     balance -= float(amount)
-            
-            cur.close()
-            conn.close()
             
             return {"balance": balance}, 200
             
@@ -781,77 +853,73 @@ class BalanceResource(Resource):
 
 
 
-@rest_api.route('/api/withdraw', methods=['POST'])
+@rest_api.route('/api/withdrawal', methods=['POST'])
 class WithdrawFunds(Resource):
     """
     Processes a withdrawal request via Lightning Network
     """
     @token_required
     def post(self, current_user):
-        with searchable_latency.labels('withdraw').time():
+        with searchable_latency.labels('withdrawal').time():
             # todo: verify that the user has enough balance
             try:
                 data = request.get_json()
                 
                 if not data or 'invoice' not in data:
-                    searchable_requests.labels('withdraw', 'POST', 400).inc()
+                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
                     return {"error": "Lightning invoice is required"}, 400
                 
-                lightning_invoice = data['invoice']
-                
-                # Generate withdraw_id from last 10 chars of the invoice
-                withdraw_id = lightning_invoice[-20:] if len(lightning_invoice) >= 20 else lightning_invoice
-                
+                invoice = data['invoice']
                 # Record the withdrawal in the database first
                 conn = get_db_connection()
                 cur = conn.cursor()
                 
-                # Extract amount from request if available, default to 0
-                amount = data.get('amount', 0)
                 
                 # Prepare withdrawal data
                 withdrawal_data = {
-                    'invoice': lightning_invoice,
-                    'amount': amount,
-                    'status': 'pending',
+                    'invoice': invoice,
+                    'status': [('pending', int(time.time()))],
                     'user_id': current_user.id
                 }
                 
                 # Store withdrawal record
                 execute_sql(cur, f"""
                     INSERT INTO kv (type, fkey, pkey, data)
-                    VALUES ('withdraw', '{current_user.id}', '{withdraw_id}', {Json(withdrawal_data)})
+                    VALUES ('withdrawal', '{current_user.id}', '{invoice}', {Json(withdrawal_data)})
                     RETURNING pkey
                 """, commit=True, connection=conn)
                 
                 # Process payment using the helper function
-                payment_response = pay_lightning_invoice(lightning_invoice)
+                # todo: this should run in a background thread
+                payment_response = pay_lightning_invoice(invoice)
+                fee_sat = payment_response.get('fee_sat', 0)
+                value_sat = payment_response.get('value_sat', 0)
                 
                 # Update the withdrawal record with payment response if available
                 if payment_response:
-                    withdrawal_data['btcpay_response'] = payment_response
+                    # withdrawal_data['btcpay_response'] = payment_response
                     
                     execute_sql(cur, f"""
                         UPDATE kv 
-                        SET data = {Json(withdrawal_data)}
-                        WHERE type = 'withdraw' AND pkey = '{withdraw_id}'
+                        SET data = {Json({
+                            **withdrawal_data,
+                            'fee_sat': fee_sat,
+                            'value_sat': value_sat,
+                            'amount': int(value_sat)+ int(fee_sat),
+                            'status': withdrawal_data['status'] + [(payment_response.get('status', 'unknown'), int(time.time()))]
+                        })}
+                        WHERE type = 'withdrawal' AND pkey = '{invoice}'
                     """, commit=True, connection=conn)
                 
                 cur.close()
                 conn.close()
                 
-                searchable_requests.labels('withdraw', 'POST', 200).inc()
-                return {
-                    "success": True,
-                    "withdraw_id": withdraw_id,
-                    "payment_id": payment_response.get('id', ''),
-                    "amount": amount,
-                    "status": withdrawal_data.get('status', 'pending')
-                }, 200
+                searchable_requests.labels('withdrawal', 'POST', 200).inc()
+                return {"recorded": True}, 200
                 
             except Exception as e:
                 print(f"Error processing withdrawal: {str(e)}")
-                searchable_requests.labels('withdraw', 'POST', 500).inc()
+                searchable_requests.labels('withdrawal', 'POST', 500).inc()
                 return {"error": str(e)}, 500
 
 
@@ -910,7 +978,7 @@ class CreateInvoice(Resource):
             amount = data['amount']
             searchable_id = data['searchable_id']
             item_name = data.get('item_name', f"Item #{searchable_id}")
-            buyer_name = data.get('buyer_name', "Anonymous")
+            buyer_id = data.get('buyer_id', "unknow")
             
             # Prepare payload for BTCPay Server
             payload = {
@@ -919,7 +987,7 @@ class CreateInvoice(Resource):
                 "metadata": {
                     "orderId": searchable_id,
                     "itemName": item_name,
-                    "buyerName": buyer_name,
+                    "buyerName": buyer_id,
                 },
                 "checkout": {
                     "expirationMinutes": 60,
@@ -929,8 +997,6 @@ class CreateInvoice(Resource):
                 }
             }
             
-            # Make request to BTCPay Server
-            import requests
             response = requests.post(
                 f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
                 json=payload,
@@ -944,6 +1010,8 @@ class CreateInvoice(Resource):
                 return {"error": f"Failed to create invoice: {response.text}"}, 500
                 
             invoice_data = response.json()
+            # Log raw invoice data for debugging purposes
+            print(f"Raw invoice data: {json.dumps(invoice_data, indent=2)}")
             
             # Record the invoice in our database
             conn = get_db_connection()
@@ -951,10 +1019,11 @@ class CreateInvoice(Resource):
             
             # Store invoice record
             invoice_record = {
-                "amount": amount,
-                "buyer": current_user.id,
-                "timestamp": str(datetime.datetime.now()),
-                "searchable_id": searchable_id
+                "amount": int(amount),
+                "buyer_id": str(current_user.id),
+                "timestamp": int(datetime.datetime.now().timestamp()),
+                "searchable_id": str(searchable_id),
+                "invoice_id": invoice_data['id']
             }
             
             execute_sql(cur, f"""
@@ -999,38 +1068,32 @@ class CheckPayment(Resource):
             
             # If payment is settled, record it in our database
             if invoice_data['status'] == 'Settled' or invoice_data['status'] == 'Complete':
-                # Get the searchable_id from the invoice record
-                conn = get_db_connection()
-                cur = conn.cursor()
+                # Get the searchable_id from the invoice record using utility function
+                invoice_records = get_data_from_kv(type='invoice', pkey=invoice_id)
                 
-                execute_sql(cur, f"""
-                    SELECT fkey, data FROM kv
-                    WHERE type = 'invoice' AND pkey = '{invoice_id}'
-                """)
-                
-                result = cur.fetchone()
-                if result:
-                    searchable_id = result[0]
-                    invoice_record = result[1]
+                if invoice_records:
+                    invoice_record = invoice_records[0]
+                    searchable_id = invoice_record.get('fkey')
                     
                     # Store payment record
                     payment_record = {
-                        "amount": invoice_data.get('amount', invoice_record.get('amount')),
+                        "amount": int(invoice_data.get('amount', invoice_record.get('amount'))),
                         "status": invoice_data['status'],
-                        "buyer_id": current_user.id,
-                        "timestamp": str(datetime.datetime.now()),
-                        "searchable_id": searchable_id
+                        "buyer_id": str(current_user.id), # todo: this could be visitor
+                        "timestamp": int(time.time()),
+                        "searchable_id": str(searchable_id)
                     }
                     
+                    conn = get_db_connection()
+                    cur = conn.cursor()
                     execute_sql(cur, f"""
                         INSERT INTO kv (type, pkey, fkey, data)
                         VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
                         ON CONFLICT (type, pkey, fkey) 
                         DO UPDATE SET data = {Json(payment_record)}
                     """, commit=True, connection=conn)
-                
-                cur.close()
-                conn.close()
+                    cur.close()
+                    conn.close()
             
             # Return the payment status to the client
             return invoice_data, 200
@@ -1038,3 +1101,68 @@ class CheckPayment(Resource):
         except Exception as e:
             print(f"Error checking payment status: {str(e)}")
             return {"error": str(e)}, 500
+
+
+
+@rest_api.route('/api/transactions', methods=['GET'])
+class TransactionHistory(Resource):
+    """
+    Retrieves complete transaction history for the current user, including payments and withdrawals
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/transactions" -H "Authorization: <token>"
+    """
+    @token_required
+    def get(self, current_user):
+        with searchable_latency.labels('transaction_history').time():
+            try:
+                # Initialize transactions list
+                transactions = []
+                
+                # Get all searchables published by this user
+                searchable_ids = get_searchableIds_by_user(current_user.id)
+                
+                # Get all payments for all user's searchables in a single query
+                if searchable_ids:
+                    payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
+                    for payment in payment_records:
+                        # Normalize payment data
+                        transaction = {
+                            'invoice_id': payment.get('pkey', ''),
+                            'type': 'payment',
+                            'amount': int(payment.get('amount', 0)),
+                            'timestamp': payment.get('timestamp', ''),
+                            'status': payment.get('status', 'unknown'),
+                            'searchable_id': payment.get('fkey', ''),
+                            'buyer_id': payment.get('buyer_id', '')
+                        }
+                        transactions.append(transaction)
+                
+                # Get all withdrawals for this user
+                withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(current_user.id))
+                for withdrawal in withdrawal_records:
+                    # Normalize withdrawal data
+                    transaction = {
+                        'invoice': withdrawal.get('pkey', ''),
+                        'type': 'withdrawal',
+                        'amount': int(withdrawal.get('amount', "")),
+                        'fee_sat': int(withdrawal.get('fee_sat', "")),
+                        'value_sat': int(withdrawal.get('value_sat', "")),
+                        'timestamp': int(payment.get('timestamp', '')),
+                        'status': withdrawal.get('status', []),
+                        'invoice': withdrawal.get('invoice', 'missing'),
+                    }
+                    transactions.append(transaction)
+                
+                # Monitor metrics
+                searchable_requests.labels('transaction_history', 'GET', 200).inc()
+                
+                return {
+                    'transactions': transactions
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving transaction history: {str(e)}")
+                searchable_requests.labels('transaction_history', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+

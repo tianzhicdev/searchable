@@ -288,6 +288,95 @@ export function componentStyleOverrides(theme) {
                     fontFamily: theme.fonts.fontFamily.primary
                 }
             }
-        }
+        },
+        MuiTable: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary
+                }
+            }
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    color: theme.textDark
+                },
+                head: {
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    color: theme.colors.lightBlue
+                }
+            }
+        },
+        MuiTableHead: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary
+                }
+            }
+        },
+        MuiTablePagination: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    color: theme.textDark
+                },
+                selectIcon: {
+                    color: theme.colors.lightBlue
+                },
+                actions: {
+                    color: theme.colors.lightBlue
+                }
+            }
+        },
+        MuiTable: {
+            styleOverrides: {
+                root: {
+                    '& .MuiTableCell-root': {
+                        borderColor: `${theme.colors.lightBlue} !important`
+                    }
+                }
+            }
+        },
+        MuiTableRow: {
+            styleOverrides: {
+                root: {
+                    borderColor: theme.colors.lightBlue,
+                    fontFamily: theme.fonts.fontFamily.primary
+                }
+            }
+        },
+        MuiTablePagination: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    color: theme.textDark
+                },
+                selectIcon: {
+                    color: theme.colors.lightBlue
+                },
+                actions: {
+                    color: theme.colors.lightBlue
+                },
+                select: {
+                    color: theme.textDark
+                },
+                menuItem: {
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                displayedRows: {
+                    margin: 0,
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                selectLabel:{
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                toolbar: {
+                    '& > p:nth-of-type(1)': {
+                        fontSize: '0.875rem'
+                    }
+                }
+            }
+        },
     };
 }

@@ -5,6 +5,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import CompactTable from '../../components/common/CompactTable';
 
 const SearchableDetails = () => {
   // Item data
@@ -47,7 +48,7 @@ const SearchableDetails = () => {
       try {
         console.log("User:", account.user);
         console.log("Item:", SearchableItem);
-        if (account && SearchableItem && SearchableItem.terminal_id === account.user._id) {
+        if (account && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
           setIsOwner(true);
           // Fetch payment records when we confirm the user is the owner
           fetchPaymentRecords();
@@ -130,8 +131,7 @@ const SearchableDetails = () => {
       const payload = {
         amount: SearchableItem.payloads.public.price,
         searchable_id: id,
-        item_name: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
-        buyer_name: account?.user?.username || "Anonymous",
+        buyer_id: account?.user?._id || "unknown",
         redirect_url: window.location.href
       };
       
@@ -510,36 +510,21 @@ const SearchableDetails = () => {
         </Grid>
         </Paper>
         
+
+        {/* Replace the Payment Records table with CompactTable component */}
         {isOwner && (
-          <Paper sx={{ marginTop: 2, padding: 2 }}>
-            <Box p={2}>
-              <Typography variant="h5" gutterBottom>
-                Payment Records
-              </Typography>
-              {paymentRecords.length > 0 ? (
-                <Box sx={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Invoice ID</th>
-                        <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paymentRecords.map((record) => (
-                        <tr key={record.pkey}>
-                          <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{record.pkey}</td>
-                          <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{record.status || 'Unknown'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Box>
-              ) : (
-                <Typography variant="body1">No payment records found.</Typography>
-              )}
-            </Box>
-          </Paper>
+          <Box mt={2}>
+            <CompactTable 
+              data={paymentRecords.map(record => ({
+                PaymentId: record.pkey,
+                Amount: record.amount,
+                Status: record.status,
+                UpdatedAt: formatDate(record.timestamp)
+              }))}
+              title="Payment Records"
+              // excludeColumns={["type", "fkey", "ctime", "value"]} 
+            />
+          </Box>
         )}
         </Grid>
       )}

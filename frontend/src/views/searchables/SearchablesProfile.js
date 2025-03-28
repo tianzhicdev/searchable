@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Typography, Paper, Box, Divider, Tooltip
+  Typography, Paper, Box, Divider
 } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 
@@ -25,11 +25,10 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
     >
       <Box display="flex" flexDirection="row">
         <Box id="item-details" flex="1 1 auto">
-          <Tooltip title={publicData.title || ''} placement="top">
             <Typography variant="h4">
               {truncateText(publicData.title, 50)}
             </Typography>
-          </Tooltip>
+
           
           <Divider />
           
@@ -46,7 +45,7 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
                 Price: {publicData.price} Sats
               </Typography>
             )}
-            
+
             {item.distance && (
               <Typography variant="body2">
                 Distance: {formatDistance(item.distance)}
@@ -59,11 +58,9 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
               </Typography>
             )}
             
-            <Tooltip title={publicData.description || ''} placement="top">
               <Typography variant="body2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                 Description: {truncateText(publicData.description, 150)}
               </Typography>
-            </Tooltip>
           </Box>
         </Box>
         <Box id="item-profile-image" flex="0 0 auto" mr={2}>
