@@ -6,57 +6,93 @@ print(PASSWORD)
 
 import paramiko
 import json
-import requests
 
-def pay_lightning_invoice(invoice, decode_only=False):
+def decode_lightning_invoice(invoice):
     """
-    Pay a Lightning Network invoice via BTCPay Server
+    Decode a Lightning Network invoice without paying it.
     
     Args:
-        invoice: The lightning invoice to pay
-        decode_only: If True, only decode the invoice without paying
+        invoice (str): The Lightning Network invoice to decode
         
     Returns:
-        dict: The payment response with status information
+        dict: JSON response containing decoded invoice details
     """
     try:
-        # First, decode the invoice to get its details
-        decode_response = requests.get(
-            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/lightning/BTC/invoices/decode",
-            params={"cryptoCode": "BTC", "lightning": invoice},
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-            }
-        )
+        # Set up SSH client
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        if decode_response.status_code != 200:
-            raise Exception(f"Failed to decode invoice: {decode_response.text}")
-            
-        invoice_details = decode_response.json()
+        # Connect to the remote host
+        client.connect(HOST, username='root', password=PASSWORD)
         
-        # If we only want to decode, return the invoice details
-        if decode_only:
-            return invoice_details
+        # Command to decode the invoice
+        command = f"docker exec -i btcpayserver_lnd_bitcoin lncli --macaroonpath=/data/admin.macaroon --network=mainnet decodepayreq {invoice} --json"
         
-        # Otherwise, proceed with payment
-        response = requests.post(
-            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/lightning/BTC/payments",
-            json={"BOLT11": invoice},
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-            }
-        )
+        # Execute the command
+        stdin, stdout, stderr = client.exec_command(command)
         
-        if response.status_code != 200:
-            raise Exception(f"Failed to pay invoice: {response.text}")
-            
-        payment_data = response.json()
-        return payment_data
+        # Get the output
+        response = stdout.read().decode('utf-8')
+        # Print the response for debugging
+        print(f"Lightning invoice decode response: {response}")
+        error = stderr.read().decode('utf-8')
+        
+        # Close the connection
+        client.close()
+        
+        if error:
+            print(f"Lightning invoice decode error: {error}")
+            return {"error": error}
+        
+        # Parse the JSON response
+        return json.loads(response)
+    
     except Exception as e:
-        print(f"Error paying Lightning invoice: {str(e)}")
-        raise
+        print(f"Exception decoding invoice: {str(e)}")
+        return {"error": str(e)}
+
+def pay_lightning_invoice(invoice):
+    """
+    Pay a Lightning Network invoice remotely on the specified host and return the payment result.
+    
+    Args:
+        invoice (str): The Lightning Network invoice to pay
+        
+    Returns:
+        dict: JSON response from the payment command
+    """
+    try:
+        # Set up SSH client
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Connect to the remote host
+        client.connect(HOST, username='root', password=PASSWORD)
+        
+        # Command to pay the invoice
+        command = f"docker exec -i btcpayserver_lnd_bitcoin lncli --macaroonpath=/data/admin.macaroon --network=mainnet payinvoice {invoice} -f --json --fee_limit 50"
+        
+        # Execute the command
+        stdin, stdout, stderr = client.exec_command(command)
+        
+        # Get the output
+        response = stdout.read().decode('utf-8')
+        # Print the response for debugging
+        print(f"Lightning payment response: {response}")
+        error = stderr.read().decode('utf-8')
+        
+        # Close the connection
+        client.close()
+        
+        if error:
+            print(f"Lightning payment error: {error}")
+            return {"error": error}
+        
+        # Parse the JSON response
+        return json.loads(response)
+    
+    except Exception as e:
+        return {"error": str(e)}
 
 # root@generous-purpose:~/btcpayserver-docker# docker exec -it btcpayserver_lnd_bitcoin lncli --macaroonpath=/data/admin.macaroon  --network=mainnet payinvoice lnbc110n1pn7tmsjdqdgdshx6pqg9c8qpp5vjrx2jdtch5pzchxjgpudj8rv6dqpmf82eat72gax90rwzhzgkpqsp55370guh6xgeultfq5zxpckh8s3rcgx4fwfjyxydhaqc26xzz5sps9qrsgqcqpcxqy8ayqrzjqv06k0m23t593pngl0jt7n9wznp64fqngvctz7vts8nq4tukvtljqzhvysqqvncqqqqqqqqqqqqqqqqq9grzjqtsjy9p55gdceevp36fvdmrkxqvzfhy8ak2tgc5zgtjtra9xlaz97zy63gqqtdsqquqqqqqqqqqqqqqq9gxkrff8daffd2avqnm06jx3p3hnweegwjkkje28v42vapjs5ywtsrxdectws25qzm2dxc85dql8k8vau969z39294cz7c4atgdaukejgq7wt57s -f --json
 # {

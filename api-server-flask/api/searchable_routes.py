@@ -17,7 +17,7 @@ import datetime
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
 from .routes import get_db_connection, token_required
-from .helper import pay_lightning_invoice
+from .helper import pay_lightning_invoice, decode_lightning_invoice
 import json
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
@@ -887,9 +887,19 @@ class WithdrawFunds(Resource):
                 
                 # Decode the invoice to get the amount
                 try:
-                    # Use our Lightning client to decode the invoice and get amount
-                    decoded_invoice = pay_lightning_invoice(invoice, decode_only=True)
-                    amount_to_withdraw = decoded_invoice.get('value_sat', 0) + decoded_invoice.get('fee_sat', 0)
+                    # Use our decode function to get invoice details without paying
+                    decoded_invoice = decode_lightning_invoice(invoice)
+                    if 'error' in decoded_invoice:
+                        searchable_requests.labels('withdrawal', 'POST', 400).inc()
+                        return {"error": f"Failed to decode invoice: {decoded_invoice['error']}"}, 400
+                    
+                    # Check if num_satoshis exists in the decoded invoice
+                    if 'num_satoshis' not in decoded_invoice:
+                        searchable_requests.labels('withdrawal', 'POST', 400).inc()
+                        return {"error": "Invoice missing amount information"}, 400
+                        
+                    # Get amount in satoshis from decoded invoice
+                    amount_to_withdraw = int(decoded_invoice['num_satoshis'])
                 except Exception as e:
                     print(f"Error decoding invoice: {str(e)}")
                     searchable_requests.labels('withdrawal', 'POST', 400).inc()
@@ -897,8 +907,9 @@ class WithdrawFunds(Resource):
                 
                 # Check if user has enough balance
                 current_balance = check_balance(current_user.id)
-                print(f"Current balance: {current_balance} for user {current_user.id}")
+                print(f"Current balance: {current_balance}")
                 
+                # todo: add a bit for fees
                 if current_balance < amount_to_withdraw:
                     searchable_requests.labels('withdrawal', 'POST', 400).inc()
                     return {
