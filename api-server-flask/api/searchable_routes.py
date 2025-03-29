@@ -936,26 +936,26 @@ class WithdrawFunds(Resource):
                 """, commit=True, connection=conn)
                 
                 # Process payment using the helper function
-                # todo: this should run in a background thread
-                payment_response = pay_lightning_invoice(invoice)
-                fee_sat = payment_response.get('fee_sat', 0)
-                value_sat = payment_response.get('value_sat', 0)
+                # # todo: this should run in a background thread
+                # payment_response = pay_lightning_invoice(invoice)
+                # fee_sat = payment_response.get('fee_sat', 0)
+                # value_sat = payment_response.get('value_sat', 0)
                 
-                # Update the withdrawal record with payment response if available
-                if payment_response:
-                    # withdrawal_data['btcpay_response'] = payment_response
+                # # Update the withdrawal record with payment response if available
+                # if payment_response:
+                #     # withdrawal_data['btcpay_response'] = payment_response
                     
-                    execute_sql(cur, f"""
-                        UPDATE kv 
-                        SET data = {Json({
-                            **withdrawal_data,
-                            'fee_sat': fee_sat,
-                            'value_sat': value_sat,
-                            'amount': int(value_sat)+ int(fee_sat),
-                            'status': withdrawal_data['status'] + [(payment_response.get('status', 'unknown'), int(time.time()))]
-                        })}
-                        WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                    """, commit=True, connection=conn)
+                #     execute_sql(cur, f"""
+                #         UPDATE kv 
+                #         SET data = {Json({
+                #             **withdrawal_data,
+                #             'fee_sat': fee_sat,
+                #             'value_sat': value_sat,
+                #             'amount': int(value_sat)+ int(fee_sat),
+                #             'status': withdrawal_data['status'] + [(payment_response.get('status', 'unknown'), int(time.time()))]
+                #         })}
+                #         WHERE type = 'withdrawal' AND pkey = '{invoice}'
+                #     """, commit=True, connection=conn)
                 
                 cur.close()
                 conn.close()
@@ -1060,6 +1060,7 @@ class CreateInvoice(Resource):
             return {"error": str(e)}, 500
 
 
+# todo: fe shoudl not call it
 @rest_api.route('/api/check-payment/<string:invoice_id>', methods=['GET'])
 class CheckPayment(Resource):
     """

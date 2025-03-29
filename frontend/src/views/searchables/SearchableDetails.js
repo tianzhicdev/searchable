@@ -5,6 +5,12 @@ import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import CheckIcon from '@material-ui/icons/Check';
+import ErrorIcon from '@material-ui/icons/Error';
+import CloseIcon from '@material-ui/icons/Close';
+import Alert from '@material-ui/lab/Alert';
+import IconButton from '@material-ui/core/IconButton';
+import Collapse from '@material-ui/core/Collapse';
 import CompactTable from '../../components/common/CompactTable';
 
 const SearchableDetails = () => {
@@ -38,6 +44,11 @@ const SearchableDetails = () => {
   
   const paymentCheckRef = useRef(null);
   const isMountedRef = useRef(true); //todo: what?
+  
+  // Alert states
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
   
   useEffect(() => {
     fetchItemDetails();
@@ -150,7 +161,7 @@ const SearchableDetails = () => {
       checkPaymentStatus(response.data.id);
     } catch (err) {
       console.error("Error creating invoice:", err);
-      alert("Failed to create payment invoice. Please try again.");
+      showAlert("Failed to create payment invoice. Please try again.", "error");
     } finally {
       setCreatingInvoice(false);
     }
@@ -188,7 +199,7 @@ const SearchableDetails = () => {
         } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
           console.log("Payment completed successfully");
           
-          alert("Payment successful! The seller has been notified.");
+          showAlert("Payment successful!");
           setPaymentDialogOpen(false);
         } else {
           console.log("Payment in final state (not successful)");
@@ -256,11 +267,11 @@ const SearchableDetails = () => {
           }
         }
       );
-      alert("Item removed successfully");
+      showAlert("Item removed successfully");
       history.push('/searchables');
     } catch (error) {
       console.error("Error removing item:", error);
-      alert("Failed to remove the item");
+      showAlert("Failed to remove the item", "error");
     } finally {
       setIsRemoving(false);
     }
@@ -306,6 +317,18 @@ const SearchableDetails = () => {
     }
   };
   
+  // Function to show alerts
+  const showAlert = (message, severity = 'success') => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setAlertOpen(true);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setAlertOpen(false);
+    }, 5000);
+  };
+  
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
@@ -318,6 +341,30 @@ const SearchableDetails = () => {
               <ChevronLeftIcon /> 
             </Button>
         </Box>
+      </Grid>
+      
+      {/* Alert notification */}
+      <Grid item xs={12}>
+        <Collapse in={alertOpen}>
+          <Alert
+            severity={alertSeverity}
+            action={
+              <IconButton
+                aria-label="close"
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  setAlertOpen(false);
+                }}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            icon={alertSeverity === 'success' ? <CheckIcon fontSize="inherit" /> : <ErrorIcon fontSize="inherit" />}
+          >
+            {alertMessage}
+          </Alert>
+        </Collapse>
       </Grid>
       
       {loading && (

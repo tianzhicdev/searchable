@@ -153,7 +153,13 @@ const Profile = () => {
         status: status,
         date: date,
       };
-    }).sort((a, b) => b.date - a.date);
+    }).sort((a, b) => {
+      // Convert dates to comparable values
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      // Sort in descending order (newest first)
+      return dateB - dateA;
+    });
   };
   
   const handleWithdrawalClick = () => {
@@ -200,7 +206,20 @@ const Profile = () => {
       
     } catch (err) {
       console.error('Error processing withdrawal:', err);
-      setWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+      
+      // Check for specific insufficient funds error
+      if (err.response?.status === 400 && 
+          err.response?.data?.error === "Insufficient funds" &&
+          err.response?.data?.available_balance !== undefined &&
+          err.response?.data?.withdrawal_amount !== undefined) {
+        
+        // Format error message with balance information
+        const errorMsg = `Insufficient funds. Available balance: ${err.response.data.available_balance} sats, 
+                          Withdrawal amount: ${err.response.data.withdrawal_amount} sats`;
+        setWithdrawalError(errorMsg);
+      } else {
+        setWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+      }
     } finally {
       setWithdrawalLoading(false);
     }
@@ -322,7 +341,14 @@ const Profile = () => {
             onChange={handleInvoiceChange}
             placeholder="lnbc..."
             variant="outlined"
+            fullWidth
+            margin="normal"
           />
+          {withdrawalError && (
+            <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
+              {withdrawalError}
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseWithdrawDialog}>
@@ -331,7 +357,8 @@ const Profile = () => {
           <Button 
             onClick={handleSubmitWithdrawal} 
             variant="contained"
-            // disabled={!invoice || withdrawalLoading}
+            color="primary"
+            disabled={withdrawalLoading} // todo: need to remove this shit. it is ugly
           >
             {withdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
           </Button>

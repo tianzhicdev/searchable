@@ -1,17 +1,36 @@
 version: '3.8'
 services:
+  background:
+    build:
+      context: .
+      dockerfile: Dockerfile.background
+    env_file: 
+      - .env
+      - /usr/local/.secrets.env
+    networks:
+      - db_network
+      - web_network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"  # Max 1 CPU core[6][8]
+          memory: 1GB  # Max 512MB RAM[6][3]
+        reservations:
+          cpus: "1.0"   # Guaranteed 0.5 CPU core[6]
+          memory: 256M  # Guaranteed 256MB RAM[6]
+    
   flask_api:
     container_name: flask_api
     restart: always
     env_file: 
       - .env
       - /usr/local/.secrets.env
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     networks:
       - db_network
       - web_network
-    volumes:
-      - /usr/local/.secrets.json:/app/secrets/tokens.json
     deploy:
       resources:
         limits:
