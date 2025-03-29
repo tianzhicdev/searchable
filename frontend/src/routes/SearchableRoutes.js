@@ -1,11 +1,9 @@
 import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
 import NavMotion from '../layout/NavMotion';
-import Searchables from '../views/searchables/Searchables';
 import AuthGuard from './../utils/route-guard/AuthGuard';
 import PublishSearchables from '../views/searchables/PublishSearchables';
 import Profile from '../views/profile/Profile';
-import SearchableDetails from '../views/searchables/SearchableDetails';
 
 // // login routing
 // const AuthLogin = Loadable(lazy(() => import('../views/pages/authentication/login')));
@@ -17,14 +15,15 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/searchables', '/publish-searchables', '/profile', '/test-component', '/searchable-item/:id']}>
+        <Route path={['/publish-searchables', '/profile']}>
             <Switch location={location} key={location.pathname}>
+                {/* Protected routes that require authentication */}
                 <AuthGuard>
-                        <Route exact path="/searchables" component={Searchables} />
-                        <Route exact path="/publish-searchables" component={PublishSearchables} />
-                        <Route exact path="/profile" component={Profile} />
-                        <Route exact path="/searchable-item/:id" component={SearchableDetails} />
+                    <Route exact path="/publish-searchables" component={PublishSearchables} />
+                    <Route exact path="/profile" component={Profile} />
                 </AuthGuard>
+                
+                {/* Public routes accessible to unregistered visitors */}
             </Switch>
         </Route>
     );

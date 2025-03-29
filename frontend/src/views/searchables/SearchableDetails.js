@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
+import { getOrCreateVisitorId } from '../utilities/Visitor';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import CheckIcon from '@material-ui/icons/Check';
@@ -12,6 +13,7 @@ import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
 import CompactTable from '../../components/common/CompactTable';
+import { formatDate } from '../utilities/Date';
 
 const SearchableDetails = () => {
   // Item data
@@ -59,7 +61,7 @@ const SearchableDetails = () => {
       try {
         console.log("User:", account.user);
         console.log("Item:", SearchableItem);
-        if (account && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
+        if (account && account.user && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
           setIsOwner(true);
           // Fetch payment records when we confirm the user is the owner
           fetchPaymentRecords();
@@ -138,11 +140,14 @@ const SearchableDetails = () => {
     setCreatingInvoice(true);
     setPaymentStatus(null);
     try {
+      // Get buyer ID - use account.user._id if available, otherwise use visitor ID
+      const buyerId = account?.user?._id || getOrCreateVisitorId();
+      
       // Instead of calling BTCPay Server directly, call our backend API
       const payload = {
         amount: SearchableItem.payloads.public.price,
         searchable_id: id,
-        buyer_id: account?.user?._id || "unknown",
+        buyer_id: buyerId,
         redirect_url: window.location.href
       };
       
@@ -178,10 +183,11 @@ const SearchableDetails = () => {
     }
     
     try {
+      const buyerId = account?.user?._id || getOrCreateVisitorId();
       console.log("Fetching invoice data from backend");
       const response = await axios({
         method: 'get',
-        url: `${configData.API_SERVER}check-payment/${invoiceId}`,
+        url: `${configData.API_SERVER}check-payment/${invoiceId}/${buyerId}`,
         headers: {
           Authorization: `${account.token}`
         }
@@ -305,17 +311,7 @@ const SearchableDetails = () => {
       console.error("Error fetching payment records:", error);
     }
   };
-  
-  // Add this function to format the timestamp
-  const formatDate = (timestamp) => {
-    if (!timestamp) return 'Unknown';
-    try {
-      const date = new Date(timestamp);
-      return date.toLocaleString();
-    } catch (error) {
-      return timestamp;
-    }
-  };
+
   
   // Function to show alerts
   const showAlert = (message, severity = 'success') => {
@@ -566,7 +562,7 @@ const SearchableDetails = () => {
                 PaymentId: record.pkey,
                 Amount: record.amount,
                 Status: record.status,
-                UpdatedAt: formatDate(record.timestamp)
+                Date: formatDate(record.timestamp)
               }))}
               title="Payment Records"
               // excludeColumns={["type", "fkey", "ctime", "value"]} 

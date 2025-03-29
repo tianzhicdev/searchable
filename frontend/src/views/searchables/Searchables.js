@@ -9,6 +9,7 @@ import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
+import VpnKeyIcon from '@material-ui/icons/VpnKey';
 
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
@@ -106,6 +107,11 @@ const Searchables = () => {
     history.push('/profile');
   };
 
+  // Handle navigation to login page
+  const handleLoginClick = () => {
+    history.push('/login');
+  };
+
   // Handle search button click
   const handleSearchButtonClick = () => {
     localStorage.setItem('searchTerm', searchTerm);
@@ -123,27 +129,39 @@ const Searchables = () => {
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box mb={2}>
-            <Button 
-              variant="contained" 
-              onClick={handleProfileClick}
-            >
-              <PersonIcon />
-            </Button>
-            
-            <Button 
-              variant="contained" 
-              onClick={handleLogout}
-            >
-              <ExitToAppIcon />
-            </Button>
-            
-            <Button 
-              variant="contained" 
-              onClick={handleAddNew}
-              style={{ float: 'right' }}
-            >
-              <AddIcon />
-            </Button>
+            {account.user ? (
+              <>
+                <Button 
+                  variant="contained" 
+                  onClick={handleProfileClick}
+                >
+                  <PersonIcon />
+                </Button>
+                
+                <Button 
+                  variant="contained" 
+                  onClick={handleLogout}
+                >
+                  <ExitToAppIcon />
+                </Button>
+                
+                <Button 
+                  variant="contained" 
+                  onClick={handleAddNew}
+                  style={{ float: 'right' }}
+                >
+                  <AddIcon />
+                </Button>
+              </>
+            ) : (
+              <Button 
+                variant="contained" 
+                onClick={handleLoginClick}
+                color="primary"
+              >
+                Login
+              </Button>
+            )}
         </Box>
       </Grid>
       

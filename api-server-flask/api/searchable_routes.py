@@ -188,8 +188,7 @@ class GetSearchableItem(Resource):
     """
     Retrieves a specific searchable item by its ID
     """
-    @token_required
-    def get(self, current_user, searchable_id):
+    def get(self, searchable_id):
         with searchable_latency.labels('get_searchable_item').time():
             try:
                 conn = get_db_connection()
@@ -298,57 +297,56 @@ class CreateSearchable(Resource):
                 searchable_requests.labels('create_searchable', 'POST', 500).inc()
                 return {"error": str(e), "error_details": error_traceback}, 500
 
-@rest_api.route('/api/searchable/user', methods=['GET'])
-class UserSearchables(Resource):
-    """
-    Returns all searchable items posted by the current user
+# @rest_api.route('/api/searchable/user', methods=['GET'])
+# class UserSearchables(Resource):
+#     """
+#     Returns all searchable items posted by the current user
     
-    Example curl request:
-    curl -X GET "http://localhost:5000/api/searchable/user" -H "Authorization: <token>"
-    """
-    @token_required
-    def get(self, current_user):
-        with searchable_latency.labels('user_searchables').time():
-            print(f"Fetching searchable items for user: {current_user}")
-            try:
-                conn = get_db_connection()
-                cur = conn.cursor()
+#     Example curl request:
+#     curl -X GET "http://localhost:5000/api/searchable/user" -H "Authorization: <token>"
+#     """
+#     def get(self, current_user):
+#         with searchable_latency.labels('user_searchables').time():
+#             print(f"Fetching searchable items for user: {current_user}")
+#             try:
+#                 conn = get_db_connection()
+#                 cur = conn.cursor()
                 
-                # Query to get all searchable items created by this user
-                execute_sql(cur, f"""
-                    SELECT searchable_id, searchable_data
-                    FROM searchables
-                    WHERE (searchable_data->>'terminal_id') = '{str(current_user.id)}'
-                    ORDER BY searchable_id DESC
-                """)
+#                 # Query to get all searchable items created by this user
+#                 execute_sql(cur, f"""
+#                     SELECT searchable_id, searchable_data
+#                     FROM searchables
+#                     WHERE (searchable_data->>'terminal_id') = '{str(current_user.id)}'
+#                     ORDER BY searchable_id DESC
+#                 """)
                 
-                results = []
-                for row in cur.fetchall():
-                    searchable_id, searchable_data = row
+#                 results = []
+#                 for row in cur.fetchall():
+#                     searchable_id, searchable_data = row
                     
-                    # Combine the data
-                    item = searchable_data.copy() if searchable_data else {}
-                    item['searchable_id'] = searchable_id
+#                     # Combine the data
+#                     item = searchable_data.copy() if searchable_data else {}
+#                     item['searchable_id'] = searchable_id
                     
-                    # Add username (we already know it's the current user)
-                    item['username'] = current_user.username
+#                     # Add username (we already know it's the current user)
+#                     item['username'] = current_user.username
                     
-                    results.append(item)
+#                     results.append(item)
                 
-                cur.close()
-                conn.close()
+#                 cur.close()
+#                 conn.close()
                 
-                searchable_requests.labels('user_searchables', 'GET', 200).inc()
-                return {
-                    "success": True,
-                    "count": len(results),
-                    "results": results
-                }, 200
+#                 searchable_requests.labels('user_searchables', 'GET', 200).inc()
+#                 return {
+#                     "success": True,
+#                     "count": len(results),
+#                     "results": results
+#                 }, 200
                 
-            except Exception as e:
-                print(f"Error fetching user searchables: {str(e)}")
-                searchable_requests.labels('user_searchables', 'GET', 500).inc()
-                return {"error": str(e)}, 500
+#             except Exception as e:
+#                 print(f"Error fetching user searchables: {str(e)}")
+#                 searchable_requests.labels('user_searchables', 'GET', 500).inc()
+#                 return {"error": str(e)}, 500
 
 
 @rest_api.route('/api/searchable/search', methods=['GET'])
@@ -357,10 +355,8 @@ class SearchSearchables(Resource):
     Search for searchable items based on location and optional query terms
     
     """
-    @token_required
-    def get(self, current_user):
+    def get(self):
         with searchable_latency.labels('search_searchables').time():
-            print(f"Searching for searchable items for user: {current_user}")
             try:
                 # Parse and validate request parameters
                 params = self._parse_request_params()
@@ -758,8 +754,7 @@ class KvResource(Resource):
     """
     Key-value store for arbitrary data
     """
-    @token_required
-    def get(self, current_user):
+    def get(self):
         """
         Retrieve data from key-value store
         """
@@ -810,8 +805,8 @@ class KvResource(Resource):
             print(f"Error retrieving from KV store: {str(e)}")
             return {"error": str(e)}, 500
     
-    @token_required
-    def put(self, current_user):
+
+    def put(self):
         """
         Insert or update data in key-value store
         """
@@ -984,13 +979,15 @@ class CreateInvoice(Resource):
     """
     Creates a Lightning Network invoice via BTCPay Server
     """
-    @token_required
-    def post(self, current_user):
+
+    def post(self):
         try:
             data = request.get_json()
             
             if not data or 'amount' not in data or 'searchable_id' not in data:
                 return {"error": "Amount and searchable_id are required"}, 400
+            if 'buyer_id' not in data:
+                data['buyer_id'] = "unknown"
             
             # Get the data from the request
             amount = data['amount']
@@ -1038,7 +1035,7 @@ class CreateInvoice(Resource):
             # Store invoice record
             invoice_record = {
                 "amount": int(amount),
-                "buyer_id": str(current_user.id),
+                "buyer_id": str(data['buyer_id']),
                 "timestamp": int(datetime.datetime.now().timestamp()),
                 "searchable_id": str(searchable_id),
                 "invoice_id": invoice_data['id']
@@ -1061,13 +1058,12 @@ class CreateInvoice(Resource):
 
 
 # todo: fe shoudl not call it
-@rest_api.route('/api/check-payment/<string:invoice_id>', methods=['GET'])
+@rest_api.route('/api/check-payment/<string:invoice_id>/<string:buyer_id>', methods=['GET'])
 class CheckPayment(Resource):
     """
     Checks the status of a payment via BTCPay Server
     """
-    @token_required
-    def get(self, current_user, invoice_id):
+    def get(self, invoice_id, buyer_id):
         try:
             # BTC Pay Server configuration
             # Make request to BTCPay Server to check payment status
@@ -1098,7 +1094,7 @@ class CheckPayment(Resource):
                     payment_record = {
                         "amount": int(invoice_data.get('amount', invoice_record.get('amount'))),
                         "status": invoice_data['status'],
-                        "buyer_id": str(current_user.id), # todo: this could be visitor
+                        "buyer_id": str(buyer_id), # todo: this could be visitor
                         "timestamp": int(time.time()),
                         "searchable_id": str(searchable_id)
                     }

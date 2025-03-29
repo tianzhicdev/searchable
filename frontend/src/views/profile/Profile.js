@@ -10,6 +10,7 @@ import {
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import axios from 'axios';
 import CompactTable from '../../components/common/CompactTable'; // Import CompactTable component
+import { formatDate } from '../utilities/Date';
 
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
@@ -73,22 +74,6 @@ const Profile = () => {
       setLoading(false);
     }
   };
-
-  const formatDate = (epoch) => {
-    // todo: use user timezone
-    let date = new Date(epoch * 1000).toLocaleString('en-US', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit',
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit',
-      hour12: false,
-      timeZone: 'UTC'
-    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2');
-    return date;
-  }
-
   
   // Format transactions for the CompactTable
   const formatTransactionsForTable = () => {

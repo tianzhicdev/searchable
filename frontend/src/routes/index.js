@@ -6,7 +6,7 @@ import MainRoutes from './MainRoutes';
 import LoginRoutes from './LoginRoutes';
 import AuthenticationRoutes from './AuthenticationRoutes';
 import SearchableRoutes from './SearchableRoutes';
-
+import VisitorRoutes from './VisitorRoutes';
 // project imports
 import config from './../config';
 
@@ -17,14 +17,9 @@ const Routes = () => {
         <Switch>
             <Redirect exact from="/" to={config.defaultPath} />
             <React.Fragment>
-                {/* Routes for searchables */}
-
                 <LoginRoutes />
                 <SearchableRoutes />
-                
-                {/* Route for login */}
-
-                {/* Routes for main layouts */}
+                <VisitorRoutes />
                 <MainRoutes />
             </React.Fragment>
         </Switch>
