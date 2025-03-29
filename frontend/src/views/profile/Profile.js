@@ -92,7 +92,8 @@ const Profile = () => {
   
   // Format transactions for the CompactTable
   const formatTransactionsForTable = () => {
-
+    // todo: we should simplify this shit
+    
     // Map transactions to the format expected by CompactTable
     return transactions.map(transaction => {
       // Handle withdrawal status which is an array of [status, timestamp] pairs
@@ -152,7 +153,7 @@ const Profile = () => {
         status: status,
         date: date,
       };
-    });
+    }).sort((a, b) => b.date - a.date);
   };
   
   const handleWithdrawalClick = () => {

@@ -12,6 +12,15 @@ services:
       - web_network
     volumes:
       - /usr/local/.secrets.json:/app/secrets/tokens.json
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"  # Max 1 CPU core[6][8]
+          memory: 1GB  # Max 512MB RAM[6][3]
+        reservations:
+          cpus: "1.0"   # Guaranteed 0.5 CPU core[6]
+          memory: 256M  # Guaranteed 256MB RAM[6]
+    
   nginx:
     container_name: nginx
     restart: always

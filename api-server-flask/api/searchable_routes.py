@@ -74,7 +74,7 @@ def execute_sql(cursor, sql, commit=False, connection=None):
     """
     Execute SQL with logging and return results if applicable
     """
-    print(f"Executing SQL: {sql.replace('\n', ' ')}")
+    print(f"Executing SQL: {sql.replace(chr(10), ' ')}")
     cursor.execute(sql)
     if commit and connection:
         connection.commit()
@@ -580,8 +580,7 @@ class SearchSearchables(Resource):
                         sin( radians( latitude ) ) 
                       ) ) AS distance
                     FROM searchables
-                    WHERE {where_clause}
-                    -- Pre-filter by bounding box (much faster than calculating exact distances for all rows)
+                    WHERE {where_clause} 
                     AND latitude BETWEEN {lat} - ({max_distance} / 111111) AND {lat} + ({max_distance} / 111111)
                     AND longitude BETWEEN {lng} - ({max_distance} / (111111 * cos(radians({lat})))) AND {lng} + ({max_distance} / (111111 * cos(radians({lat}))))
                 )

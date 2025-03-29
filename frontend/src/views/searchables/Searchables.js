@@ -32,7 +32,7 @@ const Searchables = () => {
   const [maxDistance, setMaxDistance] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const urlDistance = urlParams.get('maxDistance');
-    return urlDistance ? parseInt(urlDistance) :  null; // Default 100km
+    return urlDistance ? parseInt(urlDistance) : 100000000;
   });
   // Get location from Redux store instead of local state
   const account = useSelector((state) => state.account);
@@ -177,12 +177,10 @@ const Searchables = () => {
             style={{ minWidth: '100px' }}
           >
             <MenuItem value={1000}>1 km</MenuItem>
-            <MenuItem value={5000}>5 km</MenuItem>
             <MenuItem value={10000}>10 km</MenuItem>
-            <MenuItem value={50000}>50 km</MenuItem>
             <MenuItem value={100000}>100 km</MenuItem>
             <MenuItem value={1000000}>1000 km</MenuItem>
-            <MenuItem value={null}>Unlimited</MenuItem>
+            <MenuItem value={100000000}>Unlimited</MenuItem>
           </Select>
         </Box>
       </Grid>
