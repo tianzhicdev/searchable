@@ -49,6 +49,7 @@ class BaseConfig():
                 DB_PORT,
                 DB_NAME
             ) 
+            print(f"SQLALCHEMY_DATABASE_URI: {SQLALCHEMY_DATABASE_URI}")
 
             USE_SQLITE  = False
             print(f'> Successfully connected to the database {SQLALCHEMY_DATABASE_URI}')
