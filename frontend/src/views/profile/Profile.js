@@ -302,7 +302,7 @@ const Profile = () => {
             >
               View Your Items
             </Button>
-            {balance && balance > 0 && !loading && (
+            {balance > 0 && !loading && (
               <Button
                 variant="contained"
                 color="primary"

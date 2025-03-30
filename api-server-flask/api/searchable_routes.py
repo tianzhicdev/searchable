@@ -720,9 +720,7 @@ class RemoveSearchableItem(Resource):
                     return {"error": "Searchable item not found"}, 404
                     
                 searchable_data = row[0]
-                
-                # Check if the item belongs to the current user
-                if int(searchable_data.get('user_id', -1)) != current_user.id:
+                if str(searchable_data.get('terminal_id', -1)) != str(current_user.id):
                     searchable_requests.labels('remove_searchable_item', 'PUT', 403).inc()
                     cur.close()
                     conn.close()

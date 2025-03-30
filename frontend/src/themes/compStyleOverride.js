@@ -24,7 +24,7 @@ export function componentStyleOverrides(theme) {
         MuiGrid: {
             styleOverrides: {
                 container: {
-                    padding: '16px'
+                    padding: '8px'
                 }
             }
         },
@@ -326,6 +326,24 @@ export function componentStyleOverrides(theme) {
                 },
                 actions: {
                     color: theme.colors.lightBlue
+                },
+                select: {
+                    color: theme.textDark
+                },
+                menuItem: {
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                displayedRows: {
+                    margin: 0,
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                selectLabel:{
+                    fontFamily: theme.fonts.fontFamily.primary
+                },
+                toolbar: {
+                    '& > p:nth-of-type(1)': {
+                        fontSize: '0.875rem'
+                    }
                 }
             }
         },
@@ -343,6 +361,14 @@ export function componentStyleOverrides(theme) {
                 root: {
                     borderColor: theme.colors.lightBlue,
                     fontFamily: theme.fonts.fontFamily.primary
+                }
+            }
+        },
+        MuiBox: {
+            styleOverrides: {
+                root: {
+                    padding: '12px',
+                    margin: '12px'
                 }
             }
         },

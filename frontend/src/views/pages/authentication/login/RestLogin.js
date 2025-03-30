@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TextField } from '@material-ui/core';
 import configData from '../../../../config';
+import Grid from '@material-ui/core/Grid';
 
 // material-ui
 import {
@@ -37,6 +38,7 @@ import useComponentStyles from '../../../../themes/componentStyles';
 const RestLogin = (props, { ...others }) => {
     const classes = useComponentStyles();
     const dispatcher = useDispatch();
+    const history = useHistory();
 
     const scriptedRef = useScriptRef();
     const [checked, setChecked] = React.useState(true);
@@ -144,18 +146,36 @@ const RestLogin = (props, { ...others }) => {
                             </Box>
                         )}
 
-                        <Box sx={{ mt: 2 }} className={classes.formActions}>
+                        <Box sx={{ mt: 2 }} >
                             <AnimateButton>
-                                <Button
-                                    disableElevation
-                                    disabled={isSubmitting}
-                                    fullWidth
-                                    size="large"
-                                    type="submit"
-                                    className={classes.button}
-                                >
-                                    Sign In
-                                </Button>
+                                <Grid container spacing={2} justifyContent="space-between" direction="row" alignItems="center">
+                                    <Grid item xs={6} sm={5} md={4}>
+                                        <Button
+                                            disableElevation
+                                            fullWidth
+                                            size="large"
+                                            color="secondary"
+                                            className={classes.visitorButton}
+                                            onClick={() => {
+                                                history.push('/searchables');
+                                            }}
+                                        >
+                                            I'm a Guest
+                                        </Button>
+                                    </Grid>
+                                    <Grid item xs={6} sm={5} md={4}>
+                                        <Button
+                                            disableElevation
+                                            disabled={isSubmitting}
+                                            fullWidth
+                                            size="large"
+                                            type="submit"
+                                            className={classes.button}
+                                        >
+                                            Sign In
+                                        </Button>
+                                    </Grid>
+                                </Grid>
                             </AnimateButton>
                         </Box>
                     </form>

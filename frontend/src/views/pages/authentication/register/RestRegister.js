@@ -117,6 +117,26 @@ const RestRegister = ({ ...others }) => {
                     <form noValidate onSubmit={handleSubmit} {...others}>
                         
                         <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
+                            <TextField
+                                fullWidth
+                                margin="normal"
+                                id="outlined-adornment-email-register"
+                                type="email"
+                                value={values.email}
+                                name="email"
+                                placeholder="Enter your email"
+                                onBlur={handleBlur}
+                                onChange={handleChange}
+                                className={classes.textInput}
+                                error={touched.email && Boolean(errors.email)}
+                            />
+                            {touched.email && errors.email && (
+                                <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
+                                    {errors.email}
+                                </FormHelperText>
+                            )}
+                        </FormControl>
+                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
 
                                 <TextField
                                     fullWidth
@@ -137,27 +157,6 @@ const RestRegister = ({ ...others }) => {
                                     </FormHelperText>
                                 )}
                         </FormControl>
-                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
-                            <TextField
-                                fullWidth
-                                margin="normal"
-                                id="outlined-adornment-email-register"
-                                type="email"
-                                value={values.email}
-                                name="email"
-                                placeholder="Enter your email"
-                                onBlur={handleBlur}
-                                onChange={handleChange}
-                                className={classes.textInput}
-                                error={touched.email && Boolean(errors.email)}
-                            />
-                            {touched.email && errors.email && (
-                                <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
-                                    {errors.email}
-                                </FormHelperText>
-                            )}
-                        </FormControl>
-
                         <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
                             <TextField
                                 fullWidth

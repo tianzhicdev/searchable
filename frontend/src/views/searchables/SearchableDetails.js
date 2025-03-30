@@ -492,13 +492,6 @@ const SearchableDetails = () => {
                       </Grid>
                     )}
                     
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body1">
-                        <span>Item ID:</span>
-                        <span>{SearchableItem.searchable_id}</span>
-                      </Typography>
-                    </Grid>
-                    
                     {SearchableItem.payloads.public.description && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
@@ -520,9 +513,6 @@ const SearchableDetails = () => {
 
                   {SearchableItem.payloads.public.latitude && SearchableItem.payloads.public.longitude && (
                       <Grid item xs={12}>
-                        <Typography variant="body1">
-                          <span>Proposed Meeting Location:</span>
-                        </Typography>
                         <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
                           <iframe
                             title="Item Location"
@@ -539,7 +529,7 @@ const SearchableDetails = () => {
                     {SearchableItem.payloads.public.meetupLocation && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span>Meetup Location: </span>
+                          <span></span>
                           <Tooltip title={SearchableItem.payloads.public.meetupLocation}>
                             <span>{truncateText(SearchableItem.payloads.public.meetupLocation, 50)}</span>
                           </Tooltip>
