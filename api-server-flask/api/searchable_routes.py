@@ -5,6 +5,7 @@ import time
 from flask_restx import Resource
 from psycopg2.extras import Json
 import math
+import requests
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 import datetime
 
@@ -1071,7 +1072,6 @@ class CheckPayment(Resource):
         try:
             # BTC Pay Server configuration
             # Make request to BTCPay Server to check payment status
-            import requests
             response = requests.get(
                 f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices/{invoice_id}",
                 headers={
