@@ -27,13 +27,14 @@ from .searchable_routes import *
 @app.before_first_request
 def initialize_database():
     try:
-        db.create_all()
+        print("Initializing database...")
         print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
         print(f"Database Engine: {app.config['DB_ENGINE']}")
         print(f"Database Username: {app.config['DB_USERNAME']}")
         print(f"Database Host: {app.config['DB_HOST']}")
         print(f"Database Port: {app.config['DB_PORT']}")
         print(f"Database Name: {app.config['DB_NAME']}")
+        db.create_all()
         
         print('> Successfully initialized the database')
     except Exception as e:
