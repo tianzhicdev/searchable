@@ -33,6 +33,11 @@ class BaseConfig():
     DB_HOST     = os.getenv('DB_HOST'     , None)
     DB_PORT     = os.getenv('DB_PORT'     , None)
     DB_NAME     = os.getenv('DB_NAME'     , None)
+    # Print all environment variables for debugging
+    print("\n--- Environment Variables ---")
+    for var_name, var_value in os.environ.items():
+        print(f"{var_name}: {var_value}")
+    print("--- End Environment Variables ---\n")
 
     USE_SQLITE  = True 
 
