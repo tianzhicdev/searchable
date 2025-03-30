@@ -27,19 +27,12 @@ class BaseConfig():
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # DB_ENGINE   = os.getenv('DB_ENGINE'   , None)
-    # DB_USERNAME = os.getenv('DB_USERNAME' , None)
-    # DB_PASS     = os.getenv('DB_PASS'     , None)
-    # DB_HOST     = os.getenv('DB_HOST'     , None)
-    # DB_PORT     = os.getenv('DB_PORT'     , None)
-    # DB_NAME     = os.getenv('DB_NAME'     , None)
-
-    DB_ENGINE   = 'postgresql'
-    DB_USERNAME = 'abc'
-    DB_PASS     = '12345'
-    DB_HOST     = 'marcus-mini.is-very-nice.org'
-    DB_PORT     = '3005'
-    DB_NAME     = 'searchable'
+    DB_ENGINE   = os.getenv('DB_ENGINE'   , None)
+    DB_USERNAME = os.getenv('DB_USERNAME' , None)
+    DB_PASS     = os.getenv('DB_PASS'     , None)
+    DB_HOST     = os.getenv('DB_HOST'     , None)
+    DB_PORT     = os.getenv('DB_PORT'     , None)
+    DB_NAME     = os.getenv('DB_NAME'     , None)
 
     USE_SQLITE  = True 
 

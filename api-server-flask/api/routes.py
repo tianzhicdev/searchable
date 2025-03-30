@@ -13,6 +13,7 @@ import math
 import json
 import psycopg2
 from psycopg2.extras import Json
+import os
 
 from .models import db, Users, JWTTokenBlocklist
 from .config import BaseConfig
@@ -24,6 +25,9 @@ from . import rest_api
 # Load database configuration from db_config.json
 with open('db_config.json') as config_file:
     db_config = json.load(config_file)
+
+        # Test backdoor for development
+DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
 
 # Database connection parameters
 def get_db_connection():
@@ -79,8 +83,7 @@ def token_required(f):
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
             
-        # Test backdoor for development
-        if token == "bit-bid-token-secret":
+        if token == DEV_TOKEN:
             print("Using test admin account for development")
             # Create a mock admin user for testing
             admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")

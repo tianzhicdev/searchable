@@ -40,6 +40,9 @@ const SearchableDetails = () => {
   // Add this new state variable for payment records
   const [paymentRecords, setPaymentRecords] = useState([]);
   
+  // Add this new state variable for user payments
+  const [userPayments, setUserPayments] = useState([]);
+  
   const { id } = useParams();
   const account = useSelector((state) => state.account);
   const history = useHistory();
@@ -65,6 +68,10 @@ const SearchableDetails = () => {
           setIsOwner(true);
           // Fetch payment records when we confirm the user is the owner
           fetchPaymentRecords();
+        } else {
+          // If the user is not the owner, fetch their payments for this item
+          // This works for both logged in users and visitors
+          fetchUserPayments();
         }
       } catch (error) {
         console.error("Error checking ownership:", error);
@@ -312,6 +319,31 @@ const SearchableDetails = () => {
     }
   };
 
+  // Add this new function to fetch user's own payments for this item
+  const fetchUserPayments = async () => {
+    try {
+      const buyerId = account?.user?._id || getOrCreateVisitorId();
+      
+      const response = await axios.get(
+        `${configData.API_SERVER}kv`,
+        {
+          params: {
+            type: "payment",
+            fkey: id,
+            buyer_id: buyerId // need to implement this in the backend
+          },
+          headers: {
+            Authorization: `${account.token}`
+          }
+        }
+      );
+      
+      console.log("User payment records:", response.data);
+      setUserPayments(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching user payment records:", error);
+    }
+  };
   
   // Function to show alerts
   const showAlert = (message, severity = 'success') => {
@@ -564,8 +596,22 @@ const SearchableDetails = () => {
                 Status: record.status,
                 Date: formatDate(record.timestamp)
               }))}
-              title="Payment Records"
-              // excludeColumns={["type", "fkey", "ctime", "value"]} 
+              title="All Payment Records"
+            />
+          </Box>
+        )}
+
+        {/* User's Payment Records - show if not owner but has payments */}
+        {!isOwner && userPayments.length > 0 && (
+          <Box mt={2}>
+            <CompactTable 
+              data={userPayments.map(record => ({
+                PaymentId: record.pkey,
+                Amount: record.amount,
+                Status: record.status,
+                Date: formatDate(record.timestamp)
+              }))}
+              title="Your Payment Records"
             />
           </Box>
         )}

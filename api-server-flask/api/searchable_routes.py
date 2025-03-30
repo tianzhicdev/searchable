@@ -25,11 +25,12 @@ searchable_latency = Histogram('searchable_request_latency_seconds', 'Request la
 search_results_count = Summary('search_results_count', 'Number of search results returned')
             # Make request to BTCPay Server
 
-BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
-print("BTCPAY_SERVER_GREENFIELD_API_KEY len:" + BTCPAY_SERVER_GREENFIELD_API_KEY)
+BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY')
+print("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
 
 BTC_PAY_URL = "https://generous-purpose.metalseed.io"
-STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
+STORE_ID = os.environ.get('BTCPAY_STORE_ID')
+print("BTCPAY_STORE_ID: " + STORE_ID)
 
 def check_balance(user_id):
     """
@@ -775,9 +776,20 @@ class KvResource(Resource):
             if fkey:
                 query += f" AND fkey = '{fkey}'"
             
+            # Add support for filtering on JSON fields inside data column
+            # Get all query parameters that are not handled above
+            json_filters = {}
+            for key, value in request.args.items():
+                if key not in ['type', 'pkey', 'fkey'] and value:
+                    json_filters[key] = value
+            
+            # Add JSON field filters to the query
+            for field, value in json_filters.items():
+                query += f" AND data->>'{field}' = '{value}'"
+            
             # If no parameters provided, return error
-            if not (type or pkey or fkey):
-                return {"error": "At least one parameter (type, pkey, fkey) is required"}, 400
+            if not (type or pkey or fkey or json_filters):
+                return {"error": "At least one parameter (type, pkey, fkey, or data field) is required"}, 400
                 
             conn = get_db_connection()
             cur = conn.cursor()
