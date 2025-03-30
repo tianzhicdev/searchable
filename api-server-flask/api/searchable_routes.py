@@ -1,13 +1,7 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-import requests
 import os
 import re
 from flask import request, Response
 import time
-# from dbm.sqlite3 import STORE_KV
 from flask_restx import Resource
 from psycopg2.extras import Json
 import math

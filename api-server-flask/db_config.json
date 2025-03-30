@@ -1,10 +1,2 @@
 {
-  "searchable": {
-    "db_host": "marcus-mini.is-very-nice.org",
-    "db_port": "3005",
-    "db_name": "searchable",
-    "db_user": "abc",
-    "db_password": "12345",
-    "data_dir": "/Volumes/4tb0/postgres_data"
-  }
 }

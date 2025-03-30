@@ -1,42 +1,32 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
+# Standard library imports
+import os
+import jwt
 from datetime import datetime, timezone, timedelta
 from functools import wraps
-import geohash2
-from flask import request
-from flask_restx import Resource, fields
-import jwt
-import math
-import json
+
+# Third-party imports
+import requests
 import psycopg2
 from psycopg2.extras import Json
-import os
+from flask import request
+from flask_restx import Resource, fields
 
-from .models import db, Users, JWTTokenBlocklist
-from .config import BaseConfig
-import requests
-
-# Import rest_api from __init__
+# Local application imports
 from . import rest_api
+from .config import BaseConfig
+from .models import db, Users, JWTTokenBlocklist
 
-# Load database configuration from db_config.json
-with open('db_config.json') as config_file:
-    db_config = json.load(config_file)
-
-        # Test backdoor for development
+# Test backdoor for development
 DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
 
 # Database connection parameters
 def get_db_connection():
     conn = psycopg2.connect(
-        host=db_config['searchable']['db_host'],
-        port=db_config['searchable']['db_port'],
-        dbname=db_config['searchable']['db_name'],
-        user=db_config['searchable']['db_user'],
-        password=db_config['searchable']['db_password']
+        host=os.getenv('DB_HOST', ''),
+        port=os.getenv('DB_PORT', ''),
+        dbname=os.getenv('DB_NAME', ''),
+        user=os.getenv('DB_USERNAME', ''),
+        password=os.getenv('DB_PASS', '')
     )
     
     # Log connection details

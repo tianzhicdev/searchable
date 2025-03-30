@@ -1,11 +1,9 @@
-HOST = "generous-purpose.metalseed.io"
-
-import os
-PASSWORD = os.environ.get('BTCPAY_SERVER_SSH_PASSWORD')
-print("BTCPAY_SERVER_SSH_PASSWORD: " + PASSWORD)
 
 import paramiko
 import json
+import os
+PASSWORD = os.environ.get('BTCPAY_SERVER_SSH_PASSWORD')
+HOST = "generous-purpose.metalseed.io"
 
 def decode_lightning_invoice(invoice):
     """
