@@ -4,7 +4,7 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 import os, json
-
+import sys
 from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
@@ -40,10 +40,12 @@ def initialize_database():
     except Exception as e:
         print('> Error: DBMS Exception: ' + str(e) )
         # fallback to SQLite
-        BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
-        print('> Fallback to SQLite ')
-        db.create_all()
+        print('> Database initialization failed, exiting application')
+        sys.exit(1)  # Exit with error code 1 to indicate failure
+        # BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
+        # print('> Fallback to SQLite ')
+        # db.create_all()
 
 """
    Custom responses
