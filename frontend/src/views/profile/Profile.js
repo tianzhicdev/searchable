@@ -9,9 +9,8 @@ import {
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import axios from 'axios';
-import CompactTable from '../../components/common/CompactTable'; // Import CompactTable component
 import { formatDate } from '../utilities/Date';
-
+import PaymentList from '../payments/PaymentList';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState(null);
@@ -73,78 +72,6 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Format transactions for the CompactTable
-  const formatTransactionsForTable = () => {
-    // todo: we should simplify this shit
-    
-    // Map transactions to the format expected by CompactTable
-    return transactions.map(transaction => {
-      // Handle withdrawal status which is an array of [status, timestamp] pairs
-      let status = 'unknown';
-      // todo: move this out as a util function and we should use local timezone
-      let date = formatDate(transaction.timestamp);
-      
-      if (transaction.type === 'withdrawal' && Array.isArray(transaction.status)) {
-        // Find the status entry with the highest timestamp
-        let highestTimestamp = 0;
-        transaction.status.forEach(statusEntry => {
-          if (Array.isArray(statusEntry) && statusEntry.length === 2 && statusEntry[1] > highestTimestamp) {
-            highestTimestamp = statusEntry[1];
-            status = statusEntry[0];
-          }
-        });
-        
-        // Convert the epoch timestamp to a readable date
-        if (highestTimestamp > 0) {
-          date = formatDate(highestTimestamp);
-        }
-      } else {
-        status = transaction.status || 'unknown';
-      }
-      
-      // Calculate amount for withdrawals (value_sat + fee_sat)
-      let amount;
-      if (transaction.type === 'withdrawal') {
-        const valueSat = parseInt(transaction.value_sat) || 0;
-        const feeSat = parseInt(transaction.fee_sat) || 0;
-        amount = `-${valueSat + feeSat} (${feeSat} fee)`;
-      } else {
-        amount = `+${transaction.amount}`;
-      }
-      
-      // Truncate ID based on transaction type
-      let truncatedId;
-      if (transaction.type === 'withdrawal') {
-        truncatedId = transaction.invoice ? transaction.invoice.substring(0, 10) : 'missing';
-      } else {
-        truncatedId = transaction.invoice_id ? transaction.invoice_id.substring(0, 10) : 'missing';
-      }
-      transaction.type === 'withdrawal' ? transaction.type = 'out' : transaction.type = 'in';
-      
-      // Set transaction type based on status
-      
-      if(status === 'Settled' || status === 'SUCCEEDED') {
-        status = 'ok';
-      } else {
-        status = 'pending';
-      }
-
-      return {
-        invoice: truncatedId,
-        type: transaction.type,
-        amount: amount,
-        status: status,
-        date: date,
-      };
-    }).sort((a, b) => {
-      // Convert dates to comparable values
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      // Sort in descending order (newest first)
-      return dateB - dateA;
-    });
   };
   
   const handleWithdrawalClick = () => {
@@ -246,7 +173,6 @@ const Profile = () => {
               <span className={classes.infoLabel}>Email:</span>
               <span className={classes.infoValue}>{account.user.email}</span>
             </Typography>
-            
           </Box>
           <Box>
             {loading ? (
@@ -281,13 +207,7 @@ const Profile = () => {
               No transaction history found.
             </Typography>
           ) : (
-            <>
-              <CompactTable 
-                title="Transaction History"
-                data={formatTransactionsForTable()} 
-                size="small"
-              />
-            </>
+            <PaymentList/>
           )}
       </Grid>
       

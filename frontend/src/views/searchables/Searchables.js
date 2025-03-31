@@ -10,13 +10,13 @@ import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
-
+import { formatDate } from '../../views/utilities/Date';
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 import SearchableList from './SearchableList';
-
+import Payment from '../payments/Payment';
 const Searchables = () => {
   
   // State variables
@@ -210,6 +210,8 @@ const Searchables = () => {
           internalSearchTerm: internalSearchTerm
         }}
       />
+
+
     </Grid>
   );
 };

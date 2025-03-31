@@ -826,17 +826,34 @@ class KvResource(Resource):
             data = request.get_json()
             if not data:
                 return {"error": "No data provided"}, 400
-                
+            
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Upsert operation (insert or update)
+            # Check if record exists
             execute_sql(cur, f"""
-                INSERT INTO kv (type, pkey, fkey, data)
-                VALUES ('{type}', '{pkey}', '{fkey}', {Json(data)})
-                ON CONFLICT (pkey, fkey, type) 
-                DO UPDATE SET data = {Json(data)}
-            """, commit=True, connection=conn)
+                SELECT data FROM kv
+                WHERE type = '{type}' AND pkey = '{pkey}' AND fkey = '{fkey}'
+            """)
+            
+            existing_row = cur.fetchone()
+            if existing_row:
+                # Merge the existing data with new data
+                existing_data = existing_row[0]
+                merged_data = {**existing_data, **data}
+                
+                # Update with merged data
+                execute_sql(cur, f"""
+                    UPDATE kv
+                    SET data = {Json(merged_data)}
+                    WHERE type = '{type}' AND pkey = '{pkey}' AND fkey = '{fkey}'
+                """, commit=True, connection=conn)
+            else:
+                # Insert new record (no existing data to merge)
+                execute_sql(cur, f"""
+                    INSERT INTO kv (type, pkey, fkey, data)
+                    VALUES ('{type}', '{pkey}', '{fkey}', {Json(data)})
+                """, commit=True, connection=conn)
             
             cur.close()
             conn.close()
@@ -1183,5 +1200,74 @@ class TransactionHistory(Resource):
             except Exception as e:
                 print(f"Error retrieving transaction history: {str(e)}")
                 searchable_requests.labels('transaction_history', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/payments', methods=['GET'])
+class PaymentsResource(Resource):
+    """
+    Retrieves payments data filtered by searchable_id or user's role (buyer/seller)
+    """
+    @token_required
+    def get(self, current_user):
+        with searchable_latency.labels('get_payments').time():
+            # todo: this is a mess, we should refactor it. the logic should be correct though
+            try:
+                # Check if filtering by specific searchable_id
+                searchable_id = request.args.get('searchable_id')
+                print(f"searchable_id: {searchable_id}")
+
+                user_published_searchable_ids = get_searchableIds_by_user(current_user.id)
+                # Convert all elements in the list to strings to ensure consistency
+                user_published_searchable_ids = [str(id) for id in user_published_searchable_ids]
+                print(f"user_published_searchable_ids: {user_published_searchable_ids}")
+                
+                if searchable_id and (searchable_id in user_published_searchable_ids):
+                    print(f"searchable_id is in user_published_searchable_ids")
+                    # user is the seller
+                    payment_records = get_data_from_kv(type='payment', fkey=searchable_id)
+                    # Mark the current user as the seller for these payments
+                    for payment in payment_records:
+                        payment['seller_id'] = str(current_user.id)
+
+                elif searchable_id:
+                    # user is the buyer
+                    # todo: to optimize - use db filters
+                    payment_records = get_data_from_kv(type='payment')
+                    payment_records = [payment for payment in payment_records 
+                                     if payment.get('buyer_id') == str(current_user.id)] 
+                    
+                    # Mark the current user as the seller if they own the searchable item
+                    for payment in payment_records:
+                        if payment.get('fkey') in user_published_searchable_ids:
+                            payment['seller_id'] = str(current_user.id)
+                else:
+                    # profile page
+                    payment_records = []
+                    # Get payments where user is seller (payments for their searchable items)
+                    if user_published_searchable_ids:
+                        seller_payments = get_data_from_kv(type='payment', fkey=user_published_searchable_ids)
+                        for payment in seller_payments:
+                            payment['seller_id'] = str(current_user.id)
+                        payment_records.extend(seller_payments)
+                    
+                    # Get payments where user is buyer
+                    buyer_payments = get_data_from_kv(type='payment')
+                    # todo: to optimize - use db filters
+                    buyer_payments = [payment for payment in buyer_payments 
+                                     if payment.get('buyer_id') == str(current_user.id)]
+                    payment_records.extend(buyer_payments)
+                    
+
+                # todo: we should only return the latest x payments, but that is a scalability issue
+                # Record metrics
+                searchable_requests.labels('get_payments', 'GET', 200).inc()
+                
+                return {
+                    'payments': payment_records,
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving payments: {str(e)}")
+                searchable_requests.labels('get_payments', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 

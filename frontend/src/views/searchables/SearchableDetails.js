@@ -12,9 +12,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
-import CompactTable from '../../components/common/CompactTable';
-import { formatDate } from '../utilities/Date';
-
+import PaymentList from '../payments/PaymentList';
 const SearchableDetails = () => {
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
@@ -36,12 +34,6 @@ const SearchableDetails = () => {
   
   // Payment related
   const [invoice, setInvoice] = useState(null);
-  
-  // Add this new state variable for payment records
-  const [paymentRecords, setPaymentRecords] = useState([]);
-  
-  // Add this new state variable for user payments
-  const [userPayments, setUserPayments] = useState([]);
   
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -66,13 +58,7 @@ const SearchableDetails = () => {
         console.log("Item:", SearchableItem);
         if (account && account.user && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
           setIsOwner(true);
-          // Fetch payment records when we confirm the user is the owner
-          fetchPaymentRecords();
-        } else {
-          // If the user is not the owner, fetch their payments for this item
-          // This works for both logged in users and visitors
-          fetchUserPayments();
-        }
+        } 
       } catch (error) {
         console.error("Error checking ownership:", error);
       }
@@ -295,56 +281,7 @@ const SearchableDetails = () => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
-  
-  // Add this new function to fetch payment records
-  const fetchPaymentRecords = async () => {
-    try {
-      const response = await axios.get(
-        `${configData.API_SERVER}kv`,
-        {
-          params: {
-            type: "payment",
-            fkey: id
-          },
-          headers: {
-            Authorization: `${account.token}`
-          }
-        }
-      );
-      
-      console.log("Payment records:", response.data);
-      setPaymentRecords(response.data.data || []);
-    } catch (error) {
-      console.error("Error fetching payment records:", error);
-    }
-  };
 
-  // Add this new function to fetch user's own payments for this item
-  const fetchUserPayments = async () => {
-    try {
-      const buyerId = account?.user?._id || getOrCreateVisitorId();
-      
-      const response = await axios.get(
-        `${configData.API_SERVER}kv`,
-        {
-          params: {
-            type: "payment",
-            fkey: id,
-            buyer_id: buyerId // need to implement this in the backend
-          },
-          headers: {
-            Authorization: `${account.token}`
-          }
-        }
-      );
-      
-      console.log("User payment records:", response.data);
-      setUserPayments(response.data.data || []);
-    } catch (error) {
-      console.error("Error fetching user payment records:", error);
-    }
-  };
-  
   // Function to show alerts
   const showAlert = (message, severity = 'success') => {
     setAlertMessage(message);
@@ -529,10 +466,7 @@ const SearchableDetails = () => {
                     {SearchableItem.payloads.public.meetupLocation && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
-                          <span></span>
-                          <Tooltip title={SearchableItem.payloads.public.meetupLocation}>
-                            <span>{truncateText(SearchableItem.payloads.public.meetupLocation, 50)}</span>
-                          </Tooltip>
+                            <span>{SearchableItem.payloads.public.meetupLocation}</span>
                         </Typography>
                       </Grid>
                     )}
@@ -576,35 +510,7 @@ const SearchableDetails = () => {
         </Paper>
         
 
-        {/* Replace the Payment Records table with CompactTable component */}
-        {isOwner && (
-          <Box mt={2}>
-            <CompactTable 
-              data={paymentRecords.map(record => ({
-                PaymentId: record.pkey,
-                Amount: record.amount,
-                Status: record.status,
-                Date: formatDate(record.timestamp)
-              }))}
-              title="All Payment Records"
-            />
-          </Box>
-        )}
-
-        {/* User's Payment Records - show if not owner but has payments */}
-        {!isOwner && userPayments.length > 0 && (
-          <Box mt={2}>
-            <CompactTable 
-              data={userPayments.map(record => ({
-                PaymentId: record.pkey,
-                Amount: record.amount,
-                Status: record.status,
-                Date: formatDate(record.timestamp)
-              }))}
-              title="Your Payment Records"
-            />
-          </Box>
-        )}
+        <PaymentList searchable_id={id} />
         </Grid>
       )}
 
