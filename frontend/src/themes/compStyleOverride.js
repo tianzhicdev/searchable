@@ -364,6 +364,36 @@ export function componentStyleOverrides(theme) {
                 }
             }
         },
+        MuiMenu: {
+            styleOverrides: {
+                paper: {
+                    border: `1px solid ${theme.colors.orangeMain}`,
+                    borderRadius: '0px',
+                    backgroundColor: theme.colors.primaryDark,
+                    marginTop: '4px'
+                }
+            }
+        },
+        MuiMenuItem: {
+            styleOverrides: {
+                root: {
+                    fontSize: '1rem',
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    color: theme.orangeMain,
+                    '&:hover': {
+                        backgroundColor: theme.menuSelectedBack,
+                        color: theme.menuSelected
+                    },
+                    '&.Mui-selected': {
+                        backgroundColor: theme.menuSelectedBack,
+                        color: theme.menuSelected,
+                        '&:hover': {
+                            backgroundColor: theme.menuSelectedBack
+                        }
+                    }
+                }
+            }
+        },
         MuiBox: {
             styleOverrides: {
                 root: {

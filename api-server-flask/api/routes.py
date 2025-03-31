@@ -6,7 +6,6 @@ from functools import wraps
 
 # Third-party imports
 import requests
-import psycopg2
 from psycopg2.extras import Json
 from flask import request
 from flask_restx import Resource, fields
@@ -15,29 +14,10 @@ from flask_restx import Resource, fields
 from . import rest_api
 from .config import BaseConfig
 from .models import db, Users, JWTTokenBlocklist
+from .helper import get_db_connection  # Import get_db_connection from helper
 
 # Test backdoor for development
 DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
-
-# Database connection parameters
-def get_db_connection():
-    conn = psycopg2.connect(
-        host=os.getenv('DB_HOST', ''),
-        port=os.getenv('DB_PORT', ''),
-        dbname=os.getenv('DB_NAME', ''),
-        user=os.getenv('DB_USERNAME', ''),
-        password=os.getenv('DB_PASS', '')
-    )
-    
-    # Log connection details
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT current_database(), current_user, inet_client_addr(), inet_client_port()")
-        connection_details = cursor.fetchone()
-        print(f"Connected to database: {connection_details[0]}")
-        print(f"Connected as user: {connection_details[1]}")
-        print(f"Client address: {connection_details[2]}")
-        print(f"Client port: {connection_details[3]}")
-    return conn
 
 """
     Flask-Restx models for api request and response data

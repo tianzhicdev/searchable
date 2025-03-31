@@ -44,13 +44,22 @@ const PaymentList = ({ searchable_id }) => {
             date: formatDate(payment.timestamp),
             tracking: payment.tracking,
             rating: payment.rating,
-            review: payment.review
+            review: payment.review,
+            address: payment.address,
+            tel: payment.tel
         },
           private: {
             buyer_id: payment.buyer_id,
             seller_id: payment.seller_id || '' // Handle case where seller_id might not be in the API response
           }
         }));
+        // Sort payments by date in descending order (newest first)
+        transformedPayments.sort((a, b) => {
+          // Convert formatted dates back to Date objects for comparison
+          const dateA = new Date(a.public.date);
+          const dateB = new Date(b.public.date);
+          return dateB - dateA; // Descending order
+        });
         
         setPayments(transformedPayments);
         setLoading(false);
@@ -89,11 +98,14 @@ const PaymentList = ({ searchable_id }) => {
   }
 
   return (
+    <>
+    <Typography variant="h6">Transactions</Typography>
     <Box>
       {payments.map((payment) => (
         <Payment key={payment.public.Id} payment={payment} />
       ))}
     </Box>
+    </>
   );
 };
 

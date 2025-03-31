@@ -1,5 +1,5 @@
 // action - state management
-import { ACCOUNT_INITIALIZE, LOGIN, LOGOUT } from './actions';
+import { ACCOUNT_INITIALIZE, LOGIN, LOGOUT, SET_USER } from './actions';
 
 export const initialState = {
     token: '',
@@ -36,6 +36,13 @@ const accountReducer = (state = initialState, action) => {
                 isLoggedIn: false,
                 token: '',
                 user: null
+            };
+        }
+        case SET_USER: {
+            const { payload } = action;
+            return {
+                ...state,
+                user: payload
             };
         }
         default: {

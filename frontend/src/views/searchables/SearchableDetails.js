@@ -13,7 +13,13 @@ import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
 import PaymentList from '../payments/PaymentList';
+import { useDispatch } from 'react-redux';
+import { SET_USER } from '../../store/actions';
+
 const SearchableDetails = () => {
+
+  const dispatch = useDispatch();
+
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -30,7 +36,6 @@ const SearchableDetails = () => {
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [usdPrice, setUsdPrice] = useState(null); //todo: perhaps we cache it in the backend
-
   
   // Payment related
   const [invoice, setInvoice] = useState(null);
@@ -141,6 +146,8 @@ const SearchableDetails = () => {
         amount: SearchableItem.payloads.public.price,
         searchable_id: id,
         buyer_id: buyerId,
+        address: account.user.address,
+        tel: account.user.tel,
         redirect_url: window.location.href
       };
       
@@ -281,6 +288,29 @@ const SearchableDetails = () => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
+  const fetchProfileData = async () => {
+    if (!account.user || !account.token) return;
+    
+    try {
+      const response = await axios.get(`${configData.API_SERVER}profile`, {
+        headers: { Authorization: `${account.token}` }
+      });
+      
+      // Update Redux store with new profile data
+      dispatch({
+        type: SET_USER,
+        payload: {
+          ...account.user,
+          address: response.data.address,
+          tel: response.data.tel
+        }
+      });
+
+    } catch (err) {
+      console.error('Error fetching user profile data:', err);
+      setError('Failed to load profile information');
+    }
+  };
 
   // Function to show alerts
   const showAlert = (message, severity = 'success') => {
@@ -292,6 +322,29 @@ const SearchableDetails = () => {
     setTimeout(() => {
       setAlertOpen(false);
     }, 5000);
+  };
+  
+  // New function to handle payment button click
+  const handlePayButtonClick = () => {
+    // Check if user is logged in
+    if (!account.user) {
+      showAlert("Please log in to make a payment", "error");
+      history.push('/login');
+      return;
+    }
+
+    fetchProfileData();
+    
+    // Check if profile has address and telephone
+    // if (!account.user.address || !account.user.tel) {
+    //   //todo: load profile here
+    //   showAlert("Please update your profile with address and telephone before making a payment", "warning");
+    //   // history.push('/profile');
+    //   return;
+    // }
+    
+    // If profile is complete, proceed with invoice creation
+    createInvoice();
   };
   
   return (
@@ -477,7 +530,7 @@ const SearchableDetails = () => {
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={createInvoice}
+                          onClick={handlePayButtonClick}
                           disabled={creatingInvoice}
                         >
                           {creatingInvoice ? (
@@ -514,30 +567,35 @@ const SearchableDetails = () => {
         </Grid>
       )}
 
+      {/* Existing Payment Dialog - Updated to show address and tel */}
       <Dialog open={paymentDialogOpen} maxWidth="md">
-        <DialogTitle>Lightning Network Payment</DialogTitle>
         <DialogContent>
           {invoice ? (
-            <Box display="flex" flexDirection="column" alignItems="center" p={2}>
-                <Typography variant="h6" gutterBottom>
-                  {truncateText(SearchableItem?.payloads?.public?.title || `Item #${SearchableItem?.searchable_id}`, 40)}
-                </Typography>
+            <Box sx={{ border: '1px solid', borderColor: 'divider', padding: 2, marginTop: 2, width: '100%' }}>
               
-              <Typography variant="body1" gutterBottom>
+              <Typography variant="body1" gutterBottom align="left">
                 Amount: {invoice.amount} Sats
               </Typography>
               
-              <Typography variant="body1" gutterBottom>
+              <Typography variant="body1" gutterBottom align="left">
                 Invoice ID: {invoice.id.substring(0, 3).toUpperCase()}
+              </Typography>
+              <Typography variant="body2" align="left">
+                Address: {account.user?.address || 'Not provided'}
+              </Typography>
+              <Typography variant="body2" align="left">
+                Telephone: {account.user?.tel || 'Not provided'}
               </Typography>
               
               {paymentStatus && (
-                <Typography variant="body1" gutterBottom style={{ marginTop: 16 }}>
+                <Typography variant="body1" gutterBottom style={{ marginTop: 16 }} align="left">
                   Status: {paymentStatus}
-                  {/* {checkingPayment && <CircularProgress size={16} style={{ marginLeft: 8 }} />} */}
                 </Typography>
               )}
               
+              <Typography variant="body2" color="textSecondary" style={{ marginTop: 16 }} align="left">
+              TRANSACTION IS IRRERVERSIBLE
+              </Typography>
               {invoice.checkoutLink && (
                 <Button 
                   variant="contained" 
@@ -545,14 +603,11 @@ const SearchableDetails = () => {
                   href={invoice.checkoutLink}
                   target="_blank"
                   style={{ marginTop: 16 }}
+                  align="left"
                 >
                   Pay with ⚡
                 </Button>
               )}
-              
-              <Typography variant="body2" color="textSecondary" style={{ marginTop: 16, textAlign: 'center' }}>
-                This payment is irreversible.
-              </Typography>
             </Box>
           ) : (
             <Box display="flex" justifyContent="center" p={3}>

@@ -3,20 +3,17 @@ import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
-  Grid, Typography, Button, Box, TextField, MenuItem, Select
+  Grid, Button, Box, TextField, MenuItem, Select
 } from '@material-ui/core';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
-import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import { formatDate } from '../../views/utilities/Date';
 import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 import SearchableList from './SearchableList';
-import Payment from '../payments/Payment';
 const Searchables = () => {
   
   // State variables
@@ -168,7 +165,7 @@ const Searchables = () => {
       <Grid item xs={12}>
         <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
           <TextField
-            placeholder="Search for items..."
+            placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ flex: 1, marginRight: '16px' }}

@@ -107,7 +107,7 @@ const Payment = ({ payment }) => {
 
     const needsTracking = (!hasTracking) && isUserSeller;
     // Show Rate It button if user is buyer and has tracking
-    const showRateButton = isUserBuyer && hasTracking && payment.public.rating === null;
+    const showRateButton = isUserBuyer && hasTracking && (payment.public.rating === null || payment.public.rating === undefined);
     
     // Show Add Tracking button if user is seller and tracking is null
     const showTrackingButton = isUserSeller && needsTracking;

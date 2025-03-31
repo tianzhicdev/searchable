@@ -8,8 +8,9 @@ import os
 from datetime import datetime, timedelta
 
 from api import get_db_connection
-from api.helper import pay_lightning_invoice
-from api.searchable_routes import Json, execute_sql, get_data_from_kv
+from api.helper import pay_lightning_invoice, check_payment, Json, execute_sql, get_data_from_kv, get_db_connection
+
+# from api.searchable_routes import Json, execute_sql, get_data_from_kv
 
 # Configure logging
 logging.basicConfig(
@@ -68,40 +69,15 @@ def check_invoice_payments():
                 # Already processed this invoice
                 continue
                 
-            # Check payment status with BTCPay Server
+            # Check payment status using our helper function
             try:
-                response = requests.get(
-                    f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices/{invoice_id}",
-                    headers={
-                        'Content-Type': 'application/json',
-                        'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-                    }
-                )
+                invoice_data = check_payment(invoice_id)
+                processed_count += 1
                 
-                if response.status_code == 200:
-                    invoice_data = response.json()
-                    processed_count += 1
-                    
-                    # If payment is settled, record it in our database
-                    if invoice_data['status'].lower() in ('settled', 'complete'):
-                        # Store payment record
-                        payment_record = {
-                            "amount": int(invoice_data.get('amount', invoice.get('amount', 0))),
-                            "status": invoice_data['status'],
-                            "buyer_id": invoice.get('buyer_id', 'unknown'),
-                            "timestamp": int(time.time()),
-                            "searchable_id": str(searchable_id)
-                        }
-                        
-                        execute_sql(cur, f"""
-                            INSERT INTO kv (type, pkey, fkey, data)
-                            VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
-                            ON CONFLICT (type, pkey, fkey) 
-                            DO UPDATE SET data = {Json(payment_record)}
-                        """, commit=True, connection=conn)
-                        
-                        paid_count += 1
-                        logger.info(f"Recorded payment for invoice {invoice_id}")
+                # If payment is settled, it has been recorded by the helper function
+                if invoice_data.get('status', '').lower() in ('settled', 'complete'):
+                    paid_count += 1
+                    logger.info(f"Recorded payment for invoice {invoice_id}")
                 
             except Exception as e:
                 logger.error(f"Error checking payment status for invoice {invoice_id}: {str(e)}")

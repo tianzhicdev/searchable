@@ -3,22 +3,33 @@ import re
 from flask import request, Response
 import time
 from flask_restx import Resource
-from psycopg2.extras import Json
 import math
 import requests
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 import datetime
+import json
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
-from .routes import get_db_connection, token_required
-from .helper import pay_lightning_invoice, decode_lightning_invoice
-import json
+from .routes import token_required
+# Import moved utility functions from helper
+from .helper import (
+    get_db_connection,
+    pay_lightning_invoice, 
+    decode_lightning_invoice, 
+    check_payment, 
+    get_profile, 
+    get_searchableIds_by_user, 
+    get_data_from_kv, 
+    check_balance,
+    execute_sql,
+    Json
+)
+
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
 searchable_latency = Histogram('searchable_request_latency_seconds', 'Request latency in seconds', ['endpoint'])
 search_results_count = Summary('search_results_count', 'Number of search results returned')
-            # Make request to BTCPay Server
 
 BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY')
 print("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
@@ -26,158 +37,6 @@ print("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
 BTC_PAY_URL = "https://generous-purpose.metalseed.io"
 STORE_ID = os.environ.get('BTCPAY_STORE_ID')
 print("BTCPAY_STORE_ID: " + STORE_ID)
-
-def check_balance(user_id):
-    """
-    Calculate user balance from payments and withdrawals
-    
-    Args:
-        user_id: The user ID to check balance for
-        
-    Returns:
-        float: The user's current balance in sats
-    """
-    try:
-        # Step 1: Get all searchables published by this user using utility function
-        searchable_ids = get_searchableIds_by_user(user_id)
-        
-        # Step 2: Calculate balance from payments and withdrawals
-        balance = 0
-        
-        # If user has searchables, look for payments in a single query
-        if searchable_ids:
-            payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
-            for record in payment_records:
-                amount = record.get('amount')
-                # Add payment amount to balance
-                if amount is not None:
-                    balance += float(amount)
-        
-        # Get all withdrawals for this user using utility function
-        withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(user_id))
-        for record in withdrawal_records:
-            amount = record.get('amount')
-            # Subtract withdrawal amount from balance
-            if amount is not None:
-                balance -= float(amount)
-        
-        return balance
-    except Exception as e:
-        print(f"Error calculating balance: {str(e)}")
-        return 0
-
-def execute_sql(cursor, sql, commit=False, connection=None):
-    """
-    Execute SQL with logging and return results if applicable
-    """
-    print(f"Executing SQL: {sql.replace(chr(10), ' ')}")
-    cursor.execute(sql)
-    if commit and connection:
-        connection.commit()
-    return cursor
-
-
-def get_searchableIds_by_user(user_id):
-    """
-    Retrieves all searchable IDs for a specific user
-    
-    Args:
-        user_id: The user ID to query for
-        
-    Returns:
-        List of searchable IDs belonging to the user
-    """
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Query searchables with terminal_id matching the user
-        execute_sql(cur, f"""
-            SELECT searchable_id
-            FROM searchables
-            WHERE searchable_data->>'terminal_id' = '{str(user_id)}'
-        """)
-        
-        searchable_ids = [row[0] for row in cur.fetchall()]
-        
-        cur.close()
-        conn.close()
-        
-        return searchable_ids
-    except Exception as e:
-        print(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
-        return []
-
-
-def get_data_from_kv(type=None, pkey=None, fkey=None):
-    """
-    Retrieves data from the key-value store based on specified parameters
-    
-    Args:
-        type: The type of data to retrieve (required) - can be a single value or list
-        pkey: The primary key to filter by (optional) - can be a single value or list
-        fkey: The foreign key to filter by (optional) - can be a single value or list
-        
-    Returns:
-        List of data records matching the criteria, or empty list if none found
-    """
-    try:
-        if not type:
-            print("Error: type parameter is required for get_data_from_kv")
-            return []
-        
-        # Build query dynamically based on provided parameters
-        query = "SELECT data, pkey, fkey FROM kv WHERE "
-        
-        # Handle type parameter (single value or list)
-        if isinstance(type, list):
-            if not type:  # Empty list check
-                print("Error: type list cannot be empty")
-                return []
-            type_values = "', '".join([str(t) for t in type])
-            query += f"type IN ('{type_values}')"
-        else:
-            query += f"type = '{type}'"
-        
-        # Handle pkey parameter (single value or list)
-        if pkey:
-            if isinstance(pkey, list):
-                if pkey:  # Only if list is not empty
-                    pkey_values = "', '".join([str(p) for p in pkey])
-                    query += f" AND pkey IN ('{pkey_values}')"
-            else:
-                query += f" AND pkey = '{pkey}'"
-        
-        # Handle fkey parameter (single value or list)
-        if fkey:
-            if isinstance(fkey, list):
-                if fkey:  # Only if list is not empty
-                    fkey_values = "', '".join([str(f) for f in fkey])
-                    query += f" AND fkey IN ('{fkey_values}')"
-            else:
-                query += f" AND fkey = '{fkey}'"
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Execute the query with string interpolation
-        execute_sql(cur, query)
-        
-        results = []
-        for row in cur.fetchall():
-            data = row[0].copy() if row[0] else {}  # Make a copy to avoid modifying the original
-            data['pkey'] = row[1]
-            data['fkey'] = row[2]
-            results.append(data)
-            
-        cur.close()
-        conn.close()
-        
-        return results
-    except Exception as e:
-        print(f"Error retrieving data from KV store: {str(e)}")
-        return []
-
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
 class GetSearchableItem(Resource):
@@ -227,7 +86,6 @@ class GetSearchableItem(Resource):
             except Exception as e:
                 searchable_requests.labels('get_searchable_item', 'GET', 500).inc()
                 return {"error": str(e)}, 500
-
 
 @rest_api.route('/api/searchable', methods=['POST'], strict_slashes=False)
 class CreateSearchable(Resource):
@@ -292,58 +150,6 @@ class CreateSearchable(Resource):
                 
                 searchable_requests.labels('create_searchable', 'POST', 500).inc()
                 return {"error": str(e), "error_details": error_traceback}, 500
-
-# @rest_api.route('/api/searchable/user', methods=['GET'])
-# class UserSearchables(Resource):
-#     """
-#     Returns all searchable items posted by the current user
-    
-#     Example curl request:
-#     curl -X GET "http://localhost:5000/api/searchable/user" -H "Authorization: <token>"
-#     """
-#     def get(self, current_user):
-#         with searchable_latency.labels('user_searchables').time():
-#             print(f"Fetching searchable items for user: {current_user}")
-#             try:
-#                 conn = get_db_connection()
-#                 cur = conn.cursor()
-                
-#                 # Query to get all searchable items created by this user
-#                 execute_sql(cur, f"""
-#                     SELECT searchable_id, searchable_data
-#                     FROM searchables
-#                     WHERE (searchable_data->>'terminal_id') = '{str(current_user.id)}'
-#                     ORDER BY searchable_id DESC
-#                 """)
-                
-#                 results = []
-#                 for row in cur.fetchall():
-#                     searchable_id, searchable_data = row
-                    
-#                     # Combine the data
-#                     item = searchable_data.copy() if searchable_data else {}
-#                     item['searchable_id'] = searchable_id
-                    
-#                     # Add username (we already know it's the current user)
-#                     item['username'] = current_user.username
-                    
-#                     results.append(item)
-                
-#                 cur.close()
-#                 conn.close()
-                
-#                 searchable_requests.labels('user_searchables', 'GET', 200).inc()
-#                 return {
-#                     "success": True,
-#                     "count": len(results),
-#                     "results": results
-#                 }, 200
-                
-#             except Exception as e:
-#                 print(f"Error fetching user searchables: {str(e)}")
-#                 searchable_requests.labels('user_searchables', 'GET', 500).inc()
-#                 return {"error": str(e)}, 500
-
 
 @rest_api.route('/api/searchable/search', methods=['GET'])
 class SearchSearchables(Resource):
@@ -683,7 +489,6 @@ class SearchSearchables(Resource):
             if 'terminal_id' in item and item['terminal_id'] in usernames:
                 item['username'] = usernames[item['terminal_id']]
 
-
 @rest_api.route('/api/remove-searchable-item/<int:searchable_id>', methods=['PUT'])
 class RemoveSearchableItem(Resource):
     """
@@ -741,7 +546,6 @@ class RemoveSearchableItem(Resource):
                 searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
                 print(f"Error removing searchable item: {str(e)}")
                 return {"error": str(e)}, 500
-
 
 @rest_api.route('/api/kv', methods=['GET', 'PUT'])
 class KvResource(Resource):
@@ -882,8 +686,6 @@ class BalanceResource(Resource):
             print(f"Error calculating balance: {str(e)}")
             return {"error": str(e)}, 500
 
-
-
 @rest_api.route('/api/withdrawal', methods=['POST'])
 class WithdrawFunds(Resource):
     """
@@ -985,8 +787,6 @@ class WithdrawFunds(Resource):
                 searchable_requests.labels('withdrawal', 'POST', 500).inc()
                 return {"error": str(e)}, 500
 
-
-
 @rest_api.route('/metrics')
 class MetricsResource(Resource):
     """
@@ -1001,30 +801,43 @@ class CreateInvoice(Resource):
     """
     Creates a Lightning Network invoice via BTCPay Server
     """
-
-    def post(self):
+    @token_required
+    def post(self, current_user):
         try:
             data = request.get_json()
             
             if not data or 'amount' not in data or 'searchable_id' not in data:
                 return {"error": "Amount and searchable_id are required"}, 400
-            if 'buyer_id' not in data:
-                data['buyer_id'] = "unknown"
             
             # Get the data from the request
             amount = data['amount']
             searchable_id = data['searchable_id']
-            item_name = data.get('item_name', f"Item #{searchable_id}")
-            buyer_id = data.get('buyer_id', "unknow")
+            buyer_id = str(current_user.id)
+            
+            # Get profile data using the reusable function
+            profile_data = get_profile(buyer_id)
+            
+            # Initialize address and tel variables
+            address = ''
+            tel = ''
+            
+            if profile_data:
+                address = profile_data.get('address', '')
+                tel = profile_data.get('tel', '')
+            
+            # Validate that address and telephone are provided
+            if not address or not tel:
+                return {"error": "Address and telephone number are required for delivery"}, 400
             
             # Prepare payload for BTCPay Server
             payload = {
                 "amount": amount,
                 "currency": "SATS",
                 "metadata": {
-                    "orderId": searchable_id,
-                    "itemName": item_name,
-                    "buyerName": buyer_id,
+                    "searchable_id": searchable_id,
+                    "buyer_id": buyer_id,
+                    "address": address,
+                    "tel": tel
                 },
                 "checkout": {
                     "expirationMinutes": 60,
@@ -1060,7 +873,9 @@ class CreateInvoice(Resource):
                 "buyer_id": str(data['buyer_id']),
                 "timestamp": int(datetime.datetime.now().timestamp()),
                 "searchable_id": str(searchable_id),
-                "invoice_id": invoice_data['id']
+                "invoice_id": invoice_data['id'],
+                "address": address,
+                "tel": tel
             }
             
             execute_sql(cur, f"""
@@ -1078,8 +893,6 @@ class CreateInvoice(Resource):
             print(f"Error creating invoice: {str(e)}")
             return {"error": str(e)}, 500
 
-
-# todo: fe shoudl not call it
 @rest_api.route('/api/check-payment/<string:invoice_id>/<string:buyer_id>', methods=['GET'])
 class CheckPayment(Resource):
     """
@@ -1087,58 +900,18 @@ class CheckPayment(Resource):
     """
     def get(self, invoice_id, buyer_id):
         try:
-            # BTC Pay Server configuration
-            # Make request to BTCPay Server to check payment status
-            response = requests.get(
-                f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices/{invoice_id}",
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-                }
-            )
+            # Use our helper function to check payment status
+            invoice_data = check_payment(invoice_id)
             
-            if response.status_code != 200:
-                return {"error": f"Failed to check payment status: {response.text}"}, 500
+            if "error" in invoice_data:
+                return invoice_data, 500
                 
-            invoice_data = response.json()
-            
-            # If payment is settled, record it in our database
-            if invoice_data['status'] == 'Settled' or invoice_data['status'] == 'Complete':
-                # Get the searchable_id from the invoice record using utility function
-                invoice_records = get_data_from_kv(type='invoice', pkey=invoice_id)
-                
-                if invoice_records:
-                    invoice_record = invoice_records[0]
-                    searchable_id = invoice_record.get('fkey')
-                    
-                    # Store payment record
-                    payment_record = {
-                        "amount": int(invoice_data.get('amount', invoice_record.get('amount'))),
-                        "status": invoice_data['status'],
-                        "buyer_id": str(buyer_id), # todo: this could be visitor
-                        "timestamp": int(time.time()),
-                        "searchable_id": str(searchable_id)
-                    }
-                    
-                    conn = get_db_connection()
-                    cur = conn.cursor()
-                    execute_sql(cur, f"""
-                        INSERT INTO kv (type, pkey, fkey, data)
-                        VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
-                        ON CONFLICT (type, pkey, fkey) 
-                        DO UPDATE SET data = {Json(payment_record)}
-                    """, commit=True, connection=conn)
-                    cur.close()
-                    conn.close()
-            
             # Return the payment status to the client
             return invoice_data, 200
             
         except Exception as e:
             print(f"Error checking payment status: {str(e)}")
             return {"error": str(e)}, 500
-
-
 
 @rest_api.route('/api/transactions', methods=['GET'])
 class TransactionHistory(Resource):
@@ -1271,3 +1044,79 @@ class PaymentsResource(Resource):
                 searchable_requests.labels('get_payments', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
+@rest_api.route('/api/profile', methods=['GET', 'PUT'])
+class ProfileResource(Resource):
+    """
+    Manages user profile data
+    """
+    @token_required
+    def get(self, current_user):
+        """
+        Retrieves profile data for the authenticated user
+        """
+        try:
+            profile_data = get_profile(current_user.id)
+            
+            if not profile_data:
+                searchable_requests.labels('get_profile', 'GET', 404).inc()
+                return {"error": "Profile not found"}, 404
+                
+            searchable_requests.labels('get_profile', 'GET', 200).inc()
+            return profile_data, 200
+            
+        except Exception as e:
+            print(f"Error retrieving profile: {str(e)}")
+            searchable_requests.labels('get_profile', 'GET', 500).inc()
+            return {"error": str(e)}, 500
+    
+    @token_required
+    def put(self, current_user):
+        """
+        Creates or updates profile data for the authenticated user
+        """
+        try:
+            data = request.get_json()
+            
+            if not data:
+                searchable_requests.labels('update_profile', 'PUT', 400).inc()
+                return {"error": "No profile data provided"}, 400
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Check if profile exists for this user
+            execute_sql(cur, f"""
+                SELECT data FROM profile
+                WHERE terminal_id = {current_user.id}
+            """)
+            
+            existing_profile = cur.fetchone()
+            
+            if existing_profile:
+                # Update existing profile
+                # Note: We're merging existing data with new data
+                existing_data = existing_profile[0]
+                merged_data = {**existing_data, **data}
+                
+                execute_sql(cur, f"""
+                    UPDATE profile
+                    SET data = {Json(merged_data)}
+                    WHERE terminal_id = {current_user.id}
+                """, commit=True, connection=conn)
+            else:
+                # Create new profile
+                execute_sql(cur, f"""
+                    INSERT INTO profile (terminal_id, data)
+                    VALUES ({current_user.id}, {Json(data)})
+                """, commit=True, connection=conn)
+            
+            cur.close()
+            conn.close()
+            
+            searchable_requests.labels('update_profile', 'PUT', 200).inc()
+            return {"success": True, "message": "Profile updated successfully"}, 200
+            
+        except Exception as e:
+            print(f"Error updating profile: {str(e)}")
+            searchable_requests.labels('update_profile', 'PUT', 500).inc()
+            return {"error": str(e)}, 500

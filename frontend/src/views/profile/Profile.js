@@ -5,18 +5,23 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert,
+  Menu, MenuItem, IconButton
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
 import axios from 'axios';
-import { formatDate } from '../utilities/Date';
 import PaymentList from '../payments/PaymentList';
+import ProfileEditor, { openProfileEditor } from './ProfileEditor';
+
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [profileData, setProfileData] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   
   // Withdrawal states
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -25,11 +30,15 @@ const Profile = () => {
   const [withdrawalError, setWithdrawalError] = useState(null);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   
+  // Menu state
+  const [anchorEl, setAnchorEl] = useState(null);
+  
   const account = useSelector((state) => state.account);
   const history = useHistory();
   
   useEffect(() => {
     fetchBalance();
+    fetchProfileData();
   }, [account.user, account.token]);
   
   const fetchBalance = async () => {
@@ -71,6 +80,26 @@ const Profile = () => {
       setError('Failed to load transaction information');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchProfileData = async () => {
+    if (!account.user || !account.user._id) return;
+    
+    setProfileLoading(true);
+    
+    try {
+      const response = await axios.get(`${configData.API_SERVER}profile`, {
+        headers: { Authorization: `${account.token}` }
+      });
+      
+      console.log("Profile data response:", response.data);
+      setProfileData(response.data);
+    } catch (err) {
+      console.error('Error fetching user profile data:', err);
+      // We don't set global error here to avoid affecting other components
+    } finally {
+      setProfileLoading(false);
     }
   };
   
@@ -141,11 +170,29 @@ const Profile = () => {
     setWithdrawalSuccess(false);
   };
   
+  const handleEditClick = () => {
+    openProfileEditor();
+    handleMenuClose();
+  };
+  
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
   return (
     <Grid container className={classes.container}>
-      {/* Header Section */}
-      <Grid item xs={12} className={classes.header}>
-        <div className={classes.leftButtons}>
+      {/* Header Section with updated styles */}
+      <Grid item xs={12} className={classes.header} style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginBottom: '16px'
+      }}>
+        <div>
           <Button 
             variant="contained" 
             className={classes.iconButton}
@@ -154,14 +201,49 @@ const Profile = () => {
             <ArrowBackIcon />
           </Button>
         </div>
+        <div>
+          <IconButton 
+            onClick={handleMenuOpen}
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              history.push('/searchables?internalSearchTerm=terminal_id:' + account.user._id);
+            }}>
+              View Your Items
+            </MenuItem>
+            {balance > 0 && !loading && (
+              <MenuItem onClick={() => {
+                handleMenuClose();
+                handleWithdrawalClick();
+              }}>
+                Withdraw
+              </MenuItem>
+            )}
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              handleEditClick();
+            }}>
+              Edit Profile
+            </MenuItem>
+          </Menu>
+        </div>
       </Grid>
       
       {/* Personal Information Section */}
       <Grid item xs={12} className={classes.gridItem}>
         <Paper elevation={3} className={classes.paper}>
-          <Typography variant="h6" className={classes.sectionTitle}>
-            Personal Information
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" style={{ padding: 0, margin: 0 }}>
+            <Typography variant="h6" className={classes.sectionTitle}>
+              Personal Information
+            </Typography>
+          </Box>
           <Box >
             <Typography variant="body1">
               <span className={classes.infoLabel}>Username:</span>
@@ -174,6 +256,25 @@ const Profile = () => {
               <span className={classes.infoValue}>{account.user.email}</span>
             </Typography>
           </Box>
+          
+          {profileLoading ? (
+            <CircularProgress size={18} />
+          ) : profileData && (
+            <>
+              <Box>
+                <Typography variant="body1">
+                  <span className={classes.infoLabel}>Address:</span>
+                  <span className={classes.infoValue}>{profileData.address || 'Not provided'}</span>
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body1">
+                  <span className={classes.infoLabel}>Telephone:</span>
+                  <span className={classes.infoValue}>{profileData.tel || 'Not provided'}</span>
+                </Typography>
+              </Box>
+            </>
+          )}
           <Box>
             {loading ? (
               <CircularProgress size={18} />
@@ -210,30 +311,7 @@ const Profile = () => {
             <PaymentList/>
           )}
       </Grid>
-      
-      {/* Posted Items Section */}
-      <Grid item xs={12} className={classes.gridItem}>
-          <Box className={classes.container}>
-            <Button
-              variant="contained"
-              color="primary"
-              className={classes.button}
-              onClick={() => history.push('/searchables?internalSearchTerm=terminal_id:' + account.user._id )}
-            >
-              View Your Items
-            </Button>
-            {balance > 0 && !loading && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleWithdrawalClick}
-                style={{ marginLeft: '10px' }}
-              >
-                Withdraw
-              </Button>
-            )}
-          </Box>
-      </Grid>
+    
       
       {/* Withdrawal Dialog */}
       <Dialog open={withdrawDialogOpen} onClose={handleCloseWithdrawDialog} maxWidth="sm" fullWidth>
@@ -281,6 +359,9 @@ const Profile = () => {
           Withdrawal successful! Your funds have been sent.
         </Alert>
       </Snackbar>
+      
+      {/* ProfileEditor component now has no props */}
+      <ProfileEditor />
     </Grid>
   );
 };
