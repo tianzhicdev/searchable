@@ -141,22 +141,32 @@ const SearchableDetails = () => {
       // Get buyer ID - use account.user._id if available, otherwise use visitor ID
       const buyerId = account?.user?._id || getOrCreateVisitorId();
       
-      // Instead of calling BTCPay Server directly, call our backend API
+      // Check if user is logged in
+      const isUserLoggedIn = !!account?.user;
+      
+      // Use different endpoints based on login status
+      const endpoint = isUserLoggedIn ? 'create-invoice' : 'create-invoice-visitor';
+      
+      // Prepare payload based on user status
       const payload = {
         amount: SearchableItem.payloads.public.price,
         searchable_id: id,
         buyer_id: buyerId,
-        address: account.user.address,
-        tel: account.user.tel,
         redirect_url: window.location.href
       };
       
+      // Add address and tel only for logged-in users
+      if (isUserLoggedIn) {
+        payload.address = account.user.address;
+        payload.tel = account.user.tel;
+      }
+      
       const response = await axios({
         method: 'post',
-        url: `${configData.API_SERVER}create-invoice`,
+        url: `${configData.API_SERVER}${endpoint}`,
         data: payload,
         headers: {
-          Authorization: `${account.token}`,
+          ...(isUserLoggedIn ? { Authorization: `${account.token}` } : {}),
           'Content-Type': 'application/json'
         }
       });
@@ -184,13 +194,16 @@ const SearchableDetails = () => {
     
     try {
       const buyerId = account?.user?._id || getOrCreateVisitorId();
+      const isUserLoggedIn = !!account?.user;
+      
+      // Use different endpoints based on login status
+      const endpoint = `check-payment/${invoiceId}/${buyerId}`
+      
       console.log("Fetching invoice data from backend");
       const response = await axios({
         method: 'get',
-        url: `${configData.API_SERVER}check-payment/${invoiceId}/${buyerId}`,
-        headers: {
-          Authorization: `${account.token}`
-        }
+        url: `${configData.API_SERVER}${endpoint}`,
+        headers: isUserLoggedIn ? { Authorization: `${account.token}` } : {}
       });
       
       console.log("Received payment status:", response.data.status);
@@ -327,23 +340,21 @@ const SearchableDetails = () => {
   // New function to handle payment button click
   const handlePayButtonClick = () => {
     // Check if user is logged in
-    if (!account.user) {
-      showAlert("Please log in to make a payment", "error");
-      history.push('/login');
-      return;
+    const isUserLoggedIn = !!account?.user;
+    
+    if (isUserLoggedIn) {
+      fetchProfileData();
+      
+      // Only require address and telephone for non-online business types
+      if (SearchableItem.payloads.public.businessType !== "online" && 
+          (!account.user.address || !account.user.tel)) {
+        showAlert("Please update your profile with address and telephone before making a payment", "warning");
+        history.push('/profile');
+        return;
+      }
     }
-
-    fetchProfileData();
     
-    // Check if profile has address and telephone
-    // if (!account.user.address || !account.user.tel) {
-    //   //todo: load profile here
-    //   showAlert("Please update your profile with address and telephone before making a payment", "warning");
-    //   // history.push('/profile');
-    //   return;
-    // }
-    
-    // If profile is complete, proceed with invoice creation
+    // Proceed with invoice creation
     createInvoice();
   };
   
@@ -501,7 +512,10 @@ const SearchableDetails = () => {
                     )}
                   </Grid>
 
-                  {SearchableItem.payloads.public.latitude && SearchableItem.payloads.public.longitude && (
+                  {/* Only display map if businessType is not online */}
+                  {SearchableItem.payloads.public.latitude && 
+                   SearchableItem.payloads.public.longitude && 
+                   SearchableItem.payloads.public.businessType !== "online" && (
                       <Grid item xs={12}>
                         <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
                           <iframe
@@ -516,7 +530,10 @@ const SearchableDetails = () => {
                         </Box>
                       </Grid>
                     )}
-                    {SearchableItem.payloads.public.meetupLocation && (
+                  
+                  {/* Only display meetup location if businessType is not online */}
+                  {SearchableItem.payloads.public.meetupLocation && 
+                   SearchableItem.payloads.public.businessType !== "online" && (
                       <Grid item xs={12}>
                         <Typography variant="body1">
                             <span>{SearchableItem.payloads.public.meetupLocation}</span>
@@ -567,7 +584,7 @@ const SearchableDetails = () => {
         </Grid>
       )}
 
-      {/* Existing Payment Dialog - Updated to show address and tel */}
+      {/* Payment Dialog - Updated to conditionally show address/tel based on business type */}
       <Dialog open={paymentDialogOpen} maxWidth="md">
         <DialogContent>
           {invoice ? (
@@ -580,12 +597,25 @@ const SearchableDetails = () => {
               <Typography variant="body1" gutterBottom align="left">
                 Invoice ID: {invoice.id.substring(0, 3).toUpperCase()}
               </Typography>
-              <Typography variant="body2" align="left">
-                Address: {account.user?.address || 'Not provided'}
-              </Typography>
-              <Typography variant="body2" align="left">
-                Telephone: {account.user?.tel || 'Not provided'}
-              </Typography>
+              
+              {/* Only display address and telephone for non-online business types and logged-in users */}
+              {SearchableItem && SearchableItem.payloads.public.businessType !== "online" && account?.user && (
+                <>
+                  <Typography variant="body2" align="left">
+                    Address: {account.user?.address || 'Not provided'}
+                  </Typography>
+                  <Typography variant="body2" align="left">
+                    Telephone: {account.user?.tel || 'Not provided'}
+                  </Typography>
+                </>
+              )}
+              
+              {/* If visitor, prompt to register for non-online business types */}
+              {SearchableItem && SearchableItem.payloads.public.businessType !== "online" && !account?.user && (
+                <Typography variant="body2" color="error" style={{ marginTop: 8 }} align="left">
+                  Note: Create an account to provide delivery details for physical items.
+                </Typography>
+              )}
               
               {paymentStatus && (
                 <Typography variant="body1" gutterBottom style={{ marginTop: 16 }} align="left">
@@ -594,7 +624,7 @@ const SearchableDetails = () => {
               )}
               
               <Typography variant="body2" color="textSecondary" style={{ marginTop: 16 }} align="left">
-              TRANSACTION IS IRRERVERSIBLE
+                TRANSACTION IS IRRERVERSIBLE
               </Typography>
               {invoice.checkoutLink && (
                 <Button 

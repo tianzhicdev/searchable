@@ -8,8 +8,10 @@ import PropTypes from 'prop-types';
 import { Box, Paper } from '@material-ui/core';
 import axios from 'axios';
 import configData from '../../config';
+
 const Payment = ({ payment }) => {
     const account = useSelector((state) => state.account);
+    const visitorId = localStorage.getItem('visitorId');
     // Get all payment properties and convert to array of [key, value] pairs
     // Filter out entries with empty string values
     const publicPaymentEntries = Object.entries(payment.public || {}).filter(([key, value]) => 
@@ -29,23 +31,32 @@ const Payment = ({ payment }) => {
     const handleTrackingDialogOpen = () => setTrackingDialogOpen(true);
     const handleTrackingDialogClose = () => setTrackingDialogOpen(false);
 
+    // Get the current user's ID (either logged in or visitor)
+    const currentUserId = account && account.user ? account.user._id.toString() : visitorId;
+
     // Submit handlers (to be implemented later)
     const handleRatingSubmit = () => {
         // API call to update rating and review
         const updateRating = async () => {
             try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // Add authorization header if user is logged in
+                if (account && account.token) {
+                    headers['Authorization'] = account.token;
+                } else if (visitorId) {
+                    headers['X-Visitor-ID'] = visitorId;
+                }
+                
                 const response = await axios.put(
                     `${configData.API_SERVER}kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`, 
                     {
                         rating: ratingValue,
                         review: reviewText
                     },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `${account.token}`
-                        }
-                    }
+                    { headers }
                 );
                 
                 // Axios automatically throws errors for non-2xx responses
@@ -57,32 +68,33 @@ const Payment = ({ payment }) => {
         
         // Call the update function
         updateRating();
-        // API call will go here
-        console.log('Rating submitted:', ratingValue, reviewText);
         handleRateDialogClose();
     };
 
     const handleTrackingSubmit = () => {
-        // API call will go here
-        console.log('Tracking number submitted:', trackingNumber);
         // API call to update tracking number
         const updateTracking = async () => {
             try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // Add authorization header if user is logged in
+                if (account && account.token) {
+                    headers['Authorization'] = account.token;
+                } else if (visitorId) {
+                    headers['X-Visitor-ID'] = visitorId;
+                }
+                
                 const response = await axios.put(
                     `${configData.API_SERVER}kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`, 
                     {
                         tracking: trackingNumber
                     },
-                    {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `${account.token}`
-                        }
-                    }
+                    { headers }
                 );
                 
                 // Axios automatically throws errors for non-2xx responses
-                // Update the local state or trigger a refresh
                 console.log('Tracking information updated successfully');
             } catch (error) {
                 console.error('Error updating tracking:', error);
@@ -95,15 +107,19 @@ const Payment = ({ payment }) => {
     };
 
     // Check if user is the buyer and tracking exists
-    const isUserBuyer = payment.private && account && 
-                       payment.private.buyer_id === account.user._id.toString();
+    const isUserBuyer = payment.private && 
+                       ((account && account.user && payment.private.buyer_id === account.user._id.toString()) || 
+                       (!account.user && payment.private.buyer_id === visitorId));
+                       
     const hasTracking = payment.public && 
                        payment.public.tracking !== undefined && 
                        payment.public.tracking !== null && 
                        payment.public.tracking.trim() !== '';
+                       
     // Check if user is the seller and tracking doesn't exist
-    const isUserSeller = payment.private && account && 
-                        payment.private.seller_id === account.user._id.toString();
+    const isUserSeller = payment.private && 
+                        ((account && account.user && payment.private.seller_id === account.user._id.toString()) || 
+                        (!account.user && payment.private.seller_id === visitorId));
 
     const needsTracking = (!hasTracking) && isUserSeller;
     // Show Rate It button if user is buyer and has tracking

@@ -11,7 +11,7 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
-  CircularProgress, Divider, IconButton
+  CircularProgress, Divider, IconButton, MenuItem
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -52,7 +52,8 @@ const PublishSearchables = () => {
     meetupLocation: '',
     latitude: '',
     longitude: '',
-    price: ''
+    price: '',
+    businessType: 'personal'
   });
   
   const [images, setImages] = useState([]);
@@ -269,16 +270,25 @@ const PublishSearchables = () => {
     setSuccess(false);
     
     try {
+      // For online business, set default values for location
+      const submissionData = {...formData};
+      if (submissionData.businessType === 'online') {
+        submissionData.latitude = null;
+        submissionData.longitude = null;
+        submissionData.meetupLocation = 'Online';
+      }
+      
       // Create searchable data following the Terminal/Searchable paradigm
       const searchableData = {
         payloads: {
           "public": {
-            "title": formData.title,
-            "description": formData.description,
-            "meetupLocation": formData.meetupLocation,
-            "latitude": formData.latitude,
-            "longitude": formData.longitude,
-            "price": formData.price ? formData.price : null,
+            "title": submissionData.title,
+            "description": submissionData.description,
+            "meetupLocation": submissionData.meetupLocation,
+            "latitude": submissionData.latitude,
+            "longitude": submissionData.longitude,
+            "price": submissionData.price ? submissionData.price : null,
+            "businessType": submissionData.businessType,
             "images": previewImages.map(base64String => {
               // Remove the data:image/xxx;base64, prefix
               return base64String.split(',')[1];
@@ -312,7 +322,8 @@ const PublishSearchables = () => {
         meetupLocation: '',
         latitude: selectedLocation ? selectedLocation.latitude.toString() : '',
         longitude: selectedLocation ? selectedLocation.longitude.toString() : '',
-        price: ''
+        price: '',
+        businessType: 'personal'
       });
       setImages([]);
       setPreviewImages([]);
@@ -444,6 +455,31 @@ const PublishSearchables = () => {
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
+                  Business Type *
+                </Typography>
+                <TextField
+                  select
+                  fullWidth
+                  id="businessType"
+                  name="businessType"
+                  value={formData.businessType}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  size="small"
+                  required
+                  className={classes.textInput}
+                >
+                  <MenuItem value="personal">Personal</MenuItem>
+                  <MenuItem value="online">Online Business</MenuItem>
+                  <MenuItem value="local">Local Business</MenuItem>
+                </TextField>
+                <Typography variant="caption" className={classes.formHelp}>
+                  Select the type of listing you are creating
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
                   Description
                 </Typography>
                 <TextField
@@ -517,61 +553,65 @@ const PublishSearchables = () => {
                 </Box>
               </Grid>
 
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Meet-up Location
-                </Typography>
-                <Box className={classes.inputWithStatus}>
-                  <TextField
-                    fullWidth
-                    id="meetupLocation"
-                    name="meetupLocation"
-                    value={formData.meetupLocation}
-                    onChange={handleInputChange}
-                    variant="outlined"
-                    size="small"
-                    placeholder="Select a location on the map or enter manually"
-                    className={classes.textInput}
-                  />
-                </Box>
-                <Typography variant="caption" className={classes.formHelp}>
-                  This will be suggested as the meeting point for exchanges
-                </Typography>
-              </Grid>
+              {formData.businessType !== 'online' && (
+                <Grid item xs={12} className={classes.formGroup}>
+                  <Typography variant="subtitle1" className={classes.formLabel}>
+                    Meet-up Location
+                  </Typography>
+                  <Box className={classes.inputWithStatus}>
+                    <TextField
+                      fullWidth
+                      id="meetupLocation"
+                      name="meetupLocation"
+                      value={formData.meetupLocation}
+                      onChange={handleInputChange}
+                      variant="outlined"
+                      size="small"
+                      placeholder="Select a location on the map or enter manually"
+                      className={classes.textInput}
+                    />
+                  </Box>
+                  <Typography variant="caption" className={classes.formHelp}>
+                    This will be suggested as the meeting point for exchanges
+                  </Typography>
+                </Grid>
+              )}
 
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Select Location on Map
-                </Typography>
-                <Typography variant="body2" className={classes.mapInstruction}>
-                  <LocationOnIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 8 }} />
-                  Your current location is shown on the map. Click anywhere to select a meeting location for your item.
-                </Typography>
-                
-                {mapLoading ? (
-                  <Box className={classes.mapLoading}>
-                    <CircularProgress size={24} style={{ marginRight: 16 }} />
-                    <Typography variant="body2">Loading map with your location...</Typography>
-                  </Box>
-                ) : (
-                  <Box className={classes.mapContainer}>
-                    <MapContainer 
-                      center={location.latitude && location.longitude ? 
-                             [location.latitude, location.longitude] : 
-                             [51.505, -0.09]} 
-                      zoom={13} 
-                      style={{ height: "100%", width: "100%" }}
-                    >
-                      <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      />
-                      <LocationMarker />
-                      <MapUpdater userLocation={location} />
-                    </MapContainer>
-                  </Box>
-                )}
-              </Grid>
+              {formData.businessType !== 'online' && (
+                <Grid item xs={12} className={classes.formGroup}>
+                  <Typography variant="subtitle1" className={classes.formLabel}>
+                    Select Location on Map
+                  </Typography>
+                  <Typography variant="body2" className={classes.mapInstruction}>
+                    <LocationOnIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                    Your current location is shown on the map. Click anywhere to select a meeting location for your item.
+                  </Typography>
+                  
+                  {mapLoading ? (
+                    <Box className={classes.mapLoading}>
+                      <CircularProgress size={24} style={{ marginRight: 16 }} />
+                      <Typography variant="body2">Loading map with your location...</Typography>
+                    </Box>
+                  ) : (
+                    <Box className={classes.mapContainer}>
+                      <MapContainer 
+                        center={location.latitude && location.longitude ? 
+                               [location.latitude, location.longitude] : 
+                               [51.505, -0.09]} 
+                        zoom={13} 
+                        style={{ height: "100%", width: "100%" }}
+                      >
+                        <TileLayer
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        />
+                        <LocationMarker />
+                        <MapUpdater userLocation={location} />
+                      </MapContainer>
+                    </Box>
+                  )}
+                </Grid>
+              )}
               
               <Grid item xs={12}>
                 <Box className={classes.formActions}>

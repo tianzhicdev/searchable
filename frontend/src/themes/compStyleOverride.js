@@ -434,5 +434,42 @@ export function componentStyleOverrides(theme) {
                 }
             }
         },
+        MuiAlert: {
+            styleOverrides: {
+                root: {
+                    fontFamily: theme.fonts.fontFamily.primary,
+                    borderRadius: '0px',
+                    border: `1px solid ${theme.colors.orangeMain}`,
+                },
+                standardSuccess: {
+                    backgroundColor: theme.colors.primaryDark,
+                    color: theme.colors.orangeMain,
+                    '& .MuiAlert-icon': {
+                        color: theme.colors.orangeMain
+                    }
+                },
+                standardError: {
+                    backgroundColor: theme.colors.primaryDark,
+                    color: theme.colors.orangeMain,
+                    '& .MuiAlert-icon': {
+                        color: theme.colors.orangeMain
+                    }
+                },
+                standardWarning: {
+                    backgroundColor: theme.colors.primaryDark,
+                    color: theme.colors.orangeMain,
+                    '& .MuiAlert-icon': {
+                        color: theme.colors.orangeMain
+                    }
+                },
+                standardInfo: {
+                    backgroundColor: theme.colors.primaryDark,
+                    color: theme.colors.orangeMain,
+                    '& .MuiAlert-icon': {
+                        color: theme.colors.orangeMain
+                    }
+                }
+            }
+        },
     };
 }

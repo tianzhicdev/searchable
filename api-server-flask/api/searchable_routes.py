@@ -114,15 +114,19 @@ class CreateSearchable(Resource):
                 # Extract latitude and longitude from the data for dedicated columns
                 latitude = None
                 longitude = None
-                if 'payloads' in data and 'public' in data['payloads']:
-                    public_payload = data['payloads']['public']
-                    if 'latitude' in public_payload and 'longitude' in public_payload:
-                        latitude = float(public_payload['latitude'])
-                        longitude = float(public_payload['longitude'])
+                try:
+                    latitude = float(data['payloads']['public']['latitude'])
+                    longitude = float(data['payloads']['public']['longitude'])
+                except:
+                    print("No latitude or longitude found in the data")
+                    pass
                 
                 # Insert into searchables table with dedicated lat/long columns
                 print("Executing database insert...")
-                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ({Json(data)}, {latitude}, {longitude}) RETURNING searchable_id;"
+                # Use NULL for latitude/longitude if they are None
+                lat_value = "NULL" if latitude is None else latitude
+                lng_value = "NULL" if longitude is None else longitude
+                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ({Json(data)}, {lat_value}, {lng_value}) RETURNING searchable_id;"
                 execute_sql(cur, sql)
                 searchable_id = cur.fetchone()[0]
                 
@@ -321,7 +325,7 @@ class SearchSearchables(Resource):
         print(f"  Internal search term: {internal_search_term}")
         
         # Using location-based search?
-        using_location = lat is not None and lng is not None and max_distance is not None
+        using_location = lat is not None and lng is not None and max_distance is not None and max_distance != 100000000
         if using_location:
             print(f"  Coordinates: ({lat}, {lng})")
             print(f"  Max distance: {max_distance} meters")
@@ -796,6 +800,86 @@ class MetricsResource(Resource):
         metrics_data = generate_latest(REGISTRY)
         return Response(metrics_data, mimetype='text/plain; charset=utf-8')
 
+def create_lightning_invoice(amount, searchable_id, buyer_id, address='', tel='', redirect_url=''):
+    """
+    Creates a Lightning Network invoice via BTCPay Server and records it in the database
+    
+    Args:
+        amount (int/str): Amount in sats
+        searchable_id (str/int): ID of the searchable item
+        buyer_id (str): ID of the buyer (can be user ID or visitor ID)
+        address (str, optional): Shipping address
+        tel (str, optional): Contact telephone number
+        redirect_url (str, optional): URL to redirect after payment
+        
+    Returns:
+        tuple: (invoice_data, status_code) - The invoice data from BTCPay and HTTP status code
+    """
+    try:
+        # Prepare payload for BTCPay Server
+        payload = {
+            "amount": amount,
+            "currency": "SATS",
+            "metadata": {
+                "searchable_id": searchable_id,
+                "buyer_id": buyer_id,
+                "address": address,
+                "tel": tel
+            },
+            "checkout": {
+                "expirationMinutes": 60,
+                "monitoringMinutes": 60,
+                "paymentMethods": ["BTC-LightningNetwork"],
+                "redirectURL": redirect_url
+            }
+        }
+        
+        response = requests.post(
+            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
+            json=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
+            }
+        )
+        
+        if response.status_code != 200:
+            return {"error": f"Failed to create invoice: {response.text}"}, 500
+            
+        invoice_data = response.json()
+        # Log raw invoice data for debugging purposes
+        print(f"Raw invoice data: {json.dumps(invoice_data, indent=2)}")
+        
+        # Record the invoice in our database
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Store invoice record
+        invoice_record = {
+            "amount": int(amount),
+            "buyer_id": str(buyer_id),
+            "timestamp": int(datetime.datetime.now().timestamp()),
+            "searchable_id": str(searchable_id),
+            "invoice_id": invoice_data['id'],
+            "address": address,
+            "tel": tel
+        }
+        
+        execute_sql(cur, f"""
+            INSERT INTO kv (type, pkey, fkey, data)
+            VALUES ('invoice', '{invoice_data['id']}', '{searchable_id}', {Json(invoice_record)})
+        """, commit=True, connection=conn)
+        
+        cur.close()
+        conn.close()
+        
+        # Return the invoice data to the client
+        return invoice_data, 200
+        
+    except Exception as e:
+        print(f"Error creating invoice: {str(e)}")
+        return {"error": str(e)}, 500
+
 @rest_api.route('/api/create-invoice', methods=['POST'])
 class CreateInvoice(Resource):
     """
@@ -817,7 +901,7 @@ class CreateInvoice(Resource):
             # Get profile data using the reusable function
             profile_data = get_profile(buyer_id)
             
-            # Initialize address and tel variables
+            # Initialize address and tel variables from profile
             address = ''
             tel = ''
             
@@ -825,72 +909,49 @@ class CreateInvoice(Resource):
                 address = profile_data.get('address', '')
                 tel = profile_data.get('tel', '')
             
-            # Validate that address and telephone are provided
-            if not address or not tel:
-                return {"error": "Address and telephone number are required for delivery"}, 400
-            
-            # Prepare payload for BTCPay Server
-            payload = {
-                "amount": amount,
-                "currency": "SATS",
-                "metadata": {
-                    "searchable_id": searchable_id,
-                    "buyer_id": buyer_id,
-                    "address": address,
-                    "tel": tel
-                },
-                "checkout": {
-                    "expirationMinutes": 60,
-                    "monitoringMinutes": 60,
-                    "paymentMethods": ["BTC-LightningNetwork"],
-                    "redirectURL": data.get('redirect_url', '')
-                }
-            }
-            
-            response = requests.post(
-                f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
-                json=payload,
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-                }
+            # Use the common function for invoice creation
+            return create_lightning_invoice(
+                amount=amount,
+                searchable_id=searchable_id,
+                buyer_id=buyer_id,
+                address=address,
+                tel=tel,
+                redirect_url=data.get('redirect_url', '')
             )
-            
-            if response.status_code != 200:
-                return {"error": f"Failed to create invoice: {response.text}"}, 500
-                
-            invoice_data = response.json()
-            # Log raw invoice data for debugging purposes
-            print(f"Raw invoice data: {json.dumps(invoice_data, indent=2)}")
-            
-            # Record the invoice in our database
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Store invoice record
-            invoice_record = {
-                "amount": int(amount),
-                "buyer_id": str(data['buyer_id']),
-                "timestamp": int(datetime.datetime.now().timestamp()),
-                "searchable_id": str(searchable_id),
-                "invoice_id": invoice_data['id'],
-                "address": address,
-                "tel": tel
-            }
-            
-            execute_sql(cur, f"""
-                INSERT INTO kv (type, pkey, fkey, data)
-                VALUES ('invoice', '{invoice_data['id']}', '{searchable_id}', {Json(invoice_record)})
-            """, commit=True, connection=conn)
-            
-            cur.close()
-            conn.close()
-            
-            # Return the invoice data to the client
-            return invoice_data, 200
             
         except Exception as e:
             print(f"Error creating invoice: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/create-invoice-visitor', methods=['POST'])
+class CreateInvoiceVisitor(Resource):
+    """
+    Creates a Lightning Network invoice via BTCPay Server for unauthenticated visitors
+    """
+    def post(self):
+        try:
+            data = request.get_json()
+            
+            if not data or 'amount' not in data or 'searchable_id' not in data or 'buyer_id' not in data:
+                return {"error": "data fields amount, searchable_id, and buyer_id are required"}, 400
+            
+            # Get the data from the request
+            amount = data['amount']
+            searchable_id = data['searchable_id']
+            buyer_id = data['buyer_id']
+            
+            # Use the common function for invoice creation
+            return create_lightning_invoice(
+                amount=amount,
+                searchable_id=searchable_id,
+                buyer_id=buyer_id,
+                address=data.get('address', ''),
+                tel=data.get('tel', ''),
+                redirect_url=data.get('redirect_url', '')
+            )
+            
+        except Exception as e:
+            print(f"Error creating visitor invoice: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/check-payment/<string:invoice_id>/<string:buyer_id>', methods=['GET'])
@@ -974,6 +1035,50 @@ class TransactionHistory(Resource):
                 print(f"Error retrieving transaction history: {str(e)}")
                 searchable_requests.labels('transaction_history', 'GET', 500).inc()
                 return {"error": str(e)}, 500
+
+@rest_api.route('/api/payments-visitor', methods=['GET'])
+class VisitorPaymentsResource(Resource):
+    """
+    Retrieves payments data for a visitor (non-authenticated user) filtered by buyer_id
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/payments-visitor?buyer_id=visitor_123&searchable_id=456"
+    """
+    def get(self):
+        with searchable_latency.labels('get_payments_visitor').time():
+            try:
+                # Get buyer_id from query parameters
+                buyer_id = request.args.get('buyer_id')
+                searchable_id = request.args.get('searchable_id')
+                
+                if not buyer_id:
+                    searchable_requests.labels('get_payments_visitor', 'GET', 400).inc()
+                    return {"error": "buyer_id is required"}, 400
+                
+                # Filter payments by buyer_id and optionally by searchable_id
+                if searchable_id:
+                    # Get payments for specific buyer and searchable item
+                    payment_records = get_data_from_kv(type='payment', fkey=searchable_id)
+                    payment_records = [payment for payment in payment_records 
+                                      if payment.get('buyer_id') == str(buyer_id)]
+                else:
+                    # Get all payments for this buyer
+                    payment_records = get_data_from_kv(type='payment')
+                    payment_records = [payment for payment in payment_records 
+                                      if payment.get('buyer_id') == str(buyer_id)]
+                
+                # Monitor metrics
+                searchable_requests.labels('get_payments_visitor', 'GET', 200).inc()
+                
+                return {
+                    'payments': payment_records
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving visitor payment history: {str(e)}")
+                searchable_requests.labels('get_payments_visitor', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
 
 @rest_api.route('/api/payments', methods=['GET'])
 class PaymentsResource(Resource):

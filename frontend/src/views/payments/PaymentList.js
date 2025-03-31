@@ -10,7 +10,7 @@ import Payment from './Payment';
 import { useSelector } from 'react-redux';
 import configData from '../../config';
 import { formatDate } from '../../views/utilities/Date';
-
+import { getOrCreateVisitorId } from '../../views/utilities/Visitor';
 const PaymentList = ({ searchable_id }) => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +23,21 @@ const PaymentList = ({ searchable_id }) => {
       setError(null);
       try {
         // Build the API endpoint URL based on whether searchable_id is provided
-        const endpoint = searchable_id 
-          ? `${configData.API_SERVER}payments?searchable_id=${searchable_id}`
-          : `${configData.API_SERVER}payments`;
+        // Determine if user is logged in
+        const isUserLoggedIn = !!account?.user;
+        
+        // Use different endpoints based on login status
+        let endpoint;
+        
+        if (searchable_id) {
+          if (isUserLoggedIn) {
+            endpoint = `${configData.API_SERVER}payments?searchable_id=${searchable_id}`;
+          } else {
+            endpoint = `${configData.API_SERVER}payments-visitor?searchable_id=${searchable_id}&buyer_id=${getOrCreateVisitorId()}`;
+          }
+        } else {
+          endpoint = `${configData.API_SERVER}payments`;
+        }
         
         // Make the actual API call
         const response = await axios.get(endpoint, {
