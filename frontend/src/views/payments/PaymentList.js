@@ -33,6 +33,7 @@ const PaymentList = ({ searchable_id }) => {
             Authorization: `${account.token}`
           }
         });
+        console.log("fetchPayments.response.data", response.data);
         
         // Transform the API response data to match the expected format
         const transformedPayments = response.data.payments.map(payment => ({
