@@ -90,6 +90,62 @@ def token_required(f):
     return decorator
 
 
+def token_optional(f):
+    @wraps(f)
+    def decorator(self, *args, **kwargs):
+        token = None
+        visitor_id = None
+        
+        # Check for authorization token
+        if 'use-jwt' in request.headers and request.headers['use-jwt'] == "true" and "authorization" in request.headers:
+            token = request.headers["authorization"]
+            print(f"optional-Token: {token}")
+            
+            # Handle token authentication
+            if token == DEV_TOKEN:
+                print("Using test admin account for development")
+                # Create a mock admin user for testing
+                admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")
+                return f(self, *args, current_user=admin_user, visitor_id=None, **kwargs)
+                
+            try:
+                data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+                print(f"Decoded JWT data: {data}")
+                
+                current_user = Users.get_by_email(data["email"])
+                print(f"User {current_user.username} with email {current_user.email} is making a request.")
+                
+                if not current_user:
+                    return {"success": False, 
+                            "msg": "Sorry. Wrong auth token. This user does not exist."}, 400
+                            
+                token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
+                
+                if token_expired is not None:
+                    return {"success": False, "msg": "Token revoked."}, 400
+                    
+                if not current_user.check_jwt_auth_active():
+                    return {"success": False, "msg": "Token expired."}, 400
+                    
+                return f(self, *args, current_user=current_user, visitor_id=None, **kwargs)
+                
+            except Exception as e:
+                print(f"Exception occurred: {e}")
+                return {"success": False, "msg": "Token is invalid"}, 400
+        
+        # If no token, check for visitor ID
+        elif 'use-jwt' in request.headers and request.headers['use-jwt'] == "false" and "X-Visitor-Id" in request.headers:
+            visitor_id = request.headers["X-Visitor-Id"]
+            print(f"optional-Visitor ID: {visitor_id}")
+            return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+        
+        # If neither token nor visitor ID is provided
+        else:
+            return {"success": False, "msg": "'use-jwt' header must set to true or false. Provide either a JWT token or visitor ID."}, 400
+            
+    return decorator
+
+
 """
     Flask-Restx routes
 """

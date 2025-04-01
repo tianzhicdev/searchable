@@ -20,10 +20,11 @@ CREATE INDEX IF NOT EXISTS idx_searchable_geo_geohash ON searchable_geo(geohash)
 CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
 
 CREATE TABLE IF NOT EXISTS kv (
+    type TEXT NOT NULL,
     pkey TEXT NOT NULL,
     fkey TEXT NOT NULL,
     data JSONB NOT NULL,
-    PRIMARY KEY (pkey, fkey)
+    PRIMARY KEY (type, pkey, fkey)
 );
 
 -- Index on pkey for faster lookups

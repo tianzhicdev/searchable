@@ -6,8 +6,9 @@ import math
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 import geohash2
 from . import rest_api
-from .routes import token_required
+from .routes import token_required, token_optional
 from .helper import (
+    create_lightning_invoice,
     get_db_connection,
     pay_lightning_invoice, 
     decode_lightning_invoice, 
@@ -17,8 +18,11 @@ from .helper import (
     get_data_from_kv, 
     check_balance,
     execute_sql,
-    Json
+    Json,
+    get_withdrawal_timestamp,
+    get_withdrawal_status
 )
+import time
 
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_v2_requests_total', 'Total number of searchable API v2 requests', ['endpoint', 'method', 'status'])
@@ -30,7 +34,8 @@ class GetSearchableItem(Resource):
     """
     Retrieves a specific searchable item by its ID
     """
-    def get(self, searchable_id):
+    @token_optional
+    def get(self, searchable_id, current_user = None, visitor_id = None):
         with searchable_latency.labels('get_searchable_item_v2').time():
             try:
                 conn = get_db_connection()
@@ -152,7 +157,8 @@ class SearchSearchables(Resource):
     """
     Search for searchable items based on location and optional query terms
     """
-    def get(self):
+    @token_optional
+    def get(self, current_user = None, visitor_id = None):
         with searchable_latency.labels('search_searchables_v2').time():
             try:
                 # Parse and validate request parameters
@@ -381,28 +387,6 @@ class SearchSearchables(Resource):
     
     def _query_searchable_geo(self, cur, lat, lng, max_distance, where_clause):
         """Query searchable_geo table using lat/long coordinates"""
-        # Use a more efficient query using a WITH clause to calculate distance first
-        # query = f"""
-        #     WITH distance_calc AS (
-        #         SELECT 
-        #           s.searchable_id,
-        #           s.searchable_data,
-        #           ( 6371000 * acos( cos( radians({lat}) ) * 
-        #             cos( radians( sg.latitude ) ) * 
-        #             cos( radians( sg.longitude ) - radians({lng}) ) + 
-        #             sin( radians({lat}) ) * 
-        #             sin( radians( sg.latitude ) ) 
-        #           ) ) AS distance
-        #         FROM searchables s
-        #         JOIN searchable_geo sg ON s.searchable_id = sg.searchable_id
-        #         WHERE {where_clause} 
-        #         AND sg.latitude BETWEEN {lat} - ({max_distance} / 111111) AND {lat} + ({max_distance} / 111111)
-        #         AND sg.longitude BETWEEN {lng} - ({max_distance} / (111111 * cos(radians({lat})))) AND {lng} + ({max_distance} / (111111 * cos(radians({lat}))))
-        #     )
-        #     SELECT * FROM distance_calc
-        #     WHERE distance <= {max_distance}
-        #     ORDER BY distance
-        # """
         query = f"""
                 WITH distance_calc AS (
                     SELECT 
@@ -492,7 +476,8 @@ class GetSearchableItem(Resource):
     """
     Retrieves a specific searchable item by its ID
     """
-    def get(self, searchable_id):
+    @token_optional
+    def get(self, searchable_id, current_user = None, visitor_id = None):
         with searchable_latency.labels('get_searchable_item_v2').time():
             try:
                 conn = get_db_connection()
@@ -528,75 +513,89 @@ class GetSearchableItem(Resource):
                 return {"error": str(e)}, 500
 
 
-# POST /api/v1/searchable/create
-# Class: CreateSearchable
-# Purpose: Creates a new searchable item
-# Authentication: Required
-
-# GET /api/v1/searchable/search
-# Class: SearchSearchables
-# Purpose: Search for searchable items based on location and optional query terms
-# Authentication: not required
-# Parameters:
-    #   - lat: latitude of the user's location
-    #   - lng: longitude of the user's location
-    #   - max_distance: maximum distance in meters from the user's location
-    #   - query_term: optional query term for searching
-    #   - filters: optional filters for searching
-    #   - page_number: optional page number for pagination
-    #   - page_size: optional page size for pagination
-    #   - use_location: optional boolean to use location-based search
-
-
-# PUT /api/v1/searchable/remove/{searchable_id}
-# Class: RemoveSearchableItem
-# Purpose: Soft removes a searchable item by setting is_removed flag to true
-# Authentication: Required
+@rest_api.route('/api/v1/searchable/remove/<int:searchable_id>', methods=['PUT'])
+class RemoveSearchableItem(Resource):
+    """
+    Soft removes a searchable item by setting is_removed flag to true
+    
+    Example curl request:
+    curl -X PUT "http://localhost:5000/api/searchable/123/remove" -H "Authorization: <token>"
+    """
+    @token_required
+    def put(self, current_user, searchable_id):
+        with searchable_latency.labels('remove_searchable_item').time():
+            print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # First check if the item exists and belongs to the current user
+                execute_sql(cur, f"""
+                    SELECT searchable_data
+                    FROM searchables
+                    WHERE searchable_id = {searchable_id}
+                """)
+                
+                row = cur.fetchone()
+                if not row:
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 404).inc()
+                    cur.close()
+                    conn.close()
+                    return {"error": "Searchable item not found"}, 404
+                    
+                searchable_data = row[0]
+                if str(searchable_data.get('terminal_id', -1)) != str(current_user.id):
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 403).inc()
+                    cur.close()
+                    conn.close()
+                    return {"error": "You don't have permission to remove this item"}, 403
+                
+                # Update the searchable_data to mark it as removed
+                searchable_data['is_removed'] = True
+                
+                # Update the record in the database
+                execute_sql(cur, f"""
+                    UPDATE searchables
+                    SET searchable_data = {Json(searchable_data)}
+                    WHERE searchable_id = {searchable_id}
+                """, commit=True, connection=conn)
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('remove_searchable_item', 'PUT', 200).inc()
+                return {"success": True, "message": "Item has been removed"}, 200
+                
+            except Exception as e:
+                searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
+                print(f"Error removing searchable item: {str(e)}")
+                return {"error": str(e)}, 500
 
 
 # GET /api/v1/balance
-# Class: BalanceResource
-# Purpose: Get user's balance by calculating payments and withdrawals
-# Authentication: Required
+# todo: move later
 
 
-# POST /api/v1/withdrawal
-# Class: WithdrawFunds
-# Purpose: Processes a withdrawal request via Lightning Network
-# Authentication: Required
+@rest_api.route('/api/v1/check-payment/<string:invoice_id>', methods=['GET'])
+class CheckPayment(Resource):
+    """
+    Checks the status of a payment via BTCPay Server
+    """
+    def get(self, invoice_id):
+        try:
+            # Use our helper function to check payment status
+            invoice_data = check_payment(invoice_id)
+            
+            if "error" in invoice_data:
+                return invoice_data, 500
+                
+            # Return the payment status to the client
+            return invoice_data, 200
+            
+        except Exception as e:
+            print(f"Error checking payment status: {str(e)}")
+            return {"error": str(e)}, 500
 
-
-# GET /metrics
-# Class: MetricsResource
-# Purpose: Exposes Prometheus metrics for monitoring
-
-# POST /api/v1/create-invoice
-# Class: CreateInvoice
-# Purpose: Creates a Lightning Network invoice via BTCPay Server
-# Authentication: Optional
-# parameters:
-    #   - amount: amount to be paid
-    #   - searchable_id: id of the searchable item
-    #   - buyer_id: id of the buyer/visitor get visitor id from header
-
-    # get from profile:
-        #   - address: optional address for the invoice
-        #   - tel: optional phone number for the invoice
-
-
-# GET /api/v1/check-payment/{invoice_id}
-# Purpose: Checks the status of a payment via BTCPay Server
-# Authentication: Not required
-
-
-# GET /api/v1/payments-by-user
-# Purpose: Retrieves payments data filtered by searchable_id or user's role
-# Authentication: Required
-
-# GET /api/v1/payments-by-searchable/{searchable_id}
-# Authentication: Not required
-# parameters:
-    #   - terminal_id: terminal_id could be seller or buyer
 
 
 @rest_api.route('/api/v1/terminal', methods=['GET'])
@@ -673,3 +672,292 @@ class UpdateUserTerminal(Resource):
             except Exception as e:
                 searchable_requests.labels('update_terminal', 'PUT', 500).inc()
                 return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/create-invoice', methods=['POST'])
+class CreateInvoiceV1(Resource):
+    """
+    Creates a Lightning Network invoice via BTCPay Server
+    
+    Supports both authenticated users and visitors
+    
+    Parameters:
+        - amount: amount to be paid in sats
+        - searchable_id: id of the searchable item
+        - buyer_id: id of the buyer (optional, required for visitors)
+        - address: optional address for shipping
+        - tel: optional phone number
+        - redirect_url: optional URL to redirect after payment
+    """
+    @token_optional
+    def post(self, current_user=None, visitor_id=None):
+        with searchable_latency.labels('create_invoice_v1').time():
+            try:
+                data = request.get_json()
+                
+                if not data or 'amount' not in data or 'searchable_id' not in data or 'business_type' not in data:
+                    searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
+                    return {"error": "Amount, searchable_id and business_type are required"}, 400
+                
+                # Get the data from the request
+                amount = data['amount']
+                searchable_id = data['searchable_id']
+                business_type = data['business_type']
+                address = ''
+                tel = ''
+                
+                # Set buyer_id based on authentication status
+                if current_user:
+                    # Authenticated user
+                    buyer_id = str(current_user.id)
+                    
+                    if business_type == 'online':
+                        # Get profile data to retrieve address and tel
+                        profile_data = get_terminal(buyer_id)
+                        
+                        # Initialize address and tel variables from profile
+                        # Initialize address and tel variables from profile
+                        if profile_data:
+                            address = profile_data.get('address', '')
+                            tel = profile_data.get('tel', '')
+                        
+                        # Fail the request if address or tel is missing
+                        if not address or not tel:
+                            searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
+                            return {"error": "Address and telephone number are required"}, 400
+                        
+                elif visitor_id:
+                    # Visitor
+                    buyer_id = visitor_id
+                    if business_type == 'online':
+                        searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
+                        return {"error": "vistors cannot pay for online business"}, 400
+                else:
+                    # Fail the request if no buyer_id is provided
+                    searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
+                    return {"error": "authentication OR visitor_id is required"}, 400
+                
+                # Create a Lightning invoice
+                response = None
+                try:
+                    # Use our decode function to get invoice details without paying
+                    response = create_lightning_invoice(
+                        amount=amount
+                    )
+                except Exception as e:
+                    searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                    return {"error": f"Failed to create invoice: {str(e)}"}, 500
+                
+                # Record the lightning invoice in our database
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Check if invoice ID exists
+                if 'id' not in response:
+                    searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                    return {"error": "failed to create invoice, please try again later"}, 500
+                
+                # Store invoice record
+                invoice_record = {
+                    "amount": int(amount),
+                    "buyer_id": str(buyer_id),
+                    "timestamp": int(time.time()),
+                    "searchable_id": str(searchable_id),
+                    "invoice_id": response['id'],
+                    "address": address,
+                    "tel": tel
+                }
+                
+                execute_sql(cur, f"""
+                    INSERT INTO kv (type, pkey, fkey, data)
+                    VALUES ('invoice', '{response['id']}', '{searchable_id}', {Json(invoice_record)})
+                """, commit=True, connection=conn)
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('create_invoice_v1', 'POST', 200).inc()
+                return response, 200
+                
+            except Exception as e:
+                print(f"Error creating invoice: {str(e)}")
+                searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/payments-by-terminal', methods=['GET'])
+class PaymentsByTerminal(Resource):
+    """
+    Retrieves payments data filtered by terminal_id
+    
+    This endpoint returns payments where the authenticated user is either:
+    - the seller (owner of the searchable items that received payments)
+    - the buyer (user who made payments for searchable items)
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/v1/payments-by-terminal" -H "Authorization: <token>"
+    """
+    @token_required
+    def get(self, current_user):
+        
+        with searchable_latency.labels('payments_by_terminal').time():
+            try:
+                # Get all searchables published by this user
+                user_published_searchable_ids = get_searchableIds_by_user(current_user.id)
+                # Convert all elements in the list to strings to ensure consistency
+                user_published_searchable_ids = [str(id) for id in user_published_searchable_ids]
+                
+                # Initialize transactions list
+                payments = []
+                
+                # Get payments where user is seller (payments for their searchable items)
+                if user_published_searchable_ids:
+                    seller_payments = get_data_from_kv(type='payment', fkey=user_published_searchable_ids)
+                    for payment in seller_payments:
+                        payment['seller_id'] = str(current_user.id)
+                    payments.extend(seller_payments)
+                
+                # Get payments where user is buyer
+                buyer_payments = get_data_from_kv(type='payment') # todo: filter by terminal_id
+                # Filter to only include payments where the user is the buyer
+                buyer_payments = [payment for payment in buyer_payments 
+                                 if payment.get('buyer_id') == str(current_user.id)]
+                payments.extend(buyer_payments)
+                
+                # Record metrics
+                searchable_requests.labels('payments_by_terminal', 'GET', 200).inc()
+                # Merge payments with the same pkey to avoid duplicates
+                merged_payments = {}
+                for payment in payments:
+                    pkey = payment.get('pkey')
+                    if pkey:
+                        if pkey in merged_payments:
+                            # If we already have this payment, merge any additional data
+                            merged_payments[pkey].update(payment)
+                        else:
+                            # First time seeing this payment
+                            merged_payments[pkey] = payment
+                
+                # Convert back to list
+                payments = list(merged_payments.values())
+                
+                return {
+                    'payments': payments,
+                    'count': len(payments)
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving payments by terminal: {str(e)}")
+                searchable_requests.labels('payments_by_terminal', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
+class WithdrawalsByTerminal(Resource):
+    """
+    Retrieves withdrawal data for the authenticated user
+    
+    This endpoint returns all withdrawals made by the authenticated user.
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/v1/withdrawals-by-terminal" -H "Authorization: <token>"
+    """
+    @token_required
+    def get(self, current_user):
+        with searchable_latency.labels('withdrawals_by_terminal').time():
+            try:
+                # Initialize transactions list
+                withdrawals = []
+                
+                # Get withdrawal records for the authenticated user
+                withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(current_user.id))
+                for withdrawal in withdrawal_records:
+                    # Normalize withdrawal data
+                    
+                    transaction = {
+                        'invoice': withdrawal.get('pkey', ''),
+                        'type': 'withdrawal',
+                        'amount': int(withdrawal.get('amount', 0)),
+                        'fee_sat': int(withdrawal.get('fee_sat', 0)),
+                        'value_sat': int(withdrawal.get('value_sat', 0)),
+                        'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
+                        'status': get_withdrawal_status(withdrawal.get('status', [])),
+                        'invoice': withdrawal.get('invoice', 'missing'),
+                    }
+                    withdrawals.append(transaction)
+                
+                # Record metrics
+                searchable_requests.labels('withdrawals_by_terminal', 'GET', 200).inc()
+                
+                return {
+                    'withdrawals': withdrawals,
+                    'count': len(withdrawals)
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving withdrawals by terminal: {str(e)}")
+                searchable_requests.labels('withdrawals_by_terminal', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/payments-by-searchable/<string:searchable_id>', methods=['GET'])
+class PaymentsBySearchable(Resource):
+    """
+    Retrieves payments data filtered by searchable_id
+    
+    This endpoint returns payments for a specific searchable item.
+    Optional terminal_id parameter can filter by seller or buyer.
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/v1/payments-by-searchable/123?terminal_id=456"
+    """
+    @token_optional
+    def get(self, searchable_id, current_user=None, visitor_id=None):
+        with searchable_latency.labels('payments_by_searchable').time():
+            try:
+                # Get payments for this searchable item
+                payments = get_data_from_kv(type='payment', fkey=searchable_id)
+                filtered_payments = []
+                
+                if current_user:
+                    # Authenticated user - check if they are the seller of this searchable
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    
+                    execute_sql(cur, f"""
+                        SELECT searchable_data
+                        FROM searchables
+                        WHERE searchable_id = {searchable_id}
+                    """)
+                    
+                    result = cur.fetchone()
+                    cur.close()
+                    conn.close()
+                    
+                    if result and result[0].get('terminal_id') == str(current_user.id):
+                        # User is the seller, return all payments for this searchable
+                        # Add seller_id to each payment
+                        filtered_payments = []
+                        for payment in payments:
+                            payment['seller_id'] = str(current_user.id)
+                            filtered_payments.append(payment)
+                    else:
+                        # User is not the seller, only return payments where they are the buyer
+                        for payment in payments:
+                            if payment.get('buyer_id') == str(current_user.id):
+                                filtered_payments.append(payment)
+                else:
+                    # Visitor - only return payments where they are the buyer
+                    for payment in payments:
+                        if payment.get('buyer_id') == visitor_id:
+                            filtered_payments.append(payment)
+                
+                # Record metrics
+                searchable_requests.labels('payments_by_searchable', 'GET', 200).inc()
+                
+                return {
+                    'payments': filtered_payments,
+                    'count': len(filtered_payments)
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving payments by searchable: {str(e)}")
+                searchable_requests.labels('payments_by_searchable', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+

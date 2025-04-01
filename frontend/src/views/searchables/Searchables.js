@@ -14,6 +14,7 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 import SearchableList from './SearchableList';
+import backend from '../utilities/Backend'; 
 const Searchables = () => {
   
   // State variables
@@ -126,7 +127,7 @@ const Searchables = () => {
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box mb={2}>
-            {account.user ? (
+            {account.isLoggedIn ? (
               <>
                 <Button 
                   variant="contained" 

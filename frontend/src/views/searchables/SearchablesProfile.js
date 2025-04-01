@@ -3,7 +3,6 @@ import {
   Typography, Paper, Box, Divider
 } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
-
 const SearchablesProfile = ({ item, onClick, formatDistance }) => {
   const classes = useComponentStyles();
 

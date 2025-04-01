@@ -73,7 +73,7 @@ const RestLogin = (props, { ...others }) => {
                             })
                             .then(function (response) {
                                 if (response.data.success) {
-                                    console.log(response.data);
+                                    console.log("Login successful", response.data);
                                     dispatcher({
                                         type: ACCOUNT_INITIALIZE,
                                         payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }

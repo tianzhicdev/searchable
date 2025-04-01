@@ -207,6 +207,8 @@ def check_balance(user_id):
         withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(user_id))
         for record in withdrawal_records:
             amount = record.get('amount')
+            print(f"Withdrawal amount: {amount}")
+            print(f"Balance before subtraction: {balance}")
             # Subtract withdrawal amount from balance
             if amount is not None:
                 balance -= float(amount)
@@ -367,3 +369,78 @@ def check_payment(invoice_id):
     except Exception as e:
         print(f"Error checking payment status: {str(e)}")
         return {"error": str(e)}
+
+
+def create_lightning_invoice(amount):
+    """
+    Creates a Lightning Network invoice via BTCPay Server and records it in the database
+    
+    Args:
+        amount (int/str): Amount in sats
+        searchable_id (str/int): ID of the searchable item
+        buyer_id (str): ID of the buyer (can be user ID or visitor ID)
+        address (str, optional): Shipping address
+        tel (str, optional): Contact telephone number
+        redirect_url (str, optional): URL to redirect after payment
+        
+    Returns:
+        tuple: (invoice_data, status_code) - The invoice data from BTCPay and HTTP status code
+    """
+    try:
+        # Prepare payload for BTCPay Server
+        payload = {
+            "amount": amount,
+            "currency": "SATS",
+            "metadata": {
+            },
+            "checkout": {
+                "expirationMinutes": 60,
+                "monitoringMinutes": 60,
+                "paymentMethods": ["BTC-LightningNetwork"],
+                "redirectURL": ""
+            }
+        }
+        
+        response = requests.post(
+            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
+            json=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
+            }
+        )
+        
+        if response.status_code != 200:
+            return {"error": f"Failed to create invoice: {response.text}"}, 500
+            
+        invoice_data = response.json()
+        # Log raw invoice data for debugging purposes
+        print(f"Raw invoice data: {json.dumps(invoice_data, indent=2)}")
+        
+        return {"id": invoice_data['id'], "checkoutLink": invoice_data['checkoutLink']}
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+def get_withdrawal_timestamp(status_list):
+    """Extract the timestamp from withdrawal status entries"""
+    try:
+        # Example status_list: [["pending", 1743532517], ["SUCCEEDED", 1743532625]]
+        if not status_list:
+            return 0
+        return min([status[1] for status in status_list if len(status) > 1], default=0)
+    except Exception:
+        return 0
+
+def get_withdrawal_status(status_list):
+    """Extract the latest status from withdrawal status entries"""
+    try:
+        # Example status_list: [["pending", 1743532517], ["SUCCEEDED", 1743532625]]
+        # Sort by timestamp (second element in each status entry)
+        sorted_statuses = sorted(status_list, key=lambda x: x[1] if len(x) > 1 else 0)
+        # Get the last (most recent) status
+        latest_statuses = sorted_statuses[-1:] if sorted_statuses else []
+        # Extract the status string (first element)
+        return next(iter([status[0] for status in latest_statuses]), '')
+    except Exception:
+        return ''

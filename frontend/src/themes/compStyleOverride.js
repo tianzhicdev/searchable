@@ -440,6 +440,10 @@ export function componentStyleOverrides(theme) {
                     fontFamily: theme.fonts.fontFamily.primary,
                     borderRadius: '0px',
                     border: `1px solid ${theme.colors.orangeMain}`,
+                    position: 'fixed',
+                    top: '20px',
+                    zIndex: 9999,
+                    maxWidth: '95%',
                 },
                 standardSuccess: {
                     backgroundColor: theme.colors.primaryDark,

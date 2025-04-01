@@ -15,6 +15,7 @@ import Collapse from '@material-ui/core/Collapse';
 import PaymentList from '../payments/PaymentList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
+import backend from '../utilities/Backend';
 
 const SearchableDetails = () => {
 
@@ -23,6 +24,7 @@ const SearchableDetails = () => {
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [searchablePayments, setSearchablePayments] = useState([]);
   
   // UI states
   const [loading, setLoading] = useState(true);
@@ -81,6 +83,12 @@ const SearchableDetails = () => {
   }, [SearchableItem]);
   
   useEffect(() => {
+    if (SearchableItem) {
+      fetchPayments();
+    }
+  }, [SearchableItem]);
+  
+  useEffect(() => {
     // todo: what?
     return () => {
       isMountedRef.current = false;
@@ -95,14 +103,7 @@ const SearchableDetails = () => {
     setError(null);
     
     try {
-      const response = await axios.get(
-        `${configData.API_SERVER}searchable-item/${id}`,
-        {
-          headers: {
-            Authorization: `${account.token}`
-          }
-        }
-      );
+      const response = await backend.get(`v1/searchable/${id}`);
       
       setSearchableItem(response.data);
     } catch (err) {
@@ -145,31 +146,24 @@ const SearchableDetails = () => {
       const isUserLoggedIn = !!account?.user;
       
       // Use different endpoints based on login status
-      const endpoint = isUserLoggedIn ? 'create-invoice' : 'create-invoice-visitor';
-      
+      const endpoint = 'v1/create-invoice'
       // Prepare payload based on user status
       const payload = {
         amount: SearchableItem.payloads.public.price,
         searchable_id: id,
-        buyer_id: buyerId,
-        redirect_url: window.location.href
+        business_type: SearchableItem.payloads.public.businessType
       };
       
-      // Add address and tel only for logged-in users
-      if (isUserLoggedIn) {
-        payload.address = account.user.address;
-        payload.tel = account.user.tel;
-      }
+      // // Add address and tel only for logged-in users
+      // if (isUserLoggedIn) {
+      //   payload.address = account.user.address;
+      //   payload.tel = account.user.tel;
+      // }
       
-      const response = await axios({
-        method: 'post',
-        url: `${configData.API_SERVER}${endpoint}`,
-        data: payload,
-        headers: {
-          ...(isUserLoggedIn ? { Authorization: `${account.token}` } : {}),
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await backend.post(
+        endpoint,
+        payload
+      );
       
       setInvoice(response.data);
       setPaymentDialogOpen(true);
@@ -197,14 +191,10 @@ const SearchableDetails = () => {
       const isUserLoggedIn = !!account?.user;
       
       // Use different endpoints based on login status
-      const endpoint = `check-payment/${invoiceId}/${buyerId}`
+      const endpoint = `v1/check-payment/${invoiceId}`
       
       console.log("Fetching invoice data from backend");
-      const response = await axios({
-        method: 'get',
-        url: `${configData.API_SERVER}${endpoint}`,
-        headers: isUserLoggedIn ? { Authorization: `${account.token}` } : {}
-      });
+      const response = await backend.get(endpoint);
       
       console.log("Received payment status:", response.data.status);
       
@@ -278,7 +268,7 @@ const SearchableDetails = () => {
     setIsRemoving(true);
     try {
       await axios.put(
-        `${configData.API_SERVER}remove-searchable-item/${id}`,
+        `${configData.API_SERVER}v1/searchable/remove/${id}`,
         {},
         {
           headers: {
@@ -321,7 +311,7 @@ const SearchableDetails = () => {
 
     } catch (err) {
       console.error('Error fetching user profile data:', err);
-      setError('Failed to load profile information');
+      // setError('Failed to load profile information');
     }
   };
 
@@ -346,16 +336,25 @@ const SearchableDetails = () => {
       fetchProfileData();
       
       // Only require address and telephone for non-online business types
-      if (SearchableItem.payloads.public.businessType !== "online" && 
+      if (SearchableItem.payloads.public.businessType === "online" && 
           (!account.user.address || !account.user.tel)) {
-        showAlert("Please update your profile with address and telephone before making a payment", "warning");
-        history.push('/profile');
+        showAlert("Please log in or update your profile with address and telephone before making a payment", "warning");
         return;
       }
     }
     
     // Proceed with invoice creation
     createInvoice();
+  };
+  
+  const fetchPayments = async () => {
+    try {
+      const response = await backend.get(`v1/payments-by-searchable/${id}`);
+      setSearchablePayments(response.data.payments);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+      showAlert("Failed to load payment history", "error");
+    }
   };
   
   return (
@@ -579,8 +578,7 @@ const SearchableDetails = () => {
         </Grid>
         </Paper>
         
-
-        <PaymentList searchable_id={id} />
+        <PaymentList payments={searchablePayments} />
         </Grid>
       )}
 

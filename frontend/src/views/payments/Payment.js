@@ -107,6 +107,16 @@ const Payment = ({ payment }) => {
     };
 
     // Check if user is the buyer and tracking exists
+    const isWithdrawal = payment.private && 
+                         payment.private.withdrawer_id !== undefined && 
+                         payment.private.withdrawer_id !== null && 
+                         payment.private.withdrawer_id.trim() !== ''
+                         && payment.private.withdrawer_id === account.user._id.toString();
+    console.log("isWithdrawal");
+    console.log(isWithdrawal);
+    console.log(payment.private);
+    console.log(account.user._id);
+
     const isUserBuyer = payment.private && 
                        ((account && account.user && payment.private.buyer_id === account.user._id.toString()) || 
                        (!account.user && payment.private.buyer_id === visitorId));
@@ -152,6 +162,11 @@ const Payment = ({ payment }) => {
                                     <span style={{ color: '#3899ef' }}>{key}:</span> <span>{typeof value === 'number' && key.includes('amount') ? `${value} Sats` : value}</span>
                                 </Typography>
                             ))}
+                 
+                            <Typography variant="body1" style={{ marginRight: '16px' }}>
+                                    {isWithdrawal ? '[WITHDRAWAL]' : ''} 
+                            </Typography>
+                            
                             <Typography variant="body1" style={{ marginRight: '16px' }}>
                                 {isUserBuyer ? '[PAID]' : ''} 
                             </Typography>

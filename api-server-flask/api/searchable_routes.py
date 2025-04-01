@@ -14,6 +14,7 @@ from . import rest_api
 from .routes import token_required
 # Import moved utility functions from helper
 from .helper import (
+    create_lightning_invoice,
     get_db_connection,
     pay_lightning_invoice, 
     decode_lightning_invoice, 
@@ -800,85 +801,6 @@ class MetricsResource(Resource):
         metrics_data = generate_latest(REGISTRY)
         return Response(metrics_data, mimetype='text/plain; charset=utf-8')
 
-def create_lightning_invoice(amount, searchable_id, buyer_id, address='', tel='', redirect_url=''):
-    """
-    Creates a Lightning Network invoice via BTCPay Server and records it in the database
-    
-    Args:
-        amount (int/str): Amount in sats
-        searchable_id (str/int): ID of the searchable item
-        buyer_id (str): ID of the buyer (can be user ID or visitor ID)
-        address (str, optional): Shipping address
-        tel (str, optional): Contact telephone number
-        redirect_url (str, optional): URL to redirect after payment
-        
-    Returns:
-        tuple: (invoice_data, status_code) - The invoice data from BTCPay and HTTP status code
-    """
-    try:
-        # Prepare payload for BTCPay Server
-        payload = {
-            "amount": amount,
-            "currency": "SATS",
-            "metadata": {
-                "searchable_id": searchable_id,
-                "buyer_id": buyer_id,
-                "address": address,
-                "tel": tel
-            },
-            "checkout": {
-                "expirationMinutes": 60,
-                "monitoringMinutes": 60,
-                "paymentMethods": ["BTC-LightningNetwork"],
-                "redirectURL": redirect_url
-            }
-        }
-        
-        response = requests.post(
-            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices",
-            json=payload,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-            }
-        )
-        
-        if response.status_code != 200:
-            return {"error": f"Failed to create invoice: {response.text}"}, 500
-            
-        invoice_data = response.json()
-        # Log raw invoice data for debugging purposes
-        print(f"Raw invoice data: {json.dumps(invoice_data, indent=2)}")
-        
-        # Record the invoice in our database
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Store invoice record
-        invoice_record = {
-            "amount": int(amount),
-            "buyer_id": str(buyer_id),
-            "timestamp": int(datetime.datetime.now().timestamp()),
-            "searchable_id": str(searchable_id),
-            "invoice_id": invoice_data['id'],
-            "address": address,
-            "tel": tel
-        }
-        
-        execute_sql(cur, f"""
-            INSERT INTO kv (type, pkey, fkey, data)
-            VALUES ('invoice', '{invoice_data['id']}', '{searchable_id}', {Json(invoice_record)})
-        """, commit=True, connection=conn)
-        
-        cur.close()
-        conn.close()
-        
-        # Return the invoice data to the client
-        return invoice_data, 200
-        
-    except Exception as e:
-        print(f"Error creating invoice: {str(e)}")
-        return {"error": str(e)}, 500
 
 @rest_api.route('/api/create-invoice', methods=['POST'])
 class CreateInvoice(Resource):

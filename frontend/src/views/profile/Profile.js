@@ -13,7 +13,8 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import axios from 'axios';
 import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
-
+import backend from '../utilities/Backend';
+import { formatDate } from '../utilities/Date';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState(null);
@@ -29,6 +30,7 @@ const Profile = () => {
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState(null);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
+  const [transformedWithdrawals, setTransformedWithdrawals] = useState([]);
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -48,36 +50,45 @@ const Profile = () => {
     setError(null);
     
     try {
-      // Fetch user transactions (payments and withdrawals) using KV endpoint
-      const transactionsResponse = await axios.get(`${configData.API_SERVER}transactions`, {
-        params: {
-          // fkey: account.user._id,
-          // type: 'payment' // Get both payment and withdraw transactions
-        },
-        headers: { Authorization: `${account.token}` }
-      });
+      // Fetch user payments using the payments-by-terminal endpoint
+      const paymentsResponse = await backend.get(`v1/payments-by-terminal`);
 
-      console.log("Transactions response:", transactionsResponse.data);
+      console.log("Payments response:", paymentsResponse.data);
       
-      // Set transactions data from KV response
-      setTransactions(transactionsResponse.data.transactions || []);
+      // Fetch user withdrawals using the withdrawals-by-terminal endpoint
+      const withdrawalsResponse = await backend.get(`v1/withdrawals-by-terminal`);
       
-      // Calculate balance from transactions
-      const calculatedBalance = (transactionsResponse.data.transactions || []).reduce((total, tx) => {
-        if (tx.type === 'payment') {
-          return total + (parseInt(tx.amount) || 0);
+      console.log("Withdrawals response:", withdrawalsResponse.data);
+
+      const allTransactions = [
+        ...(paymentsResponse.data.payments || []),
+      ];
+
+      setTransactions(allTransactions);
+      const withdrawals = withdrawalsResponse.data.withdrawals.map(withdrawal => ({
+        public: {
+          invoice: withdrawal.invoice.substring(0, 20) + "...",
+          amount: withdrawal.amount,
+          fee: withdrawal.fee_sat,
+          amount: withdrawal.value_sat,
+          date: formatDate(withdrawal.timestamp),
+          status: withdrawal.status,
+        },
+        private: {
+          withdrawer_id: account.user._id.toString(),
         }
-        if (tx.type === 'withdrawal') {
-          return total - (parseInt(tx.amount) || 0);
-        }
-        return total;
-      }, 0);
+      }));
+      setTransformedWithdrawals(withdrawals);
       
-      // Set calculated balance
-      setBalance(calculatedBalance);
+      // Fetch balance directly from the balance endpoint
+      const balanceResponse = await backend.get('balance');
+      console.log("Balance response:", balanceResponse.data);
+      
+      // Set balance from the API response
+      setBalance(balanceResponse.data.balance || 0);
     } catch (err) {
-      console.error('Error fetching user transaction data:', err);
-      setError('Failed to load transaction information');
+      console.error('Error fetching user payment data:', err);
+      setError('Failed to load payment information');
     } finally {
       setLoading(false);
     }
@@ -295,21 +306,8 @@ const Profile = () => {
       {/* Transaction History Section */}
       <Grid item xs={12} className={classes.gridItem}>
           
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={2}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Typography variant="body1" color="error" align="center">
-              {error}
-            </Typography>
-          ) : transactions.length === 0 ? (
-            <Typography variant="body1" align="center" p={2}>
-              No transaction history found.
-            </Typography>
-          ) : (
-            <PaymentList/>
-          )}
+            <PaymentList payments={transactions} transformed_input={transformedWithdrawals} />
+
       </Grid>
     
       

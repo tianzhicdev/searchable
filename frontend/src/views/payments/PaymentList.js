@@ -5,86 +5,50 @@ import {
   CircularProgress,
   Typography,
 } from '@material-ui/core';
-import axios from 'axios';
 import Payment from './Payment';
-import { useSelector } from 'react-redux';
-import configData from '../../config';
 import { formatDate } from '../../views/utilities/Date';
-import { getOrCreateVisitorId } from '../../views/utilities/Visitor';
-const PaymentList = ({ searchable_id }) => {
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const account = useSelector(state => state.account);
+
+const PaymentList = ({ payments = [], transformed_input = [], loading = false, error = null }) => {
+  const [transformedPayments, setTransformedPayments] = useState([]);
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Build the API endpoint URL based on whether searchable_id is provided
-        // Determine if user is logged in
-        const isUserLoggedIn = !!account?.user;
-        
-        // Use different endpoints based on login status
-        let endpoint;
-        
-        if (searchable_id) {
-          if (isUserLoggedIn) {
-            endpoint = `${configData.API_SERVER}payments?searchable_id=${searchable_id}`;
-          } else {
-            endpoint = `${configData.API_SERVER}payments-visitor?searchable_id=${searchable_id}&buyer_id=${getOrCreateVisitorId()}`;
-          }
-        } else {
-          endpoint = `${configData.API_SERVER}payments`;
-        }
-        
-        // Make the actual API call
-        const response = await axios.get(endpoint, {
-          headers: {
-            Authorization: `${account.token}`
-          }
-        });
-        console.log("fetchPayments.response.data", response.data);
-        
-        // Transform the API response data to match the expected format
-        const transformedPayments = response.data.payments.map(payment => ({
-          public: {
-            Id: payment.pkey,
-            Item: payment.searchable_id,
-            Amount: payment.amount,
-            Status: payment.status,
-            date: formatDate(payment.timestamp),
-            tracking: payment.tracking,
-            rating: payment.rating,
-            review: payment.review,
-            address: payment.address,
-            tel: payment.tel
+    if (payments.length > 0) {
+      // Transform the payments data to match the expected format
+      let transformed = payments.map(payment => ({
+        public: {
+          Id: payment.pkey,
+          Item: payment.searchable_id,
+          Amount: payment.amount,
+          Status: payment.status,
+          date: formatDate(payment.timestamp),
+          tracking: payment.tracking,
+          rating: payment.rating,
+          review: payment.review,
+          address: payment.address,
+          tel: payment.tel
         },
-          private: {
-            buyer_id: payment.buyer_id,
-            seller_id: payment.seller_id || '' // Handle case where seller_id might not be in the API response
-          }
-        }));
-        // Sort payments by date in descending order (newest first)
-        transformedPayments.sort((a, b) => {
-          // Convert formatted dates back to Date objects for comparison
-          const dateA = new Date(a.public.date);
-          const dateB = new Date(b.public.date);
-          return dateB - dateA; // Descending order
-        });
-        
-        setPayments(transformedPayments);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching payments:", error);
-        setError("Failed to load payments. Please try again later.");
-        setLoading(false);
-      }
-    };
+        private: {
+          buyer_id: payment.buyer_id,
+          seller_id: payment.seller_id || '' // Handle case where seller_id might not be in the API response
+        }
+      }));
 
-    fetchPayments();
-  }, [searchable_id]); // Re-fetch when searchable_id changes
+      // append transformed_input to transformed
+      transformed = transformed.concat(transformed_input);
+
+      // Sort payments by date in descending order (newest first)
+      transformed.sort((a, b) => {
+        // Convert formatted dates back to Date objects for comparison
+        const dateA = new Date(a.public.date);
+        const dateB = new Date(b.public.date);
+        return dateB - dateA; // Descending order
+      });
+
+      setTransformedPayments(transformed);
+    } else {
+      setTransformedPayments([]);
+    }
+  }, [payments]); // Only re-run when payments change
 
   if (loading) {
     return (
@@ -104,9 +68,9 @@ const PaymentList = ({ searchable_id }) => {
     );
   }
 
-  if (payments.length === 0) {
+  if (transformedPayments.length === 0) {
     return (
-        <></>
+      <></>
     );
   }
 
@@ -114,7 +78,7 @@ const PaymentList = ({ searchable_id }) => {
     <>
     <Typography variant="h6">Transactions</Typography>
     <Box>
-      {payments.map((payment) => (
+      {transformedPayments.map((payment) => (
         <Payment key={payment.public.Id} payment={payment} />
       ))}
     </Box>

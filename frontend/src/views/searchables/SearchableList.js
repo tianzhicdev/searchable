@@ -8,8 +8,8 @@ import {
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import configData from '../../config';
 import SearchablesProfile from './SearchablesProfile';
+import backend from '../utilities/Backend';
 
 const SearchableList = ({ criteria }) => {
     
@@ -83,7 +83,7 @@ const SearchableList = ({ criteria }) => {
     setError(null);
 
     try {
-      const response = await axios.get(configData.API_SERVER + 'v1/searchable/search', {
+      const response = await backend.get('v1/searchable/search', {
         params: {
           lat: location.latitude,
           lng: location.longitude,
@@ -94,9 +94,6 @@ const SearchableList = ({ criteria }) => {
           internal_search_term: criteria.internalSearchTerm,
           filters: {},
           use_location: criteria.distance == 100000000 ? false : true
-        },
-        headers: {
-          Authorization: `${account.token}`
         }
       });
 
