@@ -32,7 +32,8 @@ const Payment = ({ payment }) => {
     const handleTrackingDialogClose = () => setTrackingDialogOpen(false);
 
     // Get the current user's ID (either logged in or visitor)
-    const currentUserId = account && account.user ? account.user._id.toString() : visitorId;
+    const isLoggedIn = account && account.isLoggedIn;
+    const currentUserId = isLoggedIn && account.user ? account.user._id?.toString() : visitorId;
 
     // Submit handlers (to be implemented later)
     const handleRatingSubmit = () => {
@@ -112,14 +113,13 @@ const Payment = ({ payment }) => {
                          payment.private.withdrawer_id !== null && 
                          payment.private.withdrawer_id.trim() !== ''
                          && payment.private.withdrawer_id === account.user._id.toString();
+
     console.log("isWithdrawal");
     console.log(isWithdrawal);
     console.log(payment.private);
     console.log(account.user._id);
 
-    const isUserBuyer = payment.private && 
-                       ((account && account.user && payment.private.buyer_id === account.user._id.toString()) || 
-                       (!account.user && payment.private.buyer_id === visitorId));
+    const isUserBuyer = payment.private && payment.private.buyer_id === currentUserId
                        
     const hasTracking = payment.public && 
                        payment.public.tracking !== undefined && 
@@ -127,9 +127,7 @@ const Payment = ({ payment }) => {
                        payment.public.tracking.trim() !== '';
                        
     // Check if user is the seller and tracking doesn't exist
-    const isUserSeller = payment.private && 
-                        ((account && account.user && payment.private.seller_id === account.user._id.toString()) || 
-                        (!account.user && payment.private.seller_id === visitorId));
+    const isUserSeller = payment.private && payment.private.seller_id === currentUserId
 
     const needsTracking = (!hasTracking) && isUserSeller;
     // Show Rate It button if user is buyer and has tracking
