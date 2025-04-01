@@ -50,17 +50,24 @@ const ProfileEditor = () => {
     setFetchLoading(true);
     
     try {
-      const response = await axios.get(`${configData.API_SERVER}profile`, {
+      const response = await axios.get(`${configData.API_SERVER}v1/terminal`, {
         headers: { Authorization: `${account.token}` }
       });
       
-      setProfileData({
-        address: response.data.address || '',
-        tel: response.data.tel || ''
-      });
+      if (response.data) {
+        setProfileData({
+          address: response.data.address || '',
+          tel: response.data.tel || ''
+        });
+      }
     } catch (err) {
-      console.error('Error fetching user profile data:', err);
-      setError('Failed to load profile information');
+      // 404 is acceptable - it just means the user hasn't set up their profile yet
+      if (err.response && err.response.status === 404) {
+        console.log('User profile not found, using default empty values');
+      } else {
+        console.error('Error fetching user profile data:', err);
+        setError('Failed to load profile information');
+      }
     } finally {
       setFetchLoading(false);
     }
@@ -80,7 +87,7 @@ const ProfileEditor = () => {
     
     try {
       const response = await axios.put(
-        `${configData.API_SERVER}profile`,
+        `${configData.API_SERVER}v1/terminal`,
         profileData,
         {
           headers: {

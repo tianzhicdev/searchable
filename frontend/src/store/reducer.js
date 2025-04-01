@@ -14,7 +14,7 @@ const reducer = combineReducers({
         {
             key: 'account',
             storage,
-            keyPrefix: 'berry-'
+            keyPrefix: 'ugovernable-'
         },
         accountReducer
     ),
@@ -23,7 +23,7 @@ const reducer = combineReducers({
         {
             key: 'location',
             storage,
-            keyPrefix: 'berry-'
+            keyPrefix: 'ugovernable-'
         },
         locationReducer
     )

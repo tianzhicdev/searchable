@@ -44,15 +44,15 @@ def execute_sql(cursor, sql, commit=False, connection=None):
         connection.commit()
     return cursor
 
-def get_profile(terminal_id):
+def get_terminal(terminal_id):
     """
-    Retrieve a user profile by terminal_id
+    Retrieve a terminal by terminal_id
     
     Args:
         terminal_id: The terminal ID (user ID) to retrieve the profile for
         
     Returns:
-        dict: The user's profile data or None if not found
+        dict: The terminal data or None if not found
     """
     try:
         conn = get_db_connection()
@@ -60,7 +60,7 @@ def get_profile(terminal_id):
         
         # Query to get the profile data for the specified terminal_id
         execute_sql(cur, f"""
-            SELECT data FROM profile
+            SELECT terminal_data FROM terminal
             WHERE terminal_id = '{terminal_id}'
         """)
         

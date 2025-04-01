@@ -18,7 +18,7 @@ from .helper import (
     pay_lightning_invoice, 
     decode_lightning_invoice, 
     check_payment, 
-    get_profile, 
+    get_terminal, 
     get_searchableIds_by_user, 
     get_data_from_kv, 
     check_balance,
@@ -899,7 +899,7 @@ class CreateInvoice(Resource):
             buyer_id = str(current_user.id)
             
             # Get profile data using the reusable function
-            profile_data = get_profile(buyer_id)
+            profile_data = get_terminal(buyer_id)
             
             # Initialize address and tel variables from profile
             address = ''
@@ -1160,7 +1160,7 @@ class ProfileResource(Resource):
         Retrieves profile data for the authenticated user
         """
         try:
-            profile_data = get_profile(current_user.id)
+            profile_data = get_terminal(current_user.id)
             
             if not profile_data:
                 searchable_requests.labels('get_profile', 'GET', 404).inc()

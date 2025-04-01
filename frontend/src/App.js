@@ -12,7 +12,7 @@ import theme from './themes';
 // project imports
 import NavigationScroll from './layout/NavigationScroll';
 import StateDebugger from './components/StateDebugger';
-
+import Terminal from './views/utilities/Terminal';
 //-----------------------|| APP ||-----------------------//
 
 const App = () => {
@@ -24,6 +24,7 @@ const App = () => {
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <NavigationScroll>
+                    <Terminal />
                     <Routes />
                 </NavigationScroll>
             </ThemeProvider>

@@ -33,3 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_kv_pkey ON kv(pkey);
 CREATE INDEX IF NOT EXISTS idx_kv_fkey ON kv(fkey);
 
 
+CREATE TABLE IF NOT EXISTS terminal (
+    terminal_id SERIAL PRIMARY KEY,
+    terminal_data JSONB NOT NULL
+);

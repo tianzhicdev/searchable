@@ -22,6 +22,7 @@ CORS(app)
 # Import routes after initializing rest_api to avoid circular imports
 from .routes import *
 from .searchable_routes import *
+from .searchable_v1 import *
 
 # Setup database
 @app.before_first_request

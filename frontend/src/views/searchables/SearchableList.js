@@ -83,15 +83,17 @@ const SearchableList = ({ criteria }) => {
     setError(null);
 
     try {
-      const response = await axios.get(configData.API_SERVER + 'searchable/search', {
+      const response = await axios.get(configData.API_SERVER + 'v1/searchable/search', {
         params: {
           lat: location.latitude,
-          long: location.longitude,
+          lng: location.longitude,
           max_distance: criteria.distance,
           page_number: page,
           page_size: calculateOptimalPageSize(),
           query_term: criteria.searchTerm,
-          internal_search_term: criteria.internalSearchTerm
+          internal_search_term: criteria.internalSearchTerm,
+          filters: {},
+          use_location: criteria.distance == 100000000 ? false : true
         },
         headers: {
           Authorization: `${account.token}`

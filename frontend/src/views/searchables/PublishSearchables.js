@@ -275,7 +275,6 @@ const PublishSearchables = () => {
       if (submissionData.businessType === 'online') {
         submissionData.latitude = null;
         submissionData.longitude = null;
-        submissionData.meetupLocation = 'Online';
       }
       
       // Create searchable data following the Terminal/Searchable paradigm
@@ -289,6 +288,7 @@ const PublishSearchables = () => {
             "longitude": submissionData.longitude,
             "price": submissionData.price ? submissionData.price : null,
             "businessType": submissionData.businessType,
+            "use_location": submissionData.businessType === 'online' ? false : true,
             "images": previewImages.map(base64String => {
               // Remove the data:image/xxx;base64, prefix
               return base64String.split(',')[1];
@@ -303,7 +303,7 @@ const PublishSearchables = () => {
       
       // Send the request with JSON data
       const response = await axios.post(
-        configData.API_SERVER + 'searchable',
+        configData.API_SERVER + 'v1/searchable/create',
         searchableData,
         {
           headers: {

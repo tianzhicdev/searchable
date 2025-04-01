@@ -1,24 +1,18 @@
-import os
 import re
 from flask import request, Response
-import time
+import json
 from flask_restx import Resource
 import math
-import requests
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
-import datetime
-import json
-
-# Import rest_api and get_db_connection from __init__
+import geohash2
 from . import rest_api
 from .routes import token_required
-# Import moved utility functions from helper
 from .helper import (
     get_db_connection,
     pay_lightning_invoice, 
     decode_lightning_invoice, 
     check_payment, 
-    get_profile, 
+    get_terminal, 
     get_searchableIds_by_user, 
     get_data_from_kv, 
     check_balance,
@@ -98,7 +92,7 @@ class CreateSearchable(Resource):
                 longitude = None
                 
                 # Check if location data should be used
-                use_location = data.get('use_location', False)
+                use_location = data.get('payloads', {}).get('public', {}).get('use_location', False)
                 
                 if use_location:
                     try:
@@ -110,19 +104,23 @@ class CreateSearchable(Resource):
                 else:
                     print("Location usage disabled for this searchable")
                 
-                # Insert into searchables table with dedicated lat/long columns
+                # Insert into searchables table
                 print("Executing database insert...")
-                # Use NULL for latitude/longitude if they are None
-                # If either latitude or longitude is None, both should be NULL
-                if latitude is None or longitude is None:
-                    lat_value = "NULL"
-                    lng_value = "NULL"
-                else:
-                    lat_value = latitude
-                    lng_value = longitude
-                sql = f"INSERT INTO searchables (searchable_data, latitude, longitude) VALUES ({Json(data)}, {lat_value}, {lng_value}) RETURNING searchable_id;"
+                sql = f"INSERT INTO searchables (terminal_id, searchable_data) VALUES ('{current_user.id}', {Json(data)}) RETURNING searchable_id;"
                 execute_sql(cur, sql)
                 searchable_id = cur.fetchone()[0]
+                
+                # If location data is provided, insert into searchable_geo table
+                if use_location and (latitude is not None) and (longitude is not None):
+                    # Calculate geohash for the coordinates
+                    geohash = geohash2.encode(latitude, longitude, precision=9)
+                    
+                    # Insert into searchable_geo table
+                    geo_sql = f"""
+                        INSERT INTO searchable_geo (searchable_id, latitude, longitude, geohash)
+                        VALUES ({searchable_id}, {latitude}, {longitude}, '{geohash}')
+                    """
+                    execute_sql(cur, geo_sql)
                 
                 print(f"Added searchable {searchable_id}")
                 
@@ -195,11 +193,19 @@ class SearchSearchables(Resource):
         # Get parameters from request
         lat = request.args.get('lat')
         lng = request.args.get('lng')
+        query_term = request.args.get('query_term', '')
         max_distance = request.args.get('max_distance', None)  # Get as string first
         page_number = int(request.args.get('page_number', 1))
         page_size = int(request.args.get('page_size', 10))
-        filters = request.args.get('filters', '')
-        use_location = request.args.get('use_location', False)
+        # Get filters as JSON, defaulting to empty dict if not provided or invalid
+        try:
+            filters = json.loads(request.args.get('filters', '{}'))
+        except json.JSONDecodeError:
+            # Log the error for debugging
+            print(f"Error parsing filters JSON: {request.args.get('filters', '{}')}")
+            filters = {}
+        use_location_param = request.args.get('use_location', 'false')
+        use_location = use_location_param.lower() == 'true'
         
         
         # Only validate lat/lng if max_distance is specified and use_location is true
@@ -221,6 +227,7 @@ class SearchSearchables(Resource):
             'lat': lat,
             'lng': lng,
             'max_distance': max_distance,
+            'query_term': query_term,
             'page_number': page_number,
             'page_size': page_size,
             'filters': filters,
@@ -292,6 +299,7 @@ class SearchSearchables(Resource):
         print(f"Search parameters:")
         print(f"  Query term: {query_term}")
         print(f"  Filters: {filters}")
+        print(f"  Filter type: {type(filters)}")
         print(f"  Use location: {use_location}")
         
         if use_location:
@@ -320,51 +328,28 @@ class SearchSearchables(Resource):
         where_clause = " AND ".join(base_conditions)
         
         if use_location:
-            # Use a more efficient query using a WITH clause to calculate distance first
-            query = f"""
-                WITH distance_calc AS (
-                    SELECT 
-                      searchable_id,
-                      searchable_data,
-                      latitude,
-                      longitude,
-                      ( 6371000 * acos( cos( radians({lat}) ) * 
-                        cos( radians( latitude ) ) * 
-                        cos( radians( longitude ) - radians({lng}) ) + 
-                        sin( radians({lat}) ) * 
-                        sin( radians( latitude ) ) 
-                      ) ) AS distance
-                    FROM searchables
-                    WHERE {where_clause} 
-                    AND latitude BETWEEN {lat} - ({max_distance} / 111111) AND {lat} + ({max_distance} / 111111)
-                    AND longitude BETWEEN {lng} - ({max_distance} / (111111 * cos(radians({lat})))) AND {lng} + ({max_distance} / (111111 * cos(radians({lat}))))
-                )
-                SELECT * FROM distance_calc
-                WHERE distance <= {max_distance}
-                ORDER BY distance
-            """
+            # Use the new function to query searchable_geo table
+            db_results = self._query_searchable_geo(cur, lat, lng, max_distance, where_clause)
         else:
             # Query without location filtering
             query = f"""
                 SELECT 
                   searchable_id,
                   searchable_data,
-                  latitude,
-                  longitude,
                   NULL as distance
                 FROM searchables
                 WHERE {where_clause}
                 ORDER BY searchable_id DESC
             """
-        
-        # Execute the query
-        execute_sql(cur, query)
-        db_results = cur.fetchall()
+            
+            # Execute the query
+            execute_sql(cur, query)
+            db_results = cur.fetchall()
         
         # Process results and calculate match scores
         filtered_results = []
         for result in db_results:
-            searchable_id, searchable_data, item_lat, item_lng, distance = result
+            searchable_id, searchable_data, distance = result
             
             item_data = dict(searchable_data)
             if distance is not None:
@@ -377,6 +362,7 @@ class SearchSearchables(Resource):
             
             # Only include results with a match score if we have a query term
             if query_term and match_score == 0:
+                print(f"No match score for {searchable_id}")
                 continue
                 
             filtered_results.append(item_data)
@@ -392,6 +378,61 @@ class SearchSearchables(Resource):
         conn.close()
         
         return filtered_results, len(filtered_results)
+    
+    def _query_searchable_geo(self, cur, lat, lng, max_distance, where_clause):
+        """Query searchable_geo table using lat/long coordinates"""
+        # Use a more efficient query using a WITH clause to calculate distance first
+        # query = f"""
+        #     WITH distance_calc AS (
+        #         SELECT 
+        #           s.searchable_id,
+        #           s.searchable_data,
+        #           ( 6371000 * acos( cos( radians({lat}) ) * 
+        #             cos( radians( sg.latitude ) ) * 
+        #             cos( radians( sg.longitude ) - radians({lng}) ) + 
+        #             sin( radians({lat}) ) * 
+        #             sin( radians( sg.latitude ) ) 
+        #           ) ) AS distance
+        #         FROM searchables s
+        #         JOIN searchable_geo sg ON s.searchable_id = sg.searchable_id
+        #         WHERE {where_clause} 
+        #         AND sg.latitude BETWEEN {lat} - ({max_distance} / 111111) AND {lat} + ({max_distance} / 111111)
+        #         AND sg.longitude BETWEEN {lng} - ({max_distance} / (111111 * cos(radians({lat})))) AND {lng} + ({max_distance} / (111111 * cos(radians({lat}))))
+        #     )
+        #     SELECT * FROM distance_calc
+        #     WHERE distance <= {max_distance}
+        #     ORDER BY distance
+        # """
+        query = f"""
+                WITH distance_calc AS (
+                    SELECT 
+                        s.searchable_id,
+                        s.searchable_data,
+                        6371000 * ACOS(
+                            GREATEST(LEAST(
+                                COS(RADIANS({lat})) * 
+                                COS(RADIANS(sg.latitude)) * 
+                                COS(RADIANS(sg.longitude) - RADIANS({lng})) + 
+                                SIN(RADIANS({lat})) * 
+                                SIN(RADIANS(sg.latitude))
+                            , 1), -1) 
+                        ) AS distance
+                    FROM searchables s
+                    JOIN searchable_geo sg ON s.searchable_id = sg.searchable_id
+                    WHERE {where_clause}
+                    AND sg.latitude BETWEEN {lat} - ({max_distance} / 111045) 
+                        AND {lat} + ({max_distance} / 111045)
+                    AND sg.longitude BETWEEN {lng} - ({max_distance} / (111045 * COALESCE(ABS(COS(RADIANS({lat}))), 0.00001))) 
+                        AND {lng} + ({max_distance} / (111045 * COALESCE(ABS(COS(RADIANS({lat}))), 0.00001)))
+                )
+                SELECT * FROM distance_calc
+                WHERE distance <= {max_distance}
+                ORDER BY distance;
+                """
+        
+        # Execute the query
+        execute_sql(cur, query)
+        return cur.fetchall()
     
     def _apply_pagination(self, results, page_number, page_size):
         """Apply pagination to the filtered results"""
@@ -446,10 +487,45 @@ class SearchSearchables(Resource):
             if 'terminal_id' in item and item['terminal_id'] in usernames:
                 item['username'] = usernames[item['terminal_id']]
 
-# GET /api/v1/searchable/{searchable_id}
-# Class: GetSearchableItem
-# Purpose: Retrieves a specific searchable item by its ID
-# Authentication: not required
+@rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
+class GetSearchableItem(Resource):
+    """
+    Retrieves a specific searchable item by its ID
+    """
+    def get(self, searchable_id):
+        with searchable_latency.labels('get_searchable_item_v2').time():
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Query to get the searchable item
+                execute_sql(cur, f"""
+                    SELECT searchable_id, searchable_data
+                    FROM searchables
+                    WHERE searchable_id = {searchable_id}
+                """)
+                
+                result = cur.fetchone()
+                
+                if not result:
+                    searchable_requests.labels('get_searchable_item_v2', 'GET', 404).inc()
+                    return {"error": "Searchable item not found"}, 404
+                    
+                searchable_id, searchable_data = result
+                
+                # Combine the data
+                item_data = searchable_data
+                item_data['searchable_id'] = searchable_id
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('get_searchable_item_v2', 'GET', 200).inc()
+                return item_data, 200
+                
+            except Exception as e:
+                searchable_requests.labels('get_searchable_item_v2', 'GET', 500).inc()
+                return {"error": str(e)}, 500
 
 
 # POST /api/v1/searchable/create
@@ -523,11 +599,77 @@ class SearchSearchables(Resource):
     #   - terminal_id: terminal_id could be seller or buyer
 
 
-# GET /api/v1/profile
-# Purpose: Retrieves profile data for the authenticated user
-# Authentication: Required
+@rest_api.route('/api/v1/terminal', methods=['GET'])
+class GetUserTerminal(Resource):
+    """
+    Retrieves terminal data for the authenticated user
+    """
+    @token_required
+    def get(self, current_user):
+        with searchable_latency.labels('get_terminal').time():
+            try:
+                # Get profile data using the helper function
+                terminal_data = get_terminal(current_user.id)
+                
+                if not terminal_data:
+                    searchable_requests.labels('get_terminal', 'GET', 404).inc()
+                    return {"error": "Terminal not found"}, 404
+                
+                searchable_requests.labels('get_terminal', 'GET', 200).inc()
+                return terminal_data, 200
+                
+            except Exception as e:
+                searchable_requests.labels('get_terminal', 'GET', 500).inc()
+                return {"error": str(e)}, 500
 
-# PUT /api/v1/profile
-# Purpose: Creates or updates profile data for the authenticated user
-# Authentication: Required
 
+@rest_api.route('/api/v1/terminal', methods=['PUT'])
+class UpdateUserTerminal(Resource):
+    """
+    Creates or updates terminal data for the authenticated user
+    """
+    @token_required
+    def put(self, current_user):
+        with searchable_latency.labels('update_terminal').time():
+            try:
+                # Get the request data
+                data = request.get_json()
+                
+                if not data:
+                    searchable_requests.labels('update_terminal', 'PUT', 400).inc()
+                    return {"error": "No data provided"}, 400
+                
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Check if terminal data already exists for this user
+                execute_sql(cur, f"""
+                    SELECT terminal_id FROM terminal
+                    WHERE terminal_id = '{current_user.id}'
+                """)
+                
+                result = cur.fetchone()
+                
+                if result:
+                    # Update existing terminal data
+                    execute_sql(cur, f"""
+                        UPDATE terminal
+                        SET terminal_data = {Json(data)}
+                        WHERE terminal_id = '{current_user.id}'
+                    """, commit=True, connection=conn)
+                else:
+                    # Create new terminal data
+                    execute_sql(cur, f"""
+                        INSERT INTO terminal (terminal_id, terminal_data)
+                        VALUES ('{current_user.id}', {Json(data)})
+                    """, commit=True, connection=conn)
+                
+                cur.close()
+                conn.close()
+                
+                searchable_requests.labels('update_terminal', 'PUT', 200).inc()
+                return {"message": "Terminal data updated successfully"}, 200
+                
+            except Exception as e:
+                searchable_requests.labels('update_terminal', 'PUT', 500).inc()
+                return {"error": str(e)}, 500
