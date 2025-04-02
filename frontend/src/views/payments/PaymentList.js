@@ -33,9 +33,7 @@ const PaymentList = ({ payments = [], transformed_input = [], loading = false, e
         }
       }));
 
-      // append transformed_input to transformed
       transformed = transformed.concat(transformed_input);
-
       // Sort payments by date in descending order (newest first)
       transformed.sort((a, b) => {
         // Convert formatted dates back to Date objects for comparison
@@ -48,7 +46,7 @@ const PaymentList = ({ payments = [], transformed_input = [], loading = false, e
     } else {
       setTransformedPayments([]);
     }
-  }, [payments]); // Only re-run when payments change
+  }, [payments, transformed_input]); // Only re-run when payments change
 
   if (loading) {
     return (
