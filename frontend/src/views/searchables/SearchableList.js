@@ -35,7 +35,7 @@ const SearchableList = ({ criteria }) => {
     const estimatedItemHeight = 180; // pixels, adjust based on your actual item heights
     // Calculate how many items can fit in viewport with some padding for header and footer
     const availableHeight = viewportHeight - 200; // subtract space for header, search bar, pagination
-    let optimalPageSize = Math.max(3, Math.floor(availableHeight / estimatedItemHeight));
+    let optimalPageSize = Math.max(10, Math.floor(availableHeight / estimatedItemHeight));
     
     // Cap it at reasonable limits
     if (optimalPageSize > 15) optimalPageSize = 15;

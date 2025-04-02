@@ -126,7 +126,7 @@ const Searchables = () => {
   return (
     <Grid container spacing={2}>
       <Grid item xs={12}>
-        <Box mb={2}>
+        <Box >
             {account.isLoggedIn ? (
               <>
                 <Button 
@@ -164,7 +164,7 @@ const Searchables = () => {
       </Grid>
       
       <Grid item xs={12}>
-        <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+        <Box mb={1} display="flex" justifyContent="space-between" alignItems="center">
           <TextField
             placeholder="Search"
             value={searchTerm}

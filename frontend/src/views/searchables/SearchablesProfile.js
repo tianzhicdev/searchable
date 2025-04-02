@@ -62,9 +62,9 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
               </Typography>
           </Box>
         </Box>
-        <Box id="item-profile-image" flex="0 0 auto" mr={2}>
+        <Box id="item-profile-image" flex="0 0 auto" >
           {publicData.images && publicData.images.length > 0 && (
-            <Box p={1} display="flex" justifyContent="center" style={{border: `1px solid #ff3c00`, margin: '16px'}}>
+            <Box display="flex" justifyContent="center" style={{border: `1px solid #ff3c00`, margin: '8px'}}>
               <img 
                 src={`data:image/jpeg;base64,${publicData.images[0]}`} 
                 alt={publicData.title || `Item #${item.searchable_id}`}

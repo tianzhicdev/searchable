@@ -146,37 +146,30 @@ const RestLogin = (props, { ...others }) => {
                             </Box>
                         )}
 
-                        <Box sx={{ mt: 2 }} >
-                            <AnimateButton>
-                                <Grid container spacing={2} justifyContent="space-between" direction="row" alignItems="center">
-                                    <Grid item xs={6} sm={5} md={4}>
-                                        <Button
-                                            disableElevation
-                                            fullWidth
-                                            size="large"
-                                            color="secondary"
-                                            className={classes.visitorButton}
-                                            onClick={() => {
-                                                history.push('/searchables');
-                                            }}
-                                        >
-                                            I'm a Guest
-                                        </Button>
-                                    </Grid>
-                                    <Grid item xs={6} sm={5} md={4}>
-                                        <Button
-                                            disableElevation
-                                            disabled={isSubmitting}
-                                            fullWidth
-                                            size="large"
-                                            type="submit"
-                                            className={classes.button}
-                                        >
-                                            Sign In
-                                        </Button>
-                                    </Grid>
-                                </Grid>
-                            </AnimateButton>
+                        <Box sx={{ mt: 2 }} display="flex" justifyContent="space-between">
+                            <Button
+                                disableElevation
+                                fullWidth
+                                size="large"
+                                color="secondary"
+                                className={classes.visitorButton}
+                                onClick={() => {
+                                    history.push('/searchables');
+                                }}
+                            >
+                                Guest
+                            </Button>
+                            <Box sx={{ m: 0.5 }}></Box>
+                            <Button
+                                disableElevation
+                                disabled={isSubmitting}
+                                fullWidth
+                                size="large"
+                                type="submit"
+                                className={classes.button}
+                            >
+                                Sign In
+                            </Button>
                         </Box>
                     </form>
                 )}

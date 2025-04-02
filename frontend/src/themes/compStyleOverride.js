@@ -23,7 +23,13 @@ export function componentStyleOverrides(theme) {
           },
         MuiGrid: {
             styleOverrides: {
+                root: {
+                    padding: '8px'
+                },
                 container: {
+                    padding: '8px'
+                },
+                item: {
                     padding: '8px'
                 }
             }
@@ -71,6 +77,9 @@ export function componentStyleOverrides(theme) {
           styleOverrides: {
             root: {
               color: theme.colors.lightBlue
+            },
+            colorSecondary: {
+              color: theme.colors.yellow
             }
           }
         },
@@ -95,7 +104,7 @@ export function componentStyleOverrides(theme) {
                     fontFamily: theme.fonts.fontFamily.primary,
                     border: `1px solid ${theme.colors.orangeMain}`,
                     borderRadius: '0px',
-                    padding: '12px',
+                    padding: '8px',
                     marginBottom: '12px'
                 },
                 rounded: {
@@ -397,8 +406,8 @@ export function componentStyleOverrides(theme) {
         MuiBox: {
             styleOverrides: {
                 root: {
-                    padding: '12px',
-                    margin: '12px'
+                    padding: '8px',
+                    margin: '8px'
                 }
             }
         },

@@ -203,26 +203,18 @@ const Payment = ({ payment }) => {
                 <DialogTitle>Rate Your Purchase</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Please rate your purchase from -3 to 3 and leave a review.
+                        Please rate your purchase from 0 to 5 stars and leave a review.
                     </DialogContentText>
-                    <Box mt={2} mb={2}>
+                    <Box mt={2} mb={2} display="flex" flexDirection="column" alignItems="center">
                         <Typography gutterBottom>Rating:</Typography>
-                        <Slider
+                        <Rating
+                            name="purchase-rating"
                             value={ratingValue}
-                            onChange={(e, newValue) => setRatingValue(newValue)}
-                            min={-3}
-                            max={3}
-                            step={1}
-                            marks={[
-                                { value: -3, label: '-3' },
-                                { value: -2, label: '-2' },
-                                { value: -1, label: '-1' },
-                                { value: 0, label: '0' },
-                                { value: 1, label: '1' },
-                                { value: 2, label: '2' },
-                                { value: 3, label: '3' }
-                            ]}
-                            valueLabelDisplay="on"
+                            onChange={(event, newValue) => {
+                                setRatingValue(newValue);
+                            }}
+                            precision={0.5}
+                            size="large"
                         />
                     </Box>
                     <TextField

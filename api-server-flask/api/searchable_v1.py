@@ -471,48 +471,6 @@ class SearchSearchables(Resource):
             if 'terminal_id' in item and item['terminal_id'] in usernames:
                 item['username'] = usernames[item['terminal_id']]
 
-@rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
-class GetSearchableItem(Resource):
-    """
-    Retrieves a specific searchable item by its ID
-    """
-    @token_optional
-    def get(self, searchable_id, current_user = None, visitor_id = None):
-        with searchable_latency.labels('get_searchable_item_v2').time():
-            try:
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                # Query to get the searchable item
-                execute_sql(cur, f"""
-                    SELECT searchable_id, searchable_data
-                    FROM searchables
-                    WHERE searchable_id = {searchable_id}
-                """)
-                
-                result = cur.fetchone()
-                
-                if not result:
-                    searchable_requests.labels('get_searchable_item_v2', 'GET', 404).inc()
-                    return {"error": "Searchable item not found"}, 404
-                    
-                searchable_id, searchable_data = result
-                
-                # Combine the data
-                item_data = searchable_data
-                item_data['searchable_id'] = searchable_id
-                
-                cur.close()
-                conn.close()
-                
-                searchable_requests.labels('get_searchable_item_v2', 'GET', 200).inc()
-                return item_data, 200
-                
-            except Exception as e:
-                searchable_requests.labels('get_searchable_item_v2', 'GET', 500).inc()
-                return {"error": str(e)}, 500
-
-
 @rest_api.route('/api/v1/searchable/remove/<int:searchable_id>', methods=['PUT'])
 class RemoveSearchableItem(Resource):
     """
@@ -959,5 +917,124 @@ class PaymentsBySearchable(Resource):
             except Exception as e:
                 print(f"Error retrieving payments by searchable: {str(e)}")
                 searchable_requests.labels('payments_by_searchable', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
+class SearchableRating(Resource):
+    """
+    Retrieves rating data for a specific searchable item
+    
+    This endpoint returns the average rating and count of ratings for a searchable item.
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/v1/rating/searchable/123"
+    """
+    @token_optional
+    def get(self, searchable_id, current_user=None, visitor_id=None):
+        with searchable_latency.labels('searchable_rating').time():
+            try:
+                # Get payments for this searchable item with ratings
+                payments = get_data_from_kv(type='payment', fkey=str(searchable_id))
+                
+                # Extract ratings from payments
+                ratings = []
+                for payment in payments:
+                    rating = payment.get('rating')
+                    if rating is not None:  # Only include if rating exists
+                        try:
+                            rating_value = float(rating)
+                            if 0 <= rating_value <= 5:  # Validate rating range
+                                ratings.append(rating_value)
+                        except (ValueError, TypeError):
+                            # Skip invalid ratings
+                            continue
+                
+                # Calculate average rating
+                if ratings:
+                    average_rating = sum(ratings) / len(ratings)
+                else:
+                    average_rating = 0
+                
+                # Record metrics
+                searchable_requests.labels('searchable_rating', 'GET', 200).inc()
+                
+                return {
+                    'average_rating': round(average_rating, 1),
+                    'rating_count': len(ratings),
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
+                searchable_requests.labels('searchable_rating', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
+class TerminalRating(Resource):
+    """
+    Retrieves aggregated rating data for all searchables by a terminal
+    
+    This endpoint returns the average rating and count across all searchables
+    published by the specified terminal.
+    
+    Example curl request:
+    curl -X GET "http://localhost:5000/api/v1/rating/terminal/456"
+    """
+    @token_optional
+    def get(self, terminal_id, current_user=None, visitor_id=None):
+        with searchable_latency.labels('terminal_rating').time():
+            try:
+                # Get all searchables published by this terminal
+                terminal_searchable_ids = get_searchableIds_by_user(terminal_id)
+                
+                if not terminal_searchable_ids:
+                    # No searchables found for this terminal
+                    searchable_requests.labels('terminal_rating', 'GET', 404).inc()
+                    return {
+                        'terminal_id': terminal_id,
+                        'average_rating': 0,
+                        'rating_count': 0,
+                        'searchable_count': 0
+                    }, 200
+                
+                # Convert all elements in the list to strings to ensure consistency
+                terminal_searchable_ids = [str(id) for id in terminal_searchable_ids]
+                
+                # Initialize variables to calculate aggregate rating
+                all_ratings = []
+                rated_searchables = set()
+                
+                # Get payments for all searchables published by this terminal
+                payments = get_data_from_kv(type='payment', fkey=terminal_searchable_ids)
+                
+                for payment in payments:
+                    rating = payment.get('rating')
+                    searchable_id = payment.get('searchable_id')
+                    if rating is not None and searchable_id is not None:  # Only include if rating exists
+                        try:
+                            rating_value = float(rating)
+                            if 0 <= rating_value <= 5:  # Validate rating range
+                                all_ratings.append(rating_value)
+                                rated_searchables.add(searchable_id)
+                        except (ValueError, TypeError):
+                            # Skip invalid ratings
+                            continue
+                
+                # Calculate average rating
+                if all_ratings:
+                    average_rating = sum(all_ratings) / len(all_ratings)
+                else:
+                    average_rating = 0
+                
+                # Record metrics
+                searchable_requests.labels('terminal_rating', 'GET', 200).inc()
+                
+                return {
+                    'average_rating': round(average_rating, 1),
+                    'rating_count': len(all_ratings),
+                }, 200
+                
+            except Exception as e:
+                print(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
+                searchable_requests.labels('terminal_rating', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 

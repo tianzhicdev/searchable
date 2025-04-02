@@ -16,6 +16,10 @@ import PaymentList from '../payments/PaymentList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
+// Import star rating icons
+// import StarIcon from '@material-ui/icons/Star';
+// import StarHalfIcon from '@material-ui/icons/StarHalf';
+// import StarBorderIcon from '@material-ui/icons/StarBorder';
 
 const SearchableDetails = () => {
 
@@ -41,6 +45,11 @@ const SearchableDetails = () => {
   
   // Payment related
   const [invoice, setInvoice] = useState(null);
+  
+  // Rating states
+  const [searchableRating, setSearchableRating] = useState(null);
+  const [terminalRating, setTerminalRating] = useState(null);
+  const [loadingRatings, setLoadingRatings] = useState(true);
   
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -85,6 +94,7 @@ const SearchableDetails = () => {
   useEffect(() => {
     if (SearchableItem) {
       fetchPayments();
+      fetchRatings();
     }
   }, [SearchableItem]);
   
@@ -112,6 +122,34 @@ const SearchableDetails = () => {
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Fetch ratings for both the searchable item and the seller
+  const fetchRatings = async () => {
+    setLoadingRatings(true);
+    try {
+      // Fetch searchable item rating
+      const searchableResponse = await backend.get(`v1/rating/searchable/${id}`);
+      setSearchableRating(searchableResponse.data);
+      
+      // Fetch terminal (seller) rating if terminal_id is available
+      if (SearchableItem.terminal_id) {
+        const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
+        setTerminalRating(terminalResponse.data);
+      }
+    } catch (err) {
+      console.error("Error fetching ratings:", err);
+      // Don't set an error state, as this is not critical functionality
+    } finally {
+      setLoadingRatings(false);
+    }
+  };
+  
+  // Helper function to render text ratings instead of stars
+  const renderStarRating = (rating, count = null) => {
+    if (rating === null || rating === undefined) return null;
+    
+    return  `${rating.toFixed(1)}/5(${count})`
   };
   
   const convertSatsToUSD = async (sats) => {
@@ -358,7 +396,7 @@ const SearchableDetails = () => {
   };
   
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={1}>
       <Grid item xs={12}>
         <Box mb={2}>
             <Button 
@@ -415,21 +453,37 @@ const SearchableDetails = () => {
         <Grid item xs={12}>
         <Paper elevation={3}>
         <Grid item xs={12}>
-            <Box p={3}>
+            <Box p={1}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Box
                     sx={{
                       '@media (max-width:600px)': {
-                        padding: '8px',
+                        padding: '4px',
                       },
                     }}
                   >
-                    <Tooltip title={SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`}>
-                      <Typography variant="h4" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      
+                      <Typography variant="h3" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         {SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`}
                       </Typography>
-                    </Tooltip>
+                    
+                    {/* Display item rating */}
+                    <Box mt={1} display="flex" alignItems="center">
+                    {!loadingRatings && searchableRating && (
+                        <Typography variant="body1" style={{ marginRight: 8 }}>
+                         Rating {renderStarRating(searchableRating.average_rating, searchableRating.rating_count)}
+                     </Typography>
+
+                    )}
+                    {!loadingRatings && terminalRating && (
+                            <Typography variant="body1" style={{ marginRight: 8 }}>
+                               User Rating: {renderStarRating(terminalRating.average_rating, terminalRating.rating_count)}
+                            </Typography>
+                            
+                        )}</Box>
+
+                    
                     <Divider style={{ width: '100%' }} />
                   </Box>
                 </Grid>
@@ -480,6 +534,8 @@ const SearchableDetails = () => {
                             <span>{truncateText(SearchableItem.username, 25)}</span>
                           </Tooltip>
                         </Typography>
+                        
+                        {/* Display seller rating */}
                       </Grid>
                     )}
 
@@ -491,6 +547,7 @@ const SearchableDetails = () => {
                         </Typography>
                       </Grid>
                     )}
+
                     
                     {SearchableItem.payloads.public.description && (
                       <Grid item xs={12}>
