@@ -2,9 +2,7 @@ import React from 'react';
 import { Redirect, Switch } from 'react-router-dom';
 
 // routes
-import MainRoutes from './MainRoutes';
 import LoginRoutes from './LoginRoutes';
-import AuthenticationRoutes from './AuthenticationRoutes';
 import SearchableRoutes from './SearchableRoutes';
 import VisitorRoutes from './VisitorRoutes';
 // project imports
@@ -20,7 +18,6 @@ const Routes = () => {
                 <LoginRoutes />
                 <SearchableRoutes />
                 <VisitorRoutes />
-                <MainRoutes />
             </React.Fragment>
         </Switch>
     );

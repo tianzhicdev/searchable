@@ -10,7 +10,6 @@ import Routes from './routes';
 import theme from './themes';
 
 // project imports
-import NavigationScroll from './layout/NavigationScroll';
 import StateDebugger from './components/StateDebugger';
 import Terminal from './views/utilities/Terminal';
 //-----------------------|| APP ||-----------------------//
@@ -23,10 +22,8 @@ const App = () => {
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
-                <NavigationScroll>
                     <Terminal />
                     <Routes />
-                </NavigationScroll>
             </ThemeProvider>
         </StyledEngineProvider>
     );
