@@ -26,7 +26,7 @@ BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_
 
 # Configuration
 CHECK_INVOICE_INTERVAL = 60  # Check invoices every 60 seconds
-PROCESS_WITHDRAWAL_INTERVAL = 120  # Process withdrawals every 120 seconds
+PROCESS_WITHDRAWAL_INTERVAL = 5  # Process withdrawals every 120 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 
