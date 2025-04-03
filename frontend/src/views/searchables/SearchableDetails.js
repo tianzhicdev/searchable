@@ -16,10 +16,6 @@ import PaymentList from '../payments/PaymentList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
-// Import star rating icons
-// import StarIcon from '@material-ui/icons/Star';
-// import StarHalfIcon from '@material-ui/icons/StarHalf';
-// import StarBorderIcon from '@material-ui/icons/StarBorder';
 
 const SearchableDetails = () => {
 
@@ -385,6 +381,44 @@ const SearchableDetails = () => {
     createInvoice();
   };
   
+  // Add this new function after the handlePayButtonClick function
+  const handleStripePayButtonClick = async () => {
+    // Check if user is logged in - same validation as Lightning payment
+    const isUserLoggedIn = !!account?.user;
+    
+    if (isUserLoggedIn) {
+      fetchProfileData();
+      
+      // Only require address and telephone for non-online business types
+      if (SearchableItem.payloads.public.businessType === "online" && 
+          (!account.user.address || !account.user.tel)) {
+        showAlert("Please log in or update your profile with address and telephone before making a payment", "warning");
+        return;
+      }
+    }
+    
+    // Create Stripe checkout session
+    try {
+      setCreatingInvoice(true); // Reuse the same loading state
+      
+      const response = await backend.post(
+        'v1/create-checkout-session',
+        {
+          name: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
+          amount: Math.round(usdPrice * 100) // Convert USD price to cents for Stripe
+        }
+      );
+      
+      // Open Stripe checkout URL in a new tab
+      window.open(response.data.url, '_blank');
+    } catch (err) {
+      console.error("Error creating Stripe checkout session:", err);
+      showAlert("Failed to create Stripe payment. Please try again.", "error");
+    } finally {
+      setCreatingInvoice(false);
+    }
+  };
+  
   const fetchPayments = async () => {
     try {
       const response = await backend.get(`v1/payments-by-searchable/${id}`);
@@ -599,7 +633,7 @@ const SearchableDetails = () => {
                   
                   { SearchableItem.payloads.public && SearchableItem.payloads.public.price && (
                     <Grid item xs={12}>
-                      <Box mt={3} display="flex" justifyContent="center">
+                      <Box mt={3} display="flex" justifyContent="center" gap={2}>
                         <Button
                           variant="contained"
                           color="primary"
@@ -609,9 +643,21 @@ const SearchableDetails = () => {
                           {creatingInvoice ? (
                             <CircularProgress size={24} />
                           ) : (
-                            "Pay with Lightning"
+                            "Pay with ⚡"
                           )}
                         </Button>
+                        {/* <Button
+                          variant="contained"
+                          color="secondary"
+                          onClick={handleStripePayButtonClick}
+                          disabled={creatingInvoice || usdPrice === null}
+                        >
+                          {creatingInvoice ? (
+                            <CircularProgress size={24} />
+                          ) : (
+                            "Pay with 💳"
+                          )}
+                        </Button> */}
                       </Box>
                     </Grid>
                   )}

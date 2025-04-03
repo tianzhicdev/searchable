@@ -1,3 +1,4 @@
+import os
 import re
 from flask import request, Response
 import json
@@ -23,6 +24,8 @@ from .helper import (
     get_withdrawal_status
 )
 import time
+import stripe
+stripe.api_key = os.getenv('STRIPE_API_KEY')
 
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_v2_requests_total', 'Total number of searchable API v2 requests', ['endpoint', 'method', 'status'])
@@ -1038,3 +1041,37 @@ class TerminalRating(Resource):
                 searchable_requests.labels('terminal_rating', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
+@rest_api.route('/api/v1/create-checkout-session', methods=['POST'])
+class CreateCheckoutSession(Resource):
+    def post(self):
+        # Get the request data
+        data = request.get_json()
+  
+  # Extract name and amount from the request data
+        name = data.get('name', 'Product')
+        amount = data.get('amount', 2000)  # Default to 2000 cents ($20.00) if not provided
+        
+        # Ensure amount is an integer (Stripe requires amount in cents)
+        try:
+            amount = int(amount)
+        except (ValueError, TypeError):
+            return {"error": "Invalid amount format"}, 400
+        session = stripe.checkout.Session.create(
+            line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {
+                'name': name,
+                },
+                'unit_amount': amount,
+            },
+            'quantity': 1,
+            }],
+            mode='payment',
+            success_url='http://localhost:4242/success',
+            cancel_url='http://localhost:4242/cancel',
+        )
+
+        return {
+            'url': session.url
+        }, 200

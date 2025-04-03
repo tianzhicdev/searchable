@@ -39,3 +39,4 @@ paramiko==2.12.0
 # flask_mysqldb
 psycopg2-binary
 prometheus-client
+stripe>=5.0.0
