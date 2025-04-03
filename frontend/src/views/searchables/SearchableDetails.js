@@ -391,6 +391,11 @@ const SearchableDetails = () => {
     if (isUserLoggedIn) {
       fetchProfileData();
       
+      // Check if price is too low for credit card payment
+      if (SearchableItem.payloads.public.price < 1000) {
+        showAlert("Amount too low for credit card payment. Please use Lightning instead.", "warning");
+        return;
+      }
       // Only require address and telephone for non-online business types
       if (SearchableItem.payloads.public.businessType !== "online" && 
           (!account.user.address || !account.user.tel)) {
