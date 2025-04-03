@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timedelta
 
 from api import get_db_connection
-from api.helper import pay_lightning_invoice, check_payment, Json, execute_sql, get_data_from_kv, get_db_connection
+from api.helper import check_stripe_payment, pay_lightning_invoice, check_payment, Json, execute_sql, get_data_from_kv, get_db_connection
 
 # from api.searchable_routes import Json, execute_sql, get_data_from_kv
 
@@ -70,17 +70,31 @@ def check_invoice_payments():
                 continue
                 
             # Check payment status using our helper function
-            try:
-                invoice_data = check_payment(invoice_id)
-                processed_count += 1
-                
-                # If payment is settled, it has been recorded by the helper function
-                if invoice_data.get('status', '').lower() in ('settled', 'complete'):
-                    paid_count += 1
-                    logger.info(f"Recorded payment for invoice {invoice_id}")
-                
-            except Exception as e:
-                logger.error(f"Error checking payment status for invoice {invoice_id}: {str(e)}")
+            if invoice.get('invoice_type') == 'lightning':
+                try:
+                    invoice_data = check_payment(invoice_id)
+                    processed_count += 1
+                    
+                    # If payment is settled, it has been recorded by the helper function
+                    if invoice_data.get('status', '').lower() in ('settled', 'complete'):
+                        paid_count += 1
+                        logger.info(f"Recorded payment for invoice {invoice_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error checking payment status for invoice {invoice_id}: {str(e)}")
+            elif invoice.get('invoice_type') == 'stripe':
+                try:
+                    session_id = invoice_id
+                    payment_data = check_stripe_payment(session_id)
+                    processed_count += 1
+                    
+                    # If payment is paid, it has been recorded by the helper function
+                    if payment_data.get('status') == 'paid':
+                        paid_count += 1
+                        logger.info(f"Recorded Stripe payment for session {session_id}")
+                        
+                except Exception as e:
+                    logger.error(f"Error checking Stripe payment status for session {invoice_id}: {str(e)}")
         
         cur.close()
         conn.close()

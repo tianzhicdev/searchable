@@ -167,7 +167,7 @@ const SearchableDetails = () => {
     }
   };
   
-  const createInvoice = async () => {
+  const createInvoice = async (invoiceType = 'lightning') => {
     if (!SearchableItem || !SearchableItem.payloads.public.price) return;
     
     setCreatingInvoice(true);
@@ -176,35 +176,38 @@ const SearchableDetails = () => {
       // Get buyer ID - use account.user._id if available, otherwise use visitor ID
       const buyerId = account?.user?._id || getOrCreateVisitorId();
       
-      // Check if user is logged in
-      const isUserLoggedIn = !!account?.user;
-      
-      // Use different endpoints based on login status
-      const endpoint = 'v1/create-invoice'
-      // Prepare payload based on user status
+      // Prepare common payload properties
       const payload = {
-        amount: SearchableItem.payloads.public.price,
         searchable_id: id,
-        business_type: SearchableItem.payloads.public.businessType
+        business_type: SearchableItem.payloads.public.businessType,
+        invoice_type: invoiceType,
       };
       
-      // // Add address and tel only for logged-in users
-      // if (isUserLoggedIn) {
-      //   payload.address = account.user.address;
-      //   payload.tel = account.user.tel;
-      // }
+      // Add Stripe-specific properties if needed
+      if (invoiceType === 'stripe') {
+        payload.success_url = `${window.location.origin}${window.location.pathname}`;
+        payload.cancel_url = `${window.location.origin}${window.location.pathname}`;
+      }
       
-      const response = await backend.post(
-        endpoint,
-        payload
-      );
+      // Add address and tel for logged-in users
+      if (account?.user) {
+        payload.address = account.user.address;
+        payload.tel = account.user.tel;
+      }
       
-      setInvoice(response.data);
-      setPaymentDialogOpen(true);
-      checkPaymentStatus(response.data.id);
+      const response = await backend.post('v1/create-invoice', payload);
+      
+      if (invoiceType === 'lightning') {
+        setInvoice(response.data);
+        setPaymentDialogOpen(true);
+        checkPaymentStatus(response.data.id);
+      } else if (invoiceType === 'stripe' && response.data.url) {
+        // Open Stripe checkout URL in a new tab
+        window.open(response.data.url, '_blank');
+      }
     } catch (err) {
-      console.error("Error creating invoice:", err);
-      showAlert("Failed to create payment invoice. Please try again.", "error");
+      console.error(`Error creating ${invoiceType} invoice:`, err);
+      showAlert(`Failed to create payment invoice. Please try again.`, "error");
     } finally {
       setCreatingInvoice(false);
     }
@@ -361,7 +364,7 @@ const SearchableDetails = () => {
     }, 5000);
   };
   
-  // New function to handle payment button click
+  // Update both button click handlers to use the same createInvoice function
   const handlePayButtonClick = () => {
     // Check if user is logged in
     const isUserLoggedIn = !!account?.user;
@@ -377,11 +380,10 @@ const SearchableDetails = () => {
       }
     }
     
-    // Proceed with invoice creation
-    createInvoice();
+    // Proceed with Lightning invoice creation
+    createInvoice('lightning');
   };
   
-  // Add this new function after the handlePayButtonClick function
   const handleStripePayButtonClick = async () => {
     // Check if user is logged in - same validation as Lightning payment
     const isUserLoggedIn = !!account?.user;
@@ -390,33 +392,15 @@ const SearchableDetails = () => {
       fetchProfileData();
       
       // Only require address and telephone for non-online business types
-      if (SearchableItem.payloads.public.businessType === "online" && 
+      if (SearchableItem.payloads.public.businessType !== "online" && 
           (!account.user.address || !account.user.tel)) {
-        showAlert("Please log in or update your profile with address and telephone before making a payment", "warning");
+        showAlert("Please update your profile with address and telephone before making a payment", "warning");
         return;
       }
     }
     
     // Create Stripe checkout session
-    try {
-      setCreatingInvoice(true); // Reuse the same loading state
-      
-      const response = await backend.post(
-        'v1/create-checkout-session',
-        {
-          name: SearchableItem.payloads.public.title || `Item #${SearchableItem.searchable_id}`,
-          amount: Math.round(usdPrice * 100) // Convert USD price to cents for Stripe
-        }
-      );
-      
-      // Open Stripe checkout URL in a new tab
-      window.open(response.data.url, '_blank');
-    } catch (err) {
-      console.error("Error creating Stripe checkout session:", err);
-      showAlert("Failed to create Stripe payment. Please try again.", "error");
-    } finally {
-      setCreatingInvoice(false);
-    }
+    createInvoice('stripe');
   };
   
   const fetchPayments = async () => {
@@ -633,31 +617,22 @@ const SearchableDetails = () => {
                   
                   { SearchableItem.payloads.public && SearchableItem.payloads.public.price && (
                     <Grid item xs={12}>
-                      <Box mt={3} display="flex" justifyContent="center" gap={2}>
+                      <Box mt={3} display="flex" flexDirection="column" justifyContent="center" gap={2}>
                         <Button
                           variant="contained"
                           color="primary"
                           onClick={handlePayButtonClick}
                           disabled={creatingInvoice}
                         >
-                          {creatingInvoice ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            "Pay with ⚡"
-                          )}
+                            Pay with ⚡ (0% fee)
                         </Button>
-                        {/* <Button
+                        <Button
                           variant="contained"
-                          color="secondary"
                           onClick={handleStripePayButtonClick}
                           disabled={creatingInvoice || usdPrice === null}
                         >
-                          {creatingInvoice ? (
-                            <CircularProgress size={24} />
-                          ) : (
-                            "Pay with 💳"
-                          )}
-                        </Button> */}
+                            Pay with 💳 (3.5% fee)
+                        </Button>
                       </Box>
                     </Grid>
                   )}

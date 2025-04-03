@@ -5,8 +5,9 @@ import requests
 import time
 from psycopg2.extras import Json
 import psycopg2
+import stripe
 
-
+stripe.api_key = os.environ.get('STRIPE_API_KEY')
 # Moved get_db_connection from routes.py
 def get_db_connection():
     conn = psycopg2.connect(
@@ -369,6 +370,74 @@ def check_payment(invoice_id):
     except Exception as e:
         print(f"Error checking payment status: {str(e)}")
         return {"error": str(e)}
+
+
+def check_stripe_payment(session_id):
+    """
+    Checks the status of a Stripe payment session and records it in the database if successful
+    
+    Args:
+        session_id (str): The Stripe checkout session ID to check
+        
+    Returns:
+        dict: The payment status information
+    """
+    try:
+        # Retrieve the checkout session from Stripe
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Get payment status
+        payment_status = checkout_session.payment_status
+        
+        # If payment is successful, record it in our database
+        if payment_status == 'paid':
+            # Get the invoice record from our database
+            invoice_records = get_data_from_kv(type='invoice', pkey=session_id)
+            
+            if invoice_records:
+                invoice_record = invoice_records[0]
+                searchable_id = invoice_record.get('fkey')
+                
+                # Store payment record
+                payment_record = {
+                    "amount": invoice_record['amount'],  # Will raise KeyError if amount doesn't exist
+                    "usd_amount": invoice_record['usd_price'],
+                    "status": "complete",
+                    "buyer_id": invoice_record.get('buyer_id', 'unknown'),
+                    "timestamp": int(time.time()),
+                    "searchable_id": str(searchable_id),
+                    "address": invoice_record.get('address', ''),
+                    "tel": invoice_record.get('tel', ''),
+                    "payment_type": "stripe"
+                }
+                
+                conn = get_db_connection()
+                cur = conn.cursor()
+                execute_sql(cur, f"""
+                    INSERT INTO kv (type, pkey, fkey, data)
+                    VALUES ('payment', '{session_id}', '{searchable_id}', {Json(payment_record)})
+                    ON CONFLICT (type, pkey, fkey) 
+                    DO UPDATE SET data = {Json(payment_record)}
+                """, commit=True, connection=conn)
+                cur.close()
+                conn.close()
+        
+        # Return the payment status information
+        return {
+            "status": payment_status,
+            "session_id": session_id,
+            "amount_total": checkout_session.amount_total,
+            "currency": checkout_session.currency
+        }
+        
+    except stripe.error.StripeError as e:
+        print(f"Stripe error checking payment status: {str(e)}")
+        return {"error": str(e)}
+    except Exception as e:
+        print(f"Error checking Stripe payment status: {str(e)}")
+        return {"error": str(e)}
+
+
 
 
 def create_lightning_invoice(amount):

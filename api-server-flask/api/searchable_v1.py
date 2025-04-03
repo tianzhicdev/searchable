@@ -1,5 +1,7 @@
 import os
 import re
+
+import requests
 from flask import request, Response
 import json
 from flask_restx import Resource
@@ -21,7 +23,7 @@ from .helper import (
     execute_sql,
     Json,
     get_withdrawal_timestamp,
-    get_withdrawal_status
+    get_withdrawal_status,
 )
 import time
 import stripe
@@ -31,6 +33,82 @@ stripe.api_key = os.getenv('STRIPE_API_KEY')
 searchable_requests = Counter('searchable_v2_requests_total', 'Total number of searchable API v2 requests', ['endpoint', 'method', 'status'])
 searchable_latency = Histogram('searchable_v2_request_latency_seconds', 'Request latency in seconds for v2 API', ['endpoint'])
 search_results_count = Summary('searchable_v2_search_results_count', 'Number of search results returned in v2 API')
+
+
+def validate_payment_request(data, current_user, visitor_id, metrics_label):
+    """
+    Validates payment request data and returns buyer information or error response
+    
+    Args:
+        data: The request JSON data
+        current_user: The authenticated user (or None)
+        visitor_id: The visitor ID (or None)
+        metrics_label: Label for Prometheus metrics
+        
+    Returns:
+        tuple: (result, status_code)
+            - If validation successful: ({'buyer_id': str, 'address': str, 'tel': str}, None)
+            - If validation failed: ({"error": str}, status_code)
+    """
+    # Validate required fields
+    if not data:
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "Request data is missing"}, 400
+        
+    if 'searchable_id' not in data:
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "searchable_id is required"}, 400
+        
+    if 'business_type' not in data:
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "business_type is required"}, 400
+
+    if 'invoice_type' not in data:
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "invoice_type is required"}, 400
+        
+    # Validate invoice_type if present
+    invoice_type = data.get('invoice_type')
+    if invoice_type and invoice_type not in ['lightning', 'stripe']:
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "Invalid invoice_type. Must be 'lightning' or 'stripe'"}, 400
+    
+    # Get the data from the request
+    business_type = data['business_type']
+    address = ''
+    tel = ''
+    
+    if current_user:
+        # Authenticated user
+        buyer_id = str(current_user.id)
+        
+        if business_type == 'online':
+            # Get profile data to retrieve address and tel
+            profile_data = get_terminal(buyer_id)
+            
+            # Initialize address and tel variables from profile
+            if profile_data:
+                address = profile_data.get('address', '')
+                tel = profile_data.get('tel', '')
+            
+            # Fail the request if address or tel is missing
+            if not address or not tel:
+                searchable_requests.labels(metrics_label, 'POST', 400).inc()
+                return {"error": "Address and telephone number are required"}, 400
+            
+    elif visitor_id:
+        # Visitor
+        buyer_id = visitor_id
+        if business_type == 'online':
+            searchable_requests.labels(metrics_label, 'POST', 400).inc()
+            return {"error": "vistors cannot pay for online business"}, 400
+    else:
+        # Fail the request if no buyer_id is provided
+        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        return {"error": "authentication OR visitor_id is required"}, 400
+    
+    # Return the validated payment info
+    return {'buyer_id': buyer_id, 'address': address, 'tel': tel}, None
 
 @rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
 class GetSearchableItem(Resource):
@@ -634,115 +712,7 @@ class UpdateUserTerminal(Resource):
                 searchable_requests.labels('update_terminal', 'PUT', 500).inc()
                 return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/create-invoice', methods=['POST'])
-class CreateInvoiceV1(Resource):
-    """
-    Creates a Lightning Network invoice via BTCPay Server
-    
-    Supports both authenticated users and visitors
-    
-    Parameters:
-        - amount: amount to be paid in sats
-        - searchable_id: id of the searchable item
-        - buyer_id: id of the buyer (optional, required for visitors)
-        - address: optional address for shipping
-        - tel: optional phone number
-        - redirect_url: optional URL to redirect after payment
-    """
-    @token_optional
-    def post(self, current_user=None, visitor_id=None):
-        with searchable_latency.labels('create_invoice_v1').time():
-            try:
-                data = request.get_json()
-                
-                if not data or 'amount' not in data or 'searchable_id' not in data or 'business_type' not in data:
-                    searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
-                    return {"error": "Amount, searchable_id and business_type are required"}, 400
-                
-                # Get the data from the request
-                amount = data['amount']
-                searchable_id = data['searchable_id']
-                business_type = data['business_type']
-                address = ''
-                tel = ''
-                
-                # Set buyer_id based on authentication status
-                if current_user:
-                    # Authenticated user
-                    buyer_id = str(current_user.id)
-                    
-                    if business_type == 'online':
-                        # Get profile data to retrieve address and tel
-                        profile_data = get_terminal(buyer_id)
-                        
-                        # Initialize address and tel variables from profile
-                        # Initialize address and tel variables from profile
-                        if profile_data:
-                            address = profile_data.get('address', '')
-                            tel = profile_data.get('tel', '')
-                        
-                        # Fail the request if address or tel is missing
-                        if not address or not tel:
-                            searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
-                            return {"error": "Address and telephone number are required"}, 400
-                        
-                elif visitor_id:
-                    # Visitor
-                    buyer_id = visitor_id
-                    if business_type == 'online':
-                        searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
-                        return {"error": "vistors cannot pay for online business"}, 400
-                else:
-                    # Fail the request if no buyer_id is provided
-                    searchable_requests.labels('create_invoice_v1', 'POST', 400).inc()
-                    return {"error": "authentication OR visitor_id is required"}, 400
-                
-                # Create a Lightning invoice
-                response = None
-                try:
-                    # Use our decode function to get invoice details without paying
-                    response = create_lightning_invoice(
-                        amount=amount
-                    )
-                except Exception as e:
-                    searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
-                    return {"error": f"Failed to create invoice: {str(e)}"}, 500
-                
-                # Record the lightning invoice in our database
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                # Check if invoice ID exists
-                if 'id' not in response:
-                    searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
-                    return {"error": "failed to create invoice, please try again later"}, 500
-                
-                # Store invoice record
-                invoice_record = {
-                    "amount": int(amount),
-                    "buyer_id": str(buyer_id),
-                    "timestamp": int(time.time()),
-                    "searchable_id": str(searchable_id),
-                    "invoice_id": response['id'],
-                    "address": address,
-                    "tel": tel
-                }
-                
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, pkey, fkey, data)
-                    VALUES ('invoice', '{response['id']}', '{searchable_id}', {Json(invoice_record)})
-                """, commit=True, connection=conn)
-                
-                cur.close()
-                conn.close()
-                
-                searchable_requests.labels('create_invoice_v1', 'POST', 200).inc()
-                return response, 200
-                
-            except Exception as e:
-                print(f"Error creating invoice: {str(e)}")
-                searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
-                return {"error": str(e)}, 500
+
 
 @rest_api.route('/api/v1/payments-by-terminal', methods=['GET'])
 class PaymentsByTerminal(Resource):
@@ -1040,7 +1010,7 @@ class TerminalRating(Resource):
                 print(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
                 searchable_requests.labels('terminal_rating', 'GET', 500).inc()
                 return {"error": str(e)}, 500
-
+            
 @rest_api.route('/api/v1/create-checkout-session', methods=['POST'])
 class CreateCheckoutSession(Resource):
     def post(self):
@@ -1071,7 +1041,212 @@ class CreateCheckoutSession(Resource):
             success_url='http://localhost:4242/success',
             cancel_url='http://localhost:4242/cancel',
         )
+        print('stripe session: ', session)
 
         return {
             'url': session.url
         }, 200
+
+
+@rest_api.route('/api/v1/create-invoice', methods=['POST'])
+class CreateInvoiceV1(Resource):
+    """
+    Creates a payment invoice - either Lightning Network or Stripe
+    
+    Supports both authenticated users and visitors
+    
+    Parameters:
+        - searchable_id: id of the searchable item
+        - address: optional address for shipping
+        - tel: optional phone number
+        - redirect_url: optional URL to redirect after payment
+        - invoice_type: "lightning" or "stripe" to determine payment method
+        - success_url: URL to redirect after successful payment (for Stripe)
+        - cancel_url: URL to redirect after cancelled payment (for Stripe)
+    """
+    @token_optional
+    def post(self, current_user=None, visitor_id=None):
+        with searchable_latency.labels('create_invoice_v1').time():
+            try:
+
+                # ======= validation =======
+                data = request.get_json()
+                
+                # Validate payment request
+                validation_result, error = validate_payment_request(
+                    data, current_user, visitor_id, 'create_invoice_v1'
+                )
+                
+                if error:
+                    return validation_result, error
+                
+                # ======= end of validation =======
+                
+                
+                # ======= extract validated data =======
+                buyer_id = validation_result['buyer_id']
+                address = validation_result['address']
+                tel = validation_result['tel']
+                searchable_id = data['searchable_id']
+                invoice_type = data.get('invoice_type')
+                # ======= end of extract validated data =======
+
+                # ======= get searchable data =======
+                try:
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    
+                    execute_sql(cur, f"""
+                        SELECT searchable_data
+                        FROM searchables
+                        WHERE searchable_id = '{searchable_id}'
+                    """)
+                    
+                    result = cur.fetchone()
+                    if not result:
+                        cur.close()
+                        conn.close()
+                        return {"error": "Searchable not found"}, 404
+                    
+                    searchable_data = result[0]
+                    cur.close()
+                    conn.close()
+
+                    amount = int(searchable_data.get('payloads', {}).get('public', {}).get('price', 0))
+                    if amount <= 0:
+                        return {"error": "Invalid price for this searchable"}, 400
+                except (ValueError, TypeError, AttributeError):
+                    return {"error": "Invalid price format"}, 400
+                # ======= end of get searchable data =======
+
+                
+                if invoice_type == 'lightning':
+                    
+                    # Create a Lightning invoice
+                    response = None
+                    try:
+                        # Use our decode function to get invoice details without paying
+                        response = create_lightning_invoice(
+                            amount=amount
+                        )
+                    except Exception as e:
+                        searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                        return {"error": f"Failed to create invoice: {str(e)}"}, 500
+                    
+                    # Record the lightning invoice in our database
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    
+                    # Check if invoice ID exists
+                    if 'id' not in response:
+                        searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                        return {"error": "failed to create invoice, please try again later"}, 500
+                    
+                    # Store invoice record
+                    invoice_record = {
+                        "amount": int(amount),
+                        "buyer_id": str(buyer_id),
+                        "timestamp": int(time.time()),
+                        "searchable_id": str(searchable_id),
+                        "invoice_id": response['id'],
+                        "address": address,
+                        "tel": tel,
+                        "invoice_type": "lightning"
+                    }
+                    
+                    execute_sql(cur, f"""
+                        INSERT INTO kv (type, pkey, fkey, data)
+                        VALUES ('invoice', '{response['id']}', '{searchable_id}', {Json(invoice_record)})
+                    """, commit=True, connection=conn)
+                    
+                    cur.close()
+                    conn.close()
+                    
+                    searchable_requests.labels('create_invoice_v1', 'POST', 200).inc()
+                    return response, 200
+                    
+                elif invoice_type == 'stripe':
+                    # Process Stripe checkout
+                    success_url = data.get('success_url')
+                    cancel_url = data.get('cancel_url')
+                    
+                    
+                    try:
+                        response = requests.get(
+                            'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+                        )
+                        
+                        if response.status_code == 200 and response.json().get('bitcoin', {}).get('usd'):
+                            btc_price = response.json()['bitcoin']['usd']
+                            usd_price = (amount / 100000000) * btc_price
+                        else:
+                            # Return error if we can't get BTC price
+                            return {"error": "Unable to fetch current Bitcoin price"}, 503
+                    except Exception as e:
+                        print(f"Error fetching BTC price: {str(e)}")
+                        return {"error": "Unable to fetch current Bitcoin price"}, 503
+                    
+                    # Apply 3.5% fee
+                    usd_price_with_fee = usd_price * 1.035
+                    
+                    # Convert to cents for Stripe and round to integer
+                    amount_cents = round(usd_price_with_fee * 100)
+                    
+                    # Get item name
+                    item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
+                    
+                    # Create Stripe checkout session
+                    session = stripe.checkout.Session.create(
+                        line_items=[{
+                            'price_data': {
+                                'currency': 'usd',
+                                'product_data': {
+                                    'name': item_name,
+                                },
+                                'unit_amount': amount_cents,
+                            },
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url=success_url,
+                        cancel_url=cancel_url,
+                    )
+                    
+                    # Store session ID in KV store
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+
+                    invoice_record = {
+                        "amount": int(amount),
+                        "usd_price": usd_price_with_fee,
+                        "buyer_id": str(buyer_id),
+                        "timestamp": int(time.time()),
+                        "searchable_id": str(searchable_id),
+                        "invoice_id": session.id,
+                        "address": address,
+                        "tel": tel,
+                        "invoice_type": "stripe"
+                    }
+                    
+                    try:
+                        # Store Stripe session data in KV store
+                        execute_sql(cur, f"""
+                            INSERT INTO kv (type, pkey, fkey, data)
+                            VALUES ('invoice', '{session.id}', '{searchable_id}', {Json(invoice_record)})
+                        """, commit=True, connection=conn)
+                    except Exception as e:
+                        print(f"Error storing Stripe session in KV: {str(e)}")
+                    finally:
+                        cur.close()
+                        conn.close()
+                    return {
+                        'url': session.url,
+                        'session_id': session.id
+                    }, 200
+                else:
+                    return {"error": "Invalid invoice type. Must be 'lightning' or 'stripe'"}, 400
+                
+            except Exception as e:
+                print(f"Error creating invoice: {str(e)}")
+                searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                return {"error": str(e)}, 500
