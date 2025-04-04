@@ -8,7 +8,7 @@ services:
     image: nginx:latest
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./nginx/conf.d:/etc/nginx/conf.d          # Config files
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - frontend_build:/usr/share/nginx/html  # Frontend build
       - /root/.secrets/ssl/:/etc/nginx/ssl/   # SSL certificates
     ports:
