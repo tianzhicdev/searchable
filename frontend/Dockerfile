@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build   # Outputs to /app/build
+RUN npm run build --force   # Outputs to /app/build
 
 # Stage 2: Just copy artifacts (no Nginx here)
 FROM alpine:latest
