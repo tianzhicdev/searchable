@@ -9,7 +9,7 @@ services:
     volumes:
       - ./nginx:/etc/nginx/conf.d          # Config files
       - frontend_build:/usr/share/nginx/html  # Frontend build
-      - /usr/local/.secret/ssl/:/etc/nginx/ssl/   # SSL certificates
+      - /root/.secrets/ssl/:/etc/nginx/ssl/   # SSL certificates
     ports:
       - "443:443"
     depends_on:
