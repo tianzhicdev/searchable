@@ -1,0 +1,39 @@
+services:
+  frontend:
+    build: ./frontend
+    volumes:
+      - frontend_build:/app/build
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx:/etc/nginx/conf.d          # Config files
+      - frontend_build:/usr/share/nginx/html  # Frontend build
+      - /usr/local/.secret/ssl/:/etc/nginx/ssl/   # SSL certificates
+    ports:
+      - "443:443"
+    depends_on:
+      - frontend
+      # - flask_api
+
+volumes:
+  frontend_build:  # Shared volume between frontend and nginx
+
+  # nginx:
+  #   container_name: nginx
+  #   restart: always
+  #   image: "nginx:latest"
+  #   ports:
+  #     - "3006:3006"
+  #   volumes:
+  #     - ./nginx:/etc/nginx/conf.d
+  #   networks:
+  #     - web_network
+  #   depends_on: 
+  #     - flask_api
+
+networks:
+  db_network:
+    driver: bridge
+  web_network:
+    driver: bridge
