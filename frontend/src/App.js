@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { ThemeProvider } from '@material-ui/core/styles';
-import { CssBaseline, StyledEngineProvider } from '@material-ui/core';
+import { CssBaseline, StyledEngineProvider, Container, Box } from '@material-ui/core';
 import config from './config';
 // routing
 import Routes from './routes';
@@ -22,8 +22,12 @@ const App = () => {
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
-                    <Terminal />
-                    <Routes />
+                <Box display="flex" justifyContent="center" width="100%">
+                    <Container maxWidth="md" style={{ width: '100%' }}>
+                        <Terminal />
+                        <Routes />
+                    </Container>
+                </Box>
             </ThemeProvider>
         </StyledEngineProvider>
     );

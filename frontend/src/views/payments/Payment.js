@@ -138,13 +138,11 @@ const Payment = ({ payment }) => {
     console.log(payment);
     console.log(account);
     return (
-        <Grid item xs={12}>
+        <>
             <Paper 
                 id="searchable-profile"
                 style={{ marginBottom: '16px', cursor: 'pointer' }}
             >
-                <Box display="flex" flexDirection="row">
-                    <Box id="item-details" flex="1 1 auto">
                         <Box display="flex" flexDirection="row" flexWrap="wrap" alignItems="center">
                             {publicPaymentEntries.map(([key, value]) => (
                                 <Typography 
@@ -194,8 +192,6 @@ const Payment = ({ payment }) => {
                                 </Button>
                             )}
                         </Box>
-                    </Box>
-                </Box>
             </Paper>
 
             {/* Rating Dialog */}
@@ -261,7 +257,7 @@ const Payment = ({ payment }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Grid>
+        </>
     );
 };
 
