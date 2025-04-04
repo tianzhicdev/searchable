@@ -2,9 +2,9 @@
 FROM node:16-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 COPY . .
-RUN npm run build --force   # Outputs to /app/build
+RUN npm run build   # Outputs to /app/build
 
 # Stage 2: Just copy artifacts (no Nginx here)
 FROM alpine:latest
