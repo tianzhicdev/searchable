@@ -68,6 +68,7 @@
     ]
   },
   "devDependencies": {
-    "@material-ui/codemod": "^5.0.0-alpha.35"
+    "@material-ui/codemod": "^5.0.0-alpha.35",
+    "sass": "^1.86.3"
   }
 }
