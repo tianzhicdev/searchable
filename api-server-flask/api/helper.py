@@ -282,7 +282,7 @@ def pay_lightning_invoice(invoice):
         client.connect(HOST, username='root', password=PASSWORD)
         
         # Command to pay the invoice
-        command = f"docker exec -i btcpayserver_lnd_bitcoin lncli --macaroonpath=/data/admin.macaroon --network=mainnet payinvoice {invoice} -f --json --fee_limit 50"
+        command = f"docker exec -i btcpayserver_lnd_bitcoin lncli --macaroonpath=/data/admin.macaroon --network=mainnet payinvoice {invoice} -f --json --fee_limit 2000"
         
         # Execute the command
         stdin, stdout, stderr = client.exec_command(command)
