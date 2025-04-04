@@ -1,5 +1,5 @@
 # Stage 1: Build the React app
-FROM node:16-alpine as build-stage
+FROM node:22.11.0-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
