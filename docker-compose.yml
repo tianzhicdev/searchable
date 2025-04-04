@@ -20,19 +20,6 @@ services:
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
 
-  # nginx:
-  #   container_name: nginx
-  #   restart: always
-  #   image: "nginx:latest"
-  #   ports:
-  #     - "3006:3006"
-  #   volumes:
-  #     - ./nginx:/etc/nginx/conf.d
-  #   networks:
-  #     - web_network
-  #   depends_on: 
-  #     - flask_api
-
 networks:
   db_network:
     driver: bridge

@@ -16,6 +16,7 @@ from .helper import (
     pay_lightning_invoice, 
     decode_lightning_invoice, 
     check_payment, 
+    check_stripe_payment,
     get_terminal, 
     get_searchableIds_by_user, 
     get_data_from_kv, 
@@ -636,8 +637,103 @@ class CheckPayment(Resource):
             return {"error": str(e)}, 500
 
 
+@rest_api.route('/api/v1/refresh-payment', methods=['POST'])
+class RefreshPayment(Resource):
+    """
+    Refreshes the payment status for a given invoice_id or session_id
+    """
+    def post(self):
+        data = request.json
+        
+        if not data:
+            return {"error": "No data provided"}, 400
+            
+        invoice_type = data.get('invoice_type')
+        
+        if not invoice_type:
+            return {"error": "invoice_type is required"}, 400
+            
+        if invoice_type == 'lightning':
+            invoice_id = data.get('invoice_id')
+            if not invoice_id:
+                return {"error": "invoice_id is required for lightning payments"}, 400
+                
+            # Use our helper function to check lightning payment status
+            invoice_data = check_payment(invoice_id)
+            return invoice_data, 200
+            
+        elif invoice_type == 'stripe':
+            session_id = data.get('session_id')
+            if not session_id:
+                return {"error": "session_id is required for stripe payments"}, 400
+                
+            # Use our helper function to check stripe payment status
+            payment_data = check_stripe_payment(session_id)
+            return payment_data, 200
+            
+        else:
+            return {"error": "Invalid invoice_type. Must be 'lightning' or 'stripe'"}, 400
 
-@rest_api.route('/api/v1/terminal', methods=['GET'])
+
+@rest_api.route('/api/v1/refresh-payments-by-searchable/<searchable_id>', methods=['GET'])
+class RefreshPaymentsBySearchable(Resource):
+    """
+    Refreshes the payment status for all invoices associated with a searchable item
+    """
+    def get(self, searchable_id):
+        with searchable_latency.labels('refresh_payments_by_searchable').time():
+            try:
+                # Get all invoices for this searchable_id
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                execute_sql(cur, f"""
+                    SELECT pkey, data FROM kv
+                    WHERE type = 'invoice' AND fkey = '{searchable_id}'
+                """)
+                
+                invoices = cur.fetchall()
+                cur.close()
+                conn.close()
+                
+                if not invoices:
+                    searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200).inc()
+                    return {"message": "No invoices found for this searchable item"}, 200
+                
+                results = []
+                
+                # Process each invoice
+                for invoice in invoices:
+                    invoice_id = invoice[0]
+                    invoice_data = invoice[1]
+                    
+                    # Determine invoice type and check payment status
+                    if invoice_data.get('invoice_type') == 'lightning':
+                        payment_status = check_payment(invoice_id)
+                        results.append({
+                            "invoice_id": invoice_id,
+                            "type": "lightning",
+                            "status": payment_status.get('status', 'unknown'),
+                            "data": payment_status
+                        })
+                    elif invoice_data.get('invoice_type') == 'stripe':
+                        payment_status = check_stripe_payment(invoice_id)
+                        results.append({
+                            "invoice_id": invoice_id,
+                            "type": "stripe",
+                            "status": payment_status.get('status', 'unknown'),
+                            "data": payment_status
+                        })
+                
+                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200).inc()
+                return {"searchable_id": searchable_id, "payments": results}, 200
+                
+            except Exception as e:
+                print(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
+                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+
+
 class GetUserTerminal(Resource):
     """
     Retrieves terminal data for the authenticated user

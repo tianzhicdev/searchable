@@ -91,6 +91,7 @@ const SearchableDetails = () => {
     if (SearchableItem) {
       fetchPayments();
       fetchRatings();
+      refreshPaymentsBySearchable();
     }
   }, [SearchableItem]);
   
@@ -204,6 +205,12 @@ const SearchableDetails = () => {
       } else if (invoiceType === 'stripe' && response.data.url) {
         // Open Stripe checkout URL in a new tab
         window.open(response.data.url, '_blank');
+        
+        // If we have a session_id, set up polling for Stripe payment status
+        if (response.data.session_id) {
+          // Start checking Stripe payment status
+          checkStripePaymentStatus(response.data.session_id);
+        }
       }
     } catch (err) {
       console.error(`Error creating ${invoiceType} invoice:`, err);
@@ -224,14 +231,11 @@ const SearchableDetails = () => {
     }
     
     try {
-      const buyerId = account?.user?._id || getOrCreateVisitorId();
-      const isUserLoggedIn = !!account?.user;
-      
-      // Use different endpoints based on login status
-      const endpoint = `v1/check-payment/${invoiceId}`
-      
-      console.log("Fetching invoice data from backend");
-      const response = await backend.get(endpoint);
+      // Use the new refresh-payment endpoint
+      const response = await backend.post('v1/refresh-payment', {
+        invoice_type: 'lightning',
+        invoice_id: invoiceId
+      });
       
       console.log("Received payment status:", response.data.status);
       
@@ -240,13 +244,15 @@ const SearchableDetails = () => {
         setPaymentStatus(response.data.status);
         
         if (response.data.status === 'New' || response.data.status === 'Processing') {
-          console.log("Payment still in progress, scheduling next check in 2 seconds");
+          console.log("Payment still in progress, scheduling next check in 3 seconds");
           paymentCheckRef.current = setTimeout(() => checkPaymentStatus(invoiceId), 3000);
         } else if (response.data.status === 'Settled' || response.data.status === 'Complete') {
           console.log("Payment completed successfully");
-          
           showAlert("Payment successful!");
           setPaymentDialogOpen(false);
+          
+          // Refresh payments list after successful payment
+          fetchPayments();
         } else {
           console.log("Payment in final state (not successful)");
         }
@@ -415,6 +421,59 @@ const SearchableDetails = () => {
     } catch (err) {
       console.error("Error fetching payments:", err);
       showAlert("Failed to load payment history", "error");
+    }
+  };
+  
+  // Add this new function to refresh payments by searchable id
+  const refreshPaymentsBySearchable = async () => {
+    try {
+      await backend.get(`v1/refresh-payments-by-searchable/${id}`);
+      // After refreshing, fetch the updated payments
+      fetchPayments();
+    } catch (err) {
+      console.error("Error refreshing payments for searchable:", err);
+      // Don't show an alert as this is a background operation
+    }
+  };
+  
+  // Add new function to check Stripe payment status
+  const checkStripePaymentStatus = async (sessionId) => {
+    if (!sessionId || !isMountedRef.current) return;
+    
+    console.log("Starting Stripe payment status check for session:", sessionId);
+    
+    if (!paymentCheckRef.current) {
+      setCheckingPayment(true);
+    }
+    
+    try {
+      const response = await backend.post('v1/refresh-payment', {
+        invoice_type: 'stripe',
+        session_id: sessionId
+      });
+      
+      if (isMountedRef.current) {
+        const paymentStatus = response.data.status;
+        console.log("Received Stripe payment status:", paymentStatus);
+        
+        if (paymentStatus === 'complete' || paymentStatus === 'paid') {
+          console.log("Stripe payment completed successfully");
+          showAlert("Credit card payment successful!");
+          // Refresh payments list after successful payment
+          fetchPayments();
+        } else if (paymentStatus === 'open' || paymentStatus === 'processing') {
+          console.log("Stripe payment still in progress, scheduling next check in 3 seconds");
+          paymentCheckRef.current = setTimeout(() => checkStripePaymentStatus(sessionId), 3000);
+        } else {
+          console.log("Stripe payment in final state (not successful)");
+        }
+      }
+    } catch (err) {
+      console.error("Error checking Stripe payment status:", err);
+    } finally {
+      if (!paymentCheckRef.current) {
+        setCheckingPayment(false);
+      }
     }
   };
   
