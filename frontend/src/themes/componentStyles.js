@@ -245,13 +245,12 @@ const useComponentStyles = makeStyles((theme) => ({
     width: '100%'
   },
   zoomableImageDialog: {
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     boxShadow: 'none',
     borderRadius: 0,
     position: 'relative',
   },
   zoomableImageContent: {
-    padding: '24px !important',
+    padding: '0px !important',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -259,14 +258,13 @@ const useComponentStyles = makeStyles((theme) => ({
   },
   zoomableImageFull: {
     maxWidth: '100%',
-    maxHeight: '90vh',
+    maxHeight: '100%',
     objectFit: 'contain',
   },
   zoomableImageCloseButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    color: 'white',
+    // top: 8,
+    // right: 8,
     zIndex: 1,
   },
 }));

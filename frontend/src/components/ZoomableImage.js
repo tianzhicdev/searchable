@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, IconButton } from '@material-ui/core';
+import { Dialog, DialogContent, Button } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import useComponentStyles from '../themes/componentStyles';
 
@@ -31,14 +31,10 @@ const ZoomableImage = ({ src, alt, style, className }) => {
         maxWidth="lg"
         classes={{ paper: classes.zoomableImageDialog }}
       >
-        <IconButton 
-          className={classes.zoomableImageCloseButton} 
+        <DialogContent 
+          className={classes.zoomableImageContent}
           onClick={handleClose}
-          aria-label="close"
         >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent className={classes.zoomableImageContent}>
           <img 
             src={src} 
             alt={alt} 
