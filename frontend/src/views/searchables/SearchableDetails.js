@@ -204,8 +204,9 @@ const SearchableDetails = () => {
         setPaymentDialogOpen(true);
         checkPaymentStatus(response.data.id);
       } else if (invoiceType === 'stripe' && response.data.url) {
+        // window.open(response.data.url, '_blank');
         // Open Stripe checkout URL in a new tab
-        window.open(response.data.url, '_blank');
+        window.location.href = response.data.url;
         
         // If we have a session_id, set up polling for Stripe payment status
         if (response.data.session_id) {
