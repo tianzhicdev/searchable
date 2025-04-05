@@ -95,8 +95,7 @@ const Searchables = () => {
   const handleLogout = () => {
     console.log(account.token);
     
-    axios
-        .post(configData.API_SERVER + 'users/logout', {token: `${account.token}`}, { headers: { Authorization: `${account.token}` } })
+    backend.post('users/logout', {token: `${account.token}`})
         .then(function (response) {
             // Clear search state on logout
             localStorage.removeItem('searchablesPage');

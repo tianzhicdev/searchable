@@ -18,6 +18,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import LocationOnIcon from '@material-ui/icons/LocationOn';
 import { setLocation, setLocationError, setLocationLoading } from '../../store/locationReducer';
 import { compressImage, fileToDataURL } from '../../utils/imageCompression';
+import backend from '../utilities/Backend';
 
 // Fix for default icon issue in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -302,15 +303,9 @@ const PublishSearchables = () => {
       };
       
       // Send the request with JSON data
-      const response = await axios.post(
-        configData.API_SERVER + 'v1/searchable/create',
-        searchableData,
-        {
-          headers: {
-            'Authorization': `${account.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await backend.post(
+        'v1/searchable/create',
+        searchableData
       );
       
       setSuccess(true);

@@ -100,9 +100,7 @@ const Profile = () => {
     setProfileLoading(true);
     
     try {
-      const response = await axios.get(`${configData.API_SERVER}profile`, {
-        headers: { Authorization: `${account.token}` }
-      });
+      const response = await backend.get('v1/terminal');
       
       console.log("Profile data response:", response.data);
       setProfileData(response.data);
@@ -138,15 +136,9 @@ const Profile = () => {
     setWithdrawalError(null);
     
     try {
-      const response = await axios.post(
-        `${configData.API_SERVER}withdrawal`,
-        { invoice: invoice.trim() },
-        {
-          headers: {
-            Authorization: `${account.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+      const response = await backend.post(
+        'withdrawal',
+        { invoice: invoice.trim() }
       );
       
       console.log('Withdrawal response:', response.data);
@@ -213,11 +205,11 @@ const Profile = () => {
           </Button>
         </div>
         <div>
-          <IconButton 
+          <Button 
             onClick={handleMenuOpen}
           >
             <MoreVertIcon />
-          </IconButton>
+          </Button>
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}

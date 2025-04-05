@@ -757,11 +757,29 @@ class GetUserTerminal(Resource):
                 return {"error": str(e)}, 500
 
 
-@rest_api.route('/api/v1/terminal', methods=['PUT'])
-class UpdateUserTerminal(Resource):
+@rest_api.route('/api/v1/terminal', methods=['GET', 'PUT'])
+class UserTerminal(Resource):
     """
-    Creates or updates terminal data for the authenticated user
+    Retrieves, creates or updates terminal data for the authenticated user
     """
+    @token_required
+    def get(self, current_user):
+        with searchable_latency.labels('get_terminal_v1').time():
+            try:
+                # Get profile data using the helper function
+                terminal_data = get_terminal(current_user.id)
+                
+                if not terminal_data:
+                    searchable_requests.labels('get_terminal_v1', 'GET', 404).inc()
+                    return {"error": "Terminal not found"}, 404
+                
+                searchable_requests.labels('get_terminal_v1', 'GET', 200).inc()
+                return terminal_data, 200
+                
+            except Exception as e:
+                searchable_requests.labels('get_terminal_v1', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+    
     @token_required
     def put(self, current_user):
         with searchable_latency.labels('update_terminal').time():

@@ -6,8 +6,8 @@ import { Card, CardContent, Typography, Divider, Grid, Button, Dialog,
 import Rating from '@material-ui/lab/Rating';
 import PropTypes from 'prop-types';
 import { Box, Paper } from '@material-ui/core';
-import axios from 'axios';
 import configData from '../../config';
+import Backend from '../utilities/Backend';
 
 const Payment = ({ payment }) => {
     const account = useSelector((state) => state.account);
@@ -40,27 +40,16 @@ const Payment = ({ payment }) => {
         // API call to update rating and review
         const updateRating = async () => {
             try {
-                const headers = {
-                    'Content-Type': 'application/json'
+                const payload = {
+                    rating: ratingValue,
+                    review: reviewText
                 };
                 
-                // Add authorization header if user is logged in
-                if (account && account.token) {
-                    headers['Authorization'] = account.token;
-                } else if (visitorId) {
-                    headers['X-Visitor-ID'] = visitorId;
-                }
-                
-                const response = await axios.put(
-                    `${configData.API_SERVER}kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`, 
-                    {
-                        rating: ratingValue,
-                        review: reviewText
-                    },
-                    { headers }
+                await Backend.put(
+                    `kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`,
+                    payload
                 );
                 
-                // Axios automatically throws errors for non-2xx responses
                 console.log('Rating and review updated successfully');
             } catch (error) {
                 console.error('Error updating rating and review:', error);
@@ -76,26 +65,15 @@ const Payment = ({ payment }) => {
         // API call to update tracking number
         const updateTracking = async () => {
             try {
-                const headers = {
-                    'Content-Type': 'application/json'
+                const payload = {
+                    tracking: trackingNumber
                 };
                 
-                // Add authorization header if user is logged in
-                if (account && account.token) {
-                    headers['Authorization'] = account.token;
-                } else if (visitorId) {
-                    headers['X-Visitor-ID'] = visitorId;
-                }
-                
-                const response = await axios.put(
-                    `${configData.API_SERVER}kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`, 
-                    {
-                        tracking: trackingNumber
-                    },
-                    { headers }
+                await Backend.put(
+                    `kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`,
+                    payload
                 );
                 
-                // Axios automatically throws errors for non-2xx responses
                 console.log('Tracking information updated successfully');
             } catch (error) {
                 console.error('Error updating tracking:', error);

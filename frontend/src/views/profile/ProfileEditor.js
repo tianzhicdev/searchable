@@ -4,8 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, 
   TextField, Button, CircularProgress, Typography, Snackbar, Alert
 } from '@material-ui/core';
-import axios from 'axios';
-import configData from '../../config';
+import Backend from '../utilities/Backend';
 import { SET_USER } from '../../store/actions';
 import useComponentStyles from '../../themes/componentStyles';
 
@@ -50,9 +49,7 @@ const ProfileEditor = () => {
     setFetchLoading(true);
     
     try {
-      const response = await axios.get(`${configData.API_SERVER}v1/terminal`, {
-        headers: { Authorization: `${account.token}` }
-      });
+      const response = await Backend.get('v1/terminal');
       
       if (response.data) {
         setProfileData({
@@ -86,19 +83,11 @@ const ProfileEditor = () => {
     setError(null);
     
     try {
-      const response = await axios.put(
-        `${configData.API_SERVER}v1/terminal`,
-        profileData,
-        {
-          headers: {
-            Authorization: `${account.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await Backend.put('v1/terminal', profileData);
+      
       // Check if the response is successful
-      if (!response || !response.data || response.status !== 200) {
-        throw new Error(response?.data?.message || 'Failed to update profile. Server returned an invalid response.');
+      if (!response || !response.data) {
+        throw new Error('Failed to update profile. Server returned an invalid response.');
       }
       
       // Check if the response contains the expected data

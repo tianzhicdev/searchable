@@ -311,14 +311,9 @@ const SearchableDetails = () => {
     
     setIsRemoving(true);
     try {
-      await axios.put(
-        `${configData.API_SERVER}v1/searchable/remove/${id}`,
-        {},
-        {
-          headers: {
-            Authorization: `${account.token}`
-          }
-        }
+      await backend.put(
+        `v1/searchable/remove/${id}`,
+        {}
       );
       showAlert("Item removed successfully");
       history.push('/searchables');
