@@ -12,6 +12,7 @@ import theme from './themes';
 // project imports
 import StateDebugger from './components/StateDebugger';
 import Terminal from './views/utilities/Terminal';
+import Footer from './components/Footer';
 //-----------------------|| APP ||-----------------------//
 
 const App = () => {
@@ -28,6 +29,7 @@ const App = () => {
                         <Routes />
                     </Container>
                 </Box>
+                <Footer />
             </ThemeProvider>
         </StyledEngineProvider>
     );

@@ -274,6 +274,15 @@ const useComponentStyles = makeStyles((theme) => ({
     // right: 8,
     zIndex: 1,
   },
+  
+  footer: {
+    borderTop: theme.borders.main,
+    backgroundColor: theme.palette.background.paper,
+    marginTop: 'auto',
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover
+    }
+  },
 }));
 
 export default useComponentStyles; 

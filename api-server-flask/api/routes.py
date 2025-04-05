@@ -224,7 +224,6 @@ class Login(Resource):
 
         _email = req_data.get("email")
         _password = req_data.get("password")
-        print(f"Email: {_email}, Password: {_password}")
 
         user_exists = Users.get_by_email(_email)
 

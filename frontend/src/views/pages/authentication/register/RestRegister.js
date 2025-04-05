@@ -222,7 +222,7 @@ const RestRegister = ({ ...others }) => {
                                         />
                                     }
                                     label={
-                                            <Typography variant="subtitle1" component={Link} to="#" className={classes.textLink}>
+                                            <Typography variant="subtitle1" component={Link} to="/terms-and-conditions" className={classes.textLink}>
                                             Agree with Terms & Condition.
                                             </Typography>
                                     }   

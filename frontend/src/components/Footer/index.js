@@ -1,0 +1,27 @@
+import React from 'react';
+import { Box, Typography, Link, Container } from '@material-ui/core';
+// import useComponentStyles from '../../themes/componentStyles';
+
+const Footer = () => {
+  const currentYear = new Date().getFullYear();
+//   const classes = useComponentStyles();
+  
+  return (
+    <Box component="footer" >
+      <Container maxWidth="lg">
+        <Typography variant="body2" color="textSecondary" align="center" style={{ padding: '16px 0' }}>
+          {'Copyright © '}
+            bit-bid.com
+            {' '}
+          {currentYear}
+          {' | '}
+          <Link color="inherit" href="/faq" underline="hover">
+            FAQ
+          </Link>
+        </Typography>
+      </Container>
+    </Box>
+  );
+};
+
+export default Footer; 
