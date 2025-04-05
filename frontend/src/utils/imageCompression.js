@@ -43,30 +43,61 @@ export const compressImage = (file, maxSizeKB = 200, maxWidth = 1200, maxHeight 
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Start with high quality
-        let quality = 0.9;
-        const mime = file.type || 'image/jpeg';
+        // Convert to Blob with fixed quality
+        let mime = file.type || 'image/jpeg';
         
-        // Function to compress with different quality settings
-        const tryCompression = (currentQuality) => {
-          canvas.toBlob((blob) => {
-            if (blob.size <= maxSizeKB * 1024 || currentQuality <= 0.1) {
-              // Create a new file from the blob
-              const compressedFile = new File([blob], file.name, {
+        // Force JPEG conversion for AVIF and other formats that don't compress well with canvas
+        if (mime === 'image/avif' || mime === 'image/webp' || mime === 'image/gif') {
+          mime = 'image/jpeg';
+        }
+        
+        // Use a binary search approach to find optimal quality
+        let minQuality = 0.1;
+        let maxQuality = 1.0;
+        let bestQuality = 0.7; // Start with a reasonable default
+        let bestBlob = null;
+        
+        const findOptimalQuality = (attempt = 0, maxAttempts = 5) => {
+          if (attempt >= maxAttempts) {
+            // Use the best blob we've found so far
+            if (bestBlob) {
+              const compressedFile = new File([bestBlob], file.name, {
                 type: mime,
                 lastModified: new Date().getTime()
               });
-              
               resolve(compressedFile);
             } else {
-              // Try with lower quality
-              tryCompression(currentQuality - 0.1);
+              // Fallback to a low quality if we somehow didn't find any suitable blob
+              canvas.toBlob((blob) => {
+                const compressedFile = new File([blob], file.name, {
+                  type: mime,
+                  lastModified: new Date().getTime()
+                });
+                resolve(compressedFile);
+              }, mime, 0.5);
             }
-          }, mime, currentQuality);
+            return;
+          }
+          
+          canvas.toBlob((blob) => {
+            console.log(`Attempt ${attempt+1}: Quality ${bestQuality.toFixed(2)}, Size: ${(blob.size / 1024).toFixed(2)}KB`);
+            
+            if (blob.size <= maxSizeKB * 1024) {
+              // This quality works, but we might be able to increase it
+              bestBlob = blob;
+              minQuality = bestQuality;
+              bestQuality = (maxQuality + bestQuality) / 2;
+            } else {
+              // Too large, decrease quality
+              maxQuality = bestQuality;
+              bestQuality = (minQuality + bestQuality) / 2;
+            }
+            
+            findOptimalQuality(attempt + 1, maxAttempts);
+          }, mime, bestQuality);
         };
         
-        // Start compression attempts
-        tryCompression(quality);
+        findOptimalQuality();
       };
       
       img.onerror = (error) => {
