@@ -359,7 +359,7 @@ def check_payment(invoice_id):
                     INSERT INTO kv (type, pkey, fkey, data)
                     VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
                     ON CONFLICT (type, pkey, fkey) 
-                    DO UPDATE SET data = {Json(payment_record)}
+                    DO NOTHING
                 """, commit=True, connection=conn)
                 cur.close()
                 conn.close()
@@ -417,7 +417,7 @@ def check_stripe_payment(session_id):
                     INSERT INTO kv (type, pkey, fkey, data)
                     VALUES ('payment', '{session_id}', '{searchable_id}', {Json(payment_record)})
                     ON CONFLICT (type, pkey, fkey) 
-                    DO UPDATE SET data = {Json(payment_record)}
+                    DO NOTHING
                 """, commit=True, connection=conn)
                 cur.close()
                 conn.close()

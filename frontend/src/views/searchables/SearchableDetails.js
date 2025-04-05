@@ -731,7 +731,7 @@ const SearchableDetails = () => {
             <Box sx={{ border: '1px solid', borderColor: 'divider', padding: 2, marginTop: 2, width: '100%' }}>
               
               <Typography variant="body1" gutterBottom align="left">
-                Amount: {invoice.amount} Sats
+                Amount: {SearchableItem?.payloads?.public?.price || invoice.amount} Sats
               </Typography>
               
               <Typography variant="body1" gutterBottom align="left">
