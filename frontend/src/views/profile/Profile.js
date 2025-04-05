@@ -225,7 +225,7 @@ const Profile = () => {
           >
             <MenuItem onClick={() => {
               handleMenuClose();
-              history.push('/searchables?internalSearchTerm=terminal_id:' + account.user._id);
+              history.push('/searchables?filters=' + encodeURIComponent(JSON.stringify({ terminal_id: account.user._id })));
             }}>
               View Your Items
             </MenuItem>

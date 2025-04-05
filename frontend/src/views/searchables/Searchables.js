@@ -23,9 +23,28 @@ const Searchables = () => {
     return urlParams.get('searchTerm') || localStorage.getItem('searchTerm') || '';
   });
 
-  const [internalSearchTerm, setInternalSearchTerm] = useState(() => {
+  const [filters, setFilters] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('internalSearchTerm') || localStorage.getItem('internalSearchTerm') || '';
+    const urlFilters = urlParams.get('filters');
+    
+    if (urlFilters) {
+      try {
+        return JSON.parse(decodeURIComponent(urlFilters));
+      } catch (e) {
+        console.error("Error parsing filters from URL:", e);
+      }
+    }
+    
+    const storedFilters = localStorage.getItem('searchablesFilters');
+    if (storedFilters) {
+      try {
+        return JSON.parse(storedFilters);
+      } catch (e) {
+        console.error("Error parsing filters from localStorage:", e);
+      }
+    }
+    
+    return {};
   });
 
   const [maxDistance, setMaxDistance] = useState(() => {
@@ -113,7 +132,7 @@ const Searchables = () => {
   // Handle search button click
   const handleSearchButtonClick = () => {
     localStorage.setItem('searchTerm', searchTerm);
-    localStorage.setItem('internalSearchTerm', internalSearchTerm);
+    localStorage.setItem('searchablesFilters', JSON.stringify(filters));
     localStorage.setItem('searchablesMaxDistance', maxDistance);
     // Force re-render of SearchableList by updating the search criteria
     setSearchTerm(prevTerm => {
@@ -205,7 +224,7 @@ const Searchables = () => {
         criteria={{
           searchTerm: searchTerm,
           distance: maxDistance,
-          internalSearchTerm: internalSearchTerm
+          filters: filters
         }}
       />
 

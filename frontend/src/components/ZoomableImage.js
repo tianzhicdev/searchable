@@ -43,7 +43,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
         </DialogContent>
       </Dialog>
     </>
-  );
+);
 };
 
-export default ZoomableImage; 
+export default ZoomableImage;

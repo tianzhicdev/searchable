@@ -212,11 +212,13 @@ const useComponentStyles = makeStyles((theme) => ({
     padding: theme.spacing(4),
     color: theme.palette.text.secondary
   },
+  
   pagination: {
     display: 'flex',
     justifyContent: 'center',
     margin: theme.spacing(2, 0)
   },
+  
   paginationButton: {
     fontWeight: 'bold',
     color: theme.palette.text.primary,
@@ -237,6 +239,7 @@ const useComponentStyles = makeStyles((theme) => ({
     justifyContent: 'flex-end',
     alignItems: 'center'
   },
+  
   userInfo: {
     display: 'flex',
     alignItems: 'center',
@@ -244,11 +247,13 @@ const useComponentStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(3),
     width: '100%'
   },
+  
   zoomableImageDialog: {
     boxShadow: 'none',
     borderRadius: 0,
     position: 'relative',
   },
+  
   zoomableImageContent: {
     padding: '0px !important',
     display: 'flex',
@@ -256,11 +261,13 @@ const useComponentStyles = makeStyles((theme) => ({
     alignItems: 'center',
     overflow: 'hidden',
   },
+  
   zoomableImageFull: {
     maxWidth: '100%',
     maxHeight: '100%',
     objectFit: 'contain',
   },
+  
   zoomableImageCloseButton: {
     position: 'absolute',
     // top: 8,

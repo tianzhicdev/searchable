@@ -70,7 +70,7 @@ const SearchableList = ({ criteria }) => {
         handleSearch(1)
       }
     }
-  }, [location.latitude, location.longitude, criteria.searchTerm, criteria.distance, criteria.internalSearchTerm]);
+  }, [location.latitude, location.longitude, criteria.searchTerm, criteria.distance, criteria.filters]);
 
   // Function to handle search
   const handleSearch = async (page = 1) => {
@@ -91,8 +91,7 @@ const SearchableList = ({ criteria }) => {
           page_number: page,
           page_size: calculateOptimalPageSize(),
           query_term: criteria.searchTerm,
-          internal_search_term: criteria.internalSearchTerm,
-          filters: {},
+          filters: criteria.filters || {},
           use_location: criteria.distance == 100000000 ? false : true
         }
       });
