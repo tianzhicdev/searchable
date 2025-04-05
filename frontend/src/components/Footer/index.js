@@ -18,6 +18,11 @@ const Footer = () => {
           <Link color="inherit" href="/faq" underline="hover">
             FAQ
           </Link>
+
+          {' | '}
+          <Link color="inherit" href="/contact-info" underline="hover">
+            Contact Information
+          </Link>
         </Typography>
       </Container>
     </Box>
