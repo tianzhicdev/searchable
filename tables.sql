@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS kv (
     data JSONB NOT NULL,
     PRIMARY KEY (type, pkey, fkey)
 );
+-- Index on type for faster lookups
+CREATE INDEX IF NOT EXISTS idx_kv_type ON kv(type);
+
 
 -- Index on pkey for faster lookups
 CREATE INDEX IF NOT EXISTS idx_kv_pkey ON kv(pkey);

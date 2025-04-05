@@ -16,6 +16,7 @@ import PaymentList from '../payments/PaymentList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
+import ZoomableImage from '../../components/ZoomableImage';
 
 const SearchableDetails = () => {
 
@@ -575,7 +576,7 @@ const SearchableDetails = () => {
                     <Grid container spacing={1}>
                       {SearchableItem.payloads.public.images.map((image, index) => (
                         <Grid item xs={12} sm={6} key={index}>
-                          <img 
+                          <ZoomableImage 
                             src={`data:image/jpeg;base64,${image}`} 
                             alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
                             style={{ maxWidth: '100%', height: 'auto' }}

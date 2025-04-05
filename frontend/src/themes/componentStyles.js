@@ -244,6 +244,31 @@ const useComponentStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(3),
     width: '100%'
   },
+  zoomableImageDialog: {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    boxShadow: 'none',
+    borderRadius: 0,
+    position: 'relative',
+  },
+  zoomableImageContent: {
+    padding: '24px !important',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  zoomableImageFull: {
+    maxWidth: '100%',
+    maxHeight: '90vh',
+    objectFit: 'contain',
+  },
+  zoomableImageCloseButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    color: 'white',
+    zIndex: 1,
+  },
 }));
 
 export default useComponentStyles; 
