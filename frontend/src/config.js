@@ -21,6 +21,7 @@ const config = {
     basename: '',
     dashboard: '/searchables',
     defaultPath: '/searchables',
+    loginPath: '/login',
     fontFamily: `'Roboto', sans-serif`,
     borderRadius: 12,
     API_SERVER: BACKEND_SERVER,

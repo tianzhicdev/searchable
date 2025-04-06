@@ -1225,14 +1225,57 @@ class CreateInvoiceV1(Resource):
                     searchable_data = result[0]
                     cur.close()
                     conn.close()
+                    # todo: amount should be caculated
+                    # Calculate amount based on pricing mode
+                    pricing_mode = searchable_data.get('payloads', {}).get('public', {}).get('pricingMode')
+                    
+                    # Initialize description variable for invoice detail
+                    description_parts = []
+                    
+                    if pricing_mode == 'variations':
+                        # For variations mode, calculate total from selections
+                        if 'selections' not in data:
+                            return {"error": "Selections are required for variation pricing"}, 400
+                        
+                            # Calculate total price from selections
+                        amount = 0
+                        selections = data.get('selections', [])
+                        selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
+                        
+                        # Create a map of selectable IDs to prices for quick lookup
+                        selectable_prices = {item['id']: item['price'] for item in selectables}
+                        # Create a map of selectable IDs to names
+                        selectable_names = {item['id']: item['name'] for item in selectables}
+                        
+                        for selection in selections:
+                            selectable_id = selection.get('id')
+                            quantity = int(selection.get('quantity', 0))
+                            
+                            if selectable_id in selectable_prices:
+                                item_price = selectable_prices[selectable_id]
+                                amount += item_price * quantity
+                                
+                                # Add description part for this item
+                                item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
+                                description_parts.append(f"[{item_name}]({quantity})@{item_price}")
+                            else:
+                                return {"error": f"Invalid selectable ID: {selectable_id}"}, 400
+                    else:
+                        # For single pricing mode, use the price from searchable data
+                        amount = int(searchable_data.get('payloads', {}).get('public', {}).get('price', 0))
+                        
+                        # Get product name for invoice description
+                        item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
+                        description_parts.append(f"[{item_name}](1)@{amount}")
 
-                    amount = int(searchable_data.get('payloads', {}).get('public', {}).get('price', 0))
                     if amount <= 0:
                         return {"error": "Invalid price for this searchable"}, 400
+                        
+                    # Create the complete description string
+                    invoice_description = "/".join(description_parts)
                 except (ValueError, TypeError, AttributeError):
                     return {"error": "Invalid price format"}, 400
                 # ======= end of get searchable data =======
-
                 
                 if invoice_type == 'lightning':
                     
@@ -1241,7 +1284,7 @@ class CreateInvoiceV1(Resource):
                     try:
                         # Use our decode function to get invoice details without paying
                         response = create_lightning_invoice(
-                            amount=amount
+                            amount=amount# Add the description to the lightning invoice
                         )
                     except Exception as e:
                         searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
@@ -1265,7 +1308,8 @@ class CreateInvoiceV1(Resource):
                         "invoice_id": response['id'],
                         "address": address,
                         "tel": tel,
-                        "invoice_type": "lightning"
+                        "invoice_type": "lightning",
+                        "description": invoice_description  # Add description to the stored record
                     }
                     
                     execute_sql(cur, f"""
@@ -1315,7 +1359,7 @@ class CreateInvoiceV1(Resource):
                             'price_data': {
                                 'currency': 'usd',
                                 'product_data': {
-                                    'name': item_name,
+                                    'name': item_name, # Add description to the Stripe product
                                 },
                                 'unit_amount': amount_cents,
                             },
@@ -1339,7 +1383,8 @@ class CreateInvoiceV1(Resource):
                         "invoice_id": session.id,
                         "address": address,
                         "tel": tel,
-                        "invoice_type": "stripe"
+                        "invoice_type": "stripe",
+                        "description": invoice_description  # Add description to the stored record
                     }
                     
                     try:
@@ -1364,3 +1409,61 @@ class CreateInvoiceV1(Resource):
                 print(f"Error creating invoice: {str(e)}")
                 searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
                 return {"error": str(e)}, 500
+            
+# BTC price cache
+btc_price_cache = {
+    'price': None,
+    'timestamp': 0
+}
+
+@rest_api.route('/api/v1/get-btc-price', methods=['GET'])
+class GetBtcPrice(Resource):
+    """
+    Retrieves the current BTC price in USD with caching
+    """
+    def get(self):
+        with searchable_latency.labels('get_btc_price').time():
+            try:
+                current_time = int(time.time())
+                cache_ttl = 600  # 10 minutes in seconds
+                
+                # Check if we have a cached price that's still valid
+                if btc_price_cache['price'] and (current_time - btc_price_cache['timestamp'] < cache_ttl):
+                    searchable_requests.labels('get_btc_price', 'GET', 200).inc()
+                    return {
+                        'price': btc_price_cache['price'],
+                        'cached': True,
+                        'cache_time': btc_price_cache['timestamp']
+                    }, 200
+                
+                # If no valid cache, fetch new price
+                response = requests.get(
+                    'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data and 'bitcoin' in data and 'usd' in data['bitcoin']:
+                        btc_price = data['bitcoin']['usd']
+                        
+                        # Update cache
+                        btc_price_cache['price'] = btc_price
+                        btc_price_cache['timestamp'] = current_time
+                        
+                        searchable_requests.labels('get_btc_price', 'GET', 200).inc()
+                        return {
+                            'price': btc_price,
+                            'cached': False
+                        }, 200
+                    else:
+                        searchable_requests.labels('get_btc_price', 'GET', 500).inc()
+                        return {"error": "Invalid response format from price API"}, 500
+                else:
+                    searchable_requests.labels('get_btc_price', 'GET', response.status_code).inc()
+                    return {"error": f"Failed to fetch BTC price: {response.status_code}"}, response.status_code
+                    
+            except Exception as e:
+                print(f"Error fetching BTC price: {str(e)}")
+                searchable_requests.labels('get_btc_price', 'GET', 500).inc()
+                return {"error": str(e)}, 500
+

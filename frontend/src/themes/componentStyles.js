@@ -40,7 +40,7 @@ const useComponentStyles = makeStyles((theme) => ({
   
   // Form elements
   formGroup: {
-    marginBottom: theme.spacing(3)
+    marginBottom: theme.spacing(1)
   },
   formLabel: {
     marginBottom: theme.spacing(1),
@@ -79,7 +79,7 @@ const useComponentStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
     color: theme.palette.text.primary,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: '0px',
     cursor: 'pointer',
     '&:hover': {
       backgroundColor: theme.palette.action.hover
@@ -98,7 +98,7 @@ const useComponentStyles = makeStyles((theme) => ({
     width: '100px',
     height: '100px',
     overflow: 'hidden',
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: '0px',
     border: theme.borders.main
   },
   previewImage: {
@@ -124,7 +124,7 @@ const useComponentStyles = makeStyles((theme) => ({
     width: '100%',
     marginBottom: theme.spacing(2),
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
+    borderRadius: '0px'
   },
   mapLoading: {
     height: '400px',
@@ -134,7 +134,7 @@ const useComponentStyles = makeStyles((theme) => ({
     justifyContent: 'center',
     backgroundColor: theme.palette.background.paper,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
+    borderRadius: '0px'
   },
   mapInstruction: {
     marginBottom: theme.spacing(2),
@@ -163,7 +163,7 @@ const useComponentStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.error.light,
     color: theme.palette.error.dark,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: '0px',
     marginBottom: theme.spacing(2)
   },
   successMessage: {
@@ -171,7 +171,7 @@ const useComponentStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.success.light,
     color: theme.palette.success.dark,
     border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: '0px',
     marginBottom: theme.spacing(2)
   },
 
@@ -283,6 +283,7 @@ const useComponentStyles = makeStyles((theme) => ({
       backgroundColor: theme.palette.action.hover
     }
   },
+
 }));
 
 export default useComponentStyles; 

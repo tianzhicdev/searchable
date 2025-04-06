@@ -23,8 +23,6 @@ const Register = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-                <Grid item xs={12} direction="column" justifyContent="flex-end" sx={{ minHeight: '100vh' }}>
-                    <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: 'calc(100vh - 68px)' }}>
                         <Grid item sx={{ m: { xs: 1, sm: 3 }, mb: 0 }}>
                                 <Grid container spacing={2} alignItems="center" justifyContent="center">
                                     <Grid item sx={{ mb: 3 }}>
@@ -43,9 +41,9 @@ const Register = () => {
                                                 <Stack alignItems="center" justifyContent="center" spacing={1}>
                                                     <Typography
                                                         color={theme.palette.secondary.main}
-                                                        gutterBottom
+                                                        // gutterBottom
                                                         variant={matchDownSM ? 'h3' : 'h2'}
-                                                        className={classes.sectionTitle}
+                                                        // className={classes.sectionTitle}
                                                     >
                                                         Sign up
                                                     </Typography>
@@ -70,8 +68,6 @@ const Register = () => {
                                     </Grid>
                                 </Grid>
                         </Grid>
-                    </Grid>
-                </Grid>
     );
 };
 

@@ -22,7 +22,7 @@ const ContactInfo = () => {
                     If you have any questions or concerns, please contact us at:
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    Email: admin@bit-bid.com
+                    Email: admin@silkroadonlightning.com
                 </Typography>
                 <Typography variant="body1" paragraph>
                     Phone: +1 (412) 961-4793

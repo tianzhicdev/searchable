@@ -11,14 +11,14 @@ const Footer = () => {
       <Container maxWidth="lg">
         <Typography variant="body2" color="textSecondary" align="center" style={{ padding: '16px 0' }}>
           {'Copyright © '}
-            bit-bid.com
+            silkroadonlightning.com
             {' '}
           {currentYear}
-          {' | '}
+        </Typography>
+        <Typography variant="body2" color="textSecondary" align="center" style={{ paddingBottom: '16px' }}>
           <Link color="inherit" href="/faq" underline="hover">
             FAQ
           </Link>
-
           {' | '}
           <Link color="inherit" href="/contact-info" underline="hover">
             Contact Information

@@ -351,6 +351,7 @@ def check_payment(invoice_id):
                     "searchable_id": str(searchable_id),
                     "address": invoice_record.get('address', ''),
                     "tel": invoice_record.get('tel', ''),
+                    "description": invoice_record.get('description', ''),
                 }
                 
                 conn = get_db_connection()
@@ -408,7 +409,8 @@ def check_stripe_payment(session_id):
                     "searchable_id": str(searchable_id),
                     "address": invoice_record.get('address', ''),
                     "tel": invoice_record.get('tel', ''),
-                    "payment_type": "stripe"
+                    "payment_type": "stripe",
+                    "description": invoice_record.get('description', '')
                 }
                 
                 conn = get_db_connection()

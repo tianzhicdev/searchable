@@ -28,7 +28,8 @@ const PaymentList = ({ payments = [], transformed_input = [], loading = false, e
           rating: payment.rating,
           review: payment.review,
           address: payment.address,
-          tel: payment.tel
+          tel: payment.tel,
+          description: payment.description
         },
         private: {
           buyer_id: payment.buyer_id,

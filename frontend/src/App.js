@@ -23,13 +23,14 @@ const App = () => {
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
-                <Box display="flex" justifyContent="center" width="100%">
-                    <Container maxWidth="md" style={{ width: '100%' }}>
+                {/* <Box display="flex" justifyContent="center" width="100%"> */}
+                    <Container maxWidth="md" style={{ width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Terminal />
                         <Routes />
+
+                        <Footer  />
                     </Container>
-                </Box>
-                <Footer />
+                {/* </Box> */}
             </ThemeProvider>
         </StyledEngineProvider>
     );

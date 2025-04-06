@@ -11,7 +11,7 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
-  CircularProgress, Divider, IconButton, MenuItem
+  CircularProgress, Divider, IconButton, MenuItem, Switch
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -56,6 +56,12 @@ const PublishSearchables = () => {
     price: '',
     businessType: 'personal'
   });
+  
+  // Add new state for selectables
+  const [selectables, setSelectables] = useState([]);
+  const [newSelectable, setNewSelectable] = useState({ name: '', price: '' });
+  // Add pricing mode state
+  const [pricingMode, setPricingMode] = useState('single'); // 'single' or 'variations'
   
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
@@ -263,6 +269,41 @@ const PublishSearchables = () => {
     setPreviewImages(newPreviews);
   };
   
+  // Add handler for selectables
+  const handleSelectableChange = (e) => {
+    const { name, value } = e.target;
+    setNewSelectable({
+      ...newSelectable,
+      [name]: value
+    });
+  };
+  
+  // Add selectable to the list
+  const addSelectable = () => {
+    if (newSelectable.name.trim() && newSelectable.price) {
+      setSelectables([
+        ...selectables,
+        { 
+          id: Date.now(), // temporary id for frontend tracking
+          name: newSelectable.name,
+          price: parseInt(newSelectable.price)
+        }
+      ]);
+      // Reset the input fields
+      setNewSelectable({ name: '', price: '' });
+    }
+  };
+  
+  // Remove selectable from the list
+  const removeSelectable = (id) => {
+    setSelectables(selectables.filter(item => item.id !== id));
+  };
+  
+  // Add handler for pricing mode change
+  const handlePricingModeChange = (event) => {
+    setPricingMode(event.target.checked ? 'variations' : 'single');
+  };
+  
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -287,13 +328,15 @@ const PublishSearchables = () => {
             "meetupLocation": submissionData.meetupLocation,
             "latitude": submissionData.latitude,
             "longitude": submissionData.longitude,
-            "price": submissionData.price ? submissionData.price : null,
+            "price": pricingMode === 'single' ? submissionData.price ? submissionData.price : null : null,
             "businessType": submissionData.businessType,
             "use_location": submissionData.businessType === 'online' ? false : true,
             "images": previewImages.map(base64String => {
               // Remove the data:image/xxx;base64, prefix
               return base64String.split(',')[1];
             }),
+            "selectables": pricingMode === 'variations' ? selectables : [],
+            "pricingMode": pricingMode,
             "visibility": {
               "udf": "always_true",
               "data": {}
@@ -322,6 +365,7 @@ const PublishSearchables = () => {
       });
       setImages([]);
       setPreviewImages([]);
+      setSelectables([]); // Reset selectables too
       
       // Redirect to searchables page after a delay
       setTimeout(() => {
@@ -375,10 +419,9 @@ const PublishSearchables = () => {
   const fetchBtcPrice = async () => {
     setPriceLoading(true);
     try {
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+      const response = await backend.get(
+        'v1/get-btc-price'
       );
-      
       if (response.data && response.data.bitcoin && response.data.bitcoin.usd) {
         setBtcPrice(response.data.bitcoin.usd);
       }
@@ -430,7 +473,7 @@ const PublishSearchables = () => {
       <Grid item xs={12}>
         <Paper elevation={3} >
           <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={1}>
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
                   Title *
@@ -490,29 +533,124 @@ const PublishSearchables = () => {
                 />
               </Grid>
               
-              <Grid item xs={12} md={6} className={classes.formGroup}>
+              <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
-                  Price in Sats
+                  Pricing
                 </Typography>
-                <TextField
-                  fullWidth
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  size="small"
-                  type="number"
-                />
-                {usdPrice !== null && (
-                  <Typography variant="caption" className={classes.formHelp} style={{ marginTop: 4 }}>
-                    {priceLoading ? (
-                      <CircularProgress size={12} style={{ marginRight: 8 }} />
-                    ) : (
-                      `≈ ${formatUSD(usdPrice)} USD`
-                    )}
-                  </Typography>
-                )}
+                <Box display="flex" alignItems="center" mb={2}>
+                  {/* <Typography variant="body2">Single Price</Typography> */}
+                  <Box mx={1}>
+                    <Switch
+                      checked={pricingMode === 'variations'}
+                      onChange={handlePricingModeChange}
+                      // color="primary"
+                    />
+                  </Box>
+                  <Typography variant="body2">Product Variations</Typography>
+                </Box>
               </Grid>
+              
+              {pricingMode === 'single' && (
+                <Grid item xs={12} md={6} className={classes.formGroup}>
+                  <Typography variant="subtitle1" className={classes.formLabel}>
+                    Price in Sats
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    size="small"
+                    type="number"
+                  />
+                  {usdPrice !== null && (
+                    <Typography variant="caption" className={classes.formHelp} style={{ marginTop: 4 }}>
+                      {priceLoading ? (
+                        <CircularProgress size={12} style={{ marginRight: 8 }} />
+                      ) : (
+                        `≈ ${formatUSD(usdPrice)} USD`
+                      )}
+                    </Typography>
+                  )}
+                </Grid>
+              )}
+              
+              {pricingMode === 'variations' && (
+                <Grid item xs={12} className={classes.formGroup}>
+                  <Typography variant="subtitle1" className={classes.formLabel}>
+                    Product Variations
+                  </Typography>
+                  <Typography variant="caption" className={classes.formHelp}>
+                    Add different options for your product (size, color, etc.) with individual prices
+                  </Typography>
+                  
+                  <Box mt={2}>
+                    <TextField
+                      placeholder="Option Description"
+                      // variant="outlined"
+                      size="small"
+                      name="name"
+                      value={newSelectable.name}
+                      onChange={handleSelectableChange}
+                      fullWidth
+                    />
+                    <Box mt={1} display="flex" alignItems="center">
+                      <TextField
+                        placeholder="Price (Sats)"
+                        // variant="outlined"
+                        type="number"
+                        size="small"
+                        name="price"
+                        value={newSelectable.price}
+                        onChange={handleSelectableChange}
+                        style={{ marginRight: 16, flex: 1 }}
+                      />
+                      <Button 
+                        variant="contained" 
+                        color="primary"
+                        onClick={addSelectable}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                  </Box>
+                  
+                  {/* List of added selectables */}
+                  <Box mt={2}>
+                    {selectables.length > 0 ? (
+                      selectables.map((item) => (
+                        <Box 
+                          key={item.id} 
+                          display="flex" 
+                          alignItems="center" 
+                          p={1} 
+                          mb={1}
+                          border="1px solid #ff3c00"
+                          // borderRadius="4px"
+                        >
+                          <Typography variant="body2" style={{ flex: 2 }}>
+                            {item.name}
+                          </Typography>
+                          <Typography variant="body2" style={{ flex: 1 }}>
+                            {item.price} sats
+                          </Typography>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => removeSelectable(item.id)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="textSecondary">
+                        No variations added yet.
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+              )}
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
