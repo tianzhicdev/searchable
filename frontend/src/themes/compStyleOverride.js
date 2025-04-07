@@ -457,8 +457,13 @@ export function componentStyleOverrides(theme) {
                     border: `1px solid ${theme.colors.orangeMain}`,
                     position: 'fixed',
                     top: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
                     zIndex: 9999,
                     maxWidth: '95%',
+                    width: 'auto',
+                    minWidth: '300px',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
                 },
                 standardSuccess: {
                     backgroundColor: theme.colors.primaryDark,
