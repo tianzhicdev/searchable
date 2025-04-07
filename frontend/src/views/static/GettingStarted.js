@@ -1,7 +1,7 @@
 import React from 'react';
 
 // material-ui
-import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
+import { Typography, Paper, Box} from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 
 const GettingStarted = () => {
