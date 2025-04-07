@@ -28,6 +28,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    ports:
+      - "5005:5005"
     networks:
       - db_network
       - web_network
@@ -47,7 +49,9 @@ services:
     ports:
       - "3006:3006"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
+      # - ./nginx:/etc/nginx/conf.d
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - web_network
     depends_on: 
