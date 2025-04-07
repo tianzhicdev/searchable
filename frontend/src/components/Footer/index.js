@@ -23,6 +23,10 @@ const Footer = () => {
           <Link color="inherit" href="/contact-info" underline="hover">
             Contact Information
           </Link>
+          {' | '}
+          <Link color="inherit" href="/getting-started" underline="hover">
+            Getting Started
+          </Link>
         </Typography>
       </Container>
     </Box>
