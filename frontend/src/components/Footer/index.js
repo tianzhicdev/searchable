@@ -20,6 +20,10 @@ const Footer = () => {
             FAQ
           </Link>
           {' | '}
+          <Link color="inherit" href="/declaration" underline="hover">
+            About Us
+          </Link>
+          {' | '}
           <Link color="inherit" href="/contact-info" underline="hover">
             Contact Information
           </Link>

@@ -62,7 +62,7 @@ const GettingStarted = () => {
                     How do I get paid?
                 </Typography>
 
-                <Typography variant="body1" className={classes.itemDescription}>
+                <Typography variant="body1" paragraph>
                     You can withdraw your funds by visiting your profile and clicking the "Withdraw" button.
                 </Typography>
 

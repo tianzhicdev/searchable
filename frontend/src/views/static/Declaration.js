@@ -6,7 +6,7 @@ import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
 // project imports
 import useComponentStyles from '../../themes/componentStyles';
 
-//==============================|| DECLARATION PAGE ||==============================//
+//==============================|| ABOUT US PAGE ||==============================//
 
 const Declaration = () => {
     const classes = useComponentStyles();
@@ -16,59 +16,60 @@ const Declaration = () => {
                 {/* Header */}
                 <Box className={classes.header}>
                     <Typography variant="h2" gutterBottom>
-                        Declaration
+                        About Us
                     </Typography>
                 </Box>
 
                 {/* Introduction Section */}
                 <Typography variant="h4" className={classes.sectionTitle}>
-                    Introduction
+                    Our Mission
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    This declaration outlines the terms, conditions, and policies that govern the use of our platform. 
-                    By accessing or using our services, you acknowledge that you have read, understood, and agree to 
-                    be bound by the terms described in this document.
+                    Silk Road on Lightning is a marketplace that leverages the Lightning Network to provide 
+                    fast, secure, and low-cost transactions for our users. We aim to create a platform where 
+                    individuals and businesses can buy and sell goods and services with ease and confidence.
                 </Typography>
 
                 <Divider className={classes.divider} />
 
-                {/* Terms Section */}
+                {/* Vision Section */}
                 <Typography variant="h4" className={classes.sectionTitle}>
-                    Terms and Conditions
+                    Our Vision
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    All users must adhere to the following terms while using our platform. These terms are designed 
-                    to ensure a fair and safe environment for all participants.
+                    We envision a world where commerce is accessible to everyone, regardless of location or 
+                    background. By utilizing Bitcoin's Lightning Network, we're building a marketplace that 
+                    is global, efficient, and user-friendly.
                 </Typography>
                 
-                <Typography variant="h6" className={classes.itemTitle}>
-                    User Responsibilities
+                <Typography variant="h4" className={classes.itemTitle}>
+                    Core Values
                 </Typography>
-                <Typography variant="body2" className={classes.itemDescription}>
-                    Users are responsible for maintaining the confidentiality of their account information and for all 
-                    activities that occur under their account. Users agree to notify us immediately of any unauthorized 
-                    use of their account or any other breach of security.
+                <Typography variant="body1" paragraph>
+                    Our platform is built on the principles of transparency, security, and user empowerment. 
+                    We believe in providing a service that respects your privacy while offering the tools you 
+                    need to succeed in the digital marketplace.
                 </Typography>
 
                 <Divider className={classes.divider} />
 
-                {/* Privacy Section */}
+                {/* Team Section */}
                 <Typography variant="h4" className={classes.sectionTitle}>
-                    Privacy Policy
+                    Our Team
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    We respect your privacy and are committed to protecting your personal data. This privacy policy will 
-                    inform you how we look after your personal data when you visit our platform and tell you about your 
-                    privacy rights.
+                    We are a dedicated group of professionals passionate about Bitcoin, the Lightning Network, 
+                    and creating innovative solutions for e-commerce. Our team combines expertise in blockchain 
+                    technology, web development, and user experience design.
                 </Typography>
                 
-                <Typography variant="h6" className={classes.itemTitle}>
-                    Data Collection
+                <Typography variant="h4" className={classes.itemTitle}>
+                    Join Our Community
                 </Typography>
-                <Typography variant="body2" className={classes.itemDescription}>
-                    We collect information you provide directly to us when you create an account, update your profile, 
-                    or communicate with us. We may also collect certain information automatically when you use our platform, 
-                    including log data, device information, and cookies.
+                <Typography variant="body1" paragraph>
+                    We're building more than just a marketplace - we're creating a community of forward-thinking 
+                    individuals who believe in the power of decentralized commerce. Whether you're a buyer, seller, 
+                    or Bitcoin enthusiast, we welcome you to be part of our journey.
                 </Typography>
             </Paper>
     );
