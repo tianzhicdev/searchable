@@ -242,7 +242,7 @@ const PublishSearchables = () => {
         }
         
         // Compress image to maximum 50KB
-        const processedFile = await compressImage(file, 50); // Passing 50 as max size in KB
+        const processedFile = await compressImage(file,200); // Passing 50 as max size in KB
         validFiles.push(processedFile);
         
         // Create preview URL
