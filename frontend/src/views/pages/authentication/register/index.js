@@ -30,7 +30,7 @@ const Register = () => {
                     <Logo />
                 </RouterLink>
             </Grid>
-            <Grid item xs={12} width={'100%'} maxWidth={'100%'}>
+            <Grid item xs={12} width={'60%'} maxWidth={'100%'}>
                 <RestRegister />
             </Grid>
             <Grid item xs={12}>
