@@ -16,31 +16,29 @@ const Login = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-                                <Grid container spacing={2} alignItems="center" justifyContent="center">
-                                    
+    <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
         <Grid item sx={{ mb: 6 }}></Grid>
-        <Grid item sx={{ mb: 6 }}></Grid>
-                                    <Grid item sx={{ mb: 3 }}>
-                                        <RouterLink to="#">
-                                            <Logo />
-                                        </RouterLink>
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <RestLogin />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Grid item container direction="column" alignItems="center" xs={12}>
-                                            <Typography
-                                                component={RouterLink}
-                                                to="/register"
-                                                variant="subtitle1"
-                                                className={classes.textLink}
-                                            >
-                                                Don't have an account?
-                                            </Typography>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
+        <Grid item sx={{ mb: 3 }}>
+            <RouterLink to="#">
+                <Logo />
+            </RouterLink>
+        </Grid>
+        <Grid item xs={12} width={'100%'} maxWidth={'100%'}>
+            <RestLogin />
+        </Grid>
+        <Grid item xs={12}>
+            <Grid item container direction="column" alignItems="center" xs={12}>
+                <Typography
+                    component={RouterLink}
+                    to="/register"
+                    variant="subtitle1"
+                    className={classes.textLink}
+                >
+                    Don't have an account?
+                </Typography>
+            </Grid>
+        </Grid>
+    </Grid>
 
     );
 };

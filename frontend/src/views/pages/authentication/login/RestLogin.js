@@ -3,7 +3,6 @@ import { Link, useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TextField } from '@material-ui/core';
 import configData from '../../../../config';
-import Grid from '@material-ui/core/Grid';
 
 // material-ui
 import {
@@ -13,7 +12,6 @@ import {
     FormHelperText,
     IconButton,
     InputAdornment,
-    InputLabel,
 } from '@material-ui/core';
 
 // third party
@@ -23,20 +21,15 @@ import axios from 'axios';
 
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
-import AnimateButton from '../../../../ui-component/extended/AnimateButton';
 import { ACCOUNT_INITIALIZE } from './../../../../store/actions';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
-// centralized styles
-import useComponentStyles from '../../../../themes/componentStyles';
-
 //============================|| API JWT - LOGIN ||============================//
 
 const RestLogin = (props, { ...others }) => {
-    const classes = useComponentStyles();
     const dispatcher = useDispatch();
     const history = useHistory();
 
@@ -105,7 +98,11 @@ const RestLogin = (props, { ...others }) => {
             >
                 {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                     <form noValidate onSubmit={handleSubmit} {...others}>
-                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
+                        <FormControl 
+                            fullWidth 
+                            error={Boolean(touched.email && errors.email)}
+                            sx={{ mb: 2 }}
+                        >
                             <TextField
                                 id="outlined-adornment-email-login"
                                 type="email"
@@ -114,16 +111,19 @@ const RestLogin = (props, { ...others }) => {
                                 onBlur={handleBlur}
                                 onChange={handleChange}
                                 placeholder="Enter your email"
-                                className={classes.textInput}
                             />
                             {touched.email && errors.email && (
-                                <FormHelperText error id="standard-weight-helper-text-email-login" className={classes.formHelp}>
+                                <FormHelperText error id="standard-weight-helper-text-email-login">
                                     {errors.email}
                                 </FormHelperText>
                             )}
                         </FormControl>
 
-                        <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
+                        <FormControl 
+                            fullWidth 
+                            error={Boolean(touched.password && errors.password)}
+                            sx={{ mb: 2 }}
+                        >
                             <TextField
                                 id="outlined-adornment-password-login"
                                 type={showPassword ? 'text' : 'password'}
@@ -132,41 +132,48 @@ const RestLogin = (props, { ...others }) => {
                                 onBlur={handleBlur}
                                 onChange={handleChange}
                                 placeholder="Enter your password"
-                                className={classes.textInput}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                aria-label="toggle password visibility"
+                                                onClick={handleClickShowPassword}
+                                                onMouseDown={handleMouseDownPassword}
+                                                edge="end"
+                                            >
+                                                {showPassword ? <Visibility /> : <VisibilityOff />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }}
                             />
                             {touched.password && errors.password && (
-                                <FormHelperText error id="standard-weight-helper-text-password-login" className={classes.formHelp}>
+                                <FormHelperText error id="standard-weight-helper-text-password-login">
                                     {errors.password}
                                 </FormHelperText>
                             )}
                         </FormControl>
                         {errors.submit && (
-                            <Box sx={{ mt: 3 }} className={classes.errorMessage}>
+                            <Box>
                                 <FormHelperText error>{errors.submit}</FormHelperText>
                             </Box>
                         )}
 
-                        <Box sx={{ mt: 2 }} display="flex" justifyContent="space-between">
+                        <Box display="flex" justifyContent="space-between">
                             <Button
-                                disableElevation
+                                disabled={isSubmitting}
                                 fullWidth
-                                size="large"
-                                color="secondary"
-                                className={classes.visitorButton}
                                 onClick={() => {
                                     history.push('/searchables');
                                 }}
                             >
                                 Guest
                             </Button>
-                            <Box sx={{ m: 0.5 }}></Box>
+                            <Box></Box>
                             <Button
-                                disableElevation
                                 disabled={isSubmitting}
                                 fullWidth
-                                size="large"
                                 type="submit"
-                                className={classes.button}
                             >
                                 Sign In
                             </Button>

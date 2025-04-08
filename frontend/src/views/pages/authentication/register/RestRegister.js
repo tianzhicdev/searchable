@@ -14,11 +14,8 @@ import {
     Grid,
     IconButton,
     InputAdornment,
-    InputLabel,
-    OutlinedInput,
     TextField,
     Typography,
-    useMediaQuery
 } from '@material-ui/core';
 
 // third party
@@ -28,9 +25,7 @@ import axios from 'axios';
 
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
-import AnimateButton from './../../../../ui-component/extended/AnimateButton';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
-import useComponentStyles from '../../../../themes/componentStyles';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -39,10 +34,8 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 //===========================|| API JWT - REGISTER ||===========================//
 
 const RestRegister = ({ ...others }) => {
-    const classes = useComponentStyles();
     let history = useHistory();
     const scriptedRef = useScriptRef();
-    const matchDownSM = useMediaQuery((theme) => theme.breakpoints.down('sm'));
     const [showPassword, setShowPassword] = React.useState(false);
     const [checked, setChecked] = React.useState(true);
 
@@ -116,10 +109,12 @@ const RestRegister = ({ ...others }) => {
                 {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                     <form noValidate onSubmit={handleSubmit} {...others}>
                         
-                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
+                        <FormControl 
+                            fullWidth 
+                            error={Boolean(touched.email && errors.email)}
+                            sx={{ mb: 2 }}
+                        >
                             <TextField
-                                fullWidth
-                                margin="normal"
                                 id="outlined-adornment-email-register"
                                 type="email"
                                 value={values.email}
@@ -127,40 +122,37 @@ const RestRegister = ({ ...others }) => {
                                 placeholder="Enter your email"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
-                                className={classes.textInput}
                                 error={touched.email && Boolean(errors.email)}
                             />
                             {touched.email && errors.email && (
-                                <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
+                                <FormHelperText error id="standard-weight-helper-text--register">
                                     {errors.email}
                                 </FormHelperText>
                             )}
                         </FormControl>
-                        <FormControl fullWidth error={Boolean(touched.email && errors.email)} className={classes.formGroup}>
-
-                                <TextField
-                                    fullWidth
-                                    margin="normal"
-                                    name="username"
-                                    id="username"
-                                    type="text"
-                                    value={values.username}
-                                    onBlur={handleBlur}
-                                    placeholder="Enter your username"
-                                    onChange={handleChange}
-                                    className={classes.textInput}
-                                    error={touched.username && Boolean(errors.username)}
-                                />
-                                {touched.username && errors.username && (
-                                    <FormHelperText error id="standard-weight-helper-text--register" className={classes.formHelp}>
-                                        {errors.username}
-                                    </FormHelperText>
-                                )}
-                        </FormControl>
-                        <FormControl fullWidth error={Boolean(touched.password && errors.password)} className={classes.formGroup}>
+                        <FormControl 
+                            fullWidth 
+                            error={Boolean(touched.email && errors.email)}
+                            sx={{ mb: 2 }}
+                        >
                             <TextField
-                                fullWidth
-                                margin="normal"
+                                name="username"
+                                id="username"
+                                type="text"
+                                value={values.username}
+                                onBlur={handleBlur}
+                                placeholder="Enter your username"
+                                onChange={handleChange}
+                                error={touched.username && Boolean(errors.username)}
+                            />
+                            {touched.username && errors.username && (
+                                <FormHelperText error id="standard-weight-helper-text--register">
+                                    {errors.username}
+                                </FormHelperText>
+                            )}
+                        </FormControl>
+                        <FormControl fullWidth error={Boolean(touched.password && errors.password)}>
+                            <TextField
                                 id="outlined-adornment-password-register"
                                 type={showPassword ? 'text' : 'password'}
                                 value={values.password}
@@ -171,11 +163,24 @@ const RestRegister = ({ ...others }) => {
                                     handleChange(e);
                                     changePassword(e.target.value);
                                 }}
-                                className={classes.textInput}
                                 error={touched.password && Boolean(errors.password)}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                aria-label="toggle password visibility"
+                                                onClick={handleClickShowPassword}
+                                                onMouseDown={handleMouseDownPassword}
+                                                edge="end"
+                                            >
+                                                {showPassword ? <Visibility /> : <VisibilityOff />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }}
                             />
                             {touched.password && errors.password && (
-                                <FormHelperText error id="standard-weight-helper-text-password-register" className={classes.formHelp}>
+                                <FormHelperText error id="standard-weight-helper-text-password-register">
                                     {errors.password}
                                 </FormHelperText>
                             )}
@@ -183,11 +188,7 @@ const RestRegister = ({ ...others }) => {
 
                         {strength !== 0 && (
                             <FormControl fullWidth>
-                                <Box
-                                    sx={{
-                                        mb: 2
-                                    }}
-                                >
+                                <Box>
                                     <Grid container spacing={2} alignItems="center">
                                         <Grid item>
                                             <Box
@@ -218,36 +219,30 @@ const RestRegister = ({ ...others }) => {
                                             onChange={(event) => setChecked(event.target.checked)}
                                             name="checked"
                                             color="primary"
-                                            className={classes.Checkbox}
                                         />
                                     }
                                     label={
-                                            <Typography variant="subtitle1" component={Link} to="/terms-and-conditions" className={classes.textLink}>
+                                        <Typography variant="subtitle1" component={Link} to="/terms-and-conditions">
                                             Agree with Terms & Condition.
-                                            </Typography>
+                                        </Typography>
                                     }   
                                 />
                             </Grid>
                         </Grid>
                         {errors.submit && (
-                            <Box sx={{ mt: 3 }} className={classes.errorMessage}>
+                            <Box>
                                 <FormHelperText error>{errors.submit}</FormHelperText>
                             </Box>
                         )}
 
-                        <Box sx={{ mt: 2 }} className={classes.formActions}>
-                            <AnimateButton>
-                                <Button
-                                    disableElevation
-                                    disabled={isSubmitting}
-                                    fullWidth
-                                    size="large"
-                                    type="submit"
-                                    className={classes.button}
-                                >
-                                    Sign Up
-                                </Button>
-                            </AnimateButton>
+                        <Box>
+                            <Button
+                                disabled={isSubmitting}
+                                fullWidth
+                                type="submit"
+                            >
+                                Sign Up
+                            </Button>
                         </Box>
                     </form>
                 )}

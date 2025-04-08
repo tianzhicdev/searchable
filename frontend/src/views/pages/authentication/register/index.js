@@ -23,51 +23,29 @@ const Register = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-                        <Grid item sx={{ m: { xs: 1, sm: 3 }, mb: 0 }}>
-                                <Grid container spacing={2} alignItems="center" justifyContent="center">
-                                    <Grid item sx={{ mb: 3 }}>
-                                        <RouterLink to="#">
-                                            <Logo />
-                                        </RouterLink>
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Grid
-                                            container
-                                            direction={matchDownSM ? 'column-reverse' : 'row'}
-                                            alignItems="center"
-                                            justifyContent="center"
-                                        >
-                                            <Grid item>
-                                                <Stack alignItems="center" justifyContent="center" spacing={1}>
-                                                    <Typography
-                                                        color={theme.palette.secondary.main}
-                                                        // gutterBottom
-                                                        variant={matchDownSM ? 'h3' : 'h2'}
-                                                        // className={classes.sectionTitle}
-                                                    >
-                                                        Sign up
-                                                    </Typography>
-                                                </Stack>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <RestRegister />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <Grid item container direction="column" alignItems="center" xs={12}>
-                                            <Typography
-                                                component={RouterLink}
-                                                to="/login"
-                                                variant="subtitle1"
-                                                className={classes.textLink}
-                                            >
-                                                Have an account?
-                                            </Typography>
-                                        </Grid>
-                                    </Grid>
-                                </Grid>
-                        </Grid>
+        <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
+            <Grid item sx={{ mb: 6 }}></Grid>
+            <Grid item sx={{ mb: 3 }}>
+                <RouterLink to="#">
+                    <Logo />
+                </RouterLink>
+            </Grid>
+            <Grid item xs={12} width={'100%'} maxWidth={'100%'}>
+                <RestRegister />
+            </Grid>
+            <Grid item xs={12}>
+                <Grid item container direction="column" alignItems="center" xs={12}>
+                    <Typography
+                        component={RouterLink}
+                        to="/login"
+                        variant="subtitle1"
+                        className={classes.textLink}
+                    >
+                        Have an account?
+                    </Typography>
+                </Grid>
+            </Grid>
+        </Grid>
     );
 };
 
