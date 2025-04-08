@@ -14,10 +14,11 @@ const Routes = () => {
     return (
         <Switch>
             <Redirect exact from="/" to={config.loginPath} />
-            {/* <React.Fragment> */}
+            <React.Fragment>
                 <LoginRoutes />
                 <SearchableRoutes />
                 <VisitorRoutes />
+            </React.Fragment>
         </Switch>
     );
 };
