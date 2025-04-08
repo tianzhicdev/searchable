@@ -491,7 +491,7 @@ const SearchableDetails = () => {
         }
       }
       // Only require address and telephone for non-online business types
-      if (SearchableItem.payloads.public.businessType !== "online" && 
+      if (SearchableItem.payloads.public.businessType === "online" && 
           (!account.user.address || !account.user.tel)) {
         showAlert("Please update your profile with address and telephone before making a payment", "warning");
         return;
