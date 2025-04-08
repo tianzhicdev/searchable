@@ -3,6 +3,7 @@ import React from 'react';
 // material-ui
 import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
+import config from '../../config';
 
 const FAQ = () => {
     const classes = useComponentStyles();
@@ -19,12 +20,12 @@ const FAQ = () => {
 
                 {/* Introduction Section */}
                 <Typography variant="h4" className={classes.sectionTitle}>
-                    What is silkroadonlightning.com?
+                    What is {config.BRANDING_CONFIG.domain}?
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    SilkRoadOnLightning is a modern marketplace inspired by the principles of free trade that guided the original Silk Road platform. 
+                    {config.BRANDING_CONFIG.displayName} is a modern marketplace inspired by the principles of free trade that guided the original Silk Road platform. 
                     We firmly believe that free trade is fundamental to human prosperity. In today's complex global landscape marked by political and economic challenges, we maintain that voluntary exchange between individuals represents a crucial pathway to economic growth and peaceful coexistence.
-                    SilkRoadOnLightning.com provides a secure platform for users to sell legal items and services using Bitcoin on the Lightning Network. We offer buyers multiple payment options, including Bitcoin transactions via the Lightning Network or traditional payments through US dollars using Stripe.
+                    {config.BRANDING_CONFIG.domain} provides a secure platform for users to sell legal items and services using Bitcoin on the Lightning Network. We offer buyers multiple payment options, including Bitcoin transactions via the Lightning Network or traditional payments through US dollars using Stripe.
                 </Typography>
 
                 <Divider className={classes.divider} />
@@ -51,10 +52,10 @@ const FAQ = () => {
 
                 {/* Privacy Section */}
                 <Typography variant="h4" className={classes.itemTitle}>
-                    Why should I use silkroadonlightning.com?
+                    Why should I use {config.BRANDING_CONFIG.domain}?
                 </Typography>
                 <Typography variant="body1" className={classes.itemDescription}>
-                  We offer a seamless user experience with no KYC (Know Your Customer) requirements for registration, withdrawals, or purchases. Our platform is designed to be more efficient, user-friendly, and cost-effective compared to alternatives in the market. At silkroadonlightning.com, we are committed to upholding the principles of privacy and freedom for all our users.
+                  We offer a seamless user experience with no KYC (Know Your Customer) requirements for registration, withdrawals, or purchases. Our platform is designed to be more efficient, user-friendly, and cost-effective compared to alternatives in the market. At {config.BRANDING_CONFIG.domain}, we are committed to upholding the principles of privacy and freedom for all our users.
                 </Typography>
             </Paper>
     );

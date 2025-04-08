@@ -3,6 +3,8 @@ import React from 'react';
 // material-ui
 import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
+// project imports
+import config from '../../config';
 
 const ContactInfo = () => {
     const classes = useComponentStyles();
@@ -22,7 +24,7 @@ const ContactInfo = () => {
                     If you have any questions or concerns, please contact us at:
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    Email: admin@silkroadonlightning.com
+                    Email: admin@{config.BRANDING_CONFIG.domain}
                 </Typography>
                 <Typography variant="body1" paragraph>
                     Phone: +1 (412) 961-4793

@@ -3,6 +3,7 @@ import React from 'react';
 // material-ui
 import { Typography, Paper, Box} from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
+import config from '../../config';
 
 const GettingStarted = () => {
     const classes = useComponentStyles();
@@ -22,7 +23,7 @@ const GettingStarted = () => {
 
                 {/* Introduction Section */}
                 <Typography variant="h4" className={classes.sectionTitle}>
-                    How do I sell on silkroadonlightning.com?
+                    How do I sell on {config.BRANDING_CONFIG.domain}?
                 </Typography>
 
                 <Typography variant="body1" paragraph>

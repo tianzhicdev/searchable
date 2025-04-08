@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Link, Container } from '@material-ui/core';
 // import useComponentStyles from '../../themes/componentStyles';
+import config from '../../config';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -11,7 +12,7 @@ const Footer = () => {
       <Container maxWidth="lg">
         <Typography variant="body2" color="textSecondary" align="center" style={{ padding: '16px 0' }}>
           {'Copyright © '}
-            silkroadonlightning.com
+            {config.BRANDING_CONFIG.domain}
             {' '}
           {currentYear}
         </Typography>

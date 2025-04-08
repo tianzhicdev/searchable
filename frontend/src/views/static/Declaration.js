@@ -5,6 +5,7 @@ import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
 
 // project imports
 import useComponentStyles from '../../themes/componentStyles';
+import config from '../../config';
 
 //==============================|| ABOUT US PAGE ||==============================//
 
@@ -25,7 +26,7 @@ const Declaration = () => {
                     Our Mission
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    Silk Road on Lightning is a marketplace that leverages the Lightning Network to provide 
+                    {config.BRANDING_CONFIG.displayName} is a marketplace that leverages the Lightning Network to provide 
                     fast, secure, and low-cost transactions for our users. We aim to create a platform where 
                     individuals and businesses can buy and sell goods and services with ease and confidence.
                 </Typography>
