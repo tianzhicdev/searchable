@@ -1,4 +1,3 @@
 [site]
 bucket = "./build"
-entry-point = "workers-site"
 
