@@ -4,7 +4,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 COPY . .
-RUN npm run build   # Outputs to /app/build
+
+# Conditionally run different build commands based on REACT_APP_BRANDING
+ARG REACT_APP_BRANDING
+RUN if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
+    echo "Building for eccentricprotocol..." && \
+    npm run build-eccentricprotocol; \
+  else \
+    echo "Building default version..." && \
+    npm run build; \
+  fi
 
 # Stage 2: Just copy artifacts (no Nginx here)
 FROM alpine:latest

@@ -15,7 +15,7 @@ if (process.env.REACT_APP_ENV === 'local') {
   SHOW_DEBUG_INFO = true;
 }
 
-let APP_BRANDING = 'silkroad';
+let APP_BRANDING = 'silkroadonlightning';
 if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
   APP_BRANDING = 'eccentricprotocol';
 } 
