@@ -26,7 +26,7 @@ const Declaration = () => {
                     Our Mission
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    {config.BRANDING_CONFIG.displayName} is a marketplace that leverages the Lightning Network to provide 
+                    {config.BRANDING_CONFIG.domain} is a marketplace that leverages the Lightning Network to provide 
                     fast, secure, and low-cost transactions for our users. We aim to create a platform where 
                     individuals and businesses can buy and sell goods and services with ease and confidence.
                 </Typography>

@@ -4,6 +4,7 @@ import React from 'react';
 import { Typography, Paper, Box} from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 import config from '../../config';
+import Logo from '../../ui-component/Logo';
 
 const GettingStarted = () => {
     const classes = useComponentStyles();
@@ -13,7 +14,7 @@ const GettingStarted = () => {
                 {/* Header */}
 
                 <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center">
-                    <img src={require('../../assets/images/camel_logo.gif')} alt="Getting Started" style={{ maxWidth: '100%', height: 'auto' }} />
+                    <Logo style={{ maxWidth: '100%', height: 'auto' }} />
                 </Box>
                 <Box className={classes.header} textAlign="center">
                     <Typography variant="h2" gutterBottom>

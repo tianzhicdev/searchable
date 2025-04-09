@@ -23,7 +23,7 @@ const FAQ = () => {
                     What is {config.BRANDING_CONFIG.domain}?
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    {config.BRANDING_CONFIG.displayName} is a modern marketplace inspired by the principles of free trade that guided the original Silk Road platform. 
+                    {config.BRANDING_CONFIG.domain} is a modern marketplace inspired by the principles of free trade that guided the original Silk Road platform. 
                     We firmly believe that free trade is fundamental to human prosperity. In today's complex global landscape marked by political and economic challenges, we maintain that voluntary exchange between individuals represents a crucial pathway to economic growth and peaceful coexistence.
                     {config.BRANDING_CONFIG.domain} provides a secure platform for users to sell legal items and services using Bitcoin on the Lightning Network. We offer buyers multiple payment options, including Bitcoin transactions via the Lightning Network or traditional payments through US dollars using Stripe.
                 </Typography>
