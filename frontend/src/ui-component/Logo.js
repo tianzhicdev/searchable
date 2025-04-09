@@ -2,7 +2,11 @@ import React from 'react';
 
 // material-ui
 import { useTheme } from '@material-ui/styles';
-import bitbid_logo from './../assets/images/camel_logo.gif';
+import config from '../config';
+
+// Import logo images
+import camelLogo from './../assets/images/camel_logo.gif';
+import eccentricLogo from './../assets/images/eccentricprotocol.jpg';
 /**
  * if you want to use image instead of <svg> uncomment following.
  *
@@ -15,10 +19,19 @@ import bitbid_logo from './../assets/images/camel_logo.gif';
 const Logo = () => {
     const theme = useTheme();
     
+    // Determine which logo to use based on config
+    const getLogo = () => {
+        if (config.APP_BRANDING === 'eccentricprotocol') {
+            return eccentricLogo;
+        } else {
+            return camelLogo;
+        }
+    };
+    
     return (
         <img 
-            src={bitbid_logo} 
-            alt="BitBid" 
+            src={getLogo()} 
+            alt={config.APP_BRANDING === 'eccentricprotocol' ? 'Eccentric Protocol' : 'Silk Road on Lightning'} 
             width="100%" 
             style={{ 
                 filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
