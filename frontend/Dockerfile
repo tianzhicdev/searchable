@@ -7,7 +7,7 @@ COPY . .
 
 # Conditionally run different build commands based on REACT_APP_BRANDING
 ARG REACT_APP_BRANDING
-RUN --no-cache if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
+RUN if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
     echo "Building for eccentricprotocol..." && \
     npm run build-eccentricprotocol; \
   else \
