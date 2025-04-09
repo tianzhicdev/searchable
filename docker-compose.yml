@@ -5,7 +5,7 @@ services:
       args:
         - REACT_APP_BRANDING=${REACT_APP_BRANDING}
     env_file:
-      - /root/.secrets/ssl/frontend.env
+      - /root/.secrets/frontend.env
     volumes:
       - frontend_build:/app/build
 
