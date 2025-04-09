@@ -6,7 +6,11 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Conditionally run different build commands based on REACT_APP_BRANDING
+# Print the REACT_APP_BRANDING value for debugging
+RUN echo "Building for branding: $REACT_APP_BRANDING"
+
 ARG REACT_APP_BRANDING
+
 RUN if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
     echo "Building for eccentricprotocol..." && \
     npm run build-eccentricprotocol; \
