@@ -431,10 +431,13 @@ class SearchSearchables(Resource):
         
         # Sort results - by match score (if query provided), then by distance (if location provided)
         if query_term and use_location:
+            print(f"Sorting by match score and distance, {len(filtered_results)} results")
             filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
-        elif query_term:
+        elif query_term and len(query_term) > 0:
+            print(f"Sorting by match score only, {len(filtered_results)} results")
             filtered_results.sort(key=lambda x: -x['match_score'])
         else:
+            print(f"Sorting by description length, {len(filtered_results)} results")
             # Sort by length of description, longest first
             filtered_results.sort(key=lambda x: -len(x.get('searchable_data', {}).get('payloads', {}).get('public', {}).get('description', '')))
 
