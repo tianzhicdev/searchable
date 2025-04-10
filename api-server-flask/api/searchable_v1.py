@@ -439,7 +439,7 @@ class SearchSearchables(Resource):
         else:
             print(f"Sorting by description length, {len(filtered_results)} results")
             # Sort by length of description, longest first
-            filtered_results.sort(key=lambda x: -len(x.get('searchable_data', {}).get('payloads', {}).get('public', {}).get('description', '')))
+            filtered_results.sort(key=lambda x: -len(x.get('payloads', {}).get('public', {}).get('description', '')))
 
         cur.close()
         conn.close()
