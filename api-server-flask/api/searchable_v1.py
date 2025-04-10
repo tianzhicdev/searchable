@@ -434,8 +434,10 @@ class SearchSearchables(Resource):
             filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
         elif query_term:
             filtered_results.sort(key=lambda x: -x['match_score'])
-        # If using location but no query, already sorted by distance in SQL
-        
+        else:
+            # Sort by length of description, longest first
+            filtered_results.sort(key=lambda x: -len(x.get('searchable_data', {}).get('payloads', {}).get('public', {}).get('description', '')))
+
         cur.close()
         conn.close()
         
