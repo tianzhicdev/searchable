@@ -1,5 +1,6 @@
 import os
 import re
+from functools import wraps
 
 import requests
 from flask import request, Response
@@ -31,12 +32,40 @@ import stripe
 stripe.api_key = os.getenv('STRIPE_API_KEY')
 
 # Define Prometheus metrics
-searchable_requests = Counter('searchable_v2_requests_total', 'Total number of searchable API v2 requests', ['endpoint', 'method', 'status'])
-searchable_latency = Histogram('searchable_v2_request_latency_seconds', 'Request latency in seconds for v2 API', ['endpoint'])
+searchable_requests = Counter('searchable_v2_requests_total', 'Total number of searchable API v2 requests', 
+                             ['endpoint', 'method', 'status', 'origin'])
+searchable_latency = Histogram('searchable_v2_request_latency_seconds', 'Request latency in seconds for v2 API', 
+                              ['endpoint', 'origin'])
 search_results_count = Summary('searchable_v2_search_results_count', 'Number of search results returned in v2 API')
 
+# Track origin decorator
+def track_origin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # Get the origin from request headers, default to 'unknown'
+        origin = request.headers.get('Origin', 'unknown')
+        # Normalize origin to remove protocol and trailing slashes
+        if origin != 'unknown':
+            try:
+                # Remove protocol (http://, https://)
+                if '://' in origin:
+                    origin = origin.split('://')[1]
+                # Remove trailing slash if present
+                if origin.endswith('/'):
+                    origin = origin[:-1]
+                # Remove port if present
+                if ':' in origin:
+                    origin = origin.split(':')[0]
+            except Exception:
+                # If any parsing fails, fall back to the original
+                pass
+        
+        # Add origin to kwargs so the wrapped function can use it
+        kwargs['request_origin'] = origin
+        return f(*args, **kwargs)
+    return decorated
 
-def validate_payment_request(data, current_user, visitor_id, metrics_label):
+def validate_payment_request(data, current_user, visitor_id, metrics_label, origin='unknown'):
     """
     Validates payment request data and returns buyer information or error response
     
@@ -45,6 +74,7 @@ def validate_payment_request(data, current_user, visitor_id, metrics_label):
         current_user: The authenticated user (or None)
         visitor_id: The visitor ID (or None)
         metrics_label: Label for Prometheus metrics
+        origin: The request origin
         
     Returns:
         tuple: (result, status_code)
@@ -53,25 +83,25 @@ def validate_payment_request(data, current_user, visitor_id, metrics_label):
     """
     # Validate required fields
     if not data:
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "Request data is missing"}, 400
         
     if 'searchable_id' not in data:
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "searchable_id is required"}, 400
         
     if 'business_type' not in data:
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "business_type is required"}, 400
 
     if 'invoice_type' not in data:
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "invoice_type is required"}, 400
         
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
     if invoice_type and invoice_type not in ['lightning', 'stripe']:
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "Invalid invoice_type. Must be 'lightning' or 'stripe'"}, 400
     
     # Get the data from the request
@@ -94,18 +124,18 @@ def validate_payment_request(data, current_user, visitor_id, metrics_label):
             
             # Fail the request if address or tel is missing
             if not address or not tel:
-                searchable_requests.labels(metrics_label, 'POST', 400).inc()
+                searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
                 return {"error": "Address and telephone number are required"}, 400
             
     elif visitor_id:
         # Visitor
         buyer_id = visitor_id
         if business_type == 'online':
-            searchable_requests.labels(metrics_label, 'POST', 400).inc()
+            searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
             return {"error": "vistors cannot pay for online business"}, 400
     else:
         # Fail the request if no buyer_id is provided
-        searchable_requests.labels(metrics_label, 'POST', 400).inc()
+        searchable_requests.labels(metrics_label, 'POST', 400, origin).inc()
         return {"error": "authentication OR visitor_id is required"}, 400
     
     # Return the validated payment info
@@ -117,8 +147,9 @@ class GetSearchableItem(Resource):
     Retrieves a specific searchable item by its ID
     """
     @token_optional
-    def get(self, searchable_id, current_user = None, visitor_id = None):
-        with searchable_latency.labels('get_searchable_item_v2').time():
+    @track_origin
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('get_searchable_item_v2', request_origin).time():
             try:
                 conn = get_db_connection()
                 cur = conn.cursor()
@@ -133,7 +164,7 @@ class GetSearchableItem(Resource):
                 result = cur.fetchone()
                 
                 if not result:
-                    searchable_requests.labels('get_searchable_item_v2', 'GET', 404).inc()
+                    searchable_requests.labels('get_searchable_item_v2', 'GET', 404, request_origin).inc()
                     return {"error": "Searchable item not found"}, 404
                     
                 searchable_id, searchable_data = result
@@ -145,11 +176,11 @@ class GetSearchableItem(Resource):
                 cur.close()
                 conn.close()
                 
-                searchable_requests.labels('get_searchable_item_v2', 'GET', 200).inc()
+                searchable_requests.labels('get_searchable_item_v2', 'GET', 200, request_origin).inc()
                 return item_data, 200
                 
             except Exception as e:
-                searchable_requests.labels('get_searchable_item_v2', 'GET', 500).inc()
+                searchable_requests.labels('get_searchable_item_v2', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/searchable/create', methods=['POST'])
@@ -158,14 +189,15 @@ class CreateSearchable(Resource):
     Creates a new searchable item
     """
     @token_required
-    def post(self, current_user):
-        with searchable_latency.labels('create_searchable_v2').time():
+    @track_origin
+    def post(self, current_user, request_origin='unknown'):
+        with searchable_latency.labels('create_searchable_v2', request_origin).time():
             print(f"Creating searchable for user: {current_user.id} {current_user.username}")
             conn = None
             try:
                 data = request.get_json()  # Get JSON data from request
                 if not data:
-                    searchable_requests.labels('create_searchable_v2', 'POST', 400).inc()
+                    searchable_requests.labels('create_searchable_v2', 'POST', 400, request_origin).inc()
                     return {"error": "Invalid input"}, 400
 
                 conn = get_db_connection()
@@ -186,7 +218,7 @@ class CreateSearchable(Resource):
                         latitude = float(data['payloads']['public']['latitude'])
                         longitude = float(data['payloads']['public']['longitude'])
                     except:
-                        searchable_requests.labels('create_searchable_v2', 'POST', 400).inc()
+                        searchable_requests.labels('create_searchable_v2', 'POST', 400, request_origin).inc()
                         return {"error": "Location data is required when use_location is true"}, 400
                 else:
                     print("Location usage disabled for this searchable")
@@ -214,7 +246,7 @@ class CreateSearchable(Resource):
                 conn.commit()
                 cur.close()
                 conn.close()
-                searchable_requests.labels('create_searchable_v2', 'POST', 201).inc()
+                searchable_requests.labels('create_searchable_v2', 'POST', 201, request_origin).inc()
                 return {"searchable_id": searchable_id}, 201
             except Exception as e:
                 # Enhanced error logging
@@ -231,7 +263,7 @@ class CreateSearchable(Resource):
                     except:
                         pass
                 
-                searchable_requests.labels('create_searchable_v2', 'POST', 500).inc()
+                searchable_requests.labels('create_searchable_v2', 'POST', 500, request_origin).inc()
                 return {"error": str(e), "error_details": error_traceback}, 500
 
 @rest_api.route('/api/v1/searchable/search', methods=['GET'])
@@ -240,13 +272,14 @@ class SearchSearchables(Resource):
     Search for searchable items based on location and optional query terms
     """
     @token_optional
-    def get(self, current_user = None, visitor_id = None):
-        with searchable_latency.labels('search_searchables_v2').time():
+    @track_origin
+    def get(self, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('search_searchables_v2', request_origin).time():
             try:
                 # Parse and validate request parameters
                 params = self._parse_request_params()
                 if 'error' in params:
-                    searchable_requests.labels('search_searchables_v2', 'GET', 400).inc()
+                    searchable_requests.labels('search_searchables_v2', 'GET', 400, request_origin).inc()
                     return params, 400
                 
                 # Query database for results
@@ -269,11 +302,11 @@ class SearchSearchables(Resource):
                 # self._enrich_results_with_usernames(paginated_results)
                 
                 # Format and return response
-                searchable_requests.labels('search_searchables_v2', 'GET', 200).inc()
+                searchable_requests.labels('search_searchables_v2', 'GET', 200, request_origin).inc()
                 return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
                 
             except Exception as e:
-                searchable_requests.labels('search_searchables_v2', 'GET', 500).inc()
+                searchable_requests.labels('search_searchables_v2', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
     
     def _parse_request_params(self):
@@ -562,8 +595,9 @@ class RemoveSearchableItem(Resource):
     curl -X PUT "http://localhost:5000/api/searchable/123/remove" -H "Authorization: <token>"
     """
     @token_required
-    def put(self, current_user, searchable_id):
-        with searchable_latency.labels('remove_searchable_item').time():
+    @track_origin
+    def put(self, current_user, searchable_id, request_origin='unknown'):
+        with searchable_latency.labels('remove_searchable_item', request_origin).time():
             print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
             try:
                 conn = get_db_connection()
@@ -578,14 +612,14 @@ class RemoveSearchableItem(Resource):
                 
                 row = cur.fetchone()
                 if not row:
-                    searchable_requests.labels('remove_searchable_item', 'PUT', 404).inc()
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 404, request_origin).inc()
                     cur.close()
                     conn.close()
                     return {"error": "Searchable item not found"}, 404
                     
                 searchable_data = row[0]
                 if str(searchable_data.get('terminal_id', -1)) != str(current_user.id):
-                    searchable_requests.labels('remove_searchable_item', 'PUT', 403).inc()
+                    searchable_requests.labels('remove_searchable_item', 'PUT', 403, request_origin).inc()
                     cur.close()
                     conn.close()
                     return {"error": "You don't have permission to remove this item"}, 403
@@ -603,11 +637,11 @@ class RemoveSearchableItem(Resource):
                 cur.close()
                 conn.close()
                 
-                searchable_requests.labels('remove_searchable_item', 'PUT', 200).inc()
+                searchable_requests.labels('remove_searchable_item', 'PUT', 200, request_origin).inc()
                 return {"success": True, "message": "Item has been removed"}, 200
                 
             except Exception as e:
-                searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
+                searchable_requests.labels('remove_searchable_item', 'PUT', 500, request_origin).inc()
                 print(f"Error removing searchable item: {str(e)}")
                 return {"error": str(e)}, 500
 
@@ -621,19 +655,23 @@ class CheckPayment(Resource):
     """
     Checks the status of a payment via BTCPay Server
     """
-    def get(self, invoice_id):
+    @track_origin
+    def get(self, invoice_id, request_origin='unknown'):
         try:
             # Use our helper function to check payment status
             invoice_data = check_payment(invoice_id)
             
             if "error" in invoice_data:
+                searchable_requests.labels('check_payment', 'GET', 500, request_origin).inc()
                 return invoice_data, 500
                 
             # Return the payment status to the client
+            searchable_requests.labels('check_payment', 'GET', 200, request_origin).inc()
             return invoice_data, 200
             
         except Exception as e:
             print(f"Error checking payment status: {str(e)}")
+            searchable_requests.labels('check_payment', 'GET', 500, request_origin).inc()
             return {"error": str(e)}, 500
 
 
@@ -680,8 +718,9 @@ class RefreshPaymentsBySearchable(Resource):
     """
     Refreshes the payment status for all invoices associated with a searchable item
     """
-    def get(self, searchable_id):
-        with searchable_latency.labels('refresh_payments_by_searchable').time():
+    @track_origin
+    def get(self, searchable_id, request_origin='unknown'):
+        with searchable_latency.labels('refresh_payments_by_searchable', request_origin).time():
             try:
                 # Get all invoices for this searchable_id
                 conn = get_db_connection()
@@ -697,7 +736,7 @@ class RefreshPaymentsBySearchable(Resource):
                 conn.close()
                 
                 if not invoices:
-                    searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200).inc()
+                    searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200, request_origin).inc()
                     return {"message": "No invoices found for this searchable item"}, 200
                 
                 results = []
@@ -725,12 +764,12 @@ class RefreshPaymentsBySearchable(Resource):
                             "data": payment_status
                         })
                 
-                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200).inc()
+                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 200, request_origin).inc()
                 return {"searchable_id": searchable_id, "payments": results}, 200
                 
             except Exception as e:
                 print(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
-                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 500).inc()
+                searchable_requests.labels('refresh_payments_by_searchable', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 
@@ -739,21 +778,22 @@ class GetUserTerminal(Resource):
     Retrieves terminal data for the authenticated user
     """
     @token_required
-    def get(self, current_user):
-        with searchable_latency.labels('get_terminal').time():
+    @track_origin
+    def get(self, current_user, request_origin='unknown'):
+        with searchable_latency.labels('get_terminal', request_origin).time():
             try:
                 # Get profile data using the helper function
                 terminal_data = get_terminal(current_user.id)
                 
                 if not terminal_data:
-                    searchable_requests.labels('get_terminal', 'GET', 404).inc()
+                    searchable_requests.labels('get_terminal', 'GET', 404, request_origin).inc()
                     return {"error": "Terminal not found"}, 404
                 
-                searchable_requests.labels('get_terminal', 'GET', 200).inc()
+                searchable_requests.labels('get_terminal', 'GET', 200, request_origin).inc()
                 return terminal_data, 200
                 
             except Exception as e:
-                searchable_requests.labels('get_terminal', 'GET', 500).inc()
+                searchable_requests.labels('get_terminal', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 
@@ -763,32 +803,34 @@ class UserTerminal(Resource):
     Retrieves, creates or updates terminal data for the authenticated user
     """
     @token_required
-    def get(self, current_user):
-        with searchable_latency.labels('get_terminal_v1').time():
+    @track_origin
+    def get(self, current_user, request_origin='unknown'):
+        with searchable_latency.labels('get_terminal_v1', request_origin).time():
             try:
                 # Get profile data using the helper function
                 terminal_data = get_terminal(current_user.id)
                 
                 if not terminal_data:
-                    searchable_requests.labels('get_terminal_v1', 'GET', 404).inc()
+                    searchable_requests.labels('get_terminal_v1', 'GET', 404, request_origin).inc()
                     return {"error": "Terminal not found"}, 404
                 
-                searchable_requests.labels('get_terminal_v1', 'GET', 200).inc()
+                searchable_requests.labels('get_terminal_v1', 'GET', 200, request_origin).inc()
                 return terminal_data, 200
                 
             except Exception as e:
-                searchable_requests.labels('get_terminal_v1', 'GET', 500).inc()
+                searchable_requests.labels('get_terminal_v1', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
     
     @token_required
-    def put(self, current_user):
-        with searchable_latency.labels('update_terminal').time():
+    @track_origin
+    def put(self, current_user, request_origin='unknown'):
+        with searchable_latency.labels('update_terminal', request_origin).time():
             try:
                 # Get the request data
                 data = request.get_json()
                 
                 if not data:
-                    searchable_requests.labels('update_terminal', 'PUT', 400).inc()
+                    searchable_requests.labels('update_terminal', 'PUT', 400, request_origin).inc()
                     return {"error": "No data provided"}, 400
                 
                 conn = get_db_connection()
@@ -819,11 +861,11 @@ class UserTerminal(Resource):
                 cur.close()
                 conn.close()
                 
-                searchable_requests.labels('update_terminal', 'PUT', 200).inc()
+                searchable_requests.labels('update_terminal', 'PUT', 200, request_origin).inc()
                 return {"message": "Terminal data updated successfully"}, 200
                 
             except Exception as e:
-                searchable_requests.labels('update_terminal', 'PUT', 500).inc()
+                searchable_requests.labels('update_terminal', 'PUT', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 
@@ -841,9 +883,10 @@ class PaymentsByTerminal(Resource):
     curl -X GET "http://localhost:5000/api/v1/payments-by-terminal" -H "Authorization: <token>"
     """
     @token_required
-    def get(self, current_user):
+    @track_origin
+    def get(self, current_user, request_origin='unknown'):
         
-        with searchable_latency.labels('payments_by_terminal').time():
+        with searchable_latency.labels('payments_by_terminal', request_origin).time():
             try:
                 # Get all searchables published by this user
                 user_published_searchable_ids = get_searchableIds_by_user(current_user.id)
@@ -868,7 +911,7 @@ class PaymentsByTerminal(Resource):
                 payments.extend(buyer_payments)
                 
                 # Record metrics
-                searchable_requests.labels('payments_by_terminal', 'GET', 200).inc()
+                searchable_requests.labels('payments_by_terminal', 'GET', 200, request_origin).inc()
                 # Merge payments with the same pkey to avoid duplicates
                 merged_payments = {}
                 for payment in payments:
@@ -891,7 +934,7 @@ class PaymentsByTerminal(Resource):
                 
             except Exception as e:
                 print(f"Error retrieving payments by terminal: {str(e)}")
-                searchable_requests.labels('payments_by_terminal', 'GET', 500).inc()
+                searchable_requests.labels('payments_by_terminal', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
@@ -905,8 +948,9 @@ class WithdrawalsByTerminal(Resource):
     curl -X GET "http://localhost:5000/api/v1/withdrawals-by-terminal" -H "Authorization: <token>"
     """
     @token_required
-    def get(self, current_user):
-        with searchable_latency.labels('withdrawals_by_terminal').time():
+    @track_origin
+    def get(self, current_user, request_origin='unknown'):
+        with searchable_latency.labels('withdrawals_by_terminal', request_origin).time():
             try:
                 # Initialize transactions list
                 withdrawals = []
@@ -929,7 +973,7 @@ class WithdrawalsByTerminal(Resource):
                     withdrawals.append(transaction)
                 
                 # Record metrics
-                searchable_requests.labels('withdrawals_by_terminal', 'GET', 200).inc()
+                searchable_requests.labels('withdrawals_by_terminal', 'GET', 200, request_origin).inc()
                 
                 return {
                     'withdrawals': withdrawals,
@@ -938,7 +982,7 @@ class WithdrawalsByTerminal(Resource):
                 
             except Exception as e:
                 print(f"Error retrieving withdrawals by terminal: {str(e)}")
-                searchable_requests.labels('withdrawals_by_terminal', 'GET', 500).inc()
+                searchable_requests.labels('withdrawals_by_terminal', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/payments-by-searchable/<string:searchable_id>', methods=['GET'])
@@ -953,8 +997,9 @@ class PaymentsBySearchable(Resource):
     curl -X GET "http://localhost:5000/api/v1/payments-by-searchable/123?terminal_id=456"
     """
     @token_optional
-    def get(self, searchable_id, current_user=None, visitor_id=None):
-        with searchable_latency.labels('payments_by_searchable').time():
+    @track_origin
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('payments_by_searchable', request_origin).time():
             try:
                 # Get payments for this searchable item
                 payments = get_data_from_kv(type='payment', fkey=searchable_id)
@@ -994,7 +1039,7 @@ class PaymentsBySearchable(Resource):
                             filtered_payments.append(payment)
                 
                 # Record metrics
-                searchable_requests.labels('payments_by_searchable', 'GET', 200).inc()
+                searchable_requests.labels('payments_by_searchable', 'GET', 200, request_origin).inc()
                 
                 return {
                     'payments': filtered_payments,
@@ -1003,7 +1048,7 @@ class PaymentsBySearchable(Resource):
                 
             except Exception as e:
                 print(f"Error retrieving payments by searchable: {str(e)}")
-                searchable_requests.labels('payments_by_searchable', 'GET', 500).inc()
+                searchable_requests.labels('payments_by_searchable', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
@@ -1017,8 +1062,9 @@ class SearchableRating(Resource):
     curl -X GET "http://localhost:5000/api/v1/rating/searchable/123"
     """
     @token_optional
-    def get(self, searchable_id, current_user=None, visitor_id=None):
-        with searchable_latency.labels('searchable_rating').time():
+    @track_origin
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('searchable_rating', request_origin).time():
             try:
                 # Get payments for this searchable item with ratings
                 payments = get_data_from_kv(type='payment', fkey=str(searchable_id))
@@ -1043,7 +1089,7 @@ class SearchableRating(Resource):
                     average_rating = 0
                 
                 # Record metrics
-                searchable_requests.labels('searchable_rating', 'GET', 200).inc()
+                searchable_requests.labels('searchable_rating', 'GET', 200, request_origin).inc()
                 
                 return {
                     'average_rating': round(average_rating, 1),
@@ -1052,7 +1098,7 @@ class SearchableRating(Resource):
                 
             except Exception as e:
                 print(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
-                searchable_requests.labels('searchable_rating', 'GET', 500).inc()
+                searchable_requests.labels('searchable_rating', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
@@ -1067,15 +1113,16 @@ class TerminalRating(Resource):
     curl -X GET "http://localhost:5000/api/v1/rating/terminal/456"
     """
     @token_optional
-    def get(self, terminal_id, current_user=None, visitor_id=None):
-        with searchable_latency.labels('terminal_rating').time():
+    @track_origin
+    def get(self, terminal_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('terminal_rating', request_origin).time():
             try:
                 # Get all searchables published by this terminal
                 terminal_searchable_ids = get_searchableIds_by_user(terminal_id)
                 
                 if not terminal_searchable_ids:
                     # No searchables found for this terminal
-                    searchable_requests.labels('terminal_rating', 'GET', 404).inc()
+                    searchable_requests.labels('terminal_rating', 'GET', 404, request_origin).inc()
                     return {
                         'terminal_id': terminal_id,
                         'average_rating': 0,
@@ -1113,7 +1160,7 @@ class TerminalRating(Resource):
                     average_rating = 0
                 
                 # Record metrics
-                searchable_requests.labels('terminal_rating', 'GET', 200).inc()
+                searchable_requests.labels('terminal_rating', 'GET', 200, request_origin).inc()
                 
                 return {
                     'average_rating': round(average_rating, 1),
@@ -1122,7 +1169,7 @@ class TerminalRating(Resource):
                 
             except Exception as e:
                 print(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
-                searchable_requests.labels('terminal_rating', 'GET', 500).inc()
+                searchable_requests.labels('terminal_rating', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
             
 @rest_api.route('/api/v1/create-checkout-session', methods=['POST'])
@@ -1179,23 +1226,20 @@ class CreateInvoiceV1(Resource):
         - cancel_url: URL to redirect after cancelled payment (for Stripe)
     """
     @token_optional
-    def post(self, current_user=None, visitor_id=None):
-        with searchable_latency.labels('create_invoice_v1').time():
+    @track_origin
+    def post(self, current_user=None, visitor_id=None, request_origin='unknown'):
+        with searchable_latency.labels('create_invoice_v1', request_origin).time():
             try:
-
                 # ======= validation =======
                 data = request.get_json()
                 
                 # Validate payment request
                 validation_result, error = validate_payment_request(
-                    data, current_user, visitor_id, 'create_invoice_v1'
+                    data, current_user, visitor_id, 'create_invoice_v1', request_origin
                 )
                 
                 if error:
                     return validation_result, error
-                
-                # ======= end of validation =======
-                
                 
                 # ======= extract validated data =======
                 buyer_id = validation_result['buyer_id']
@@ -1287,7 +1331,7 @@ class CreateInvoiceV1(Resource):
                             amount=amount# Add the description to the lightning invoice
                         )
                     except Exception as e:
-                        searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                        searchable_requests.labels('create_invoice_v1', 'POST', 500, request_origin).inc()
                         return {"error": f"Failed to create invoice: {str(e)}"}, 500
                     
                     # Record the lightning invoice in our database
@@ -1296,7 +1340,7 @@ class CreateInvoiceV1(Resource):
                     
                     # Check if invoice ID exists
                     if 'id' not in response:
-                        searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                        searchable_requests.labels('create_invoice_v1', 'POST', 500, request_origin).inc()
                         return {"error": "failed to create invoice, please try again later"}, 500
                     
                     # Store invoice record
@@ -1320,7 +1364,7 @@ class CreateInvoiceV1(Resource):
                     cur.close()
                     conn.close()
                     
-                    searchable_requests.labels('create_invoice_v1', 'POST', 200).inc()
+                    searchable_requests.labels('create_invoice_v1', 'POST', 200, request_origin).inc()
                     return response, 200
                     
                 elif invoice_type == 'stripe':
@@ -1407,7 +1451,7 @@ class CreateInvoiceV1(Resource):
                 
             except Exception as e:
                 print(f"Error creating invoice: {str(e)}")
-                searchable_requests.labels('create_invoice_v1', 'POST', 500).inc()
+                searchable_requests.labels('create_invoice_v1', 'POST', 500, request_origin).inc()
                 return {"error": str(e)}, 500
             
 # BTC price cache
@@ -1421,15 +1465,16 @@ class GetBtcPrice(Resource):
     """
     Retrieves the current BTC price in USD with caching
     """
-    def get(self):
-        with searchable_latency.labels('get_btc_price').time():
+    @track_origin
+    def get(self, request_origin='unknown'):
+        with searchable_latency.labels('get_btc_price', request_origin).time():
             try:
                 current_time = int(time.time())
                 cache_ttl = 600  # 10 minutes in seconds
                 
                 # Check if we have a cached price that's still valid
                 if btc_price_cache['price'] and (current_time - btc_price_cache['timestamp'] < cache_ttl):
-                    searchable_requests.labels('get_btc_price', 'GET', 200).inc()
+                    searchable_requests.labels('get_btc_price', 'GET', 200, request_origin).inc()
                     return {
                         'price': btc_price_cache['price'],
                         'cached': True,
@@ -1450,20 +1495,20 @@ class GetBtcPrice(Resource):
                         btc_price_cache['price'] = btc_price
                         btc_price_cache['timestamp'] = current_time
                         
-                        searchable_requests.labels('get_btc_price', 'GET', 200).inc()
+                        searchable_requests.labels('get_btc_price', 'GET', 200, request_origin).inc()
                         return {
                             'price': btc_price,
                             'cached': False
                         }, 200
                     else:
-                        searchable_requests.labels('get_btc_price', 'GET', 500).inc()
+                        searchable_requests.labels('get_btc_price', 'GET', 500, request_origin).inc()
                         return {"error": "Invalid response format from price API"}, 500
                 else:
-                    searchable_requests.labels('get_btc_price', 'GET', response.status_code).inc()
+                    searchable_requests.labels('get_btc_price', 'GET', response.status_code, request_origin).inc()
                     return {"error": f"Failed to fetch BTC price: {response.status_code}"}, response.status_code
                     
             except Exception as e:
                 print(f"Error fetching BTC price: {str(e)}")
-                searchable_requests.labels('get_btc_price', 'GET', 500).inc()
+                searchable_requests.labels('get_btc_price', 'GET', 500, request_origin).inc()
                 return {"error": str(e)}, 500
 

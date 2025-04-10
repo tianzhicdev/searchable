@@ -4,10 +4,7 @@ from flask import request, Response
 import time
 from flask_restx import Resource
 import math
-import requests
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
-import datetime
-import json
 
 # Import rest_api and get_db_connection from __init__
 from . import rest_api
