@@ -13,7 +13,9 @@ from . import rest_api
 from .routes import token_required, token_optional
 from .helper import (
     create_lightning_invoice,
+    get_btc_price,
     get_db_connection,
+    get_searchable,
     pay_lightning_invoice, 
     decode_lightning_invoice, 
     check_payment, 
@@ -33,73 +35,38 @@ import stripe
 from .track_metrics import track_metrics
 stripe.api_key = os.getenv('STRIPE_API_KEY')
 
-def validate_payment_request(data, current_user, visitor_id, metrics_label, origin='unknown'):
-    """
-    Validates payment request data and returns buyer information or error response
-    
-    Args:
-        data: The request JSON data
-        current_user: The authenticated user (or None)
-        visitor_id: The visitor ID (or None)
-        metrics_label: Label for Prometheus metrics
-        origin: The request origin
-        
-    Returns:
-        tuple: (result, status_code)
-            - If validation successful: ({'buyer_id': str, 'address': str, 'tel': str}, None)
-            - If validation failed: ({"error": str}, status_code)
-    """
+def validate_payment_request(data):
     # Validate required fields
     if not data:
-        return {"error": "Request data is missing"}, 400
+        raise ValueError("Request data is missing")     
         
     if 'searchable_id' not in data:
-        return {"error": "searchable_id is required"}, 400
+        raise ValueError("searchable_id is required")
         
-    if 'business_type' not in data:
-        return {"error": "business_type is required"}, 400
+    if 'require_address' not in data:
+        raise ValueError("require_address is required")
 
     if 'invoice_type' not in data:
-        return {"error": "invoice_type is required"}, 400
-        
+        raise ValueError("invoice_type is required")
+
+    if 'selections' not in data:
+        raise ValueError("selections is required")
+    
+    if 'buyer_id' not in data:
+        raise ValueError("buyer_id is required")
+    
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
     if invoice_type and invoice_type not in ['lightning', 'stripe']:
-        return {"error": "Invalid invoice_type. Must be 'lightning' or 'stripe'"}, 400
+        raise ValueError("Invalid invoice_type. Must be 'lightning' or 'stripe'")
     
-    # Get the data from the request
-    business_type = data['business_type']
-    address = ''
-    tel = ''
-    
-    if current_user:
-        # Authenticated user
-        buyer_id = str(current_user.id)
-        
-        if business_type == 'online':
-            # Get profile data to retrieve address and tel
-            profile_data = get_terminal(buyer_id)
-            
-            # Initialize address and tel variables from profile
-            if profile_data:
-                address = profile_data.get('address', '')
-                tel = profile_data.get('tel', '')
-            
-            # Fail the request if address or tel is missing
-            if not address or not tel:
-                return {"error": "Address and telephone number are required"}, 400
-            
-    elif visitor_id:
-        # Visitor
-        buyer_id = visitor_id
-        if business_type == 'online':
-            return {"error": "vistors cannot pay for online business"}, 400
-    else:
-        # Fail the request if no buyer_id is provided
-        return {"error": "authentication OR visitor_id is required"}, 400
-    
-    # Return the validated payment info
-    return {'buyer_id': buyer_id, 'address': address, 'tel': tel}, None
+    return {
+        'require_address': data['require_address'], 
+        'invoice_type': invoice_type, 
+        'searchable_id': data['searchable_id'],
+        'selections': data['selections'], 
+        'buyer_id': data['buyer_id']
+    }
 
 @rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
 class GetSearchableItem(Resource):
@@ -1004,7 +971,160 @@ class TerminalRating(Resource):
         except Exception as e:
             print(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
             return {"error": str(e)}, 500
+
+
+def get_delivery_info(require_address, current_user):
+    if str(require_address).lower() == 'true':
+        if current_user:
+            return get_terminal(current_user.id) # todo: to test, perhaps need to use string
+        else:
+            raise ValueError("User is not authenticated")
+    else:
+        return {}
+
+def calc_invoice(searchable_data, selections):
+    """
+    Calculate invoice details based on searchable data and user selections
+    
+    Args:
+        searchable_data (dict): The data for the searchable item
+        selections (list): List of selected items with quantities
+        
+    Returns:
+        dict: Contains total_price, currency, amount_sats, amount_usd_cents, and description details
+        
+    Raises:
+        ValueError: If there are invalid selections or currency
+        KeyError: If required data is missing
+        Exception: For any other errors during calculation
+    """
+    description_parts = []
+    amount = 0
+    
+    if not searchable_data:
+        raise ValueError("Searchable data is missing or empty")
+    
+    # Check if we have selections and selectables
+    selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
+    
+    # Get currency from searchable data, default to "sat" if not specified
+    currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sat')
+    
+    if currency.lower() not in ['sat', 'usd_cents']:
+        raise ValueError(f"Invalid currency: {currency}")
+    
+    if selections and selectables:
+        # Create maps for efficient lookup
+        selectable_prices = {item['id']: item['price'] for item in selectables}
+        selectable_names = {item['id']: item['name'] for item in selectables}
+        
+        # Calculate total from selections
+        for selection in selections:
+            selectable_id = selection.get('id')
+            if selectable_id is None:
+                raise ValueError("Selection missing required 'id' field")
+                
+            try:
+                quantity = int(selection.get('quantity', 0))
+                if quantity <= 0:
+                    raise ValueError(f"Invalid quantity for item {selectable_id}: {quantity}")
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid quantity format for item {selectable_id}")
             
+            if selectable_id in selectable_prices:
+                item_price = selectable_prices[selectable_id]
+                amount += item_price * quantity
+                
+                # Add description part for this item
+                item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
+                description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
+            else:
+                raise ValueError(f"Invalid selectable ID: {selectable_id}")
+    else:
+        raise ValueError("Invalid selections or selectables")
+    
+    # Create the complete description string
+    description = "/".join(description_parts)
+    
+    # Calculate both sats and USD amounts regardless of currency
+    if currency.lower() == 'sat':
+        amount_sats = amount
+        # Convert sats to USD_CENTS using BTC price
+        btc_price_response, status_code = get_btc_price()
+        if status_code != 200:
+            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
+            
+        if 'price' in btc_price_response:
+            # Convert satoshis to BTC (1 BTC = 100,000,000 sats)
+            btc_amount = amount / 100000000
+            # Convert BTC to USD cents
+            amount_usd_cents = btc_amount * btc_price_response['price'] * 100
+        else:
+            raise ValueError("BTC price data is missing")
+    elif currency.lower() == 'usd_cents':
+        amount_usd_cents = amount
+        # Convert USD_CENTS to sats using BTC price
+        btc_price_response, status_code = get_btc_price()
+        if status_code != 200:
+            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
+            
+        if 'price' in btc_price_response:
+            # Convert USD cents to USD
+            usd_amount = amount / 100
+            # Convert USD to BTC
+            btc_amount = usd_amount / btc_price_response['price']
+            # Convert BTC to satoshis
+            amount_sats = int(btc_amount * 100000000)
+        else:
+            raise ValueError("BTC price data is missing")
+    else:
+        raise ValueError(f"Invalid currency: {currency}")
+    
+    return {
+        "total_price": amount,
+        "currency": currency,
+        "amount_sats": amount_sats,
+        "amount_usd_cents": amount_usd_cents,
+        "description": description
+    }
+
+def insert_invoice_record(invoice_id, searchable_id, invoice_record):
+    """
+    Insert an invoice record into the database
+    
+    Args:
+        invoice_id (str): The ID of the invoice
+        searchable_id (str): The ID of the searchable item
+        invoice_record (dict): The invoice data to store
+        
+    Returns:
+        bool: True if successful, False otherwise
+        
+    Raises:
+        Exception: If there's an error during database operation
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, f"""
+            INSERT INTO kv (type, pkey, fkey, data)
+            VALUES ('invoice', '{invoice_id}', '{searchable_id}', {Json(invoice_record)})
+        """, commit=True, connection=conn)
+        
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error inserting invoice record: {str(e)}")
+        if 'conn' in locals() and conn:
+            try:
+                conn.rollback()
+                conn.close()
+            except:
+                pass
+        raise
+
 @rest_api.route('/api/v1/create-invoice', methods=['POST'])
 class CreateInvoiceV1(Resource):
     """
@@ -1029,133 +1149,54 @@ class CreateInvoiceV1(Resource):
             data = request.get_json()
             
             # Validate payment request
-            validation_result, error = validate_payment_request(
-                data, current_user, visitor_id, 'create_invoice_v1', request_origin
-            )
-            
-            if error:
-                return validation_result, error
+            validation_result = validate_payment_request(data)
             
             # ======= extract validated data =======
             buyer_id = validation_result['buyer_id']
-            address = validation_result['address']
-            tel = validation_result['tel']
-            searchable_id = data['searchable_id']
-            invoice_type = data.get('invoice_type')
-            # ======= end of extract validated data =======
+            searchable_id = validation_result['searchable_id']
+            invoice_type = validation_result['invoice_type']
+            require_address = validation_result['require_address']
+            selections = validation_result['selections']
 
-            # ======= get searchable data =======
-            try:
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                execute_sql(cur, f"""
-                    SELECT searchable_data
-                    FROM searchables
-                    WHERE searchable_id = '{searchable_id}'
-                """)
-                
-                result = cur.fetchone()
-                if not result:
-                    cur.close()
-                    conn.close()
-                    return {"error": "Searchable not found"}, 404
-                
-                searchable_data = result[0]
-                cur.close()
-                conn.close()
-                # todo: amount should be caculated
-                # Calculate amount based on pricing mode
-                pricing_mode = searchable_data.get('payloads', {}).get('public', {}).get('pricingMode')
-                
-                # Initialize description variable for invoice detail
-                description_parts = []
-                
-                if pricing_mode == 'variations':
-                    # For variations mode, calculate total from selections
-                    if 'selections' not in data:
-                        return {"error": "Selections are required for variation pricing"}, 400
-                        
-                        # Calculate total price from selections
-                    amount = 0
-                    selections = data.get('selections', [])
-                    selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
-                    
-                    # Create a map of selectable IDs to prices for quick lookup
-                    selectable_prices = {item['id']: item['price'] for item in selectables}
-                    # Create a map of selectable IDs to names
-                    selectable_names = {item['id']: item['name'] for item in selectables}
-                    
-                    for selection in selections:
-                        selectable_id = selection.get('id')
-                        quantity = int(selection.get('quantity', 0))
-                        
-                        if selectable_id in selectable_prices:
-                            item_price = selectable_prices[selectable_id]
-                            amount += item_price * quantity
-                            
-                            # Add description part for this item
-                            item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
-                            description_parts.append(f"[{item_name}]({quantity})@{item_price}")
-                        else:
-                            return {"error": f"Invalid selectable ID: {selectable_id}"}, 400
-                else:
-                    # For single pricing mode, use the price from searchable data
-                    amount = int(searchable_data.get('payloads', {}).get('public', {}).get('price', 0))
-                    
-                    # Get product name for invoice description
-                    item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
-                    description_parts.append(f"[{item_name}](1)@{amount}")
+            delivery_info = get_delivery_info(require_address, current_user)
+            
+            # Get the searchable data
+            searchable_data = get_searchable(searchable_id)
+            
+            # Calculate invoice details using our new function
+            invoice_details = calc_invoice(searchable_data, selections)
+            
+            amount_sats = invoice_details["amount_sats"]
+            amount_usd_cents = invoice_details["amount_usd_cents"]
+            description = invoice_details["description"]
 
-                if amount <= 0:
-                    return {"error": "Invalid price for this searchable"}, 400
-                    
-                # Create the complete description string
-                invoice_description = "/".join(description_parts)
-            except (ValueError, TypeError, AttributeError):
-                return {"error": "Invalid price format"}, 400
             # ======= end of get searchable data =======
             
             if invoice_type == 'lightning':
-                
-                # Create a Lightning invoice
-                response = None
-                try:
-                    # Use our decode function to get invoice details without paying
-                    response = create_lightning_invoice(
-                        amount=amount# Add the description to the lightning invoice
+                response = create_lightning_invoice(
+                        amount=amount_sats,
+                        description=description
                     )
-                except Exception as e:
-                    return {"error": f"Failed to create invoice: {str(e)}"}, 500
-                
-                # Record the lightning invoice in our database
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
+
                 # Check if invoice ID exists
                 if 'id' not in response:
                     return {"error": "failed to create invoice, please try again later"}, 500
                 
                 # Store invoice record
                 invoice_record = {
-                    "amount": int(amount),
+                    "amount": int(amount_sats),
                     "buyer_id": str(buyer_id),
                     "timestamp": int(time.time()),
                     "searchable_id": str(searchable_id),
                     "invoice_id": response['id'],
-                    "address": address,
-                    "tel": tel,
+                    "address": delivery_info.get('address', ''),
+                    "tel": delivery_info.get('tel', ''),
                     "invoice_type": "lightning",
-                    "description": invoice_description  # Add description to the stored record
+                    "description": description  # Add description to the stored record
                 }
                 
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, pkey, fkey, data)
-                    VALUES ('invoice', '{response['id']}', '{searchable_id}', {Json(invoice_record)})
-                """, commit=True, connection=conn)
-                
-                cur.close()
-                conn.close()
+                # Use the helper function to insert the record
+                insert_invoice_record(response['id'], searchable_id, invoice_record)
                 
                 return response, 200
                 
@@ -1163,41 +1204,17 @@ class CreateInvoiceV1(Resource):
                 # Process Stripe checkout
                 success_url = data.get('success_url')
                 cancel_url = data.get('cancel_url')
-                
-                
-                try:
-                    response = requests.get(
-                        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
-                    )
-                    
-                    if response.status_code == 200 and response.json().get('bitcoin', {}).get('usd'):
-                        btc_price = response.json()['bitcoin']['usd']
-                        usd_price = (amount / 100000000) * btc_price
-                    else:
-                        # Return error if we can't get BTC price
-                        return {"error": "Unable to fetch current Bitcoin price"}, 503
-                except Exception as e:
-                    print(f"Error fetching BTC price: {str(e)}")
-                    return {"error": "Unable to fetch current Bitcoin price"}, 503
-                
-                # Apply 3.5% fee
-                usd_price_with_fee = usd_price * 1.035
-                
-                # Convert to cents for Stripe and round to integer
-                amount_cents = round(usd_price_with_fee * 100)
-                
                 # Get item name
                 item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
-                
                 # Create Stripe checkout session
                 session = stripe.checkout.Session.create(
                     line_items=[{
                         'price_data': {
                             'currency': 'usd',
                             'product_data': {
-                                'name': item_name, # Add description to the Stripe product
+                                'name': item_name, 
                             },
-                            'unit_amount': amount_cents,
+                            'unit_amount': amount_usd_cents,
                         },
                         'quantity': 1,
                     }],
@@ -1206,34 +1223,21 @@ class CreateInvoiceV1(Resource):
                     cancel_url=cancel_url,
                 )
                 
-                # Store session ID in KV store
-                conn = get_db_connection()
-                cur = conn.cursor()
-
                 invoice_record = {
-                    "amount": int(amount),
-                    "usd_price": usd_price_with_fee,
+                    "amount": int(amount_usd_cents),
                     "buyer_id": str(buyer_id),
                     "timestamp": int(time.time()),
                     "searchable_id": str(searchable_id),
                     "invoice_id": session.id,
-                    "address": address,
-                    "tel": tel,
+                    "address": delivery_info.get('address', ''),
+                    "tel": delivery_info.get('tel', ''),
                     "invoice_type": "stripe",
-                    "description": invoice_description  # Add description to the stored record
+                    "description": description  
                 }
                 
-                try:
-                    # Store Stripe session data in KV store
-                    execute_sql(cur, f"""
-                        INSERT INTO kv (type, pkey, fkey, data)
-                        VALUES ('invoice', '{session.id}', '{searchable_id}', {Json(invoice_record)})
-                    """, commit=True, connection=conn)
-                except Exception as e:
-                    print(f"Error storing Stripe session in KV: {str(e)}")
-                finally:
-                    cur.close()
-                    conn.close()
+
+                insert_invoice_record(session.id, searchable_id, invoice_record)
+                
                 return {
                     'url': session.url,
                     'session_id': session.id

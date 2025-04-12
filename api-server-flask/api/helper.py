@@ -515,3 +515,98 @@ def get_withdrawal_status(status_list):
         return next(iter([status[0] for status in latest_statuses]), '')
     except Exception:
         return ''
+
+
+
+# BTC price cache
+btc_price_cache = {
+    'price': None,
+    'timestamp': 0
+}
+
+def get_btc_price():
+    """
+    Retrieves the current BTC price in USD with caching
+    Returns a tuple of (response_data, status_code)
+    """
+    try:
+        current_time = int(time.time())
+        cache_ttl = 600  # 10 minutes in seconds
+        
+        # Check if we have a cached price that's still valid
+        if btc_price_cache['price'] and (current_time - btc_price_cache['timestamp'] < cache_ttl):
+            return {
+                'price': btc_price_cache['price'],
+                'cached': True,
+                'cache_time': btc_price_cache['timestamp']
+            }, 200
+        
+        # If no valid cache, fetch new price
+        response = requests.get(
+            'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd'
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data and 'bitcoin' in data and 'usd' in data['bitcoin']:
+                btc_price = data['bitcoin']['usd']
+                
+                # Update cache
+                btc_price_cache['price'] = btc_price
+                btc_price_cache['timestamp'] = current_time
+                
+                return {
+                    'price': btc_price,
+                    'cached': False
+                }, 200
+            else:
+                return {"error": "Invalid response format from price API"}, 500
+        else:
+            return {"error": f"Failed to fetch BTC price: {response.status_code}"}, response.status_code
+            
+    except Exception as e:
+        print(f"Error fetching BTC price: {str(e)}")
+        return {"error": str(e)}, 500
+
+def get_searchable(searchable_id):
+    """
+    Retrieves a searchable item by its ID
+    
+    Args:
+        searchable_id: The ID of the searchable item to retrieve
+        
+    Returns:
+        dict: The searchable data including the searchable_id, or None if not found
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, f"""
+            SELECT searchable_id, searchable_data
+            FROM searchables
+            WHERE searchable_id = {searchable_id}
+        """)
+        
+        result = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if not result:
+            return None
+            
+        searchable_id, searchable_data = result
+        
+        # Add searchable_id to the data object for convenience
+        item_data = dict(searchable_data)
+        item_data['searchable_id'] = searchable_id
+        
+        return item_data
+        
+    except Exception as e:
+        print(f"Error retrieving searchable item {searchable_id}: {str(e)}")
+        # Ensure connection is closed even if an error occurs
+        if 'conn' in locals() and conn:
+            conn.close()
+        return None
