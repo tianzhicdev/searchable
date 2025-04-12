@@ -208,9 +208,6 @@ def check_balance(user_id):
         withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(user_id))
         for record in withdrawal_records:
             amount = record.get('amount')
-            print(f"Withdrawal amount: {amount}")
-            print(f"Balance before subtraction: {balance}")
-            # Subtract withdrawal amount from balance
             if amount is not None:
                 balance -= float(amount)
         

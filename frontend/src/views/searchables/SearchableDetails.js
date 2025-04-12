@@ -560,6 +560,7 @@ const SearchableDetails = () => {
   
   // Helper function to format currency
   const formatCurrency = (amount) => {
+    // todo: we should display sats on lightning dialog
     if (currency === 'usdt') {
       return `${amount.toFixed(2)} USDT`;
     } else {
@@ -882,7 +883,7 @@ const SearchableDetails = () => {
                   style={{ marginTop: 16 }}
                   align="left"
                 >
-                  Pay with {currency === 'usdt' ? 'USDT' : '⚡'}
+                  Pay with ⚡
                 </Button>
               )}
             </Box>

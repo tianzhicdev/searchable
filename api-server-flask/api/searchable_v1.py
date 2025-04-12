@@ -43,17 +43,12 @@ def validate_payment_request(data):
     if 'searchable_id' not in data:
         raise ValueError("searchable_id is required")
         
-    if 'require_address' not in data:
-        raise ValueError("require_address is required")
-
     if 'invoice_type' not in data:
         raise ValueError("invoice_type is required")
 
     if 'selections' not in data:
         raise ValueError("selections is required")
     
-    if 'buyer_id' not in data:
-        raise ValueError("buyer_id is required")
     
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
@@ -61,11 +56,9 @@ def validate_payment_request(data):
         raise ValueError("Invalid invoice_type. Must be 'lightning' or 'stripe'")
     
     return {
-        'require_address': data['require_address'], 
         'invoice_type': invoice_type, 
         'searchable_id': data['searchable_id'],
-        'selections': data['selections'], 
-        'buyer_id': data['buyer_id']
+        'selections': data['selections']
     }
 
 @rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
@@ -1008,9 +1001,9 @@ def calc_invoice(searchable_data, selections):
     selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
     
     # Get currency from searchable data, default to "sat" if not specified
-    currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sat')
+    currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sats')
     
-    if currency.lower() not in ['sat', 'usd_cents']:
+    if currency.lower() not in ['sats', 'usdt']:
         raise ValueError(f"Invalid currency: {currency}")
     
     if selections and selectables:
@@ -1047,7 +1040,7 @@ def calc_invoice(searchable_data, selections):
     description = "/".join(description_parts)
     
     # Calculate both sats and USD amounts regardless of currency
-    if currency.lower() == 'sat':
+    if currency.lower() == 'sats':
         amount_sats = amount
         # Convert sats to USD_CENTS using BTC price
         btc_price_response, status_code = get_btc_price()
@@ -1061,8 +1054,8 @@ def calc_invoice(searchable_data, selections):
             amount_usd_cents = btc_amount * btc_price_response['price'] * 100
         else:
             raise ValueError("BTC price data is missing")
-    elif currency.lower() == 'usd_cents':
-        amount_usd_cents = amount
+    elif currency.lower() == 'usdt':
+        amount_usd_cents = amount * 100
         # Convert USD_CENTS to sats using BTC price
         btc_price_response, status_code = get_btc_price()
         if status_code != 200:
@@ -1070,7 +1063,7 @@ def calc_invoice(searchable_data, selections):
             
         if 'price' in btc_price_response:
             # Convert USD cents to USD
-            usd_amount = amount / 100
+            usd_amount = amount 
             # Convert USD to BTC
             btc_amount = usd_amount / btc_price_response['price']
             # Convert BTC to satoshis
@@ -1152,16 +1145,22 @@ class CreateInvoiceV1(Resource):
             validation_result = validate_payment_request(data)
             
             # ======= extract validated data =======
-            buyer_id = validation_result['buyer_id']
+            buyer_id = current_user.id if current_user else visitor_id
             searchable_id = validation_result['searchable_id']
             invoice_type = validation_result['invoice_type']
-            require_address = validation_result['require_address']
             selections = validation_result['selections']
 
-            delivery_info = get_delivery_info(require_address, current_user)
+            
             
             # Get the searchable data
             searchable_data = get_searchable(searchable_id)
+
+            require_address = searchable_data.get('payloads', {}).get('public', {}).get('require_address', False)
+            # Print require_address and searchable_data for debugging
+            print(f"require_address: {require_address}")
+            print(f"searchable_data: {searchable_data}")
+            delivery_info = get_delivery_info(require_address, current_user)
+            
             
             # Calculate invoice details using our new function
             invoice_details = calc_invoice(searchable_data, selections)
@@ -1174,8 +1173,7 @@ class CreateInvoiceV1(Resource):
             
             if invoice_type == 'lightning':
                 response = create_lightning_invoice(
-                        amount=amount_sats,
-                        description=description
+                        amount=amount_sats
                     )
 
                 # Check if invoice ID exists
@@ -1207,6 +1205,7 @@ class CreateInvoiceV1(Resource):
                 # Get item name
                 item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
                 # Create Stripe checkout session
+                amount_usd_cents_with_fee =  int(amount_usd_cents * 1.035)
                 session = stripe.checkout.Session.create(
                     line_items=[{
                         'price_data': {
@@ -1214,7 +1213,7 @@ class CreateInvoiceV1(Resource):
                             'product_data': {
                                 'name': item_name, 
                             },
-                            'unit_amount': amount_usd_cents,
+                            'unit_amount': amount_usd_cents_with_fee,
                         },
                         'quantity': 1,
                     }],
@@ -1224,7 +1223,7 @@ class CreateInvoiceV1(Resource):
                 )
                 
                 invoice_record = {
-                    "amount": int(amount_usd_cents),
+                    "amount": int(amount_usd_cents_with_fee),
                     "buyer_id": str(buyer_id),
                     "timestamp": int(time.time()),
                     "searchable_id": str(searchable_id),
