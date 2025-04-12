@@ -53,15 +53,14 @@ const PublishSearchables = () => {
     meetupLocation: '',
     latitude: '',
     longitude: '',
-    price: '',
-    businessType: 'personal'
+    require_address: false,
+    use_location: true,
+    currency: 'sats' // Add default currency selection
   });
   
   // Add new state for selectables
   const [selectables, setSelectables] = useState([]);
   const [newSelectable, setNewSelectable] = useState({ name: '', price: '' });
-  // Add pricing mode state
-  const [pricingMode, setPricingMode] = useState('single'); // 'single' or 'variations'
   
   const [images, setImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
@@ -299,9 +298,12 @@ const PublishSearchables = () => {
     setSelectables(selectables.filter(item => item.id !== id));
   };
   
-  // Add handler for pricing mode change
-  const handlePricingModeChange = (event) => {
-    setPricingMode(event.target.checked ? 'variations' : 'single');
+  // Handle currency change
+  const handleCurrencyChange = (e) => {
+    setFormData({
+      ...formData,
+      currency: e.target.value
+    });
   };
   
   // Handle form submission
@@ -312,9 +314,11 @@ const PublishSearchables = () => {
     setSuccess(false);
     
     try {
-      // For online business, set default values for location
+      // Create a copy of the form data for submission
       const submissionData = {...formData};
-      if (submissionData.businessType === 'online') {
+      
+      // If not using location, set coordinates to null
+      if (!submissionData.use_location) {
         submissionData.latitude = null;
         submissionData.longitude = null;
       }
@@ -328,15 +332,14 @@ const PublishSearchables = () => {
             "meetupLocation": submissionData.meetupLocation,
             "latitude": submissionData.latitude,
             "longitude": submissionData.longitude,
-            "price": pricingMode === 'single' ? submissionData.price ? submissionData.price : null : null,
-            "businessType": submissionData.businessType,
-            "use_location": submissionData.businessType === 'online' ? false : true,
+            "use_location": submissionData.use_location,
+            "require_address": submissionData.require_address,
+            "currency": submissionData.currency, // Add currency to the payload
             "images": previewImages.map(base64String => {
               // Remove the data:image/xxx;base64, prefix
               return base64String.split(',')[1];
             }),
-            "selectables": pricingMode === 'variations' ? selectables : [],
-            "pricingMode": pricingMode,
+            "selectables": selectables,
             "visibility": {
               "udf": "always_true",
               "data": {}
@@ -360,8 +363,9 @@ const PublishSearchables = () => {
         meetupLocation: '',
         latitude: selectedLocation ? selectedLocation.latitude.toString() : '',
         longitude: selectedLocation ? selectedLocation.longitude.toString() : '',
-        price: '',
-        businessType: 'personal'
+        require_address: false,
+        use_location: true,
+        currency: 'sats'
       });
       setImages([]);
       setPreviewImages([]);
@@ -432,6 +436,14 @@ const PublishSearchables = () => {
     }
   };
   
+  // Calculate USD price for a given satoshi amount
+  const calculateUsdPrice = (satoshis) => {
+    if (satoshis && btcPrice) {
+      return (parseFloat(satoshis) / 100000000) * btcPrice;
+    }
+    return null;
+  };
+  
   // Function to format USD price
   const formatUSD = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -493,27 +505,46 @@ const PublishSearchables = () => {
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
-                  Business Type *
+                  Location Settings
                 </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  id="businessType"
-                  name="businessType"
-                  value={formData.businessType}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  size="small"
-                  required
-                  className={classes.textInput}
-                >
-                  <MenuItem value="personal">Personal</MenuItem>
-                  <MenuItem value="online">Online Business</MenuItem>
-                  <MenuItem value="local">Local Business</MenuItem>
-                </TextField>
-                <Typography variant="caption" className={classes.formHelp}>
-                  Select the type of listing you are creating
-                </Typography>
+                
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="body2">Delivery: User Address Required</Typography>
+                  <Box mx={1}>
+                    <Switch
+                      checked={formData.require_address}
+                      onChange={(e) => {
+                        setFormData({
+                          ...formData,
+                          require_address: e.target.checked
+                        });
+                      }}
+                      name="require_address"
+                    />
+                  </Box>
+                  <Typography variant="caption" className={classes.formHelp}>
+                    Buyers must provide an address and telephone number for delivery
+                  </Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="body2">Use Satoshis</Typography>
+                  <Box mx={1}>
+                    <Switch
+                      checked={formData.currency === 'sats'}
+                      onChange={(e) => {
+                        setFormData({
+                          ...formData,
+                          currency: e.target.checked ? 'sats' : 'usdt'
+                        });
+                      }}
+                      name="currency_switch"
+                    />
+                  </Box>
+                  <Typography variant="caption" className={classes.formHelp}>
+                    Toggle to switch between Satoshis and USD
+                  </Typography>
+                </Box>
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>
@@ -532,125 +563,6 @@ const PublishSearchables = () => {
                   className={classes.textInput}
                 />
               </Grid>
-              
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Pricing
-                </Typography>
-                <Box display="flex" alignItems="center" mb={2}>
-                  {/* <Typography variant="body2">Single Price</Typography> */}
-                  <Box mx={1}>
-                    <Switch
-                      checked={pricingMode === 'variations'}
-                      onChange={handlePricingModeChange}
-                      // color="primary"
-                    />
-                  </Box>
-                  <Typography variant="body2">Product Variations</Typography>
-                </Box>
-              </Grid>
-              
-              {pricingMode === 'single' && (
-                <Grid item xs={12} md={6} className={classes.formGroup}>
-                  <Typography variant="subtitle1" className={classes.formLabel}>
-                    Price in Sats
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    id="price"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    size="small"
-                    type="number"
-                  />
-                  {usdPrice !== null && (
-                    <Typography variant="caption" className={classes.formHelp} style={{ marginTop: 4 }}>
-                      {priceLoading ? (
-                        <CircularProgress size={12} style={{ marginRight: 8 }} />
-                      ) : (
-                        `≈ ${formatUSD(usdPrice)} USD`
-                      )}
-                    </Typography>
-                  )}
-                </Grid>
-              )}
-              
-              {pricingMode === 'variations' && (
-                <Grid item xs={12} className={classes.formGroup}>
-                  <Typography variant="subtitle1" className={classes.formLabel}>
-                    Product Variations
-                  </Typography>
-                  <Typography variant="caption" className={classes.formHelp}>
-                    Add different options for your product (size, color, etc.) with individual prices
-                  </Typography>
-                  
-                  <Box mt={2}>
-                    <TextField
-                      placeholder="Option Description"
-                      // variant="outlined"
-                      size="small"
-                      name="name"
-                      value={newSelectable.name}
-                      onChange={handleSelectableChange}
-                      fullWidth
-                    />
-                    <Box mt={1} display="flex" alignItems="center">
-                      <TextField
-                        placeholder="Price (Sats)"
-                        // variant="outlined"
-                        type="number"
-                        size="small"
-                        name="price"
-                        value={newSelectable.price}
-                        onChange={handleSelectableChange}
-                        style={{ marginRight: 16, flex: 1 }}
-                      />
-                      <Button 
-                        variant="contained" 
-                        color="primary"
-                        onClick={addSelectable}
-                      >
-                        Add
-                      </Button>
-                    </Box>
-                  </Box>
-                  
-                  {/* List of added selectables */}
-                  <Box mt={2}>
-                    {selectables.length > 0 ? (
-                      selectables.map((item) => (
-                        <Box 
-                          key={item.id} 
-                          display="flex" 
-                          alignItems="center" 
-                          p={1} 
-                          mb={1}
-                          border="1px solid #ff3c00"
-                          // borderRadius="4px"
-                        >
-                          <Typography variant="body2" style={{ flex: 2 }}>
-                            {item.name}
-                          </Typography>
-                          <Typography variant="body2" style={{ flex: 1 }}>
-                            {item.price} sats
-                          </Typography>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => removeSelectable(item.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography variant="body2" color="textSecondary">
-                        No variations added yet.
-                      </Typography>
-                    )}
-                  </Box>
-                </Grid>
-              )}
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
@@ -685,65 +597,167 @@ const PublishSearchables = () => {
                   ))}
                 </Box>
               </Grid>
-
-              {formData.businessType !== 'online' && (
-                <Grid item xs={12} className={classes.formGroup}>
-                  <Typography variant="subtitle1" className={classes.formLabel}>
-                    Meet-up Location
-                  </Typography>
-                  <Box className={classes.inputWithStatus}>
+              
+              <Grid item xs={12} className={classes.formGroup}>
+                <Typography variant="subtitle1" className={classes.formLabel}>
+                  Product Variations
+                </Typography>
+                <Typography variant="caption" className={classes.formHelp}>
+                  Add different options for your product (size, color, etc.) with individual prices
+                </Typography>
+                
+                <Box mt={2}>
+                  <TextField
+                    placeholder="Option Description"
+                    size="small"
+                    name="name"
+                    value={newSelectable.name}
+                    onChange={handleSelectableChange}
+                    fullWidth
+                  />
+                  <Box mt={1} display="flex" alignItems="center">
                     <TextField
-                      fullWidth
-                      id="meetupLocation"
-                      name="meetupLocation"
-                      value={formData.meetupLocation}
-                      onChange={handleInputChange}
-                      variant="outlined"
+                      placeholder={formData.currency === 'sats' ? "Price (Sats)" : "Price (USD)"}
+                      type="number"
                       size="small"
-                      placeholder="Select a location on the map or enter manually"
-                      className={classes.textInput}
+                      name="price"
+                      value={newSelectable.price}
+                      onChange={handleSelectableChange}
+                      style={{ marginRight: 16, flex: 1 }}
+                    />
+                    <Button 
+                      variant="contained" 
+                      color="primary"
+                      onClick={addSelectable}
+                    >
+                      Add
+                    </Button>
+                  </Box>
+                </Box>
+                
+                <Box mt={2}>
+                  {selectables.length > 0 ? (
+                    selectables.map((item) => (
+                      <Box 
+                        key={item.id} 
+                        display="flex" 
+                        alignItems="center" 
+                        p={1} 
+                        mb={1}
+                        border="1px solid #ff3c00"
+                      >
+                        <Typography variant="body2" style={{ flex: 2 }}>
+                          {item.name}
+                        </Typography>
+                        <Typography variant="body2" style={{ flex: 1 }}>
+                          {formData.currency === 'sats' ? 
+                            `${item.price} sats` : 
+                            `${formatUSD(item.price)}`}
+                          {formData.currency === 'sats' && btcPrice && (
+                            <Typography variant="caption" display="block" style={{ marginTop: 2 }}>
+                              ≈ {formatUSD(calculateUsdPrice(item.price))}
+                            </Typography>
+                          )}
+                          {formData.currency === 'usd' && btcPrice && (
+                            <Typography variant="caption" display="block" style={{ marginTop: 2 }}>
+                              ≈ {Math.round((item.price * 100000000) / btcPrice)} sats
+                            </Typography>
+                          )}
+                        </Typography>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => removeSelectable(item.id)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="textSecondary">
+                      No variations added yet. Add at least one option to continue.
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+              <Grid item xs={12} className={classes.formGroup}>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Typography variant="body2">Use Location</Typography>
+                  <Box mx={1}>
+                    <Switch
+                      checked={formData.use_location}
+                      onChange={(e) => {
+                        setFormData({
+                          ...formData,
+                          use_location: e.target.checked
+                        });
+                      }}
+                      name="use_location"
                     />
                   </Box>
                   <Typography variant="caption" className={classes.formHelp}>
-                    This will be suggested as the meeting point for exchanges
+                    Enable to select a location on the map
                   </Typography>
-                </Grid>
-              )}
+                </Box>
+              </Grid>
 
-              {formData.businessType !== 'online' && (
-                <Grid item xs={12} className={classes.formGroup}>
-                  <Typography variant="subtitle1" className={classes.formLabel}>
-                    Select Location on Map
-                  </Typography>
-                  <Typography variant="body2" className={classes.mapInstruction}>
-                    <LocationOnIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 8 }} />
-                    Your current location is shown on the map. Click anywhere to select a meeting location for your item.
-                  </Typography>
-                  
-                  {mapLoading ? (
-                    <Box className={classes.mapLoading}>
-                      <CircularProgress size={24} style={{ marginRight: 16 }} />
-                      <Typography variant="body2">Loading map with your location...</Typography>
+              {formData.use_location && (
+                <>
+                  <Grid item xs={12} className={classes.formGroup}>
+                    <Typography variant="subtitle1" className={classes.formLabel}>
+                      Location
+                    </Typography>
+                    <Box className={classes.inputWithStatus}>
+                      <TextField
+                        fullWidth
+                        id="meetupLocation"
+                        name="meetupLocation"
+                        value={formData.meetupLocation}
+                        onChange={handleInputChange}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Select a location on the map or enter manually"
+                        className={classes.textInput}
+                      />
                     </Box>
-                  ) : (
-                    <Box className={classes.mapContainer}>
-                      <MapContainer 
-                        center={location.latitude && location.longitude ? 
-                               [location.latitude, location.longitude] : 
-                               [51.505, -0.09]} 
-                        zoom={13} 
-                        style={{ height: "100%", width: "100%" }}
-                      >
-                        <TileLayer
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        />
-                        <LocationMarker />
-                        <MapUpdater userLocation={location} />
-                      </MapContainer>
-                    </Box>
-                  )}
-                </Grid>
+                    <Typography variant="caption" className={classes.formHelp}>
+                      This will be suggested as the meeting point for exchanges
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} className={classes.formGroup}>
+                    <Typography variant="subtitle1" className={classes.formLabel}>
+                      Select Location on Map
+                    </Typography>
+                    <Typography variant="body2" className={classes.mapInstruction}>
+                      <LocationOnIcon fontSize="small" style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                      Your current location is shown on the map. Click anywhere to select a meeting location for your item.
+                    </Typography>
+                    
+                    {mapLoading ? (
+                      <Box className={classes.mapLoading}>
+                        <CircularProgress size={24} style={{ marginRight: 16 }} />
+                        <Typography variant="body2">Loading map with your location...</Typography>
+                      </Box>
+                    ) : (
+                      <Box className={classes.mapContainer}>
+                        <MapContainer 
+                          center={location.latitude && location.longitude ? 
+                                [location.latitude, location.longitude] : 
+                                [51.505, -0.09]} 
+                          zoom={13} 
+                          style={{ height: "100%", width: "100%" }}
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          />
+                          <LocationMarker />
+                          <MapUpdater userLocation={location} />
+                        </MapContainer>
+                      </Box>
+                    )}
+                  </Grid>
+                </>
               )}
               
               <Grid item xs={12}>

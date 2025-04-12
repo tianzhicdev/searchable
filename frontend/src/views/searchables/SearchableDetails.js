@@ -67,6 +67,9 @@ const SearchableDetails = () => {
   const [selectedVariations, setSelectedVariations] = useState({});
   const [totalPrice, setTotalPrice] = useState(0);
   
+  // Add new state to track the currency
+  const [currency, setCurrency] = useState('sats');
+  
   useEffect(() => {
     fetchItemDetails();
   }, [id]);
@@ -90,8 +93,18 @@ const SearchableDetails = () => {
   }, [SearchableItem, account]);
   
   useEffect(() => {
-    if (SearchableItem && SearchableItem.payloads && SearchableItem.payloads.public && SearchableItem.payloads.public.price) {
-      convertSatsToUSD(SearchableItem.payloads.public.price);
+    if (SearchableItem) {
+      // Set the currency based on the item's configuration
+      if (SearchableItem.payloads.public.currency === 'usdt') {
+        setCurrency('usdt');
+      } else {
+        setCurrency('sats');
+      }
+      
+      // Only convert sats to USD if we're not using USDT
+      if (SearchableItem.payloads.public.price && currency !== 'usdt') {
+        convertSatsToUSD(SearchableItem.payloads.public.price);
+      }
     }
   }, [SearchableItem]);
   
@@ -105,8 +118,7 @@ const SearchableDetails = () => {
   
   useEffect(() => {
     // Calculate total price based on selected variations
-    if (SearchableItem && SearchableItem.payloads.public.pricingMode === 'variations' && 
-        SearchableItem.payloads.public.selectables) {
+    if (SearchableItem && SearchableItem.payloads.public.selectables) {
       let total = 0;
       Object.entries(selectedVariations).forEach(([id, quantity]) => {
         const selectable = SearchableItem.payloads.public.selectables.find(
@@ -118,17 +130,16 @@ const SearchableDetails = () => {
       });
       setTotalPrice(total);
       
-      // Update USD price based on total
-      if (total > 0) {
+      // Update USD price based on total, only if not using USDT
+      if (total > 0 && currency !== 'usdt') {
         convertSatsToUSD(total);
       }
     }
-  }, [selectedVariations, SearchableItem]);
+  }, [selectedVariations, SearchableItem, currency]);
   
   useEffect(() => {
     // Initialize selectedVariations when SearchableItem is loaded
-    if (SearchableItem && SearchableItem.payloads.public.pricingMode === 'variations' && 
-        SearchableItem.payloads.public.selectables) {
+    if (SearchableItem && SearchableItem.payloads.public.selectables) {
       const initialSelections = {};
       SearchableItem.payloads.public.selectables.forEach(item => {
         initialSelections[item.id] = 0;
@@ -217,22 +228,13 @@ const SearchableDetails = () => {
   };
   
   const createInvoice = async (invoiceType = 'lightning') => {
-    // For single pricing mode, use existing behavior
     if (!SearchableItem) return;
     
-    // Check if we're using variations and have selections
-    const isVariationMode = SearchableItem.payloads.public.pricingMode === 'variations';
-    const hasSelections = isVariationMode && 
-      Object.values(selectedVariations).some(qty => qty > 0);
+    // Validate if we have any selections
+    const hasSelections = Object.values(selectedVariations).some(qty => qty > 0);
     
-    // Validate if we have any selections in variation mode
-    if (isVariationMode && !hasSelections) {
+    if (!hasSelections) {
       showAlert("Please select at least one item variation", "warning");
-      return;
-    }
-    
-    // For single pricing, check if price exists
-    if (!isVariationMode && !SearchableItem.payloads.public.price) {
       return;
     }
     
@@ -245,31 +247,27 @@ const SearchableDetails = () => {
       // Prepare common payload properties
       const payload = {
         searchable_id: id,
-        business_type: SearchableItem.payloads.public.businessType,
         invoice_type: invoiceType,
       };
-      
-      // Add selected variations if in variation mode
-      if (isVariationMode) {
-        const selections = [];
-        Object.entries(selectedVariations).forEach(([id, quantity]) => {
-          if (quantity > 0) {
-            const selectable = SearchableItem.payloads.public.selectables.find(
-              item => item.id.toString() === id
-            );
-            if (selectable) {
-              selections.push({
-                id: selectable.id,
-                name: selectable.name,
-                price: selectable.price,
-                quantity: quantity
-              });
-            }
+      // Add selected variations
+      const selections = [];
+      Object.entries(selectedVariations).forEach(([id, quantity]) => {
+        if (quantity > 0) {
+          const selectable = SearchableItem.payloads.public.selectables.find(
+            item => item.id.toString() === id
+          );
+          if (selectable) {
+            selections.push({
+              id: selectable.id,
+              name: selectable.name,
+              price: selectable.price,
+              quantity: quantity
+            });
           }
-        });
-        payload.selections = selections;
-        payload.total_price = totalPrice;
-      }
+        }
+      });
+      payload.selections = selections;
+      payload.total_price = totalPrice;
       
       // Add Stripe-specific properties if needed
       if (invoiceType === 'stripe') {
@@ -457,10 +455,10 @@ const SearchableDetails = () => {
     if (isUserLoggedIn) {
       fetchProfileData();
       
-      // Only require address and telephone for non-online business types
-      if (SearchableItem.payloads.public.businessType === "online" && 
+      // Check if address and telephone are required and provided
+      if (SearchableItem.payloads.public.require_address && 
           (!account.user.address || !account.user.tel)) {
-        showAlert("Please log in or update your profile with address and telephone before making a payment", "warning");
+        showAlert("Please update your profile with address and telephone before making a payment", "warning");
         return;
       }
     }
@@ -476,22 +474,17 @@ const SearchableDetails = () => {
     if (isUserLoggedIn) {
       fetchProfileData();
       
-      // Check if price is too low for credit card payment
-      if (SearchableItem.payloads.public.pricingMode === 'variations') {
-        // For variations, check the total price from selected variations
-        if (totalPrice < 1000) {
-          showAlert("Amount too low for credit card payment. Please use Lightning instead.", "warning");
-          return;
-        }
-      } else {
-        // For single pricing mode, check the fixed price
-        if (SearchableItem.payloads.public.price < 1000) {
-          showAlert("Amount too low for credit card payment. Please use Lightning instead.", "warning");
-          return;
-        }
+      // Check if price is too low for credit card payment (only for sats)
+      if (
+        (currency !== 'usdt' && totalPrice < 1000 ) || (currency === 'usdt' && totalPrice < 1)
+      ) {
+        showAlert("Amount too low for credit card payment. Please use Lightning instead.", "warning");
+        return;
       }
-      // Only require address and telephone for non-online business types
-      if (SearchableItem.payloads.public.businessType === "online" && 
+
+      
+      // Check if address and telephone are required and provided
+      if (SearchableItem.payloads.public.require_address && 
           (!account.user.address || !account.user.tel)) {
         showAlert("Please update your profile with address and telephone before making a payment", "warning");
         return;
@@ -565,64 +558,70 @@ const SearchableDetails = () => {
     }
   };
   
-  // Render variations selection UI
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    if (currency === 'usdt') {
+      return `${amount.toFixed(2)} USDT`;
+    } else {
+      return `${amount} Sats`;
+    }
+  };
+  
+  // Render variations selection UI - simplified to assume variations always exist
   const renderVariations = () => {
-    if (!SearchableItem || 
-        !SearchableItem.payloads.public.pricingMode || 
-        SearchableItem.payloads.public.pricingMode !== 'variations' ||
-        !SearchableItem.payloads.public.selectables) {
+    if (!SearchableItem || !SearchableItem.payloads.public.selectables) {
       return null;
     }
     
     return (
-          <Box p={1}>
-            {SearchableItem.payloads.public.selectables.map((item) => (
-              <Box 
-                key={item.id} 
-                display="flex" 
-                justifyContent="space-between" 
-                alignItems="center"
-                py={1}
-                // borderBottom="1px solid #eee"
+      <Box p={1} width="100%">
+        {SearchableItem.payloads.public.selectables.map((item) => (
+          <Box 
+            key={item.id} 
+            display="flex" 
+            justifyContent="space-between" 
+            alignItems="center"
+            py={1}
+            width="100%"
+          >
+            <Box flex={1}>
+              <Typography variant="body1">{item.name}</Typography>
+              <Typography variant="body2">{formatCurrency(item.price)}</Typography>
+            </Box>
+            <Box display="flex" alignItems="center">
+              <IconButton 
+                size="small" 
+                onClick={() => handleQuantityChange(item.id, -1)}
+                disabled={!selectedVariations[item.id] || selectedVariations[item.id] <= 0}
               >
-                <Box flex={1}>
-                  <Typography variant="body1">{item.name}</Typography>
-                  <Typography variant="body2">{item.price} Sats</Typography>
-                </Box>
-                <Box display="flex" alignItems="center">
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleQuantityChange(item.id, -1)}
-                    disabled={!selectedVariations[item.id] || selectedVariations[item.id] <= 0}
-                  >
-                    <RemoveIcon />
-                  </IconButton>
-                  <Typography variant="body1" style={{ margin: '0 10px' }}>
-                    {selectedVariations[item.id] || 0}
-                  </Typography>
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleQuantityChange(item.id, 1)}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </Box>
-              </Box>
-            ))}
-            
-            {totalPrice > 0 && (
-              <Box mt={2} display="flex" justifyContent="flex-end">
-                <Typography variant="h6">
-                  Total: {totalPrice} Sats
-                  {usdPrice !== null && !priceLoading && (
-                    <Typography variant="body2" component="span" style={{ marginLeft: 8 }}>
-                      (≈ {formatUSD(usdPrice)})
-                    </Typography>
-                  )}
-                </Typography>
-              </Box>
-            )}
+                <RemoveIcon />
+              </IconButton>
+              <Typography variant="body1" style={{ margin: '0 10px' }}>
+                {selectedVariations[item.id] || 0}
+              </Typography>
+              <IconButton 
+                size="small" 
+                onClick={() => handleQuantityChange(item.id, 1)}
+              >
+                <AddIcon />
+              </IconButton>
+            </Box>
           </Box>
+        ))}
+        
+        {totalPrice > 0 && (
+          <Box mt={2} display="flex" justifyContent="flex-end" width="100%">
+            <Typography variant="h6">
+              Total: {formatCurrency(totalPrice)}
+              {usdPrice !== null && !priceLoading && currency !== 'usdt' && (
+                <Typography variant="body2" component="span" style={{ marginLeft: 8 }}>
+                  (≈ {formatUSD(usdPrice)})
+                </Typography>
+              )}
+            </Typography>
+          </Box>
+        )}
+      </Box>
     );
   };
   
@@ -736,142 +735,73 @@ const SearchableDetails = () => {
                 
                 <Grid item xs={12} md={SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 ? 6 : 12}>
                   <Grid container spacing={2}>
-                    
-                    {/* Modify price display based on pricing mode */}
-                    {SearchableItem.payloads.public && 
-                     (!SearchableItem.payloads.public.pricingMode || 
-                      SearchableItem.payloads.public.pricingMode === 'single') && 
-                     SearchableItem.payloads.public.price && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body1">
-                          <span>Price: </span>
-                          <span>{SearchableItem.payloads.public.price} Sats</span>
-                          
-                          {usdPrice !== null && (
-                            <Typography variant="body2" style={{ marginTop: 4 }}>
-                              {priceLoading ? (
-                                <CircularProgress size={12} style={{ marginLeft: 8 }} />
-                              ) : (
-                                `≈ ${formatUSD(usdPrice)}`
-                              )}
-                            </Typography>
-                          )}
-                        </Typography>
-                      </Grid>
-                    )}
-                    
-                    {SearchableItem.username && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body1">
-                          <span>Posted by: </span>
-                          <Tooltip title={SearchableItem.username}>
-                            <span>{truncateText(SearchableItem.username, 25)}</span>
-                          </Tooltip>
-                        </Typography>
-                        
-                        {/* Display seller rating */}
-                      </Grid>
-                    )}
-
-                    {SearchableItem.distance && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography variant="body1">
-                          <span>Distance: </span>
-                          <span>{formatDistance(SearchableItem.distance)}</span>
-                        </Typography>
-                      </Grid>
-                    )}
-
-                    
-                    {SearchableItem.payloads.public.description && (
-                      <Grid item xs={12}>
-                        <Typography variant="body1">
-                          Description:
-                        </Typography>
-                        <Typography 
-                          variant="body2" 
-                          style={{ 
-                            whiteSpace: 'pre-line', 
-                            wordBreak: 'break-word', 
-                            overflowWrap: 'break-word' 
-                          }}
-                        >
-                          {SearchableItem.payloads.public.description}
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-
-                  {/* Render variations UI if applicable */}
-                  {renderVariations()}
+                    {renderVariations()}
                   
-                  {/* Only display map if businessType is not online */}
-                  {SearchableItem.payloads.public.latitude && 
-                   SearchableItem.payloads.public.longitude && 
-                   SearchableItem.payloads.public.businessType !== "online" && (
-                      <Grid item xs={12}>
-                        <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
-                          <iframe
-                            title="Item Location"
-                            width="100%"
-                            height="100%"
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${SearchableItem.payloads.public.longitude}%2C${SearchableItem.payloads.public.latitude}%2C${SearchableItem.payloads.public.longitude}%2C${SearchableItem.payloads.public.latitude}&layer=mapnik&marker=${SearchableItem.payloads.public.latitude}%2C${SearchableItem.payloads.public.longitude}&zoom=17`}
-                            scrolling="no"
-                            frameBorder="0"
-                            style={{ pointerEvents: 'none' }}
-                          />
-                        </Box>
-                      </Grid>
-                    )}
-                  
-                  {/* Only display meetup location if businessType is not online */}
-                  {SearchableItem.payloads.public.meetupLocation && 
-                   SearchableItem.payloads.public.businessType !== "online" && (
-                      <Grid item xs={12}>
-                        <Typography variant="body1">
-                            <span>{SearchableItem.payloads.public.meetupLocation}</span>
-                        </Typography>
-                      </Grid>
-                    )}
-                  
-                  {/* Update the payment buttons section */}
-                  {((SearchableItem.payloads.public && SearchableItem.payloads.public.price) || 
-                    (SearchableItem.payloads.public.pricingMode === 'variations')) && (
                     <Grid item xs={12}>
-                      <Box mt={3} display="flex" flexDirection="column" justifyContent="center" gap={2}>
+                      <Box mt={3} display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="center" gap={2}>
                         <Button
                           variant="contained"
                           color="primary"
                           onClick={handlePayButtonClick}
-                          disabled={creatingInvoice || (SearchableItem.payloads.public.pricingMode === 'variations' && totalPrice === 0)}
+                          disabled={creatingInvoice}
+                          fullWidth
                         >
-                            Pay with ⚡ (0% fee)
+                          Pay with ⚡ (0% fee)
                         </Button>
                         <Button
                           variant="contained"
                           onClick={handleStripePayButtonClick}
-                          disabled={creatingInvoice || usdPrice === null || 
-                                   (SearchableItem.payloads.public.pricingMode === 'variations' && totalPrice === 0)}
+                          disabled={creatingInvoice}
+                          fullWidth
                         >
-                            Pay with 💳 (3.5% fee)
+                          Pay with 💳 (3.5% fee)
                         </Button>
                       </Box>
                     </Grid>
-                  )}
-                  
-                  {isOwner && (
-                    <Grid item xs={12}>
-                      <Box mt={3} display="flex" justifyContent="center">
-                        <Button
-                          variant="contained"
-                          onClick={handleRemoveItem}
-                          disabled={isRemoving}
-                        >
-                          Remove Item
-                        </Button>
-                      </Box>
-                    </Grid>
-                  )}
+                    
+                    {/* Only display map if businessType is not online */}
+                    {SearchableItem.payloads.public.latitude && 
+                     SearchableItem.payloads.public.longitude && 
+                     SearchableItem.payloads.public.use_location && (
+                        <Grid item xs={12}>
+                          <Box mt={1} height="200px" width="100%" border="1px solid #ccc">
+                            <iframe
+                              title="Item Location"
+                              width="100%"
+                              height="100%"
+                              src={`https://www.openstreetmap.org/export/embed.html?bbox=${SearchableItem.payloads.public.longitude}%2C${SearchableItem.payloads.public.latitude}%2C${SearchableItem.payloads.public.longitude}%2C${SearchableItem.payloads.public.latitude}&layer=mapnik&marker=${SearchableItem.payloads.public.latitude}%2C${SearchableItem.payloads.public.longitude}&zoom=17`}
+                              scrolling="no"
+                              frameBorder="0"
+                              style={{ pointerEvents: 'none' }}
+                            />
+                          </Box>
+                        </Grid>
+                      )}
+                    
+                    {/* Only display meetup location if businessType is not online */}
+                    {SearchableItem.payloads.public.meetupLocation && 
+                     SearchableItem.payloads.public.use_location && (
+                        <Grid item xs={12}>
+                          <Typography variant="body1">
+                              <span>{SearchableItem.payloads.public.meetupLocation}</span>
+                          </Typography>
+                        </Grid>
+                      )}
+                    
+                    {isOwner && (
+                      <Grid item xs={12}>
+                        <Box mt={3} display="flex" justifyContent="center">
+                          <Button
+                            variant="contained"
+                            onClick={handleRemoveItem}
+                            disabled={isRemoving}
+                          >
+                            Remove Item
+                          </Button>
+                        </Box>
+                      </Grid>
+                    )}
+                  </Grid>
                 </Grid>
               </Grid>
             </Box>
@@ -882,44 +812,41 @@ const SearchableDetails = () => {
         </Grid>
       )}
 
-      {/* Update Payment Dialog to include selected variations */}
+      {/* Payment Dialog */}
       <Dialog open={paymentDialogOpen} maxWidth="md">
         <DialogContent>
           {invoice ? (
             <Box sx={{ border: '1px solid', borderColor: 'divider', padding: 2, marginTop: 2, width: '100%' }}>
               
               <Typography variant="body1" gutterBottom align="left">
-                Amount: {totalPrice > 0 ? totalPrice : (SearchableItem?.payloads?.public?.price || invoice.amount)} Sats
+                Amount: {formatCurrency(totalPrice)}
               </Typography>
               
               <Typography variant="body1" gutterBottom align="left">
                 Invoice ID: {invoice.id.substring(0, 3).toUpperCase()}
               </Typography>
               
-              {/* Show selected variations if applicable */}
-              {SearchableItem && SearchableItem.payloads.public.pricingMode === 'variations' && 
-                Object.entries(selectedVariations).some(([id, qty]) => qty > 0) && (
-                <Box mt={2} mb={2}>
-                  <Typography variant="body1" gutterBottom align="left">
-                    Selected items:
-                  </Typography>
-                  {Object.entries(selectedVariations).map(([id, qty]) => {
-                    if (qty <= 0) return null;
-                    const item = SearchableItem.payloads.public.selectables.find(
-                      selectable => selectable.id.toString() === id
-                    );
-                    if (!item) return null;
-                    return (
-                      <Typography key={id} variant="body2" align="left">
-                        {item.name} x {qty} ({item.price * qty} Sats)
-                      </Typography>
-                    );
-                  })}
-                </Box>
-              )}
+              {/* Always show selected variations */}
+              <Box mt={2} mb={2}>
+                <Typography variant="body1" gutterBottom align="left">
+                  Selected items:
+                </Typography>
+                {Object.entries(selectedVariations).map(([id, qty]) => {
+                  if (qty <= 0) return null;
+                  const item = SearchableItem.payloads.public.selectables.find(
+                    selectable => selectable.id.toString() === id
+                  );
+                  if (!item) return null;
+                  return (
+                    <Typography key={id} variant="body2" align="left">
+                      {item.name} x {qty} ({formatCurrency(item.price * qty)})
+                    </Typography>
+                  );
+                })}
+              </Box>
               
-              {/* Only display address and telephone for non-online business types and logged-in users */}
-              {SearchableItem && SearchableItem.payloads.public.businessType !== "online" && account?.user && (
+              {/* Only display address and telephone for items requiring address and logged-in users */}
+              {SearchableItem && SearchableItem.payloads.public.require_address && account?.user && (
                 <>
                   <Typography variant="body2" align="left">
                     Address: {account.user?.address || 'Not provided'}
@@ -930,10 +857,10 @@ const SearchableDetails = () => {
                 </>
               )}
               
-              {/* If visitor, prompt to register for non-online business types */}
-              {SearchableItem && SearchableItem.payloads.public.businessType !== "online" && !account?.user && (
+              {/* If visitor, prompt to register for items requiring address */}
+              {SearchableItem && SearchableItem.payloads.public.require_address && !account?.user && (
                 <Typography variant="body2" color="error" style={{ marginTop: 8 }} align="left">
-                  Note: Create an account to provide delivery details for physical items.
+                  Note: Create an account to provide delivery details for this item.
                 </Typography>
               )}
               
@@ -955,7 +882,7 @@ const SearchableDetails = () => {
                   style={{ marginTop: 16 }}
                   align="left"
                 >
-                  Pay with ⚡
+                  Pay with {currency === 'usdt' ? 'USDT' : '⚡'}
                 </Button>
               )}
             </Box>
