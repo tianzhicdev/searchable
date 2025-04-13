@@ -12,6 +12,8 @@ from .routes import token_required
 # Import moved utility functions from helper
 from .helper import (
     create_lightning_invoice,
+    get_amount_to_withdraw,
+    get_balance_by_currency,
     get_db_connection,
     pay_lightning_invoice, 
     decode_lightning_invoice, 
@@ -681,113 +683,14 @@ class BalanceResource(Resource):
         Calculate user balance from payments and withdrawals
         """
         try:
-            balance = check_balance(current_user.id)
-            return {"balance": balance}, 200
+            balance = get_balance_by_currency(current_user.id)
+            return balance, 200
             
         except Exception as e:
             print(f"Error calculating balance: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/withdrawal', methods=['POST'])
-class WithdrawFunds(Resource):
-    """
-    Processes a withdrawal request via Lightning Network
-    """
-    @token_required
-    def post(self, current_user):
-        with searchable_latency.labels('withdrawal').time():
-            try:
-                data = request.get_json()
-                
-                if not data or 'invoice' not in data:
-                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
-                    return {"error": "Lightning invoice is required"}, 400
-                
-                invoice = data['invoice']
-                
-                # Decode the invoice to get the amount
-                try:
-                    # Use our decode function to get invoice details without paying
-                    decoded_invoice = decode_lightning_invoice(invoice)
-                    if 'error' in decoded_invoice:
-                        searchable_requests.labels('withdrawal', 'POST', 400).inc()
-                        return {"error": f"Failed to decode invoice: {decoded_invoice['error']}"}, 400
-                    
-                    # Check if num_satoshis exists in the decoded invoice
-                    if 'num_satoshis' not in decoded_invoice:
-                        searchable_requests.labels('withdrawal', 'POST', 400).inc()
-                        return {"error": "Invoice missing amount information"}, 400
-                        
-                    # Get amount in satoshis from decoded invoice
-                    amount_to_withdraw = int(decoded_invoice['num_satoshis'])
-                except Exception as e:
-                    print(f"Error decoding invoice: {str(e)}")
-                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
-                    return {"error": "Invalid invoice format or unable to decode"}, 400
-                
-                # Check if user has enough balance
-                current_balance = check_balance(current_user.id)
-                print(f"Current balance: {current_balance}")
-                
-                # todo: add a bit for fees
-                if current_balance < amount_to_withdraw:
-                    searchable_requests.labels('withdrawal', 'POST', 400).inc()
-                    return {
-                        "error": "Insufficient funds", 
-                        "available_balance": current_balance, 
-                        "withdrawal_amount": amount_to_withdraw
-                    }, 400
-                
-                # Record the withdrawal in the database first
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                # Prepare withdrawal data
-                withdrawal_data = {
-                    'invoice': invoice,
-                    'status': [('pending', int(time.time()))],
-                    'user_id': current_user.id
-                }
-                
-                # Store withdrawal record
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, fkey, pkey, data)
-                    VALUES ('withdrawal', '{current_user.id}', '{invoice}', {Json(withdrawal_data)})
-                    RETURNING pkey
-                """, commit=True, connection=conn)
-                
-                # Process payment using the helper function
-                # # todo: this should run in a background thread
-                # payment_response = pay_lightning_invoice(invoice)
-                # fee_sat = payment_response.get('fee_sat', 0)
-                # value_sat = payment_response.get('value_sat', 0)
-                
-                # # Update the withdrawal record with payment response if available
-                # if payment_response:
-                #     # withdrawal_data['btcpay_response'] = payment_response
-                    
-                #     execute_sql(cur, f"""
-                #         UPDATE kv 
-                #         SET data = {Json({
-                #             **withdrawal_data,
-                #             'fee_sat': fee_sat,
-                #             'value_sat': value_sat,
-                #             'amount': int(value_sat)+ int(fee_sat),
-                #             'status': withdrawal_data['status'] + [(payment_response.get('status', 'unknown'), int(time.time()))]
-                #         })}
-                #         WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                #     """, commit=True, connection=conn)
-                
-                cur.close()
-                conn.close()
-                
-                searchable_requests.labels('withdrawal', 'POST', 200).inc()
-                return {"recorded": True}, 200
-                
-            except Exception as e:
-                print(f"Error processing withdrawal: {str(e)}")
-                searchable_requests.labels('withdrawal', 'POST', 500).inc()
-                return {"error": str(e)}, 500
+
 
 @rest_api.route('/metrics')
 class MetricsResource(Resource):

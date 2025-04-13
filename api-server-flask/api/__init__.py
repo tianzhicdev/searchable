@@ -24,6 +24,7 @@ from .routes import *
 from .searchable_routes import *
 from .searchable_v1 import *
 from .searchable_v1_no_auth import *
+from .searchable_v1_withdrawal import *
 # Setup database
 @app.before_first_request
 def initialize_database():

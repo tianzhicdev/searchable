@@ -1190,7 +1190,8 @@ class CreateInvoiceV1(Resource):
                     "address": delivery_info.get('address', ''),
                     "tel": delivery_info.get('tel', ''),
                     "invoice_type": "lightning",
-                    "description": description  # Add description to the stored record
+                    "description": description,  # Add description to the stored record
+                    "selections": selections
                 }
                 
                 # Use the helper function to insert the record
@@ -1223,7 +1224,7 @@ class CreateInvoiceV1(Resource):
                 )
                 
                 invoice_record = {
-                    "amount": int(amount_usd_cents_with_fee),
+                    "amount": round(amount_usd_cents_with_fee/100, 2),
                     "buyer_id": str(buyer_id),
                     "timestamp": int(time.time()),
                     "searchable_id": str(searchable_id),
@@ -1231,7 +1232,8 @@ class CreateInvoiceV1(Resource):
                     "address": delivery_info.get('address', ''),
                     "tel": delivery_info.get('tel', ''),
                     "invoice_type": "stripe",
-                    "description": description  
+                    "description": description,
+                    "selections": selections
                 }
                 
 

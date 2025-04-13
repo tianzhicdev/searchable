@@ -231,17 +231,17 @@ def start_background_threads():
     )
     invoice_thread.start()
     
-    # Start withdrawal processing thread
-    withdrawal_thread = threading.Thread(
-        target=withdrawal_processing_thread,
-        daemon=True,
-        name="withdrawal-processing"
-    )
-    withdrawal_thread.start()
+    # # Start withdrawal processing thread
+    # withdrawal_thread = threading.Thread(
+    #     target=withdrawal_processing_thread,
+    #     daemon=True,
+    #     name="withdrawal-processing"
+    # )
+    # withdrawal_thread.start()
     
     logger.info("Background threads started")
     
-    return invoice_thread, withdrawal_thread
+    return invoice_thread
 
 
 # This will be called when the module is imported

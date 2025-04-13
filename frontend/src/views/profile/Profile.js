@@ -17,7 +17,7 @@ import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
-  const [balance, setBalance] = useState(null);
+  const [balance, setBalance] = useState({ usdt: null, sats: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -31,6 +31,13 @@ const Profile = () => {
   const [withdrawalError, setWithdrawalError] = useState(null);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [transformedWithdrawals, setTransformedWithdrawals] = useState([]);
+  
+  // Add USDT withdrawal states
+  const [usdtWithdrawDialogOpen, setUsdtWithdrawDialogOpen] = useState(false);
+  const [usdtWithdrawalAddress, setUsdtWithdrawalAddress] = useState('');
+  const [usdtWithdrawalAmount, setUsdtWithdrawalAmount] = useState('');
+  const [usdtWithdrawalLoading, setUsdtWithdrawalLoading] = useState(false);
+  const [usdtWithdrawalError, setUsdtWithdrawalError] = useState(null);
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -84,8 +91,11 @@ const Profile = () => {
       const balanceResponse = await backend.get('balance');
       console.log("Balance response:", balanceResponse.data);
       
-      // Set balance from the API response
-      setBalance(balanceResponse.data.balance || 0);
+      // Update to store both USDT and sats values from the response
+      setBalance({
+        usdt: balanceResponse.data.usdt || 0,
+        sats: balanceResponse.data.sats || 0
+      });
     } catch (err) {
       console.error('Error fetching user payment data:', err);
       setError('Failed to load payment information');
@@ -116,6 +126,13 @@ const Profile = () => {
     setWithdrawDialogOpen(true);
     setInvoice('');
     setWithdrawalError(null);
+  };
+
+  const handleWithdrawalUSDTClick = () => {
+    setUsdtWithdrawDialogOpen(true);
+    setUsdtWithdrawalAddress('');
+    setUsdtWithdrawalAmount('');
+    setUsdtWithdrawalError(null);
   };
   
   const handleCloseWithdrawDialog = () => {
@@ -186,6 +203,74 @@ const Profile = () => {
     setAnchorEl(null);
   };
   
+  const handleCloseUsdtWithdrawDialog = () => {
+    setUsdtWithdrawDialogOpen(false);
+  };
+  
+  const handleUsdtAddressChange = (e) => {
+    setUsdtWithdrawalAddress(e.target.value);
+  };
+  
+  const handleUsdtAmountChange = (e) => {
+    // Only allow numeric input with at most 2 decimal places
+    const value = e.target.value;
+    if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
+      setUsdtWithdrawalAmount(value);
+    }
+  };
+  
+  const handleSubmitUsdtWithdrawal = async () => {
+    // Validate inputs
+    if (!usdtWithdrawalAddress || usdtWithdrawalAddress.trim() === '') {
+      setUsdtWithdrawalError('Please enter a valid withdrawal address');
+      return;
+    }
+    
+    if (!usdtWithdrawalAmount || parseFloat(usdtWithdrawalAmount) <= 0) {
+      setUsdtWithdrawalError('Please enter a valid amount greater than 0');
+      return;
+    }
+    
+    if (parseFloat(usdtWithdrawalAmount) > balance.usdt) {
+      setUsdtWithdrawalError(`Insufficient funds. Available balance: ${balance.usdt} USDT`);
+      return;
+    }
+    
+    setUsdtWithdrawalLoading(true);
+    setUsdtWithdrawalError(null);
+    
+    try {
+      const response = await backend.post(
+        'withdrawal-usdt',
+        { 
+          address: usdtWithdrawalAddress.trim(),
+          amount: parseFloat(usdtWithdrawalAmount)
+        }
+      );
+      
+      console.log('USDT Withdrawal response:', response.data);
+      setWithdrawalSuccess(true);
+      setUsdtWithdrawDialogOpen(false);
+      
+      // Refresh balance after successful withdrawal
+      fetchBalance();
+      
+    } catch (err) {
+      console.error('Error processing USDT withdrawal:', err);
+      
+      // Handle error response
+      if (err.response?.status === 400 && 
+          err.response?.data?.error === "Insufficient funds") {
+        const errorMsg = `Insufficient funds. Available balance: $${balance.usdt} USDT`;
+        setUsdtWithdrawalError(errorMsg);
+      } else {
+        setUsdtWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+      }
+    } finally {
+      setUsdtWithdrawalLoading(false);
+    }
+  };
+  
   return (
     <Grid container className={classes.container}>
       {/* Header Section with updated styles */}
@@ -221,12 +306,20 @@ const Profile = () => {
             }}>
               View Your Items
             </MenuItem>
-            {balance > 0 && !loading && (
+            {balance.sats > 0 && !loading && (
               <MenuItem onClick={() => {
                 handleMenuClose();
                 handleWithdrawalClick();
               }}>
-                Withdraw
+                Withdraw sats
+              </MenuItem>
+            )}
+            {balance.usdt > 0 && !loading && (
+              <MenuItem onClick={() => {
+                handleMenuClose();
+                handleWithdrawalUSDTClick();
+              }}>
+                Withdraw usdt
               </MenuItem>
             )}
             <MenuItem onClick={() => {
@@ -284,12 +377,20 @@ const Profile = () => {
             ) : error ? (
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
-              <Typography variant="body1">
-                <span className={classes.infoLabel}>Balance:</span>
-                <span className={classes.infoValue}>
-                  {balance} sats
-                </span>
-              </Typography>
+              <>
+                <Typography variant="body1">
+                  <span className={classes.infoLabel}>BTC Balance:</span>
+                  <span className={classes.infoValue}>
+                    {balance.sats} sats
+                  </span>
+                </Typography>
+                <Typography variant="body1">
+                  <span className={classes.infoLabel}>USDT Balance:</span>
+                  <span className={classes.infoValue}>
+                    ${balance.usdt} USDT
+                  </span>
+                </Typography>
+              </>
             )}
           </Box>
         </Paper>
@@ -334,6 +435,57 @@ const Profile = () => {
             disabled={withdrawalLoading} // todo: need to remove this shit. it is ugly
           >
             {withdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* USDT Withdrawal Dialog */}
+      <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Withdraw USDT</DialogTitle>
+        <DialogContent>
+          <TextField
+            id="usdt-address"
+            type="text"
+            value={usdtWithdrawalAddress}
+            onChange={handleUsdtAddressChange}
+            placeholder="Enter USDT wallet address"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            id="usdt-amount"
+            type="text"
+            value={usdtWithdrawalAmount}
+            onChange={handleUsdtAmountChange}
+            placeholder="Enter amount to withdraw"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            InputProps={{
+              startAdornment: <span style={{ marginRight: 8 }}>$</span>,
+            }}
+          />
+          {usdtWithdrawalError && (
+            <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
+              {usdtWithdrawalError}
+            </Typography>
+          )}
+          <Typography variant="body2" style={{ marginTop: 16 }}>
+            Available balance: ${balance.usdt} USDT
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUsdtWithdrawDialog}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmitUsdtWithdrawal} 
+            variant="contained"
+            color="primary"
+            disabled={usdtWithdrawalLoading}
+          >
+            {usdtWithdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
           </Button>
         </DialogActions>
       </Dialog>

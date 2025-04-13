@@ -216,6 +216,59 @@ def check_balance(user_id):
         print(f"Error calculating balance: {str(e)}")
         return 0
 
+def get_balance_by_currency(user_id):
+    """
+    Get user balance from payments and withdrawals
+    """
+    try:
+        # Use the SQL query to get all paid payments by user_id
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Execute the query to get all payments for searchables owned by this user
+        execute_sql(cur, f"""
+            SELECT p.pkey as invoice, p.fkey as searchable_id, p.data->>'amount' as payment_amount, 
+                   s.searchable_data->'payloads'->'public'->>'currency' as currency, 
+                   u.username as username, u.id as user_id  
+            FROM kv p 
+            JOIN kv i ON p.pkey = i.pkey 
+            JOIN searchables s ON p.fkey::integer = s.searchable_id 
+            JOIN users u ON s.searchable_data->>'terminal_id' = u.id::text 
+            WHERE p.type = 'payment' AND i.type = 'invoice' AND u.id = {user_id}
+        """)
+        
+        payment_results = cur.fetchall()
+        
+        # Calculate payments by currency
+        balance_by_currency = {}
+        for payment in payment_results:
+            amount = payment[2]  # payment_amount is at index 2
+            currency = payment[3]  # currency is at index 3
+            
+            if amount is not None and currency is not None:
+                # Convert amount to float
+                amount_float = float(amount)
+                
+                # Initialize currency in dictionary if not exists
+                if currency not in balance_by_currency:
+                    balance_by_currency[currency] = 0
+                
+                # Add amount to the appropriate currency balance
+                balance_by_currency[currency] += amount_float
+        
+
+        # todo: withdraw should have currency too
+
+        # Return the balance by currency
+        return balance_by_currency
+        
+    except Exception as e:
+        print(f"Error calculating balance: {str(e)}")
+        return 0
+    finally:
+        cur.close()
+        conn.close()
+
 def decode_lightning_invoice(invoice):
     """
     Decode a Lightning Network invoice without paying it.
@@ -383,12 +436,14 @@ def check_stripe_payment(session_id):
     try:
         # Retrieve the checkout session from Stripe
         checkout_session = stripe.checkout.Session.retrieve(session_id)
+        # Log the checkout session for debugging
+        print(f"Stripe checkout session: {checkout_session}")
         
         # Get payment status
         payment_status = checkout_session.payment_status
         
         # If payment is successful, record it in our database
-        if payment_status == 'paid':
+        if payment_status == 'paid' or payment_status == 'complete':
             # Get the invoice record from our database
             invoice_records = get_data_from_kv(type='invoice', pkey=session_id)
             
@@ -399,7 +454,6 @@ def check_stripe_payment(session_id):
                 # Store payment record
                 payment_record = {
                     "amount": invoice_record['amount'],  # Will raise KeyError if amount doesn't exist
-                    "usd_amount": invoice_record['usd_price'],
                     "status": "complete",
                     "buyer_id": invoice_record.get('buyer_id', 'unknown'),
                     "timestamp": int(time.time()),
@@ -607,3 +661,20 @@ def get_searchable(searchable_id):
         if 'conn' in locals() and conn:
             conn.close()
         return None
+
+                # Decode the invoice to get the amount
+def get_amount_to_withdraw(invoice):
+    try:
+        # Use our decode function to get invoice details without paying
+        decoded_invoice = decode_lightning_invoice(invoice)
+        if 'error' in decoded_invoice:
+            raise Exception(f"Failed to decode invoice: {decoded_invoice['error']}")
+        
+        # Check if num_satoshis exists in the decoded invoice
+        if 'num_satoshis' not in decoded_invoice:
+            raise Exception("Invoice missing amount information")
+            
+        # Get amount in satoshis from decoded invoice
+        return int(decoded_invoice['num_satoshis'])
+    except Exception as e:
+        raise Exception(f"Invalid invoice format or unable to decode: {str(e)}")
