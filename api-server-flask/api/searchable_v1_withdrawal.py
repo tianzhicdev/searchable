@@ -5,8 +5,8 @@ from flask import request
 import requests
 import time
 from psycopg2.extras import Json
-from .routes import get_db_connection, execute_sql
-from .helper import get_amount_to_withdraw, check_balance, pay_lightning_invoice
+from .routes import get_db_connection
+from .helper import get_amount_to_withdraw, get_balance_by_currency, pay_lightning_invoice, execute_sql
 
 @rest_api.route('/api/v1/withdrawal-usdt', methods=['POST'])
 class WithdrawFundsUSDT(Resource):
@@ -87,7 +87,7 @@ class WithdrawFunds(Resource):
             invoice = data['invoice']
             
             amount_to_withdraw = get_amount_to_withdraw(invoice)
-            current_balance = check_balance(current_user.id)
+            current_balance = get_balance_by_currency(current_user.id)['sats']
             
             # todo: add a bit for fees
             if current_balance < amount_to_withdraw:

@@ -12,16 +12,12 @@ from .routes import token_required
 # Import moved utility functions from helper
 from .helper import (
     create_lightning_invoice,
-    get_amount_to_withdraw,
     get_balance_by_currency,
     get_db_connection,
-    pay_lightning_invoice, 
-    decode_lightning_invoice, 
     check_payment, 
     get_terminal, 
     get_searchableIds_by_user, 
     get_data_from_kv, 
-    check_balance,
     execute_sql,
     Json
 )

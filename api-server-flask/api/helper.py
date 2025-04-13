@@ -178,44 +178,6 @@ def get_data_from_kv(type=None, pkey=None, fkey=None):
         print(f"Error retrieving data from KV store: {str(e)}")
         return []
 
-def check_balance(user_id):
-    """
-    Calculate user balance from payments and withdrawals
-    
-    Args:
-        user_id: The user ID to check balance for
-        
-    Returns:
-        float: The user's current balance in sats
-    """
-    try:
-        # Step 1: Get all searchables published by this user using utility function
-        searchable_ids = get_searchableIds_by_user(user_id)
-        
-        # Step 2: Calculate balance from payments and withdrawals
-        balance = 0
-        
-        # If user has searchables, look for payments in a single query
-        if searchable_ids:
-            payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
-            for record in payment_records:
-                amount = record.get('amount')
-                # Add payment amount to balance
-                if amount is not None:
-                    balance += float(amount)
-        
-        # Get all withdrawals for this user using utility function
-        withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(user_id))
-        for record in withdrawal_records:
-            amount = record.get('amount')
-            if amount is not None:
-                balance -= float(amount)
-        
-        return balance
-    except Exception as e:
-        print(f"Error calculating balance: {str(e)}")
-        return 0
-
 def get_balance_by_currency(user_id):
     """
     Get user balance from payments and withdrawals
@@ -240,7 +202,10 @@ def get_balance_by_currency(user_id):
         payment_results = cur.fetchall()
         
         # Calculate payments by currency
-        balance_by_currency = {}
+        balance_by_currency = {
+            'sats': 0,
+            'usdt': 0,
+        }
         for payment in payment_results:
             amount = payment[2]  # payment_amount is at index 2
             currency = payment[3]  # currency is at index 3
@@ -248,16 +213,30 @@ def get_balance_by_currency(user_id):
             if amount is not None and currency is not None:
                 # Convert amount to float
                 amount_float = float(amount)
-                
-                # Initialize currency in dictionary if not exists
-                if currency not in balance_by_currency:
-                    balance_by_currency[currency] = 0
-                
                 # Add amount to the appropriate currency balance
                 balance_by_currency[currency] += amount_float
         
 
         # todo: withdraw should have currency too
+        # Get all withdrawals for this user
+        execute_sql(cur, f"""
+            SELECT data->>'user_id' as user_id, data->>'amount' as amount, data->>'currency' as currency, pkey as withdraw_id 
+            FROM kv 
+            WHERE type = 'withdrawal' AND data->>'user_id' = '{user_id}'
+        """)
+        
+        withdrawal_results = cur.fetchall()
+        
+        # Deduct withdrawals from balance by currency
+        for withdrawal in withdrawal_results:
+            amount = withdrawal[1]   # amount is at index 1
+            currency = withdrawal[2] # currency is at index 2
+            
+            if amount is not None and currency is not None:
+                # Convert amount to float
+                amount_float = float(amount)
+                # Subtract withdrawal amount from the appropriate currency balance
+                balance_by_currency[currency] -= amount_float
 
         # Return the balance by currency
         return balance_by_currency

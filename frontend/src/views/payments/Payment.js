@@ -133,7 +133,7 @@ const Payment = ({ payment }) => {
                                         maxWidth: '100%'
                                     }}
                                 >
-                                    <span style={{ color: '#3899ef' }}>{key}:</span> <span>{typeof value === 'number' && key.includes('amount') ? `${value} Sats` : value}</span>
+                                    <span style={{ color: '#3899ef' }}>{key}:</span> <span>{typeof value === 'number' && key.includes('amount') ? `${value}` : value}</span>
                                 </Typography>
                             ))}
                  

@@ -16,14 +16,11 @@ from .helper import (
     get_btc_price,
     get_db_connection,
     get_searchable,
-    pay_lightning_invoice, 
-    decode_lightning_invoice, 
     check_payment, 
     check_stripe_payment,
     get_terminal, 
     get_searchableIds_by_user, 
     get_data_from_kv, 
-    check_balance,
     execute_sql,
     Json,
     get_withdrawal_timestamp,
@@ -772,17 +769,29 @@ class WithdrawalsByTerminal(Resource):
             withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(current_user.id))
             for withdrawal in withdrawal_records:
                 # Normalize withdrawal data
+                currency = withdrawal.get('currency', 'sats')
+                if currency == 'sats':
                 
-                transaction = {
-                    'invoice': withdrawal.get('pkey', ''),
-                    'type': 'withdrawal',
-                    'amount': int(withdrawal.get('amount', 0)),
-                    'fee_sat': int(withdrawal.get('fee_sat', 0)),
-                    'value_sat': int(withdrawal.get('value_sat', 0)),
-                    'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
-                    'status': get_withdrawal_status(withdrawal.get('status', [])),
-                    'invoice': withdrawal.get('invoice', 'missing'),
-                }
+                    transaction = {
+                        'invoice': withdrawal.get('pkey', ''),
+                        'type': 'withdrawal',
+                        'amount': int(withdrawal.get('amount', 0)),
+                        'fee_sat': int(withdrawal.get('fee_sat', 0)),
+                        'value_sat': int(withdrawal.get('value_sat', 0)),
+                        'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
+                        'status': get_withdrawal_status(withdrawal.get('status', [])),
+                        'currency': currency,
+                    }
+                elif currency == 'usdt':
+                    transaction = {
+                        'txid': withdrawal.get('pkey', ''),
+                        'type': 'withdrawal',
+                        'amount': int(withdrawal.get('amount', 0)),
+                        'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
+                        'status': get_withdrawal_status(withdrawal.get('status', [])),
+                        'currency': currency,
+                    }
+                
                 withdrawals.append(transaction)
             
             return {

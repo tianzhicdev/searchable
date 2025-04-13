@@ -72,19 +72,36 @@ const Profile = () => {
       ];
 
       setTransactions(allTransactions);
-      const withdrawals = withdrawalsResponse.data.withdrawals.map(withdrawal => ({
-        public: {
-          invoice: withdrawal.invoice.substring(0, 20) + "...",
-          amount: withdrawal.amount,
-          fee: withdrawal.fee_sat,
-          amount: withdrawal.value_sat,
-          date: formatDate(withdrawal.timestamp),
-          status: withdrawal.status,
-        },
-        private: {
-          withdrawer_id: account.user._id.toString(),
+      const withdrawals = withdrawalsResponse.data.withdrawals.map(withdrawal => {
+        if (withdrawal.currency == 'sats') {
+          return {
+            public: {
+              invoice: withdrawal.invoice,
+              fee: withdrawal.fee_sat,
+              amount: withdrawal.value_sat,
+              date: formatDate(withdrawal.timestamp),
+              status: withdrawal.status,
+              currency: withdrawal.currency,
+            },
+            private: {
+              withdrawer_id: account.user._id.toString(),
+            }
+          }
+        } else {
+          return {
+            public: {
+              txid: withdrawal.txid,
+              amount: withdrawal.amount,
+              date: formatDate(withdrawal.timestamp),
+              status: withdrawal.status,
+              currency: withdrawal.currency,
+            },
+            private: {
+              withdrawer_id: withdrawal.txid,
+            }
+          }
         }
-      }));
+      });
       setTransformedWithdrawals(withdrawals);
       
       // Fetch balance directly from the balance endpoint
@@ -154,7 +171,7 @@ const Profile = () => {
     
     try {
       const response = await backend.post(
-        'withdrawal',
+        'v1/withdrawal-sats',
         { invoice: invoice.trim() }
       );
       
@@ -241,7 +258,7 @@ const Profile = () => {
     
     try {
       const response = await backend.post(
-        'withdrawal-usdt',
+        'v1/withdrawal-usdt',
         { 
           address: usdtWithdrawalAddress.trim(),
           amount: parseFloat(usdtWithdrawalAmount)
