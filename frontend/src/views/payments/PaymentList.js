@@ -8,39 +8,29 @@ import {
 import Payment from './Payment';
 import { formatDate } from '../../views/utilities/Date';
 
-const PaymentList = ({ payments = [], transformed_input = [], loading = false, error = null }) => {
+const PaymentList = ({ receipts = [], loading = false, error = null }) => {
   const [transformedPayments, setTransformedPayments] = useState([]);
 
   useEffect(() => {
     // Start with an empty array
     let transformed = [];
     
-    if (payments.length > 0) {
-      // Transform the payments data to match the expected format
-      transformed = payments.map(payment => ({
-        public: {
-          Id: payment.pkey,
-          Item: payment.searchable_id,
-          Amount: payment.amount,
-          Status: payment.status,
-          date: formatDate(payment.timestamp),
-          tracking: payment.tracking,
-          rating: payment.rating,
-          review: payment.review,
-          address: payment.address,
-          tel: payment.tel,
-          description: payment.description
-        },
-        private: {
-          buyer_id: payment.buyer_id,
-          seller_id: payment.seller_id || '' // Handle case where seller_id might not be in the API response
+    if (receipts.length > 0) {
+      transformed = receipts.map(receipt => {
+        // Create a copy of the receipt to avoid mutating the original
+        const formattedReceipt = { ...receipt };
+        
+        // Format the timestamp if it exists
+        if (formattedReceipt.public && formattedReceipt.public.timestamp) {
+          formattedReceipt.public.date = formatDate(formattedReceipt.public.timestamp);
         }
-      }));
-    }
-    
-    // Only add transformed_input if it exists
-    if (transformed_input.length > 0) {
-      transformed = transformed.concat(transformed_input);
+        // Remove timestamp to avoid redundancy since we're using the formatted date
+        if (formattedReceipt.public) {
+          delete formattedReceipt.public.timestamp;
+        }
+        
+        return formattedReceipt;
+      });
     }
     
     // Only sort if we have data
@@ -59,7 +49,7 @@ const PaymentList = ({ payments = [], transformed_input = [], loading = false, e
     if (JSON.stringify(transformed) !== JSON.stringify(transformedPayments)) {
       setTransformedPayments(transformed);
     }
-  }, [payments, transformed_input, transformedPayments]);
+  }, [receipts, transformedPayments]);
 
   if (loading) {
     return (

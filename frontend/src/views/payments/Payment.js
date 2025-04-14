@@ -40,13 +40,15 @@ const Payment = ({ payment }) => {
         // API call to update rating and review
         const updateRating = async () => {
             try {
+                // todo: need to debug this cuz when ratingValue is 4.5 it is sent as 4
                 const payload = {
                     rating: ratingValue,
-                    review: reviewText
+                    review: reviewText,
+                    payment_id: payment.public.id
                 };
                 
-                await Backend.put(
-                    `kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`,
+                await Backend.post(
+                    `v1/rating`,
                     payload
                 );
                 
@@ -66,11 +68,12 @@ const Payment = ({ payment }) => {
         const updateTracking = async () => {
             try {
                 const payload = {
-                    tracking: trackingNumber
+                    tracking: trackingNumber,
+                    payment_id: payment.public.id
                 };
                 
-                await Backend.put(
-                    `kv?type=payment&pkey=${payment.public.Id}&fkey=${payment.public.Item}`,
+                await Backend.post(
+                    `v1/tracking`,
                     payload
                 );
                 
@@ -109,7 +112,7 @@ const Payment = ({ payment }) => {
 
     const needsTracking = (!hasTracking) && isUserSeller;
     // Show Rate It button if user is buyer and has tracking
-    const showRateButton = isUserBuyer && hasTracking && (payment.public.rating === null || payment.public.rating === undefined);
+    const showRateButton = isUserBuyer && hasTracking && (payment.public.rating === null || payment.public.rating === undefined || payment.public.rating === "");
     
     // Show Add Tracking button if user is seller and tracking is null
     const showTrackingButton = isUserSeller && needsTracking;
@@ -185,6 +188,7 @@ const Payment = ({ payment }) => {
                             name="purchase-rating"
                             value={ratingValue}
                             onChange={(event, newValue) => {
+                                console.log("ratingValue", newValue);
                                 setRatingValue(newValue);
                             }}
                             precision={0.5}

@@ -115,9 +115,9 @@ class WithdrawFunds(Resource):
                         'status': [('complete', int(time.time()))],
                         'user_id': current_user.id,
                         'currency': 'sats',
-                        'fee_sat': fee_sat,
-                        'value_sat': value_sat,
-                        'amount': fee_sat + value_sat
+                        'fee_sat': int(fee_sat),
+                        'value_sat': int(value_sat),
+                        'amount': int(fee_sat) + int(value_sat)
                     }
             
                     # Store withdrawal record

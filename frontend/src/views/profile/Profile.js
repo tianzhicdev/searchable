@@ -68,41 +68,13 @@ const Profile = () => {
       console.log("Withdrawals response:", withdrawalsResponse.data);
 
       const allTransactions = [
-        ...(paymentsResponse.data.payments || []),
+        ...(paymentsResponse.data.receipts || []),
+        ...(withdrawalsResponse.data.withdrawals || []),
       ];
 
+      console.log("allTransactions", allTransactions);
+
       setTransactions(allTransactions);
-      const withdrawals = withdrawalsResponse.data.withdrawals.map(withdrawal => {
-        if (withdrawal.currency == 'sats') {
-          return {
-            public: {
-              invoice: withdrawal.invoice,
-              fee: withdrawal.fee_sat,
-              amount: withdrawal.value_sat,
-              date: formatDate(withdrawal.timestamp),
-              status: withdrawal.status,
-              currency: withdrawal.currency,
-            },
-            private: {
-              withdrawer_id: account.user._id.toString(),
-            }
-          }
-        } else {
-          return {
-            public: {
-              txid: withdrawal.txid,
-              amount: withdrawal.amount,
-              date: formatDate(withdrawal.timestamp),
-              status: withdrawal.status,
-              currency: withdrawal.currency,
-            },
-            private: {
-              withdrawer_id: withdrawal.txid,
-            }
-          }
-        }
-      });
-      setTransformedWithdrawals(withdrawals);
       
       // Fetch balance directly from the balance endpoint
       const balanceResponse = await backend.get('balance');
@@ -416,7 +388,7 @@ const Profile = () => {
       {/* Transaction History Section */}
       <Grid item xs={12} className={classes.gridItem}>
           
-            <PaymentList payments={transactions} transformed_input={transformedWithdrawals} />
+            <PaymentList receipts={transactions}  />
 
       </Grid>
     

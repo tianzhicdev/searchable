@@ -498,7 +498,7 @@ const SearchableDetails = () => {
   const fetchPayments = async () => {
     try {
       const response = await backend.get(`v1/payments-by-searchable/${id}`);
-      setSearchablePayments(response.data.payments);
+      setSearchablePayments(response.data.receipts);
     } catch (err) {
       console.error("Error fetching payments:", err);
       showAlert("Failed to load payment history", "error");
@@ -809,7 +809,7 @@ const SearchableDetails = () => {
         </Grid>
         </Paper>
         
-        <PaymentList payments={searchablePayments} />
+        <PaymentList receipts={searchablePayments} />
         </Grid>
       )}
 

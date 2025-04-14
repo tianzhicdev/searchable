@@ -15,6 +15,7 @@ from .helper import (
     create_lightning_invoice,
     get_btc_price,
     get_db_connection,
+    get_receipts,
     get_searchable,
     check_payment, 
     check_stripe_payment,
@@ -25,6 +26,7 @@ from .helper import (
     Json,
     get_withdrawal_timestamp,
     get_withdrawal_status,
+    calc_invoice
 )
 import time
 import stripe
@@ -700,53 +702,17 @@ class PaymentsByTerminal(Resource):
     @token_required
     @track_metrics('payments_by_terminal')
     def get(self, current_user, request_origin='unknown'):
-        
         try:
-            # Get all searchables published by this user
-            user_published_searchable_ids = get_searchableIds_by_user(current_user.id)
-            # Convert all elements in the list to strings to ensure consistency
-            user_published_searchable_ids = [str(id) for id in user_published_searchable_ids]
-            
-            # Initialize transactions list
-            payments = []
-            
-            # Get payments where user is seller (payments for their searchable items)
-            if user_published_searchable_ids:
-                seller_payments = get_data_from_kv(type='payment', fkey=user_published_searchable_ids)
-                for payment in seller_payments:
-                    payment['seller_id'] = str(current_user.id)
-                payments.extend(seller_payments)
-            
-            # Get payments where user is buyer
-            buyer_payments = get_data_from_kv(type='payment') # todo: filter by terminal_id
-            # Filter to only include payments where the user is the buyer
-            buyer_payments = [payment for payment in buyer_payments 
-                             if payment.get('buyer_id') == str(current_user.id)]
-            payments.extend(buyer_payments)
-            
-            # Merge payments with the same pkey to avoid duplicates
-            merged_payments = {}
-            for payment in payments:
-                pkey = payment.get('pkey')
-                if pkey:
-                    if pkey in merged_payments:
-                        # If we already have this payment, merge any additional data
-                        merged_payments[pkey].update(payment)
-                    else:
-                        # First time seeing this payment
-                        merged_payments[pkey] = payment
-            
-            # Convert back to list
-            payments = list(merged_payments.values())
-            
+            receipts = get_receipts(user_id=current_user.id)
             return {
-                'payments': payments,
-                'count': len(payments)
+                'receipts': receipts,
+                'count': len(receipts)
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving payments by terminal: {str(e)}")
+            print(f"Error retrieving receitps by terminal: {str(e)}")
             return {"error": str(e)}, 500
+
 
 @rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
 class WithdrawalsByTerminal(Resource):
@@ -772,8 +738,8 @@ class WithdrawalsByTerminal(Resource):
                 currency = withdrawal.get('currency', 'sats')
                 if currency == 'sats':
                 
-                    transaction = {
-                        'invoice': withdrawal.get('pkey', ''),
+                    withdrawal_public = {
+                        'id': withdrawal.get('pkey', ''),
                         'type': 'withdrawal',
                         'amount': int(withdrawal.get('amount', 0)),
                         'fee_sat': int(withdrawal.get('fee_sat', 0)),
@@ -783,16 +749,19 @@ class WithdrawalsByTerminal(Resource):
                         'currency': currency,
                     }
                 elif currency == 'usdt':
-                    transaction = {
-                        'txid': withdrawal.get('pkey', ''),
+                    withdrawal_public = {
+                        'id': withdrawal.get('pkey', ''),
                         'type': 'withdrawal',
                         'amount': int(withdrawal.get('amount', 0)),
                         'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
                         'status': get_withdrawal_status(withdrawal.get('status', [])),
                         'currency': currency,
                     }
+                    withdrawal = {
+                        "public": withdrawal_public,
+                    }
                 
-                withdrawals.append(transaction)
+                withdrawals.append(withdrawal)
             
             return {
                 'withdrawals': withdrawals,
@@ -818,46 +787,10 @@ class PaymentsBySearchable(Resource):
     @track_metrics('payments_by_searchable')
     def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
-            # Get payments for this searchable item
-            payments = get_data_from_kv(type='payment', fkey=searchable_id)
-            filtered_payments = []
-            
-            if current_user:
-                # Authenticated user - check if they are the seller of this searchable
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                execute_sql(cur, f"""
-                    SELECT searchable_data
-                    FROM searchables
-                    WHERE searchable_id = {searchable_id}
-                """)
-                
-                result = cur.fetchone()
-                cur.close()
-                conn.close()
-                
-                if result and result[0].get('terminal_id') == str(current_user.id):
-                    # User is the seller, return all payments for this searchable
-                    # Add seller_id to each payment
-                    filtered_payments = []
-                    for payment in payments:
-                        payment['seller_id'] = str(current_user.id)
-                        filtered_payments.append(payment)
-                else:
-                    # User is not the seller, only return payments where they are the buyer
-                    for payment in payments:
-                        if payment.get('buyer_id') == str(current_user.id):
-                            filtered_payments.append(payment)
-            else:
-                # Visitor - only return payments where they are the buyer
-                for payment in payments:
-                    if payment.get('buyer_id') == visitor_id:
-                        filtered_payments.append(payment)
-            
+            receipts = get_receipts(user_id=current_user.id, searchable_id=searchable_id)
             return {
-                'payments': filtered_payments,
-                'count': len(filtered_payments)
+                'receipts': receipts,
+                'count': len(receipts)
             }, 200
             
         except Exception as e:
@@ -984,111 +917,6 @@ def get_delivery_info(require_address, current_user):
     else:
         return {}
 
-def calc_invoice(searchable_data, selections):
-    """
-    Calculate invoice details based on searchable data and user selections
-    
-    Args:
-        searchable_data (dict): The data for the searchable item
-        selections (list): List of selected items with quantities
-        
-    Returns:
-        dict: Contains total_price, currency, amount_sats, amount_usd_cents, and description details
-        
-    Raises:
-        ValueError: If there are invalid selections or currency
-        KeyError: If required data is missing
-        Exception: For any other errors during calculation
-    """
-    description_parts = []
-    amount = 0
-    
-    if not searchable_data:
-        raise ValueError("Searchable data is missing or empty")
-    
-    # Check if we have selections and selectables
-    selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
-    
-    # Get currency from searchable data, default to "sat" if not specified
-    currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sats')
-    
-    if currency.lower() not in ['sats', 'usdt']:
-        raise ValueError(f"Invalid currency: {currency}")
-    
-    if selections and selectables:
-        # Create maps for efficient lookup
-        selectable_prices = {item['id']: item['price'] for item in selectables}
-        selectable_names = {item['id']: item['name'] for item in selectables}
-        
-        # Calculate total from selections
-        for selection in selections:
-            selectable_id = selection.get('id')
-            if selectable_id is None:
-                raise ValueError("Selection missing required 'id' field")
-                
-            try:
-                quantity = int(selection.get('quantity', 0))
-                if quantity <= 0:
-                    raise ValueError(f"Invalid quantity for item {selectable_id}: {quantity}")
-            except (ValueError, TypeError):
-                raise ValueError(f"Invalid quantity format for item {selectable_id}")
-            
-            if selectable_id in selectable_prices:
-                item_price = selectable_prices[selectable_id]
-                amount += item_price * quantity
-                
-                # Add description part for this item
-                item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
-                description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
-            else:
-                raise ValueError(f"Invalid selectable ID: {selectable_id}")
-    else:
-        raise ValueError("Invalid selections or selectables")
-    
-    # Create the complete description string
-    description = "/".join(description_parts)
-    
-    # Calculate both sats and USD amounts regardless of currency
-    if currency.lower() == 'sats':
-        amount_sats = amount
-        # Convert sats to USD_CENTS using BTC price
-        btc_price_response, status_code = get_btc_price()
-        if status_code != 200:
-            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
-            
-        if 'price' in btc_price_response:
-            # Convert satoshis to BTC (1 BTC = 100,000,000 sats)
-            btc_amount = amount / 100000000
-            # Convert BTC to USD cents
-            amount_usd_cents = btc_amount * btc_price_response['price'] * 100
-        else:
-            raise ValueError("BTC price data is missing")
-    elif currency.lower() == 'usdt':
-        amount_usd_cents = amount * 100
-        # Convert USD_CENTS to sats using BTC price
-        btc_price_response, status_code = get_btc_price()
-        if status_code != 200:
-            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
-            
-        if 'price' in btc_price_response:
-            # Convert USD cents to USD
-            usd_amount = amount 
-            # Convert USD to BTC
-            btc_amount = usd_amount / btc_price_response['price']
-            # Convert BTC to satoshis
-            amount_sats = int(btc_amount * 100000000)
-        else:
-            raise ValueError("BTC price data is missing")
-    else:
-        raise ValueError(f"Invalid currency: {currency}")
-    
-    return {
-        "total_price": amount,
-        "currency": currency,
-        "amount_sats": amount_sats,
-        "amount_usd_cents": amount_usd_cents,
-        "description": description
-    }
 
 def insert_invoice_record(invoice_id, searchable_id, invoice_record):
     """
@@ -1200,7 +1028,9 @@ class CreateInvoiceV1(Resource):
                     "tel": delivery_info.get('tel', ''),
                     "invoice_type": "lightning",
                     "description": description,  # Add description to the stored record
-                    "selections": selections
+                    "selections": selections,
+                    "buyer_paid_amount": int(amount_sats),
+                    "buyer_paid_currency": 'sats',
                 }
                 
                 # Use the helper function to insert the record
@@ -1242,7 +1072,9 @@ class CreateInvoiceV1(Resource):
                     "tel": delivery_info.get('tel', ''),
                     "invoice_type": "stripe",
                     "description": description,
-                    "selections": selections
+                    "selections": selections,
+                    "buyer_paid_amount": round(amount_usd_cents_with_fee/100, 2),
+                    "buyer_paid_currency": 'usdt',
                 }
                 
 

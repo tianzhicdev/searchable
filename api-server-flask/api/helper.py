@@ -35,6 +35,113 @@ BTC_PAY_URL = "https://generous-purpose.metalseed.io"
 STORE_ID = os.environ.get('BTCPAY_STORE_ID', "")
 BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
 
+def calc_invoice(searchable_data, selections):
+    """
+    Calculate invoice details based on searchable data and user selections
+    
+    Args:
+        searchable_data (dict): The data for the searchable item
+        selections (list): List of selected items with quantities
+        
+    Returns:
+        dict: Contains total_price, currency, amount_sats, amount_usd_cents, and description details
+        
+    Raises:
+        ValueError: If there are invalid selections or currency
+        KeyError: If required data is missing
+        Exception: For any other errors during calculation
+    """
+    description_parts = []
+    amount = 0
+    
+    if not searchable_data:
+        raise ValueError("Searchable data is missing or empty")
+    
+    # Check if we have selections and selectables
+    selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
+    
+    # Get currency from searchable data, default to "sat" if not specified
+    currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sats')
+    
+    if currency.lower() not in ['sats', 'usdt']:
+        raise ValueError(f"Invalid currency: {currency}")
+    
+    if selections and selectables:
+        # Create maps for efficient lookup
+        selectable_prices = {item['id']: item['price'] for item in selectables}
+        selectable_names = {item['id']: item['name'] for item in selectables}
+        
+        # Calculate total from selections
+        for selection in selections:
+            selectable_id = selection.get('id')
+            if selectable_id is None:
+                raise ValueError("Selection missing required 'id' field")
+                
+            try:
+                quantity = int(selection.get('quantity', 0))
+                if quantity <= 0:
+                    raise ValueError(f"Invalid quantity for item {selectable_id}: {quantity}")
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid quantity format for item {selectable_id}")
+            
+            if selectable_id in selectable_prices:
+                item_price = selectable_prices[selectable_id]
+                amount += item_price * quantity
+                
+                # Add description part for this item
+                item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
+                description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
+            else:
+                raise ValueError(f"Invalid selectable ID: {selectable_id}")
+    else:
+        raise ValueError("Invalid selections or selectables")
+    
+    # Create the complete description string
+    description = "/".join(description_parts)
+    
+    # Calculate both sats and USD amounts regardless of currency
+    if currency.lower() == 'sats':
+        amount_sats = amount
+        # Convert sats to USD_CENTS using BTC price
+        btc_price_response, status_code = get_btc_price()
+        if status_code != 200:
+            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
+            
+        if 'price' in btc_price_response:
+            # Convert satoshis to BTC (1 BTC = 100,000,000 sats)
+            btc_amount = amount / 100000000
+            # Convert BTC to USD cents
+            amount_usd_cents = btc_amount * btc_price_response['price'] * 100
+        else:
+            raise ValueError("BTC price data is missing")
+    elif currency.lower() == 'usdt':
+        amount_usd_cents = amount * 100
+        # Convert USD_CENTS to sats using BTC price
+        btc_price_response, status_code = get_btc_price()
+        if status_code != 200:
+            raise ValueError(f"Failed to get BTC price: {btc_price_response.get('error', 'Unknown error')}")
+            
+        if 'price' in btc_price_response:
+            # Convert USD cents to USD
+            usd_amount = amount 
+            # Convert USD to BTC
+            btc_amount = usd_amount / btc_price_response['price']
+            # Convert BTC to satoshis
+            amount_sats = int(btc_amount * 100000000)
+        else:
+            raise ValueError("BTC price data is missing")
+    else:
+        raise ValueError(f"Invalid currency: {currency}")
+    
+    return {
+        "total_price": amount,
+        "currency": currency,
+        "amount_sats": amount_sats,
+        "amount_usd_cents": amount_usd_cents,
+        "amount_usd": round(amount_usd_cents/100, 2),
+        "description": description
+    }
+
 def execute_sql(cursor, sql, commit=False, connection=None):
     """
     Execute SQL with logging and return results if applicable
@@ -183,42 +290,54 @@ def get_balance_by_currency(user_id):
     Get user balance from payments and withdrawals
     """
     try:
-        # Use the SQL query to get all paid payments by user_id
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Execute the query to get all payments for searchables owned by this user
-        execute_sql(cur, f"""
-            SELECT p.pkey as invoice, p.fkey as searchable_id, p.data->>'amount' as payment_amount, 
-                   s.searchable_data->'payloads'->'public'->>'currency' as currency, 
-                   u.username as username, u.id as user_id  
-            FROM kv p 
-            JOIN kv i ON p.pkey = i.pkey 
-            JOIN searchables s ON p.fkey::integer = s.searchable_id 
-            JOIN users u ON s.searchable_data->>'terminal_id' = u.id::text 
-            WHERE p.type = 'payment' AND i.type = 'invoice' AND u.id = {user_id}
-        """)
-        
-        payment_results = cur.fetchall()
-        
-        # Calculate payments by currency
         balance_by_currency = {
             'sats': 0,
             'usdt': 0,
         }
-        for payment in payment_results:
-            amount = payment[2]  # payment_amount is at index 2
-            currency = payment[3]  # currency is at index 3
-            
-            if amount is not None and currency is not None:
-                # Convert amount to float
-                amount_float = float(amount)
-                # Add amount to the appropriate currency balance
-                balance_by_currency[currency] += amount_float
         
-
-        # todo: withdraw should have currency too
-        # Get all withdrawals for this user
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        print(f"Calculating balance for user_id: {user_id}")
+        
+        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.terminal_id = {user_id};""")
+        searchable_results = cur.fetchall()
+        
+        for searchable in searchable_results:
+            searchable_id = searchable[0]
+            searchable_data = searchable[1]
+            
+            if not isinstance(searchable_data, dict):
+                searchable_data = json.loads(searchable[1])
+                
+            try:
+                searchable_currency = searchable_data['payloads']['public']['currency'].lower()
+                
+                execute_sql(cur, f"""
+                    SELECT i.data 
+                    FROM kv i
+                    JOIN kv p ON i.pkey = p.pkey AND p.type = 'payment' AND (LOWER(p.data->>'status') = 'complete' OR LOWER(p.data->>'status') = 'settled')
+                    WHERE i.type = 'invoice' AND i.fkey = '{searchable_id}'
+                """)
+                invoice_results = cur.fetchall()
+                
+                for invoice_result in invoice_results:
+                    invoice_data = invoice_result[0]
+                    if invoice_data and 'selections' in invoice_data:
+                        selections = invoice_data['selections']
+                        
+                        calculated_invoice = calc_invoice(searchable_data, selections)
+                        
+                        if searchable_currency == 'sats':
+                            balance_by_currency['sats'] += calculated_invoice['amount_sats']
+                            print(f"Added {calculated_invoice['amount_sats']} sats from searchable {searchable_id}")
+                        elif searchable_currency == 'usdt':
+                            balance_by_currency['usdt'] += calculated_invoice['amount_usd_cents'] / 100  # Convert cents to dollars
+                            print(f"Added {calculated_invoice['amount_usd_cents'] / 100} USDT from searchable {searchable_id}")
+            except KeyError as ke:
+                print(f"KeyError processing searchable {searchable_id}: {str(ke)}")
+                continue
+        
         execute_sql(cur, f"""
             SELECT data->>'user_id' as user_id, data->>'amount' as amount, data->>'currency' as currency, pkey as withdraw_id 
             FROM kv 
@@ -227,26 +346,33 @@ def get_balance_by_currency(user_id):
         
         withdrawal_results = cur.fetchall()
         
-        # Deduct withdrawals from balance by currency
         for withdrawal in withdrawal_results:
-            amount = withdrawal[1]   # amount is at index 1
-            currency = withdrawal[2] # currency is at index 2
+            amount = withdrawal[1]
+            currency = withdrawal[2]
+            withdraw_id = withdrawal[3]
             
             if amount is not None and currency is not None:
-                # Convert amount to float
-                amount_float = float(amount)
-                # Subtract withdrawal amount from the appropriate currency balance
-                balance_by_currency[currency] -= amount_float
-
-        # Return the balance by currency
+                try:
+                    amount_float = float(amount)
+                    if currency in balance_by_currency:
+                        balance_by_currency[currency] -= amount_float
+                        print(f"Subtracted {amount_float} {currency} from withdrawal {withdraw_id}")
+                    else:
+                        print(f"Unknown currency in withdrawal {withdraw_id}: {currency}")
+                except ValueError:
+                    print(f"Invalid amount format in withdrawal {withdraw_id}: {amount}")
+        
+        print(f"Final balance for user {user_id}: {balance_by_currency}")
         return balance_by_currency
         
     except Exception as e:
-        print(f"Error calculating balance: {str(e)}")
-        return 0
+        print(f"Error calculating balance for user {user_id}: {str(e)}")
+        raise e
     finally:
-        cur.close()
-        conn.close()
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 def decode_lightning_invoice(invoice):
     """
@@ -374,13 +500,15 @@ def check_payment(invoice_id):
                 # Store payment record
                 payment_record = {
                     "amount": int(invoice_data.get('amount', invoice_record.get('amount', 0))),
-                    "status": invoice_data['status'],
+                    "status": 'complete',
                     "buyer_id": invoice_record.get('buyer_id', 'unknown'),
                     "timestamp": int(time.time()),
                     "searchable_id": str(searchable_id),
                     "address": invoice_record.get('address', ''),
                     "tel": invoice_record.get('tel', ''),
                     "description": invoice_record.get('description', ''),
+                    "buyer_paid_amount": int(invoice_record.get('amount', 0)),
+                    "buyer_paid_currency": 'sats',
                 }
                 
                 conn = get_db_connection()
@@ -440,7 +568,9 @@ def check_stripe_payment(session_id):
                     "address": invoice_record.get('address', ''),
                     "tel": invoice_record.get('tel', ''),
                     "payment_type": "stripe",
-                    "description": invoice_record.get('description', '')
+                    "description": invoice_record.get('description', ''),
+                    "buyer_paid_amount": invoice_record['amount'],
+                    "buyer_paid_currency": 'usdt',
                 }
                 
                 conn = get_db_connection()
@@ -657,3 +787,110 @@ def get_amount_to_withdraw(invoice):
         return int(decoded_invoice['num_satoshis'])
     except Exception as e:
         raise Exception(f"Invalid invoice format or unable to decode: {str(e)}")
+    
+
+def get_receipts(user_id=None, searchable_id=None):
+    """
+    Retrieves payment receipts for a user or a specific searchable item
+    
+    Args:
+        user_id (str, optional): The ID of the user to get receipts for
+        searchable_id (str, optional): The ID of the searchable item to get receipts for
+        
+    Returns:
+        list: A list of payment objects with public and private data
+        
+    Note:
+        At least one of user_id or searchable_id must be provided
+    """
+    if user_id is None and searchable_id is None:
+        print("Error: Either user_id or searchable_id must be provided")
+        return []
+        
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Build the WHERE clause based on provided parameters
+        where_conditions = []
+        if user_id:
+            where_conditions.append(f"(s.terminal_id = '{user_id}' OR p.data->>'buyer_id' = '{user_id}')")
+        if searchable_id:
+            where_conditions.append(f"s.searchable_id = '{searchable_id}'")
+            
+        where_clause = " AND ".join(where_conditions)
+
+        seller_query = f"""
+            SELECT s.searchable_id, 
+                    s.searchable_data as searchable_data,
+                    i.pkey as id, 
+                    s.searchable_data->'payloads'->'public'->>'currency' as currency, 
+                    i.data->'selections' AS selections, 
+                    p.data->>'status' as status,
+                    p.data as payment_data,
+                    p.data->>'timestamp' as timestamp,
+                    p.data->>'buyer_id' as buyer_id,
+                    s.terminal_id as seller_id,
+                    p.data->>'tracking' as tracking,
+                    p.data->>'rating' as rating,
+                    p.data->>'review' as review,
+                    s.terminal_id as seller_id
+            FROM searchables s 
+            JOIN kv i ON s.searchable_id::text = i.fkey 
+            JOIN kv p ON i.pkey = p.pkey 
+            WHERE i.type = 'invoice' 
+            AND p.type = 'payment' 
+            AND {where_clause}
+            AND (p.data->>'status' = 'complete' OR p.data->>'status' = 'Settled')
+        """
+        execute_sql(cur, seller_query)
+        seller_results = cur.fetchall()
+
+        payments = []
+        
+        for result in seller_results:
+            searchable_id, searchable_data, invoice_id, currency, selections, status, payment_data, timestamp, buyer_id, seller_id, tracking, rating, review, seller_id = result
+            
+            # Calculate invoice details to get the seller's share
+            try:
+                invoice_details = calc_invoice(searchable_data, selections)
+                
+                # Create payment record with seller information
+                payment_public = {
+                    'item': str(searchable_id),
+                    'id': invoice_id,
+                    'currency': currency,
+                    'description': invoice_details.get("description", ""),
+                    'status': status,
+                    'timestamp': payment_data.get('timestamp', ''),
+                    'tracking': payment_data.get('tracking', ''),
+                    'rating': payment_data.get('rating', ''),
+                    'review': payment_data.get('review', ''),
+                }
+
+                if currency == 'usdt':
+                    payment_public['amount'] = invoice_details.get("amount_usd", 0)
+                elif currency == 'sats':
+                    payment_public['amount'] = invoice_details.get("amount_sats", 0)
+                
+                payment_private = {
+                    'buyer_id': str(buyer_id),
+                    'seller_id': str(seller_id),
+                }
+                payment = {
+                    'public': payment_public,
+                    'private': payment_private
+                }
+                
+                payments.append(payment)
+            except Exception as calc_error:
+                print(f"Error calculating invoice details for searchable {searchable_id}: {str(calc_error)}")
+        
+        cur.close()
+        conn.close()
+        
+        return payments
+    except Exception as e:
+        print(f"Error retrieving receipts: {str(e)}")
+        return []
+
