@@ -16,6 +16,8 @@
     "@material-ui/lab": "^5.0.0-alpha.39",
     "@material-ui/styles": "^5.0.0-beta.0",
     "@material-ui/utils": "^5.0.0-beta.0",
+    "@react-three/drei": "^7.5.1",
+    "@react-three/fiber": "^7.0.6",
     "@tabler/icons": "^1.39.1",
     "@tailwindcss/vite": "^4.0.12",
     "@testing-library/jest-dom": "^5.11.10",
@@ -43,13 +45,16 @@
     "redux": "^4.0.5",
     "redux-persist": "^6.0.0",
     "tailwindcss": "^4.0.12",
+    "three": "^0.133.0",
     "yup": "^0.32.9"
   },
   "scripts": {
     "start": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts start",
     "start-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.jpg REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts start",
+    "start-figyua": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=figyua REACT_APP_LOGO=figyua.jpg REACT_APP_DESCRIPTION='Figyua' react-scripts start",
     "build": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts build",
     "build-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.jpg REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts build",
+    "build-figyua": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=figyua REACT_APP_LOGO=figyua.jpg REACT_APP_DESCRIPTION='Figyua' react-scripts build",
     "test": "react-scripts test --passWithNoTests",
     "eject": "react-scripts eject"
   },

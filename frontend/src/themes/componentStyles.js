@@ -284,6 +284,18 @@ const useComponentStyles = makeStyles((theme) => ({
     }
   },
 
+  // 3D Model rendering
+  modelLoadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    backgroundColor: theme.palette.background.paper,
+    border: theme.borders.main,
+    borderRadius: '0px'
+  },
+
 }));
 
 export default useComponentStyles; 

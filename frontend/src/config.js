@@ -18,7 +18,9 @@ if (process.env.REACT_APP_ENV === 'local') {
 let APP_BRANDING = 'silkroadonlightning';
 if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
   APP_BRANDING = 'eccentricprotocol';
-} 
+} else if (process.env.REACT_APP_BRANDING === 'figyua') {
+  APP_BRANDING = 'figyua';
+}
 
 let branding_config = {
   logo: 'camel_logo.jpg',
@@ -29,11 +31,19 @@ if (APP_BRANDING === 'eccentricprotocol') {
   branding_config = {
     logo: 'eccentricprotocol.jpg',
     domain: 'eccentricprotocol.com',
+    dashboard: '/searchables',
   }
 } else if (APP_BRANDING === 'silkroadonlightning') {
   branding_config = {
     logo: 'camel_logo.jpg',
     domain: 'silkroadonlightning.com',
+    dashboard: '/searchables',
+  }
+} else if (APP_BRANDING === 'figyua') {
+  branding_config = {
+    logo: 'camel_logo.jpg', // todo: change
+    domain: 'figyua.com',
+    dashboard: '/figyua',
   }
 }
 
@@ -41,8 +51,8 @@ const config = {
     // basename: only at build time to set, and don't add '/' at end off BASENAME for breadcrumbs, also don't put only '/' use blank('') instead,
     // like '/berry-material-react/react/default'
     basename: '',
-    dashboard: '/searchables',
-    defaultPath: '/searchables',
+    dashboard: branding_config.dashboard,
+    defaultPath: branding_config.dashboard,
     loginPath: '/login',
     fontFamily: `'Roboto', sans-serif`,
     borderRadius: 12,
