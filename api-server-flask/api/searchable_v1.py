@@ -752,7 +752,7 @@ class WithdrawalsByTerminal(Resource):
                     withdrawal_public = {
                         'id': withdrawal.get('pkey', ''),
                         'type': 'withdrawal',
-                        'amount': int(withdrawal.get('amount', 0)),
+                        'amount': float(withdrawal['amount']),
                         'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
                         'status': get_withdrawal_status(withdrawal.get('status', [])),
                         'currency': currency,

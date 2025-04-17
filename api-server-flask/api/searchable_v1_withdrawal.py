@@ -28,7 +28,7 @@ class WithdrawFundsUSDT(Resource):
         except ValueError:
             return {"error": "Invalid amount format"}, 400
         
-        USDT_DECIMALS = 18
+        USDT_DECIMALS = 6
 
         try:
             response = requests.post('http://host.docker.internal:3100/send', json={
