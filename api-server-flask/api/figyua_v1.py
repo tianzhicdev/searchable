@@ -19,25 +19,93 @@ TEST_API_KEY = "msy_dummy_api_key_for_test_mode_12345678"
 ACTIVE_API_KEY = MESHY_API_KEY
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
+ART_STYLES = ["realistic", "sculpture"]
 
-def create_model(shape_prompt, texture_prompt, model_id, api_key=None, art_style="realistic"):
+def get_image_descriptions(prompt, base64_image):
     """
-    Create a 3D model using the Meshy API based on a text prompt.
+    Process an image with XAI to get shape and texture descriptions.
     
     Args:
-        prompt (str): The text prompt for the model
-        api_key (str, optional): Meshy API key. If not provided, uses environment variable.
+        prompt (str): The user's prompt to guide the description
+        base64_image (str): Base64-encoded image data
+        
+    Returns:
+        tuple: (shape_prompt, texture_prompt) descriptions for 3D modeling
+    """
+    try:
+        client = openai.OpenAI(
+            api_key=XAI_API_KEY,
+            base_url="https://api.x.ai/v1",
+        )
+    
+        completion = client.chat.completions.create(
+            temperature=0.2,
+            model="grok-2-vision-1212",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"Describe this image in detail for 3D model generation in 2 parts with && as a separator, first part is focused on the shape and look (model mesh), second part is focused on the texture. DO NOT HAVE ANYTHING ELSE IN THE RESPONSE, JUST THE 2 PARTS SEPARATED BY && EACH PART LESS THAN 400 CHARACTERS. Also consider the users prompt: {prompt}"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+        
+        # Extract shape and texture prompts from the image description
+        image_description = completion.choices[0].message.content
+        print(f"Image description: {image_description}")
+        
+        parts = image_description.split("&&")
+        if len(parts) >= 2:
+            shape_prompt = parts[0].strip()
+            texture_prompt = parts[1].strip()
+        else:
+            # Fallback if the separator isn't found
+            shape_prompt = image_description
+            texture_prompt = f"Texture for {prompt}"
+            
+        return shape_prompt, texture_prompt
+            
+    except Exception as e:
+        print(f"Error processing image with XAI: {str(e)}")
+        # Fallback to original prompt if image processing fails
+        shape_prompt = f"3D model of {prompt}"
+        texture_prompt = f"Texture for {prompt}"
+        return shape_prompt, texture_prompt
+
+
+def create_model(prompt, model_id, base64_image, mesh_api_key=None, art_style="realistic"):
+    """
+    Create a 3D model using the Meshy API based on a text prompt and image.
+    
+    Args:
+        prompt (str): The text prompt to guide the model generation
+        model_id (str): Unique identifier for the model
+        base64_image (str): Base64-encoded image data
+        mesh_api_key (str, optional): Meshy API key. If not provided, uses environment variable.
         art_style (str, optional): Art style for the model
         
     Returns:
         dict: Information about the created model including UUID and file paths
     """
 
-    if api_key is None:
-        api_key = ACTIVE_API_KEY
+    if mesh_api_key is None:
+        mesh_api_key = ACTIVE_API_KEY
+    
+    # Process the image to get shape and texture descriptions
+    shape_prompt, texture_prompt = get_image_descriptions(prompt, base64_image)
+    
+    print(f"Shape prompt for model {model_id}: {shape_prompt}")
+    print(f"Texture prompt for model {model_id}: {texture_prompt}")
     
     headers = {
-        "Authorization": f"Bearer {api_key}"
+        "Authorization": f"Bearer {mesh_api_key}"
     }
     
     # Create directory for the model
@@ -181,7 +249,7 @@ def create_model(shape_prompt, texture_prompt, model_id, api_key=None, art_style
     
     # Metadata file is already updated with both task IDs
     
-    print(f"Model '{prompt}' created successfully. Files saved to '{model_id}' directory.")
+    print(f"Model created successfully. Files saved to '{model_id}' directory.")
     
     return {
         "id": model_id,
@@ -284,59 +352,37 @@ class CreateFigyua(Resource):
     def post(self, current_user, request_origin='unknown'):
         try:
             prompt = request.form.get('text')  
-            image = request.files.get('image')  
-            if image:
-                try:
-                    # Encode the image to base64 directly from memory
-                    image_data = image.read()
-                    base64_image = base64.b64encode(image_data).decode("utf-8")
-                    client = openai.OpenAI(
-                        api_key=XAI_API_KEY,
-                        base_url="https://api.x.ai/v1",
-                    )
-                    
-                    completion = client.chat.completions.create(
-                        model="grok-2-vision-1212",
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": f"Describe this image in detail for 3D model generation in 2 parts with && as a separator, first part is focused on the shape, look and feel, second part is focused on the texture. DO NOT HAVE ANYTHING ELSE IN THE RESPONSE, JUST THE 2 PARTS SEPARATED BY && EACH PART LESS THAN 400 CHARACTERS. Also consider the users prompt: {prompt}"},
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/jpeg;base64,{base64_image}"
-                                        },
-                                    },
-                                ],
-                            }
-                        ],
-                    )
-                    
-                    # Enhance the prompt with the image description
-                    image_description = completion.choices[0].message.content
-                    print("image_description", image_description)
-                    shape_prompt = image_description.split("&&")[0]
-                    texture_prompt = image_description.split("&&")[1]
-                    uuids = [str(uuid.uuid4()) for _ in range(2)]
-                    art_style =  "realistic"  # todo: use a list for different styles\
+            image = request.files.get('image')
             
-                    for uuid_value in uuids:
-                        thread = threading.Thread(target=create_model, args=(shape_prompt, texture_prompt, uuid_value), 
-                                                kwargs={'art_style': art_style})
-                        thread.daemon = True
-                        thread.start()
-                    
-                    return {
-                        'success': True,
-                        'uuids': uuids
-                    }, 200
-                    
-                except Exception as e:
-                    print(f"Error processing image with OpenAI: {str(e)}")
-                    # Continue with original prompt if image processing fails
-                    raise e
-            
+            if not image:
+                return {"error": "Image is required"}, 400
+                
+            try:
+                # Read and encode the image
+                image_data = image.read()
+                base64_image = base64.b64encode(image_data).decode("utf-8")
+                
+                # Generate multiple UUIDs for different art styles
+                uuids = [str(uuid.uuid4()) for _ in range(6)]
+                
+                # Start model creation threads with different art styles
+                for idx, uuid_value in enumerate(uuids):
+                    thread = threading.Thread(
+                        target=create_model, 
+                        args=(prompt, uuid_value, base64_image),
+                        kwargs={'art_style': ART_STYLES[idx % len(ART_STYLES)]}
+                    )
+                    thread.daemon = True
+                    thread.start()
+                
+                return {
+                    'success': True,
+                    'uuids': uuids
+                }, 200
+                
+            except Exception as e:
+                print(f"Error processing image: {str(e)}")
+                return {"error": str(e)}, 500
     
         except Exception as e:
             print(f"Error creating figura: {str(e)}")
