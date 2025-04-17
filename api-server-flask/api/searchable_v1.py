@@ -757,11 +757,11 @@ class WithdrawalsByTerminal(Resource):
                         'status': get_withdrawal_status(withdrawal.get('status', [])),
                         'currency': currency,
                     }
-                    withdrawal = {
-                        "public": withdrawal_public,
-                    }
+                withdrawal_record = {
+                    "public": withdrawal_public,
+                }
                 
-                withdrawals.append(withdrawal)
+                withdrawals.append(withdrawal_record)
             
             return {
                 'withdrawals': withdrawals,
