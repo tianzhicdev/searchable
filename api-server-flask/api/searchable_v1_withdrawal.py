@@ -31,43 +31,33 @@ class WithdrawFundsUSDT(Resource):
         USDT_DECIMALS = 6
 
         try:
-            response = requests.post('http://host.docker.internal:3100/send', json={
-                'to': address,
-                'amount': amount * 10 ** USDT_DECIMALS
-            })
+            conn = get_db_connection()
+            cur = conn.cursor()
             
-            print("tether server response", response.json())
+            # Generate a unique transaction ID for this withdrawal
+            tx_id = f"usdt-{current_user.id}-{int(time.time())}"
             
-            if response.status_code == 200:
-                # Get transaction ID from response
-                tx_id = response.json().get('txHash')
-                
-                
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                # Prepare withdrawal data
-                withdrawal_data = {
-                    'invoice': tx_id,
-                    'status': [('complete', int(time.time()))],
-                    'user_id': current_user.id,
-                    'amount': amount,
-                    'address': address,
-                    'currency': 'usdt'
-                }
-                
-                # Store withdrawal record
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, fkey, pkey, data)
-                    VALUES ('withdrawal', '{current_user.id}', '{tx_id}', {Json(withdrawal_data)})
-                    RETURNING pkey
-                """, commit=True, connection=conn)
-                cur.close()
-                conn.close()
+            # Prepare withdrawal data with pending status
+            withdrawal_data = {
+                'invoice': tx_id,
+                "tx_id": tx_id,
+                'status': [('pending', int(time.time()))],
+                'user_id': current_user.id,
+                'amount': amount,
+                'address': address,
+                'currency': 'usdt'
+            }
+            
+            # Store withdrawal record
+            execute_sql(cur, f"""
+                INSERT INTO kv (type, fkey, pkey, data)
+                VALUES ('withdrawal', '{current_user.id}', '{tx_id}', {Json(withdrawal_data)})
+                RETURNING pkey
+            """, commit=True, connection=conn)
+            cur.close()
+            conn.close()
 
-                return {"success": True, "msg": "Withdrawal request submitted successfully"}, 200
-            else:
-                return {"error": f"Error from USDT service: {response.text}"}, 500
+            return {"success": True, "msg": "Withdrawal request submitted successfully"}, 200
         except Exception as e:
             return {"error": f"Failed to process withdrawal: {str(e)}"}, 500
 
@@ -97,41 +87,28 @@ class WithdrawFunds(Resource):
                     "withdrawal_amount": amount_to_withdraw
                 }, 400
             
-
-            payment_response = pay_lightning_invoice(invoice)
-            if "error" in payment_response:
-                raise Exception(f"Lightning payment failed: {payment_response['error']}")
-            else:
-                fee_sat = payment_response.get('fee_sat', 0)
-                value_sat = payment_response.get('value_sat', 0)
-                status = payment_response.get('status', 'unknown')
-                if status == 'SUCCEEDED':
-                    # Record the withdrawal in the database first
-                    conn = get_db_connection()
-                    cur = conn.cursor()
-                    
-                    withdrawal_data = {
-                        'invoice': invoice,
-                        'status': [('complete', int(time.time()))],
-                        'user_id': current_user.id,
-                        'currency': 'sats',
-                        'fee_sat': int(fee_sat),
-                        'value_sat': int(value_sat),
-                        'amount': int(fee_sat) + int(value_sat)
-                    }
+            # Record the withdrawal as pending in the database
+            conn = get_db_connection()
+            cur = conn.cursor()
             
-                    # Store withdrawal record
-                    execute_sql(cur, f"""
-                        INSERT INTO kv (type, fkey, pkey, data)
-                        VALUES ('withdrawal', '{current_user.id}', '{invoice}', {Json(withdrawal_data)})
-                        RETURNING pkey
-                    """, commit=True, connection=conn)
-                    cur.close()
-                    conn.close()
-            
-                    return {"recorded": True}, 200
-                else:
-                    raise Exception(f"Lightning payment failed: {payment_response['error']}")
+            withdrawal_data = {
+                'invoice': invoice,
+                'status': [('pending', int(time.time()))],
+                'user_id': current_user.id,
+                'currency': 'sats',
+                'amount': amount_to_withdraw
+            }
+    
+            # Store withdrawal record
+            execute_sql(cur, f"""
+                INSERT INTO kv (type, fkey, pkey, data)
+                VALUES ('withdrawal', '{current_user.id}', '{invoice}', {Json(withdrawal_data)})
+                RETURNING pkey
+            """, commit=True, connection=conn)
+            cur.close()
+            conn.close()
+    
+            return {"recorded": True, "status": "pending"}, 200
             
         except Exception as e:
             print(f"Error processing withdrawal: {str(e)}")

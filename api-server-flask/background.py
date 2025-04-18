@@ -136,34 +136,77 @@ def process_pending_withdrawals():
             processed_count += 1
             
             try:
-                payment_response = pay_lightning_invoice(invoice)
-                if "error" in payment_response:
-                    logger.error(f"Lightning payment failed: {payment_response['error']}")
-                    raise Exception(f"Lightning payment failed: {payment_response['error']}")
-                else:
-                    fee_sat = payment_response.get('fee_sat', 0)
-                    value_sat = payment_response.get('value_sat', 0)
+                # Handle different currencies
+                currency = withdrawal.get('currency', 'sats')
+                
+                if currency.lower() == 'usdt':
+                    # Process USDT withdrawal
+                    address = withdrawal.get('address')
+                    amount = withdrawal.get('amount')
+                    USDT_DECIMALS = 6
                     
-                    # Update the withdrawal record with payment response
-                    conn = get_db_connection()
-                    cur = conn.cursor()
+                    response = requests.post('http://host.docker.internal:3100/send', json={
+                        'to': address,
+                        'amount': amount * 10 ** USDT_DECIMALS
+                    })
                     
-                    execute_sql(cur, f"""
-                        UPDATE kv 
-                        SET data = {Json({
-                            **withdrawal,
-                            'fee_sat': fee_sat,
-                            'value_sat': value_sat,
-                            'amount': int(value_sat) + int(fee_sat),
-                            'status': status_history + [(payment_response.get('status', 'unknown'), int(time.time()))]
-                        })}
-                        WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                    """, commit=True, connection=conn)
+                    logger.info(f"USDT server response: {response.json()}")
                     
-                    cur.close()
-                    conn.close()
+                    if response.status_code == 200:
+                        # Get transaction ID from response
+                        tx_hash = response.json().get('txHash')
+                        
+                        # Update the withdrawal record with successful status
+                        conn = get_db_connection()
+                        cur = conn.cursor()
+                        
+                        execute_sql(cur, f"""
+                            UPDATE kv 
+                            SET data = {Json({
+                                **withdrawal,
+                                'tx_hash': tx_hash,
+                                'status': status_history + [('complete', int(time.time()))]
+                            })}
+                            WHERE type = 'withdrawal' AND pkey = '{invoice}'
+                        """, commit=True, connection=conn)
+                        
+                        cur.close()
+                        conn.close()
+                        
+                        logger.info(f"Processed USDT withdrawal to {address} for amount {amount}")
+                    else:
+                        raise Exception(f"USDT service error: {response.text}")
                     
-                    logger.info(f"Processed withdrawal for invoice {invoice}: {payment_response.get('status', 'unknown')}")
+                else:  # Default to sats/BTC
+                    # Process Bitcoin Lightning withdrawal
+                    payment_response = pay_lightning_invoice(invoice)
+                    if "error" in payment_response:
+                        logger.error(f"Lightning payment failed: {payment_response['error']}")
+                        raise Exception(f"Lightning payment failed: {payment_response['error']}")
+                    else:
+                        fee_sat = payment_response.get('fee_sat', 0)
+                        value_sat = payment_response.get('value_sat', 0)
+                        
+                        # Update the withdrawal record with payment response
+                        conn = get_db_connection()
+                        cur = conn.cursor()
+                        
+                        execute_sql(cur, f"""
+                            UPDATE kv 
+                            SET data = {Json({
+                                **withdrawal,
+                                'fee_sat': fee_sat,
+                                'value_sat': value_sat,
+                                'amount': int(value_sat) + int(fee_sat),
+                                'status': status_history + [(payment_response.get('status', 'unknown'), int(time.time()))]
+                            })}
+                            WHERE type = 'withdrawal' AND pkey = '{invoice}'
+                        """, commit=True, connection=conn)
+                        
+                        cur.close()
+                        conn.close()
+                        
+                        logger.info(f"Processed sats withdrawal for invoice {invoice}: {payment_response.get('status', 'unknown')}")
                 
             except Exception as e:
                 logger.error(f"Error processing withdrawal {invoice}: {str(e)}")
@@ -231,17 +274,17 @@ def start_background_threads():
     )
     invoice_thread.start()
     
-    # # Start withdrawal processing thread
-    # withdrawal_thread = threading.Thread(
-    #     target=withdrawal_processing_thread,
-    #     daemon=True,
-    #     name="withdrawal-processing"
-    # )
-    # withdrawal_thread.start()
+    # Start withdrawal processing thread
+    withdrawal_thread = threading.Thread(
+        target=withdrawal_processing_thread,
+        daemon=True,
+        name="withdrawal-processing"
+    )
+    withdrawal_thread.start()
     
     logger.info("Background threads started")
     
-    return invoice_thread
+    return [invoice_thread, withdrawal_thread]
 
 
 # This will be called when the module is imported
