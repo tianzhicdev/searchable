@@ -19,29 +19,6 @@ services:
           cpus: "1.0"   # Guaranteed 0.5 CPU core[6]
           memory: 256M  # Guaranteed 256MB RAM[6]
     
-  flask_api:
-    container_name: flask_api
-    restart: always
-    env_file: 
-      - .env
-      - /usr/local/.secrets.env
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    ports:
-      - "5005:5005"
-    networks:
-      - db_network
-      - web_network
-    deploy:
-      resources:
-        limits:
-          cpus: "2.0"  # Max 1 CPU core[6][8]
-          memory: 1GB  # Max 512MB RAM[6][3]
-        reservations:
-          cpus: "1.0"   # Guaranteed 0.5 CPU core[6]
-          memory: 256M  # Guaranteed 256MB RAM[6]
-    
   nginx:
     container_name: nginx
     restart: always
@@ -54,8 +31,6 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - web_network
-    depends_on: 
-      - flask_api
 networks:
   db_network:
     driver: bridge

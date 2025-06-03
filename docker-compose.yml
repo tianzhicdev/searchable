@@ -9,6 +9,29 @@ services:
     volumes:
       - frontend_build:/app/build
 
+  flask_api:
+    container_name: flask_api
+    restart: always
+    env_file: 
+      - ./api-server-flask/.env
+      - /usr/local/.secrets.env
+    build:
+      context: ./api-server-flask
+      dockerfile: Dockerfile.api
+    ports:
+      - "5005:5005"
+    networks:
+      - db_network
+      - web_network
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1GB
+        reservations:
+          cpus: "1.0"
+          memory: 256M
+
   nginx:
     image: nginx:latest
     volumes:
@@ -20,7 +43,7 @@ services:
       - "443:443"
     depends_on:
       - frontend
-      # - flask_api
+      - flask_api
 
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
