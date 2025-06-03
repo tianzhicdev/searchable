@@ -14,7 +14,7 @@ services:
     restart: always
     env_file: 
       - ./api-server-flask/.env
-      - /usr/local/.secrets.env
+      - ./api-server-flask/.secrets.env
     build:
       context: ./api-server-flask
       dockerfile: Dockerfile.api
