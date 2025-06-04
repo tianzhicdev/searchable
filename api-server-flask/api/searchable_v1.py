@@ -26,12 +26,15 @@ from .helper import (
     Json,
     get_withdrawal_timestamp,
     get_withdrawal_status,
-    calc_invoice
+    calc_invoice,
+    setup_logger
 )
 import time
 import stripe
 
-from .track_metrics import track_metrics
+# Set up the logger
+logger = setup_logger(__name__, 'searchable_v1.log')
+
 stripe.api_key = os.getenv('STRIPE_API_KEY')
 
 def validate_payment_request(data):

@@ -3,7 +3,10 @@ from flask import request
 from .routes import token_required, token_optional
 from .track_metrics import *
 from . import rest_api
-from .helper import get_db_connection, execute_sql
+from .helper import get_db_connection, execute_sql, setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'searchable_v1_kv.log')
 
 @rest_api.route('/api/v1/tracking', methods=['POST'])
 class CreateTracking(Resource):
@@ -59,13 +62,13 @@ class CreateTracking(Resource):
                     # Commit the transaction
                     conn.commit()
                     
-                    print(f"Tracking information added for payment_id: {payment_id}")
+                    logger.info(f"Tracking information added for payment_id: {payment_id}")
                 except Exception as e:
                     conn.rollback()
-                    print(f"Error inserting tracking data: {str(e)}")
+                    logger.error(f"Error inserting tracking data: {str(e)}")
                     return {"error": f"Failed to update tracking information: {str(e)}"}, 500
             else:
-                print(f"No tracking information provided for payment_id: {payment_id}")
+                logger.warning(f"No tracking information provided for payment_id: {payment_id}")
             # Now that we've verified ownership, we can proceed with tracking
             
             # Close the database connection
@@ -73,7 +76,7 @@ class CreateTracking(Resource):
             conn.close()
             
         except Exception as e:
-            print(f"Error verifying payment ownership: {str(e)}")
+            logger.error(f"Error verifying payment ownership: {str(e)}")
             return {"error": f"Database error: {str(e)}"}, 500
         
 
@@ -144,10 +147,10 @@ class RatePayment(Resource):
                 # Commit the transaction
                 conn.commit()
                 
-                print(f"Rating information added for payment_id: {payment_id}")
+                logger.info(f"Rating information added for payment_id: {payment_id}")
             except Exception as e:
                 conn.rollback()
-                print(f"Error inserting rating data: {str(e)}")
+                logger.error(f"Error inserting rating data: {str(e)}")
                 return {"error": f"Failed to update rating information: {str(e)}"}, 500
             
             # Close the database connection
@@ -157,7 +160,7 @@ class RatePayment(Resource):
             return {"success": True, "rating": rating}, 200
             
         except Exception as e:
-            print(f"Error processing rating: {str(e)}")
+            logger.error(f"Error processing rating: {str(e)}")
             return {"error": f"Server error: {str(e)}"}, 500
 
 

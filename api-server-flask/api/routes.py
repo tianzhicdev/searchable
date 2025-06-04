@@ -14,7 +14,10 @@ from flask_restx import Resource, fields
 from . import rest_api
 from .config import BaseConfig
 from .models import db, Users, JWTTokenBlocklist
-from .helper import get_db_connection  # Import get_db_connection from helper
+from .helper import get_db_connection, setup_logger  # Import get_db_connection and setup_logger from helper
+
+# Set up the logger
+logger = setup_logger(__name__, 'routes.log')
 
 # Test backdoor for development
 DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
@@ -48,26 +51,26 @@ def token_required(f):
         token = None
         if "authorization" in request.headers:
             token = request.headers["authorization"]
-            print(f"Token: {token}")
+            logger.debug(f"Token: {token}")
 
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
             
         if token == DEV_TOKEN:
-            print("Using test admin account for development")
+            logger.info("Using test admin account for development")
             # Create a mock admin user for testing
             admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")
             return f(self, *args, current_user=admin_user, **kwargs)
 
         try:
             data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
-            print(f"Decoded JWT data: {data}")
+            logger.debug(f"Decoded JWT data: {data}")
 
             decoded_token = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
-            print(f"Decoded JWT: {decoded_token}")
+            logger.debug(f"Decoded JWT: {decoded_token}")
             
             current_user = Users.get_by_email(data["email"])
-            print(f"User {current_user.username} with email {current_user.email} is making a request.")
+            logger.info(f"User {current_user.username} with email {current_user.email} is making a request.")
 
             if not current_user:
                 return {"success": False,
@@ -82,7 +85,7 @@ def token_required(f):
                 return {"success": False, "msg": "Token expired."}, 400
 
         except Exception as e:
-            print(f"Exception occurred: {e}")
+            logger.error(f"Exception occurred: {e}")
             return {"success": False, "msg": "Token is invalid"}, 400
 
         return f(self, *args, current_user=current_user, **kwargs)
@@ -99,21 +102,21 @@ def token_optional(f):
         # Check for authorization token
         if 'use-jwt' in request.headers and request.headers['use-jwt'] == "true" and "authorization" in request.headers:
             token = request.headers["authorization"]
-            print(f"optional-Token: {token}")
+            logger.debug(f"optional-Token: {token}")
             
             # Handle token authentication
             if token == DEV_TOKEN:
-                print("Using test admin account for development")
+                logger.info("Using test admin account for development")
                 # Create a mock admin user for testing
                 admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")
                 return f(self, *args, current_user=admin_user, visitor_id=None, **kwargs)
                 
             try:
                 data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
-                print(f"Decoded JWT data: {data}")
+                logger.debug(f"Decoded JWT data: {data}")
                 
                 current_user = Users.get_by_email(data["email"])
-                print(f"User {current_user.username} with email {current_user.email} is making a request.")
+                logger.info(f"User {current_user.username} with email {current_user.email} is making a request.")
                 
                 if not current_user:
                     return {"success": False, 
@@ -130,13 +133,13 @@ def token_optional(f):
                 return f(self, *args, current_user=current_user, visitor_id=None, **kwargs)
                 
             except Exception as e:
-                print(f"Exception occurred: {e}")
+                logger.error(f"Exception occurred: {e}")
                 return {"success": False, "msg": "Token is invalid"}, 400
         
         # If no token, check for visitor ID
         elif 'use-jwt' in request.headers and request.headers['use-jwt'] == "false" and "X-Visitor-Id" in request.headers:
             visitor_id = request.headers["X-Visitor-Id"]
-            print(f"optional-Visitor ID: {visitor_id}")
+            logger.debug(f"optional-Visitor ID: {visitor_id}")
             return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
         
         # If neither token nor visitor ID is provided

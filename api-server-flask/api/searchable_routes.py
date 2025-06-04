@@ -19,8 +19,12 @@ from .helper import (
     get_searchableIds_by_user, 
     get_data_from_kv, 
     execute_sql,
-    Json
+    Json,
+    setup_logger
 )
+
+# Set up the logger
+logger = setup_logger(__name__, 'searchable_routes.log')
 
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_requests_total', 'Total number of searchable API requests', ['endpoint', 'method', 'status'])
@@ -28,11 +32,11 @@ searchable_latency = Histogram('searchable_request_latency_seconds', 'Request la
 search_results_count = Summary('search_results_count', 'Number of search results returned')
 
 BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY')
-print("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
+logger.info("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
 
 BTC_PAY_URL = "https://generous-purpose.metalseed.io"
 STORE_ID = os.environ.get('BTCPAY_STORE_ID')
-print("BTCPAY_STORE_ID: " + STORE_ID)
+logger.info("BTCPAY_STORE_ID: " + STORE_ID)
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
 class GetSearchableItem(Resource):
@@ -91,11 +95,11 @@ class CreateSearchable(Resource):
     @token_required
     def post(self, current_user):
         with searchable_latency.labels('create_searchable').time():
-            print(f"Creating searchable for user: {current_user}")
+            logger.info(f"Creating searchable for user: {current_user}")
             conn = None
             try:
                 data = request.get_json()  # Get JSON data from request
-                print(f"Received data: {data}")
+                logger.debug(f"Received data: {data}")
                 
                 if not data:
                     searchable_requests.labels('create_searchable', 'POST', 400).inc()
@@ -114,11 +118,11 @@ class CreateSearchable(Resource):
                     latitude = float(data['payloads']['public']['latitude'])
                     longitude = float(data['payloads']['public']['longitude'])
                 except:
-                    print("No latitude or longitude found in the data")
+                    logger.warning("No latitude or longitude found in the data")
                     pass
                 
                 # Insert into searchables table with dedicated lat/long columns
-                print("Executing database insert...")
+                logger.info("Executing database insert...")
                 # Use NULL for latitude/longitude if they are None
                 lat_value = "NULL" if latitude is None else latitude
                 lng_value = "NULL" if longitude is None else longitude
@@ -126,7 +130,7 @@ class CreateSearchable(Resource):
                 execute_sql(cur, sql)
                 searchable_id = cur.fetchone()[0]
                 
-                print(f"Added searchable {searchable_id}")
+                logger.info(f"Added searchable {searchable_id}")
                 
                 conn.commit()
                 cur.close()
@@ -137,8 +141,8 @@ class CreateSearchable(Resource):
                 # Enhanced error logging
                 import traceback
                 error_traceback = traceback.format_exc()
-                print(f"Error creating searchable: {str(e)}")
-                print(f"Traceback: {error_traceback}")
+                logger.error(f"Error creating searchable: {str(e)}")
+                logger.error(f"Traceback: {error_traceback}")
                 
                 # Ensure database connection is closed
                 if conn:
@@ -316,24 +320,24 @@ class SearchSearchables(Resource):
     def _query_database(self, lat, lng, max_distance, query_term, internal_search_term=None):
         """Query database for results and filter by actual distance and search relevance"""
         # Log query parameters for debugging
-        print(f"Search parameters:")
-        print(f"  Query term: {query_term}")
-        print(f"  Internal search term: {internal_search_term}")
+        logger.info(f"Search parameters:")
+        logger.info(f"  Query term: {query_term}")
+        logger.info(f"  Internal search term: {internal_search_term}")
         
         # Using location-based search?
         using_location = lat is not None and lng is not None and max_distance is not None and max_distance != 100000000
         if using_location:
-            print(f"  Coordinates: ({lat}, {lng})")
-            print(f"  Max distance: {max_distance} meters")
+            logger.info(f"  Coordinates: ({lat}, {lng})")
+            logger.info(f"  Max distance: {max_distance} meters")
         else:
-            print("  Not using location-based filtering")
+            logger.info("  Not using location-based filtering")
         
         # Tokenize query term
         query_tokens = self._tokenize_text(query_term)
         
         # Parse internal search term
         field_conditions = self._parse_internal_search_term(internal_search_term)
-        print(f"  Field conditions: {field_conditions}")
+        logger.info(f"  Field conditions: {field_conditions}")
         
         conn = get_db_connection()
         cur = conn.cursor()
@@ -500,7 +504,7 @@ class RemoveSearchableItem(Resource):
     @token_required
     def put(self, current_user, searchable_id):
         with searchable_latency.labels('remove_searchable_item').time():
-            print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
+            logger.info(f"Soft removing searchable item {searchable_id} by user: {current_user}")
             try:
                 conn = get_db_connection()
                 cur = conn.cursor()
@@ -544,7 +548,7 @@ class RemoveSearchableItem(Resource):
                 
             except Exception as e:
                 searchable_requests.labels('remove_searchable_item', 'PUT', 500).inc()
-                print(f"Error removing searchable item: {str(e)}")
+                logger.error(f"Error removing searchable item: {str(e)}")
                 return {"error": str(e)}, 500
 
 @rest_api.route('/api/kv', methods=['GET', 'PUT'])
@@ -611,7 +615,7 @@ class KvResource(Resource):
             return {"data": result}, 200
             
         except Exception as e:
-            print(f"Error retrieving from KV store: {str(e)}")
+            logger.error(f"Error retrieving from KV store: {str(e)}")
             return {"error": str(e)}, 500
     
 
@@ -665,7 +669,7 @@ class KvResource(Resource):
             return {"success": True, "message": "Data stored successfully"}, 200
             
         except Exception as e:
-            print(f"Error storing in KV store: {str(e)}")
+            logger.error(f"Error storing in KV store: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/balance', methods=['GET'])
@@ -683,7 +687,7 @@ class BalanceResource(Resource):
             return balance, 200
             
         except Exception as e:
-            print(f"Error calculating balance: {str(e)}")
+            logger.error(f"Error calculating balance: {str(e)}")
             return {"error": str(e)}, 500
 
 
@@ -738,7 +742,7 @@ class CreateInvoice(Resource):
             )
             
         except Exception as e:
-            print(f"Error creating invoice: {str(e)}")
+            logger.error(f"Error creating invoice: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/create-invoice-visitor', methods=['POST'])
@@ -769,7 +773,7 @@ class CreateInvoiceVisitor(Resource):
             )
             
         except Exception as e:
-            print(f"Error creating visitor invoice: {str(e)}")
+            logger.error(f"Error creating visitor invoice: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/check-payment/<string:invoice_id>/<string:buyer_id>', methods=['GET'])
@@ -789,7 +793,7 @@ class CheckPayment(Resource):
             return invoice_data, 200
             
         except Exception as e:
-            print(f"Error checking payment status: {str(e)}")
+            logger.error(f"Error checking payment status: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/transactions', methods=['GET'])
@@ -850,7 +854,7 @@ class TransactionHistory(Resource):
                 }, 200
                 
             except Exception as e:
-                print(f"Error retrieving transaction history: {str(e)}")
+                logger.error(f"Error retrieving transaction history: {str(e)}")
                 searchable_requests.labels('transaction_history', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
@@ -893,7 +897,7 @@ class VisitorPaymentsResource(Resource):
                 }, 200
                 
             except Exception as e:
-                print(f"Error retrieving visitor payment history: {str(e)}")
+                logger.error(f"Error retrieving visitor payment history: {str(e)}")
                 searchable_requests.labels('get_payments_visitor', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
@@ -910,15 +914,15 @@ class PaymentsResource(Resource):
             try:
                 # Check if filtering by specific searchable_id
                 searchable_id = request.args.get('searchable_id')
-                print(f"searchable_id: {searchable_id}")
+                logger.info(f"searchable_id: {searchable_id}")
 
                 user_published_searchable_ids = get_searchableIds_by_user(current_user.id)
                 # Convert all elements in the list to strings to ensure consistency
                 user_published_searchable_ids = [str(id) for id in user_published_searchable_ids]
-                print(f"user_published_searchable_ids: {user_published_searchable_ids}")
+                logger.info(f"user_published_searchable_ids: {user_published_searchable_ids}")
                 
                 if searchable_id and (searchable_id in user_published_searchable_ids):
-                    print(f"searchable_id is in user_published_searchable_ids")
+                    logger.info(f"searchable_id is in user_published_searchable_ids")
                     # user is the seller
                     payment_records = get_data_from_kv(type='payment', fkey=searchable_id)
                     # Mark the current user as the seller for these payments
@@ -963,7 +967,7 @@ class PaymentsResource(Resource):
                 }, 200
                 
             except Exception as e:
-                print(f"Error retrieving payments: {str(e)}")
+                logger.error(f"Error retrieving payments: {str(e)}")
                 searchable_requests.labels('get_payments', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
@@ -988,7 +992,7 @@ class ProfileResource(Resource):
             return profile_data, 200
             
         except Exception as e:
-            print(f"Error retrieving profile: {str(e)}")
+            logger.error(f"Error retrieving profile: {str(e)}")
             searchable_requests.labels('get_profile', 'GET', 500).inc()
             return {"error": str(e)}, 500
     
@@ -1040,6 +1044,6 @@ class ProfileResource(Resource):
             return {"success": True, "message": "Profile updated successfully"}, 200
             
         except Exception as e:
-            print(f"Error updating profile: {str(e)}")
+            logger.error(f"Error updating profile: {str(e)}")
             searchable_requests.labels('update_profile', 'PUT', 500).inc()
             return {"error": str(e)}, 500

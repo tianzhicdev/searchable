@@ -1,6 +1,10 @@
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 from functools import wraps
 from flask import request
+from .helper import setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'track_metrics.log')
 
 # Define Prometheus metrics (these should match those in searchable_v1.py)
 # Define Prometheus metrics
@@ -47,6 +51,8 @@ def track_metrics(endpoint):
                 except Exception as e:
                     # Track failed request
                     searchable_requests.labels(endpoint, request.method, 500, origin).inc()
+                    # Log the exception
+                    logger.error(f"Exception in {endpoint}: {str(e)}")
                     # Re-raise the exception
                     raise e
         return decorated

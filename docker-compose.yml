@@ -16,6 +16,8 @@ services:
     env_file: 
       - ./api-server-flask/.env
       - ./api-server-flask/.secrets.env
+    volumes:
+      - ./logs:/logs
     networks:
       - db_network
       - web_network
@@ -37,6 +39,8 @@ services:
     build:
       context: ./api-server-flask
       dockerfile: Dockerfile.api
+    volumes:
+      - ./logs:/logs
     ports:
       - "5005:5005"
     networks:

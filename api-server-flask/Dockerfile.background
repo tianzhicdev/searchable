@@ -6,9 +6,15 @@ COPY . .
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Create logs directory
+RUN mkdir -p /logs && chmod 777 /logs
+
 # install python dependencies
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Volume for logs
+VOLUME ["/logs"]
 
 # gunicorn
 CMD ["python", "background.py"]

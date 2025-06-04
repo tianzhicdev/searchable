@@ -6,7 +6,10 @@ import requests
 import time
 from psycopg2.extras import Json
 from .routes import get_db_connection
-from .helper import get_amount_to_withdraw, get_balance_by_currency, pay_lightning_invoice, execute_sql
+from .helper import get_amount_to_withdraw, get_balance_by_currency, pay_lightning_invoice, execute_sql, setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'searchable_v1_withdrawal.log')
 
 @rest_api.route('/api/v1/withdrawal-usdt', methods=['POST'])
 class WithdrawFundsUSDT(Resource):
@@ -59,6 +62,7 @@ class WithdrawFundsUSDT(Resource):
 
             return {"success": True, "msg": "Withdrawal request submitted successfully"}, 200
         except Exception as e:
+            logger.error(f"Failed to process withdrawal: {str(e)}")
             return {"error": f"Failed to process withdrawal: {str(e)}"}, 500
 
 @rest_api.route('/api/v1/withdrawal-sats', methods=['POST'])

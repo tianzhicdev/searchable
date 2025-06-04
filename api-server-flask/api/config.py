@@ -2,6 +2,10 @@
 
 import os, random, string
 from datetime import timedelta
+from .helper import setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'config.log')
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -15,8 +19,8 @@ class BaseConfig():
     if not JWT_SECRET_KEY:
         JWT_SECRET_KEY = ''.join(random.choice( string.ascii_lowercase  ) for i in range( 32 ))
 
-    print(f"SECRET_KEY: {SECRET_KEY}")
-    print(f"JWT_SECRET_KEY: {JWT_SECRET_KEY}")
+    logger.info(f"SECRET_KEY: {SECRET_KEY}")
+    logger.info(f"JWT_SECRET_KEY: {JWT_SECRET_KEY}")
     GITHUB_CLIENT_ID     = os.getenv('GITHUB_CLIENT_ID' , None)
     GITHUB_CLIENT_SECRET = os.getenv('GITHUB_SECRET_KEY', None)
     
@@ -46,15 +50,15 @@ class BaseConfig():
                 DB_PORT,
                 DB_NAME
             ) 
-            print(f"SQLALCHEMY_DATABASE_URI: {SQLALCHEMY_DATABASE_URI}")
+            logger.info(f"SQLALCHEMY_DATABASE_URI: {SQLALCHEMY_DATABASE_URI}")
 
             USE_SQLITE  = False
-            print(f'> Successfully connected to the database {SQLALCHEMY_DATABASE_URI}')
+            logger.info(f'> Successfully connected to the database {SQLALCHEMY_DATABASE_URI}')
 
         except Exception as e:
 
-            print('> Error: DBMS Exception: ' + str(e) )
-            print('> Fallback to SQLite ')    
+            logger.error('> Error: DBMS Exception: ' + str(e))
+            logger.warning('> Fallback to SQLite ')    
 
     if USE_SQLITE:
 

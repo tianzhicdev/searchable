@@ -16,7 +16,11 @@ from .helper import (
     check_payment, 
     check_stripe_payment,
     Json,
+    setup_logger
 )
+
+# Set up the logger
+logger = setup_logger(__name__, 'searchable_v1_no_auth.log')
 
 from .track_metrics import *
 
@@ -38,7 +42,7 @@ class CheckPayment(Resource):
             return invoice_data, 200
             
         except Exception as e:
-            print(f"Error checking payment status: {str(e)}")
+            logger.error(f"Error checking payment status: {str(e)}")
             return {"error": str(e)}, 500
 
 
