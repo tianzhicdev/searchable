@@ -2,13 +2,15 @@
 // Log all environment variables for debugging
 console.log('All process.env:', process.env);
 
-let BACKEND_SERVER = null;
+let BACKEND_SERVER = "flask_api:5005/api/";
 
 if (process.env.REACT_APP_ENV === 'local') {
-  BACKEND_SERVER = "http://localhost:3006/api/";
+  BACKEND_SERVER = "flask_api:5005/api/";
 } else {
-  BACKEND_SERVER = "http://localhost:3006/api/";
+  BACKEND_SERVER = "flask_api:5005/api/";
 }
+
+console.log('BACKEND_SERVER:', BACKEND_SERVER);
 
 let SHOW_DEBUG_INFO = false;
 if (process.env.REACT_APP_ENV === 'local') {
