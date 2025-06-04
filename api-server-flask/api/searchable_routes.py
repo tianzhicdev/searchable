@@ -32,11 +32,11 @@ searchable_latency = Histogram('searchable_request_latency_seconds', 'Request la
 search_results_count = Summary('search_results_count', 'Number of search results returned')
 
 BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY')
-logger.info("BTCPAY_SERVER_GREENFIELD_API_KEY: " + BTCPAY_SERVER_GREENFIELD_API_KEY)
+logger.info("BTCPAY_SERVER_GREENFIELD_API_KEY: " + str(BTCPAY_SERVER_GREENFIELD_API_KEY))
 
 BTC_PAY_URL = "https://generous-purpose.metalseed.io"
 STORE_ID = os.environ.get('BTCPAY_STORE_ID')
-logger.info("BTCPAY_STORE_ID: " + STORE_ID)
+logger.info("BTCPAY_STORE_ID: " + str(STORE_ID))
 
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
 class GetSearchableItem(Resource):
