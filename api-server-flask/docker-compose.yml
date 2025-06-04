@@ -1,24 +1,5 @@
 version: '3.8'
 services:
-  background:
-    build:
-      context: .
-      dockerfile: Dockerfile.background
-    env_file: 
-      - .env
-      - /usr/local/.secrets.env
-    networks:
-      - db_network
-      - web_network
-    deploy:
-      resources:
-        limits:
-          cpus: "4.0"  # Max 1 CPU core[6][8]
-          memory: 2GB  # Max 512MB RAM[6][3]
-        reservations:
-          cpus: "1.0"   # Guaranteed 0.5 CPU core[6]
-          memory: 256M  # Guaranteed 256MB RAM[6]
-    
   nginx:
     container_name: nginx
     restart: always
