@@ -5,7 +5,7 @@ services:
       args:
         - REACT_APP_BRANDING=${REACT_APP_BRANDING}
     env_file:
-      - frontend/silkroadonlightning.env
+      - .env
     volumes:
       - frontend_build:/app/build
 
