@@ -44,10 +44,24 @@ services:
     depends_on:
       - frontend
       - flask_api
+  
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - web_network
 
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
-
+  postgres_data:
+  
 networks:
   db_network:
     driver: bridge
