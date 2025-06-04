@@ -7,7 +7,7 @@ let BACKEND_SERVER = null;
 if (process.env.REACT_APP_ENV === 'local') {
   BACKEND_SERVER = "http://localhost:3006/api/";
 } else {
-  BACKEND_SERVER = "https://bit-bid.com/api/";
+  BACKEND_SERVER = "http://localhost:3006/api/";
 }
 
 let SHOW_DEBUG_INFO = false;
