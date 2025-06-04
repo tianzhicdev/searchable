@@ -44,6 +44,8 @@ services:
     depends_on:
       - frontend
       - flask_api
+    networks:
+      - web_network
   
   db:
     image: postgres
