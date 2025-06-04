@@ -2,6 +2,7 @@ import os
 import re
 from functools import wraps
 
+from .track_metrics import track_metrics
 import requests
 from flask import request, Response
 import json
