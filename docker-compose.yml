@@ -47,6 +47,21 @@ services:
       - db_network
       - web_network
 
+  file_server:
+    container_name: file_server
+    restart: always
+    env_file: 
+      - ./api-server-flask/.env
+    build:
+      context: ./api-server-flask
+      dockerfile: Dockerfile.file_server
+    volumes:
+      - ./logs:/logs
+      - file_storage:/app/storage
+    ports:
+      - "5006:5006"
+    networks:
+      - web_network
 
   nginx:
     image: nginx:latest
@@ -60,6 +75,7 @@ services:
     depends_on:
       - frontend
       - flask_api
+      - file_server
     networks:
       - web_network
   
@@ -79,6 +95,7 @@ services:
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
   postgres_data:
+  file_storage:  # Volume for file storage
   
 networks:
   db_network:

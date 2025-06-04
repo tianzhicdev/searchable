@@ -41,3 +41,31 @@ CREATE TABLE IF NOT EXISTS terminal (
     terminal_id SERIAL PRIMARY KEY,
     terminal_data JSONB NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS files (
+    file_id SERIAL PRIMARY KEY,
+    uri TEXT NOT NULL,
+    metadata JSONB NOT NULL
+);
+
+-- Index on uri for faster lookups
+CREATE INDEX IF NOT EXISTS idx_file_uri ON file(uri);
+
+CREATE TABLE IF NOT EXISTS purchases (
+    purchase_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    file_id INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL,
+    FOREIGN KEY (file_id) REFERENCES files(file_id) ON DELETE CASCADE
+);
+
+-- Index on user_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_purchases_user_id ON purchases(user_id);
+
+-- Index on file_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_purchases_file_id ON purchases(file_id);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_purchases_created_at ON purchases(created_at);
+

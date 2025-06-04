@@ -1,0 +1,21 @@
+FROM python:3.9
+
+COPY . .
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Create storage and logs directories
+RUN mkdir -p /app/storage && chmod 777 /app/storage
+RUN mkdir -p /logs && chmod 777 /logs
+
+# install python dependencies
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Volume for logs and storage
+VOLUME ["/logs", "/app/storage"]
+
+# gunicorn
+CMD ["gunicorn", "--config", "gunicorn-cfg.py", "run_file_server:app", "--workers", "2", "--threads", "2", "--timeout", "300", "--bind", "0.0.0.0:5006"] 
