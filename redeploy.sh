@@ -28,6 +28,7 @@ fi
 
 # Restart Docker containers
 $DOCKER_COMPOSE down
+docker volume rm frontend_build
 $DOCKER_COMPOSE build
 $DOCKER_COMPOSE up -d
 

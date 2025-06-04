@@ -34,7 +34,7 @@ const Login = () => {
                     variant="subtitle1"
                     className={classes.textLink}
                 >
-                    Don't have an account? test
+                    Don't have an account?
                 </Typography>
             </Grid>
         </Grid>
