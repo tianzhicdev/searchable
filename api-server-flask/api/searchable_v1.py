@@ -110,7 +110,7 @@ class CreateSearchable(Resource):
     @token_required
     @track_metrics('create_searchable_v2')
     def post(self, current_user, request_origin='unknown'):
-        print(f"Creating searchable for user: {current_user.id} {current_user.username}")
+        logger.info(f"Creating searchable for user: {current_user.id} {current_user.username}")
         conn = None
         try:
             data = request.get_json()  # Get JSON data from request
@@ -137,10 +137,10 @@ class CreateSearchable(Resource):
                 except:
                     return {"error": "Location data is required when use_location is true"}, 400
             else:
-                print("Location usage disabled for this searchable")
+                logger.info("Location usage disabled for this searchable")
             
             # Insert into searchables table
-            print("Executing database insert...")
+            logger.info("Executing database insert...")
             sql = f"INSERT INTO searchables (terminal_id, searchable_data) VALUES ('{current_user.id}', {Json(data)}) RETURNING searchable_id;"
             execute_sql(cur, sql)
             searchable_id = cur.fetchone()[0]
@@ -157,7 +157,7 @@ class CreateSearchable(Resource):
                 """
                 execute_sql(cur, geo_sql)
             
-            print(f"Added searchable {searchable_id}")
+            logger.info(f"Added searchable {searchable_id}")
             
             conn.commit()
             cur.close()
@@ -167,8 +167,8 @@ class CreateSearchable(Resource):
             # Enhanced error logging
             import traceback
             error_traceback = traceback.format_exc()
-            print(f"Error creating searchable: {str(e)}")
-            print(f"Traceback: {error_traceback}")
+            logger.error(f"Error creating searchable: {str(e)}")
+            logger.error(f"Traceback: {error_traceback}")
             
             # Ensure database connection is closed
             if conn:
@@ -227,7 +227,7 @@ class SearchSearchables(Resource):
             filters = json.loads(request.args.get('filters', '{}'))
         except json.JSONDecodeError:
             # Log the error for debugging
-            print(f"Error parsing filters JSON: {request.args.get('filters', '{}')}")
+            logger.debug(f"Error parsing filters JSON: {request.args.get('filters', '{}')}")
             filters = {}
         use_location_param = request.args.get('use_location', 'false')
         use_location = use_location_param.lower() == 'true'
@@ -321,17 +321,17 @@ class SearchSearchables(Resource):
     def _query_database(self, lat, lng, max_distance, query_term, use_location, filters={}):
         """Query database for results and filter by actual distance and search relevance"""
         # Log query parameters for debugging
-        print(f"Search parameters:")
-        print(f"  Query term: {query_term}")
-        print(f"  Filters: {filters}")
-        print(f"  Filter type: {type(filters)}")
-        print(f"  Use location: {use_location}")
+        logger.info(f"Search parameters:")
+        logger.info(f"  Query term: {query_term}")
+        logger.info(f"  Filters: {filters}")
+        logger.info(f"  Filter type: {type(filters)}")
+        logger.info(f"  Use location: {use_location}")
         
         if use_location:
-            print(f"  Coordinates: ({lat}, {lng})")
-            print(f"  Max distance: {max_distance} meters")
+            logger.info(f"  Coordinates: ({lat}, {lng})")
+            logger.info(f"  Max distance: {max_distance} meters")
         else:
-            print("  Not using location-based filtering")
+            logger.info("  Not using location-based filtering")
         
         # Tokenize query term
         query_tokens = self._tokenize_text(query_term)
@@ -387,20 +387,20 @@ class SearchSearchables(Resource):
             
             # Only include results with a match score if we have a query term
             if query_term and match_score == 0:
-                print(f"No match score for {searchable_id}")
+                logger.debug(f"No match score for {searchable_id}")
                 continue
                 
             filtered_results.append(item_data)
         
         # Sort results - by match score (if query provided), then by distance (if location provided)
         if query_term and use_location:
-            print(f"Sorting by match score and distance, {len(filtered_results)} results")
+            logger.info(f"Sorting by match score and distance, {len(filtered_results)} results")
             filtered_results.sort(key=lambda x: (-x['match_score'], x['distance']))
         elif query_term and len(query_term) > 0:
-            print(f"Sorting by match score only, {len(filtered_results)} results")
+            logger.info(f"Sorting by match score only, {len(filtered_results)} results")
             filtered_results.sort(key=lambda x: -x['match_score'])
         else:
-            print(f"Sorting by description length, {len(filtered_results)} results")
+            logger.info(f"Sorting by description length, {len(filtered_results)} results")
             # Sort by length of description, longest first
             filtered_results.sort(key=lambda x: -len(x.get('payloads', {}).get('public', {}).get('description', '')))
 
@@ -506,7 +506,7 @@ class RemoveSearchableItem(Resource):
     @token_required
     @track_metrics('remove_searchable_item')
     def put(self, current_user, searchable_id, request_origin='unknown'):
-        print(f"Soft removing searchable item {searchable_id} by user: {current_user}")
+        logger.info(f"Soft removing searchable item {searchable_id} by user: {current_user}")
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -546,7 +546,7 @@ class RemoveSearchableItem(Resource):
             return {"success": True, "message": "Item has been removed"}, 200
             
         except Exception as e:
-            print(f"Error removing searchable item: {str(e)}")
+            logger.error(f"Error removing searchable item: {str(e)}")
             return {"error": str(e)}, 500
 
 
@@ -602,7 +602,7 @@ class RefreshPaymentsBySearchable(Resource):
             return {"searchable_id": searchable_id, "payments": results}, 200
             
         except Exception as e:
-            print(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
+            logger.error(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 
@@ -714,7 +714,7 @@ class PaymentsByTerminal(Resource):
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving receitps by terminal: {str(e)}")
+            logger.error(f"Error retrieving receitps by terminal: {str(e)}")
             return {"error": str(e)}, 500
 
 
@@ -773,7 +773,7 @@ class WithdrawalsByTerminal(Resource):
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving withdrawals by terminal: {str(e)}")
+            logger.error(f"Error retrieving withdrawals by terminal: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/payments-by-searchable/<string:searchable_id>', methods=['GET'])
@@ -798,7 +798,7 @@ class PaymentsBySearchable(Resource):
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving payments by searchable: {str(e)}")
+            logger.error(f"Error retrieving payments by searchable: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
@@ -843,7 +843,7 @@ class SearchableRating(Resource):
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
+            logger.error(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
@@ -908,7 +908,7 @@ class TerminalRating(Resource):
             }, 200
             
         except Exception as e:
-            print(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
+            logger.error(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 
@@ -950,7 +950,7 @@ def insert_invoice_record(invoice_id, searchable_id, invoice_record):
         conn.close()
         return True
     except Exception as e:
-        print(f"Error inserting invoice record: {str(e)}")
+        logger.error(f"Error inserting invoice record: {str(e)}")
         if 'conn' in locals() and conn:
             try:
                 conn.rollback()
@@ -998,8 +998,8 @@ class CreateInvoiceV1(Resource):
 
             require_address = searchable_data.get('payloads', {}).get('public', {}).get('require_address', False)
             # Print require_address and searchable_data for debugging
-            print(f"require_address: {require_address}")
-            print(f"searchable_data: {searchable_data}")
+            logger.debug(f"require_address: {require_address}")
+            logger.debug(f"searchable_data: {searchable_data}")
             delivery_info = get_delivery_info(require_address, current_user)
             
             
@@ -1016,6 +1016,7 @@ class CreateInvoiceV1(Resource):
                 response = create_lightning_invoice(
                         amount=amount_sats
                     )
+                logger.info(f"lightning invoice creation response: {response}")
 
                 # Check if invoice ID exists
                 if 'id' not in response:
@@ -1092,6 +1093,6 @@ class CreateInvoiceV1(Resource):
                 return {"error": "Invalid invoice type. Must be 'lightning' or 'stripe'"}, 400
             
         except Exception as e:
-            print(f"Error creating invoice: {str(e)}")
+            logger.error(f"Error creating invoice: {str(e)}")
             return {"error": str(e)}, 500
 
