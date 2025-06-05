@@ -57,7 +57,7 @@ services:
       dockerfile: Dockerfile.file_server
     volumes:
       - ./logs:/logs
-      - .files:/app/storage
+      - ./files:/app/storage
     ports:
       - "5006:5006"
     networks:
@@ -95,7 +95,7 @@ services:
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
   postgres_data:
-  file_storage:  # Volume for file storage
+  # file_storage:  # Volume for file storage
   
 networks:
   db_network:
