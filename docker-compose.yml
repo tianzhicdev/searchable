@@ -57,7 +57,7 @@ services:
       dockerfile: Dockerfile.file_server
     volumes:
       - ./logs:/logs
-      - file_storage:/app/storage
+      - .files:/app/storage
     ports:
       - "5006:5006"
     networks:

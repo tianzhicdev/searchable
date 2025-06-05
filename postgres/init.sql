@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS files (
 );
 
 -- Index on uri for faster lookups
-CREATE INDEX IF NOT EXISTS idx_file_uri ON file(uri);
+CREATE INDEX IF NOT EXISTS idx_file_uri ON files(uri);
 
 CREATE TABLE IF NOT EXISTS purchases (
     purchase_id SERIAL PRIMARY KEY,
