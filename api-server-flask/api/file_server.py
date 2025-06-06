@@ -3,7 +3,8 @@ import logging
 from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from .helper import setup_logger
+from .common.logging_config import setup_logger
+
 # Configure logger
 logger = setup_logger(__name__, 'file_server.log')
 
