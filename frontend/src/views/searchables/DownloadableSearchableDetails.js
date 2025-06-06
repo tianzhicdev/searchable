@@ -200,8 +200,13 @@ const DownloadableSearchableDetails = () => {
       
       // Fetch terminal (seller) rating if terminal_id is available
       if (SearchableItem.terminal_id) {
-        const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
-        setTerminalRating(terminalResponse.data);
+        // Set dummy terminal rating data
+        // const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
+        // setTerminalRating(terminalResponse.data);
+        setTerminalRating({
+          average_rating: 4.5,
+          rating_count: 128
+        });
       }
     } catch (err) {
       console.error("Error fetching ratings:", err);
