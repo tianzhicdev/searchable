@@ -117,31 +117,61 @@ const PublishDownloadableSearchable = () => {
   };
   
   // Add downloadable file to the list
-  const addDownloadableFile = () => {
+  const addDownloadableFile = async () => {
     if (newFile.name.trim() && newFile.price && newFile.file) {
-      // Convert file to base64 for storage
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64String = reader.result;
-        setDownloadableFiles([
-          ...downloadableFiles,
-          { 
-            id: Date.now(),
-            name: newFile.name,
-            price: parseInt(newFile.price),
-            fileName: newFile.file.name,
-            fileType: newFile.file.type,
-            fileSize: newFile.file.size,
-            fileData: base64String.split(',')[1] // Remove data:type;base64, prefix
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', newFile.file);
+        
+        // Add metadata
+        const metadata = {
+          description: newFile.name,
+          type: 'downloadable_content'
+        };
+        formData.append('metadata', JSON.stringify(metadata));
+        
+        // Upload file using the upload API
+        const uploadResponse = await backend.post('v1/files/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
           }
-        ]);
-        // Reset the input fields
-        setNewFile({ name: '', price: '', file: null });
-        if (downloadableFileInputRef.current) {
-          downloadableFileInputRef.current.value = '';
+        });
+        
+        if (uploadResponse.data.success) {
+          // Add file info with file_id to the list
+          setDownloadableFiles([
+            ...downloadableFiles,
+            { 
+              id: Date.now(),
+              name: newFile.name,
+              price: parseInt(newFile.price),
+              fileName: newFile.file.name,
+              fileType: newFile.file.type,
+              fileSize: newFile.file.size,
+              fileId: uploadResponse.data.file_id, // Store the file_id from upload response
+              uuid: uploadResponse.data.uuid // Store the UUID as well
+            }
+          ]);
+          
+          // Reset the input fields
+          setNewFile({ name: '', price: '', file: null });
+          if (downloadableFileInputRef.current) {
+            downloadableFileInputRef.current.value = '';
+          }
+        } else {
+          setError("Failed to upload file. Please try again.");
         }
-      };
-      reader.readAsDataURL(newFile.file);
+        
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        setError(error.response?.data?.error || "Failed to upload file. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -182,7 +212,7 @@ const PublishDownloadableSearchable = () => {
               fileName: file.fileName,
               fileType: file.fileType,
               fileSize: file.fileSize,
-              fileData: file.fileData
+              fileId: file.fileId // Only send the file_id, not the file data
             })),
             "visibility": {
               "udf": "always_true",
@@ -451,9 +481,9 @@ const PublishDownloadableSearchable = () => {
                       variant="contained" 
                       color="primary"
                       onClick={addDownloadableFile}
-                      disabled={!newFile.name.trim() || !newFile.price || !newFile.file}
+                      disabled={!newFile.name.trim() || !newFile.price || !newFile.file || loading}
                     >
-                      Add File
+                      {loading ? <CircularProgress size={20} /> : 'Add File'}
                     </Button>
                   </Box>
                 </Box>
