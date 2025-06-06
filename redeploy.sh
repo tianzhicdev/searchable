@@ -28,7 +28,7 @@ fi
 
 # Restart Docker containers
 $DOCKER_COMPOSE down
-docker volume rm searchable_frontend_build
+docker volume rm searchable_frontend_build || true
 $DOCKER_COMPOSE build
 $DOCKER_COMPOSE up -d
 
