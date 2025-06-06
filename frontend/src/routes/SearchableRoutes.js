@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
 import NavMotion from '../layout/NavMotion';
 import AuthGuard from './../utils/route-guard/AuthGuard';
-import PublishSearchables from '../views/searchables/PublishSearchables';
+import PublishDownloadableSearchables from '../views/searchables/PublishDownloadableSearchables';
 import Profile from '../views/profile/Profile';
 
 // // login routing
@@ -19,7 +19,7 @@ const SearchableRoutes = () => {
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
-                    <Route exact path="/publish-searchables" component={PublishSearchables} />
+                    <Route exact path="/publish-searchables" component={PublishDownloadableSearchables} />
                     <Route exact path="/profile" component={Profile} />
                 </AuthGuard>
                 
