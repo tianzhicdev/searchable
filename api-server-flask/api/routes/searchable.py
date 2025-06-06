@@ -3,6 +3,7 @@ import os
 import re
 import math
 import geohash2
+import requests
 from flask import request
 from flask_restx import Resource
 
@@ -813,4 +814,145 @@ class ProfileResource(Resource):
             
         except Exception as e:
             logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/download-file/<int:searchable_id>/<int:file_id>', methods=['GET'])
+class DownloadSearchableFile(Resource):
+    """
+    Download a file from a searchable item after verifying payment
+    """
+    @token_optional
+    @track_metrics('download_searchable_file')
+    def get(self, searchable_id, file_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            # Get buyer ID - use current_user.id if available, otherwise use visitor_id
+            buyer_id = current_user.id if current_user else visitor_id
+            
+            if not buyer_id:
+                return {"error": "Authentication required for file downloads"}, 401
+            
+            # Get the searchable item data
+            searchable_data = get_searchable(searchable_id)
+            if not searchable_data:
+                return {"error": "Searchable item not found"}, 404
+            
+            # Check if this is a downloadable type searchable
+            item_type = searchable_data.get('payloads', {}).get('public', {}).get('type')
+            if item_type != 'downloadable':
+                return {"error": "This item is not downloadable"}, 400
+            
+            # Get downloadable files from the searchable data
+            downloadable_files = searchable_data.get('payloads', {}).get('public', {}).get('downloadableFiles', [])
+            
+            # Find the specific file
+            target_file = None
+            for file_info in downloadable_files:
+                if file_info.get('fileId') == file_id:
+                    target_file = file_info
+                    break
+            
+            if not target_file:
+                return {"error": "File not found"}, 404
+            
+            # Check if buyer has paid for this file
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query for completed payments for this searchable item by this buyer
+            payment_query = f"""
+                SELECT p.status, i.metadata
+                FROM payment p
+                JOIN invoice i ON p.invoice_id = i.id
+                WHERE i.searchable_id = {searchable_id}
+                AND i.buyer_id = '{buyer_id}'
+                AND p.status = 'complete'
+            """
+            
+            execute_sql(cur, payment_query)
+            payments = cur.fetchall()
+            
+            # Check if any payment includes this file
+            has_paid_for_file = False
+            for payment_status, invoice_metadata in payments:
+                if invoice_metadata and 'selections' in invoice_metadata:
+                    for selection in invoice_metadata['selections']:
+                        if selection.get('id') == file_id and selection.get('type') == 'downloadable':
+                            has_paid_for_file = True
+                            break
+                    if has_paid_for_file:
+                        break
+            
+            cur.close()
+            conn.close()
+            
+            if not has_paid_for_file:
+                return {"error": "Payment required to download this file"}, 403
+            
+            # If payment verified, get the file from the file server
+            file_server_url = os.environ.get('FILE_SERVER_URL')
+            if not file_server_url:
+                return {"error": "File server not configured"}, 500
+            
+            # Get file metadata from database to get the UUID
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            file_query = f"""
+                SELECT uri, metadata
+                FROM files
+                WHERE file_id = {file_id}
+            """
+            
+            execute_sql(cur, file_query)
+            file_result = cur.fetchone()
+            
+            if not file_result:
+                return {"error": "File metadata not found"}, 404
+                
+            file_uri, file_metadata = file_result
+            cur.close()
+            conn.close()
+            
+            # Extract UUID from URI
+            try:
+                file_uuid = file_uri.split('file_id=')[1] if 'file_id=' in file_uri else None
+                if not file_uuid:
+                    return {"error": "Invalid file URI"}, 500
+                    
+                # Make request to file server
+                download_response = requests.get(
+                    f"{file_server_url}/api/file/download",
+                    params={'file_id': file_uuid},
+                    stream=True
+                )
+                
+                if download_response.status_code != 200:
+                    logger.error(f"File server error: {download_response.text}")
+                    return {"error": "Failed to retrieve file from server"}, 500
+                
+                # Return the file content with appropriate headers
+                from flask import Response
+                
+                def generate():
+                    for chunk in download_response.iter_content(chunk_size=8192):
+                        if chunk:
+                            yield chunk
+                
+                response = Response(
+                    generate(),
+                    content_type=download_response.headers.get('content-type', 'application/octet-stream'),
+                    headers={
+                        'Content-Disposition': f'attachment; filename="{target_file.get("fileName", "download")}"',
+                        'Content-Length': download_response.headers.get('content-length', '')
+                    }
+                )
+                
+                return response
+                
+            except Exception as e:
+                logger.error(f"Error downloading file: {str(e)}")
+                return {"error": "Failed to download file"}, 500
+            
+        except Exception as e:
+            logger.error(f"Error in download endpoint: {str(e)}")
             return {"error": str(e)}, 500 

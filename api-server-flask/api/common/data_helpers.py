@@ -614,7 +614,8 @@ def get_receipts(user_id=None, searchable_id=None):
                     'tracking': payment_metadata.get('tracking', ''),
                     'rating': payment_metadata.get('rating', ''),
                     'review': payment_metadata.get('review', ''),
-                    'amount': float(invoice_amount)
+                    'amount': float(invoice_amount),
+                    'selections': selections  # Include selections in the payment data
                 }
 
                 payment_private = {
