@@ -86,44 +86,81 @@ def calc_invoice(searchable_data, selections):
     if not searchable_data:
         raise ValueError("Searchable data is missing or empty")
     
-    # Check if we have selections and selectables
-    selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
-    
     # Get currency from searchable data, default to "sat" if not specified
     currency = searchable_data.get('payloads', {}).get('public', {}).get('currency', 'sats')
     
     if currency.lower() not in ['sats', 'usdt']:
         raise ValueError(f"Invalid currency: {currency}")
     
-    if selections and selectables:
-        # Create maps for efficient lookup
-        selectable_prices = {item['id']: item['price'] for item in selectables}
-        selectable_names = {item['id']: item['name'] for item in selectables}
+    # Check the type to determine how to handle selections
+    searchable_type = searchable_data.get('payloads', {}).get('public', {}).get('type', '')
+    
+    if searchable_type == 'downloadable':
+        # Handle downloadable files
+        downloadable_files = searchable_data.get('payloads', {}).get('public', {}).get('downloadableFiles', [])
         
-        # Calculate total from selections
-        for selection in selections:
-            selectable_id = selection.get('id')
-            if selectable_id is None:
-                raise ValueError("Selection missing required 'id' field")
-                
-            try:
-                quantity = int(selection.get('quantity', 0))
-                if quantity <= 0:
-                    raise ValueError(f"Invalid quantity for item {selectable_id}: {quantity}")
-            except (ValueError, TypeError):
-                raise ValueError(f"Invalid quantity format for item {selectable_id}")
+        if selections and downloadable_files:
+            # Create maps for efficient lookup using fileId
+            file_prices = {item['fileId']: item['price'] for item in downloadable_files}
+            file_names = {item['fileId']: item['name'] for item in downloadable_files}
             
-            if selectable_id in selectable_prices:
-                item_price = selectable_prices[selectable_id]
-                amount += item_price * quantity
+            # Calculate total from selections
+            for selection in selections:
+                file_id = selection.get('id')
+                if file_id is None:
+                    raise ValueError("Selection missing required 'id' field")
+                    
+                try:
+                    quantity = int(selection.get('quantity', 1))  # Default to 1 for downloadable files
+                    if quantity <= 0:
+                        raise ValueError(f"Invalid quantity for file {file_id}: {quantity}")
+                except (ValueError, TypeError):
+                    raise ValueError(f"Invalid quantity format for file {file_id}")
                 
-                # Add description part for this item
-                item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
-                description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
-            else:
-                raise ValueError(f"Invalid selectable ID: {selectable_id}")
+                if file_id in file_prices:
+                    item_price = file_prices[file_id]
+                    amount += item_price * quantity
+                    
+                    # Add description part for this item
+                    item_name = file_names.get(file_id, f"File {file_id}")
+                    description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
+                else:
+                    raise ValueError(f"Invalid file ID: {file_id}")
+        else:
+            raise ValueError("Invalid selections or downloadable files")
     else:
-        raise ValueError("Invalid selections or selectables")
+        # Handle selectables (existing logic)
+        selectables = searchable_data.get('payloads', {}).get('public', {}).get('selectables', [])
+        
+        if selections and selectables:
+            # Create maps for efficient lookup
+            selectable_prices = {item['id']: item['price'] for item in selectables}
+            selectable_names = {item['id']: item['name'] for item in selectables}
+            
+            # Calculate total from selections
+            for selection in selections:
+                selectable_id = selection.get('id')
+                if selectable_id is None:
+                    raise ValueError("Selection missing required 'id' field")
+                    
+                try:
+                    quantity = int(selection.get('quantity', 0))
+                    if quantity <= 0:
+                        raise ValueError(f"Invalid quantity for item {selectable_id}: {quantity}")
+                except (ValueError, TypeError):
+                    raise ValueError(f"Invalid quantity format for item {selectable_id}")
+                
+                if selectable_id in selectable_prices:
+                    item_price = selectable_prices[selectable_id]
+                    amount += item_price * quantity
+                    
+                    # Add description part for this item
+                    item_name = selectable_names.get(selectable_id, f"Item {selectable_id}")
+                    description_parts.append(f"[{item_name}]({quantity})@{item_price}{currency}")
+                else:
+                    raise ValueError(f"Invalid selectable ID: {selectable_id}")
+        else:
+            raise ValueError("Invalid selections or selectables")
     
     # Create the complete description string
     description = "/".join(description_parts)
