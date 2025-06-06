@@ -3,7 +3,15 @@ from flask import request
 from .routes import token_required, token_optional
 from .track_metrics import *
 from . import rest_api
-from .helper import get_db_connection, execute_sql, setup_logger
+from .helper import (
+    get_db_connection, 
+    execute_sql, 
+    setup_logger,
+    get_invoices,
+    get_payments,
+    update_payment_metadata,
+    create_rating
+)
 
 # Set up the logger
 logger = setup_logger(__name__, 'searchable_v1_kv.log')
@@ -11,7 +19,7 @@ logger = setup_logger(__name__, 'searchable_v1_kv.log')
 @rest_api.route('/api/v1/tracking', methods=['POST'])
 class CreateTracking(Resource):
     """
-    Creates a new tracking item
+    Creates or updates tracking information for a payment
     """
     @token_required
     @track_metrics('create_tracking')
@@ -19,74 +27,56 @@ class CreateTracking(Resource):
         data = request.json
         tracking = data.get('tracking')
         
-        payment_id = data.get('payment_id')
+        payment_id = data.get('payment_id')  # This is external_id (BTCPay/Stripe ID)
         # Validate payment_id is provided
         if not payment_id:
             return {"error": "payment_id is required"}, 400
             
         try:
-            # Get database connection
-            conn = get_db_connection()
-            cur = conn.cursor()
+            # Get the invoice using external_id
+            invoice_records = get_invoices(external_id=payment_id)
             
-            # First, verify that the payment exists and get the associated searchable_id
-            execute_sql(cur, f"""
-                SELECT DISTINCT(s.searchable_id), s.terminal_id 
-                FROM kv p 
-                JOIN kv i ON p.pkey = i.pkey 
-                JOIN searchables s ON i.fkey = s.searchable_id::text 
-                WHERE p.type = 'payment' AND p.pkey = '{payment_id}'
-            """)
-            
-            result = cur.fetchone()
-            
-            if not result:
-                return {"error": "Payment not found"}, 404
+            if not invoice_records:
+                return {"error": "Invoice not found"}, 404
                 
-            searchable_id, terminal_id = result
+            invoice_record = invoice_records[0]
             
-            # Verify the current user is the owner of the searchable
-            if str(terminal_id) != str(current_user.id):
+            # Verify the current user is the seller (owner of the searchable)
+            if str(invoice_record['seller_id']) != str(current_user.id):
                 return {"error": "Unauthorized access to payment data"}, 403
             
-            # Insert tracking information into the kv table
+            # Get the payment record
+            payments = get_payments(invoice_id=invoice_record['id'])
+            
+            if not payments:
+                return {"error": "Payment not found"}, 404
+                
+            payment_record = payments[0]
+            
+            # Update tracking information in payment metadata
             if tracking:
-                try:
-                    # Insert tracking data associated with the payment_id
-                    execute_sql(cur, f"""
-                        UPDATE kv 
-                        SET data = jsonb_set(data, '{{tracking}}', '"{tracking}"')
-                        WHERE type = 'payment' AND pkey = '{payment_id}'
-                    """)
-                    
-                    # Commit the transaction
-                    conn.commit()
-                    
+                metadata_updates = {'tracking': tracking}
+                success = update_payment_metadata(payment_record['id'], metadata_updates)
+                
+                if success:
                     logger.info(f"Tracking information added for payment_id: {payment_id}")
-                except Exception as e:
-                    conn.rollback()
-                    logger.error(f"Error inserting tracking data: {str(e)}")
-                    return {"error": f"Failed to update tracking information: {str(e)}"}, 500
+                    return {"tracking": tracking}, 200
+                else:
+                    logger.error(f"Error updating tracking data for payment_id: {payment_id}")
+                    return {"error": "Failed to update tracking information"}, 500
             else:
                 logger.warning(f"No tracking information provided for payment_id: {payment_id}")
-            # Now that we've verified ownership, we can proceed with tracking
-            
-            # Close the database connection
-            cur.close()
-            conn.close()
-            
+                return {"error": "No tracking information provided"}, 400
+                
         except Exception as e:
             logger.error(f"Error verifying payment ownership: {str(e)}")
             return {"error": f"Database error: {str(e)}"}, 500
-        
-
-        return {"tracking": tracking}, 200
 
 
 @rest_api.route('/api/v1/rating', methods=['POST'])
 class RatePayment(Resource):
     """
-    Allows a terminal owner to add a rating to a payment
+    Allows a seller to add a rating to a payment
     """
     @token_required
     @track_metrics('rate_payment')
@@ -99,65 +89,42 @@ class RatePayment(Resource):
                 
             rating = data.get('rating')
             review = data.get('review')
-            payment_id = data.get('payment_id')
-            # Validate rating (assuming 1-5 scale)
+            payment_id = data.get('payment_id')  # This is external_id (BTCPay/Stripe ID)
+            
+            # Validate rating (assuming 0-5 scale)
             try:
-                rating = int(rating)
+                rating = float(rating)
                 if rating < 0 or rating > 5:
-                    return {"error": "Rating must be between 1 and 5"}, 400
+                    return {"error": "Rating must be between 0 and 5"}, 400
             except (ValueError, TypeError):
                 return {"error": "Invalid rating format"}, 400
+            
+            # Get the invoice using external_id
+            invoice_records = get_invoices(external_id=payment_id)
+            
+            if not invoice_records:
+                return {"error": "Invoice not found"}, 404
                 
-            # Connect to the database
-            conn = get_db_connection()
-            cur = conn.cursor()
+            invoice_record = invoice_records[0]
             
-            # First, verify that the payment exists and get the associated searchable_id
-            execute_sql(cur, f"""
-                SELECT DISTINCT(s.searchable_id), s.terminal_id 
-                FROM kv p 
-                JOIN kv i ON p.pkey = i.pkey 
-                JOIN searchables s ON i.fkey = s.searchable_id::text 
-                WHERE p.type = 'payment' AND p.pkey = '{payment_id}'
-            """)
-            
-            result = cur.fetchone()
-            
-            if not result:
-                return {"error": "Payment not found"}, 404
-                
-            searchable_id, terminal_id = result
-            
-            # Verify the current user is the owner of the searchable
-            if str(terminal_id) != str(current_user.id):
+            # Verify the current user is the seller (owner of the searchable)
+            if str(invoice_record['seller_id']) != str(current_user.id):
                 return {"error": "Unauthorized access to payment data"}, 403
             
-            # Insert rating information into the kv table
-            try:
-                # Update the payment record with the rating
-                execute_sql(cur, f"""
-                    UPDATE kv 
-                    SET data = jsonb_set(
-                        jsonb_set(data, '{{rating}}', '{rating}'),
-                        '{{review}}', '"{review}"'
-                        )
-                    WHERE type = 'payment' AND pkey = '{payment_id}'
-                """)
-                
-                # Commit the transaction
-                conn.commit()
-                
-                logger.info(f"Rating information added for payment_id: {payment_id}")
-            except Exception as e:
-                conn.rollback()
-                logger.error(f"Error inserting rating data: {str(e)}")
-                return {"error": f"Failed to update rating information: {str(e)}"}, 500
+            # Create rating record
+            rating_record = create_rating(
+                invoice_id=invoice_record['id'],
+                user_id=current_user.id,
+                rating=rating,
+                review=review
+            )
             
-            # Close the database connection
-            cur.close()
-            conn.close()
-            
-            return {"success": True, "rating": rating}, 200
+            if rating_record:
+                logger.info(f"Rating created for payment_id: {payment_id}")
+                return {"success": True, "rating": rating, "rating_id": rating_record['id']}, 200
+            else:
+                logger.error(f"Error creating rating for payment_id: {payment_id}")
+                return {"error": "Failed to create rating"}, 500
             
         except Exception as e:
             logger.error(f"Error processing rating: {str(e)}")

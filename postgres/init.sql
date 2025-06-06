@@ -69,3 +69,138 @@ CREATE INDEX IF NOT EXISTS idx_purchases_file_id ON purchases(file_id);
 -- Index on created_at for faster date-based queries
 CREATE INDEX IF NOT EXISTS idx_purchases_created_at ON purchases(created_at);
 
+-- Updated invoice table with better structure
+CREATE TABLE IF NOT EXISTS invoice (
+    id SERIAL PRIMARY KEY,
+    buyer_id INTEGER NOT NULL,
+    seller_id INTEGER NOT NULL,
+    searchable_id INTEGER NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    fee DECIMAL(20,8) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'lightning' or 'stripe'
+    external_id TEXT NOT NULL UNIQUE, -- BTCPay invoice ID or Stripe session ID
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Index on buyer_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_buyer_id ON invoice(buyer_id);
+
+-- Index on seller_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_seller_id ON invoice(seller_id);
+
+-- Index on searchable_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_searchable_id ON invoice(searchable_id);
+
+-- Index on type for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_type ON invoice(type);
+
+-- Index on external_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_external_id ON invoice(external_id);
+
+-- Index on status for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_status ON invoice(status);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_invoice_created_at ON invoice(created_at);
+
+-- Updated payment table
+CREATE TABLE IF NOT EXISTS payment (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
+    amount DECIMAL(20,8) NOT NULL,
+    fee DECIMAL(20,8) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL,
+    type TEXT NOT NULL, -- 'lightning' or 'stripe'
+    external_id TEXT, -- External payment ID if available
+    status TEXT NOT NULL DEFAULT 'complete',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Index on invoice_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_payment_invoice_id ON payment(invoice_id);
+
+-- Index on type for faster lookups
+CREATE INDEX IF NOT EXISTS idx_payment_type ON payment(type);
+
+-- Index on status for faster lookups
+CREATE INDEX IF NOT EXISTS idx_payment_status ON payment(status);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_payment_created_at ON payment(created_at);
+
+-- Updated withdrawal table with currency field
+CREATE TABLE IF NOT EXISTS withdrawal (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    fee DECIMAL(20,8) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL, -- 'sats' or 'usdt'
+    type TEXT NOT NULL, -- 'lightning' or 'bank_transfer' etc
+    external_id TEXT, -- Lightning invoice or transaction ID
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Index on user_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_withdrawal_user_id ON withdrawal(user_id);
+
+-- Index on type for faster lookups
+CREATE INDEX IF NOT EXISTS idx_withdrawal_type ON withdrawal(type);
+
+-- Index on status for faster lookups
+CREATE INDEX IF NOT EXISTS idx_withdrawal_status ON withdrawal(status);
+
+-- Index on currency for faster lookups
+CREATE INDEX IF NOT EXISTS idx_withdrawal_currency ON withdrawal(currency);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_withdrawal_created_at ON withdrawal(created_at);
+
+-- Invoice notes table for communication between buyer and seller
+CREATE TABLE IF NOT EXISTS invoice_note (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    buyer_seller TEXT NOT NULL, -- 'buyer' or 'seller'
+    content TEXT NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index on invoice_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_note_invoice_id ON invoice_note(invoice_id);
+
+-- Index on user_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invoice_note_user_id ON invoice_note(user_id);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_invoice_note_created_at ON invoice_note(created_at);
+
+-- Rating table for buyer/seller ratings
+CREATE TABLE IF NOT EXISTS rating (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    rating DOUBLE PRECISION NOT NULL CHECK (rating >= 0 AND rating <= 5),
+    review TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index on invoice_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_rating_invoice_id ON rating(invoice_id);
+
+-- Index on user_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_rating_user_id ON rating(user_id);
+
+-- Index on rating for faster aggregations
+CREATE INDEX IF NOT EXISTS idx_rating_rating ON rating(rating);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_rating_created_at ON rating(created_at);
+

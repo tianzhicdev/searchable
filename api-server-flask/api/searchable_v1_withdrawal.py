@@ -6,7 +6,14 @@ import requests
 import time
 from psycopg2.extras import Json
 from .routes import get_db_connection
-from .helper import get_amount_to_withdraw, get_balance_by_currency, pay_lightning_invoice, execute_sql, setup_logger
+from .helper import (
+    get_amount_to_withdraw, 
+    get_balance_by_currency, 
+    pay_lightning_invoice, 
+    execute_sql, 
+    setup_logger,
+    create_withdrawal
+)
 
 # Set up the logger
 logger = setup_logger(__name__, 'searchable_v1_withdrawal.log')
@@ -14,7 +21,7 @@ logger = setup_logger(__name__, 'searchable_v1_withdrawal.log')
 @rest_api.route('/api/v1/withdrawal-usdt', methods=['POST'])
 class WithdrawFundsUSDT(Resource):
     """
-    Processes a withdrawal request via Lightning Network
+    Processes a USDT withdrawal request
     """
     @token_required
     def post(self, current_user):
@@ -30,45 +37,52 @@ class WithdrawFundsUSDT(Resource):
                 return {"error": "Amount must be greater than 0"}, 400
         except ValueError:
             return {"error": "Invalid amount format"}, 400
-        
-        USDT_DECIMALS = 6
 
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
+            # Check user balance
+            current_balance = get_balance_by_currency(current_user.id)['usdt']
+            
+            if current_balance < amount:
+                return {
+                    "error": "Insufficient funds", 
+                    "available_balance": current_balance, 
+                    "withdrawal_amount": amount
+                }, 400
             
             # Generate a unique transaction ID for this withdrawal
             tx_id = f"usdt-{current_user.id}-{int(time.time())}"
             
-            # Prepare withdrawal data with pending status
-            withdrawal_data = {
-                'invoice': tx_id,
-                "tx_id": tx_id,
-                'status': [('pending', int(time.time()))],
-                'user_id': current_user.id,
-                'amount': amount,
+            # Prepare withdrawal metadata
+            withdrawal_metadata = {
                 'address': address,
-                'currency': 'usdt'
+                'timestamp': int(time.time()),
+                'original_amount': amount
             }
             
-            # Store withdrawal record
-            execute_sql(cur, f"""
-                INSERT INTO kv (type, fkey, pkey, data)
-                VALUES ('withdrawal', '{current_user.id}', '{tx_id}', {Json(withdrawal_data)})
-                RETURNING pkey
-            """, commit=True, connection=conn)
-            cur.close()
-            conn.close()
+            # Create withdrawal record
+            withdrawal = create_withdrawal(
+                user_id=current_user.id,
+                amount=amount,
+                currency='usdt',
+                withdrawal_type='bank_transfer',  # or whatever type is appropriate
+                external_id=tx_id,
+                metadata=withdrawal_metadata
+            )
+            
+            if withdrawal:
+                logger.info(f"USDT withdrawal created with ID: {withdrawal['id']}")
+                return {"success": True, "msg": "Withdrawal request submitted successfully", "withdrawal_id": withdrawal['id']}, 200
+            else:
+                return {"error": "Failed to create withdrawal record"}, 500
 
-            return {"success": True, "msg": "Withdrawal request submitted successfully"}, 200
         except Exception as e:
-            logger.error(f"Failed to process withdrawal: {str(e)}")
+            logger.error(f"Failed to process USDT withdrawal: {str(e)}")
             return {"error": f"Failed to process withdrawal: {str(e)}"}, 500
 
 @rest_api.route('/api/v1/withdrawal-sats', methods=['POST'])
 class WithdrawFunds(Resource):
     """
-    Processes a withdrawal request via Lightning Network
+    Processes a sats withdrawal request via Lightning Network
     """
     @token_required
     def post(self, current_user):
@@ -83,7 +97,7 @@ class WithdrawFunds(Resource):
             amount_to_withdraw = get_amount_to_withdraw(invoice)
             current_balance = get_balance_by_currency(current_user.id)['sats']
             
-            # todo: add a bit for fees
+            # TODO: add a bit for fees
             if current_balance < amount_to_withdraw:
                 return {
                     "error": "Insufficient funds", 
@@ -91,30 +105,30 @@ class WithdrawFunds(Resource):
                     "withdrawal_amount": amount_to_withdraw
                 }, 400
             
-            # Record the withdrawal as pending in the database
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            withdrawal_data = {
-                'invoice': invoice,
-                'status': [('pending', int(time.time()))],
-                'user_id': current_user.id,
-                'currency': 'sats',
-                'amount': amount_to_withdraw
+            # Prepare withdrawal metadata
+            withdrawal_metadata = {
+                'lightning_invoice': invoice,
+                'timestamp': int(time.time()),
+                'original_amount': amount_to_withdraw
             }
-    
-            # Store withdrawal record
-            execute_sql(cur, f"""
-                INSERT INTO kv (type, fkey, pkey, data)
-                VALUES ('withdrawal', '{current_user.id}', '{invoice}', {Json(withdrawal_data)})
-                RETURNING pkey
-            """, commit=True, connection=conn)
-            cur.close()
-            conn.close()
-    
-            return {"recorded": True, "status": "pending"}, 200
+            
+            # Create withdrawal record
+            withdrawal = create_withdrawal(
+                user_id=current_user.id,
+                amount=amount_to_withdraw,
+                currency='sats',
+                withdrawal_type='lightning',
+                external_id=invoice,
+                metadata=withdrawal_metadata
+            )
+            
+            if withdrawal:
+                logger.info(f"Sats withdrawal created with ID: {withdrawal['id']}")
+                return {"recorded": True, "status": "pending", "withdrawal_id": withdrawal['id']}, 200
+            else:
+                return {"error": "Failed to create withdrawal record"}, 500
             
         except Exception as e:
-            print(f"Error processing withdrawal: {str(e)}")
+            logger.error(f"Error processing sats withdrawal: {str(e)}")
             return {"error": str(e)}, 500
         

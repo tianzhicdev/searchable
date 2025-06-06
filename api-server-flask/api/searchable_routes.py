@@ -17,10 +17,12 @@ from .helper import (
     check_payment, 
     get_terminal, 
     get_searchableIds_by_user, 
-    get_data_from_kv, 
     execute_sql,
     Json,
-    setup_logger
+    setup_logger,
+    get_invoices,
+    get_payments,
+    get_withdrawals
 )
 
 # Set up the logger
@@ -551,127 +553,6 @@ class RemoveSearchableItem(Resource):
                 logger.error(f"Error removing searchable item: {str(e)}")
                 return {"error": str(e)}, 500
 
-@rest_api.route('/api/kv', methods=['GET', 'PUT'])
-class KvResource(Resource):
-    """
-    Key-value store for arbitrary data
-    """
-    def get(self):
-        """
-        Retrieve data from key-value store
-        """
-        try:
-            type = request.args.get('type')
-            pkey = request.args.get('pkey')
-            fkey = request.args.get('fkey')
-            
-            # Build query dynamically based on provided parameters
-            query = "SELECT data, pkey, fkey FROM kv WHERE 1=1"
-            
-            if type:
-                query += f" AND type = '{type}'"
-                
-            if pkey:
-                query += f" AND pkey = '{pkey}'"
-                
-            if fkey:
-                query += f" AND fkey = '{fkey}'"
-            
-            # Add support for filtering on JSON fields inside data column
-            # Get all query parameters that are not handled above
-            json_filters = {}
-            for key, value in request.args.items():
-                if key not in ['type', 'pkey', 'fkey'] and value:
-                    json_filters[key] = value
-            
-            # Add JSON field filters to the query
-            for field, value in json_filters.items():
-                query += f" AND data->>'{field}' = '{value}'"
-            
-            # If no parameters provided, return error
-            if not (type or pkey or fkey or json_filters):
-                return {"error": "At least one parameter (type, pkey, fkey, or data field) is required"}, 400
-                
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            execute_sql(cur, query)
-            
-            rows = cur.fetchall()
-            cur.close()
-            conn.close()
-            
-            if not rows:
-                return {"error": "No matching records found"}, 404
-                
-            # Return all matching records with pkey and fkey
-            result = []
-            for row in rows:
-                data = row[0]
-                data['pkey'] = row[1]
-                data['fkey'] = row[2]
-                result.append(data)
-                
-            return {"data": result}, 200
-            
-        except Exception as e:
-            logger.error(f"Error retrieving from KV store: {str(e)}")
-            return {"error": str(e)}, 500
-    
-
-    def put(self):
-        """
-        Insert or update data in key-value store
-        """
-        try:
-            type = request.args.get('type')
-            pkey = request.args.get('pkey')
-            fkey = request.args.get('fkey')
-            
-            if not all([type, pkey, fkey]):
-                return {"error": "Missing required parameters (type, pkey, fkey)"}, 400
-                
-            data = request.get_json()
-            if not data:
-                return {"error": "No data provided"}, 400
-            
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Check if record exists
-            execute_sql(cur, f"""
-                SELECT data FROM kv
-                WHERE type = '{type}' AND pkey = '{pkey}' AND fkey = '{fkey}'
-            """)
-            
-            existing_row = cur.fetchone()
-            if existing_row:
-                # Merge the existing data with new data
-                existing_data = existing_row[0]
-                merged_data = {**existing_data, **data}
-                
-                # Update with merged data
-                execute_sql(cur, f"""
-                    UPDATE kv
-                    SET data = {Json(merged_data)}
-                    WHERE type = '{type}' AND pkey = '{pkey}' AND fkey = '{fkey}'
-                """, commit=True, connection=conn)
-            else:
-                # Insert new record (no existing data to merge)
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, pkey, fkey, data)
-                    VALUES ('{type}', '{pkey}', '{fkey}', {Json(data)})
-                """, commit=True, connection=conn)
-            
-            cur.close()
-            conn.close()
-            
-            return {"success": True, "message": "Data stored successfully"}, 200
-            
-        except Exception as e:
-            logger.error(f"Error storing in KV store: {str(e)}")
-            return {"error": str(e)}, 500
-
 @rest_api.route('/api/balance', methods=['GET'])
 class BalanceResource(Resource):
     """
@@ -690,8 +571,6 @@ class BalanceResource(Resource):
             logger.error(f"Error calculating balance: {str(e)}")
             return {"error": str(e)}, 500
 
-
-
 @rest_api.route('/metrics')
 class MetricsResource(Resource):
     """
@@ -700,7 +579,6 @@ class MetricsResource(Resource):
     def get(self):
         metrics_data = generate_latest(REGISTRY)
         return Response(metrics_data, mimetype='text/plain; charset=utf-8')
-
 
 @rest_api.route('/api/create-invoice', methods=['POST'])
 class CreateInvoice(Resource):
@@ -799,7 +677,7 @@ class CheckPayment(Resource):
 @rest_api.route('/api/transactions', methods=['GET'])
 class TransactionHistory(Resource):
     """
-    Retrieves complete transaction history for the current user, including payments and withdrawals
+    Retrieves complete transaction history for the current user using new table structure
     
     Example curl request:
     curl -X GET "http://localhost:5000/api/transactions" -H "Authorization: <token>"
@@ -814,35 +692,39 @@ class TransactionHistory(Resource):
                 # Get all searchables published by this user
                 searchable_ids = get_searchableIds_by_user(current_user.id)
                 
-                # Get all payments for all user's searchables in a single query
+                # Get all payments for all user's searchables (seller transactions)
                 if searchable_ids:
-                    payment_records = get_data_from_kv(type='payment', fkey=searchable_ids)
-                    for payment in payment_records:
-                        # Normalize payment data
-                        transaction = {
-                            'invoice_id': payment.get('pkey', ''),
-                            'type': 'payment',
-                            'amount': int(payment.get('amount', 0)),
-                            'timestamp': payment.get('timestamp', ''),
-                            'status': payment.get('status', 'unknown'),
-                            'searchable_id': payment.get('fkey', ''),
-                            'buyer_id': payment.get('buyer_id', '')
-                        }
-                        transactions.append(transaction)
+                    seller_invoices = []
+                    for searchable_id in searchable_ids:
+                        invoices = get_invoices(searchable_id=searchable_id, seller_id=current_user.id)
+                        seller_invoices.extend(invoices)
+                    
+                    for invoice in seller_invoices:
+                        # Get payments for this invoice
+                        payments = get_payments(invoice_id=invoice['id'], status='complete')
+                        for payment in payments:
+                            transaction = {
+                                'invoice_id': invoice['external_id'],
+                                'type': 'payment',
+                                'amount': float(payment['amount']),
+                                'timestamp': int(payment['created_at'].timestamp()),
+                                'status': payment['status'],
+                                'searchable_id': invoice['searchable_id'],
+                                'buyer_id': invoice['buyer_id']
+                            }
+                            transactions.append(transaction)
                 
                 # Get all withdrawals for this user
-                withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(current_user.id))
-                for withdrawal in withdrawal_records:
-                    # Normalize withdrawal data
+                withdrawals = get_withdrawals(user_id=current_user.id)
+                for withdrawal in withdrawals:
                     transaction = {
-                        'invoice': withdrawal.get('pkey', ''),
+                        'invoice': withdrawal['external_id'] or str(withdrawal['id']),
                         'type': 'withdrawal',
-                        'amount': int(withdrawal.get('amount', "")),
-                        'fee_sat': int(withdrawal.get('fee_sat', "")),
-                        'value_sat': int(withdrawal.get('value_sat', "")),
-                        'timestamp': int(payment.get('timestamp', '')),
-                        'status': withdrawal.get('status', []),
-                        'invoice': withdrawal.get('invoice', 'missing'),
+                        'amount': float(withdrawal['amount']),
+                        'fee': float(withdrawal.get('fee', 0)),
+                        'timestamp': int(withdrawal['created_at'].timestamp()),
+                        'status': withdrawal['status'],
+                        'currency': withdrawal['currency']
                     }
                     transactions.append(transaction)
                 
@@ -861,7 +743,7 @@ class TransactionHistory(Resource):
 @rest_api.route('/api/payments-visitor', methods=['GET'])
 class VisitorPaymentsResource(Resource):
     """
-    Retrieves payments data for a visitor (non-authenticated user) filtered by buyer_id
+    Retrieves payments data for a visitor (non-authenticated user) filtered by buyer_id using new table structure
     
     Example curl request:
     curl -X GET "http://localhost:5000/api/payments-visitor?buyer_id=visitor_123&searchable_id=456"
@@ -877,17 +759,28 @@ class VisitorPaymentsResource(Resource):
                     searchable_requests.labels('get_payments_visitor', 'GET', 400).inc()
                     return {"error": "buyer_id is required"}, 400
                 
-                # Filter payments by buyer_id and optionally by searchable_id
+                # Get invoices based on filters
                 if searchable_id:
-                    # Get payments for specific buyer and searchable item
-                    payment_records = get_data_from_kv(type='payment', fkey=searchable_id)
-                    payment_records = [payment for payment in payment_records 
-                                      if payment.get('buyer_id') == str(buyer_id)]
+                    invoices = get_invoices(buyer_id=buyer_id, searchable_id=searchable_id)
                 else:
-                    # Get all payments for this buyer
-                    payment_records = get_data_from_kv(type='payment')
-                    payment_records = [payment for payment in payment_records 
-                                      if payment.get('buyer_id') == str(buyer_id)]
+                    invoices = get_invoices(buyer_id=buyer_id)
+                
+                # Get payments for these invoices
+                payment_records = []
+                for invoice in invoices:
+                    payments = get_payments(invoice_id=invoice['id'], status='complete')
+                    for payment in payments:
+                        # Convert to old format for compatibility
+                        payment_record = {
+                            'pkey': invoice['external_id'],
+                            'fkey': str(invoice['searchable_id']),
+                            'amount': float(payment['amount']),
+                            'status': payment['status'],
+                            'buyer_id': str(invoice['buyer_id']),
+                            'timestamp': int(payment['created_at'].timestamp()),
+                            'searchable_id': str(invoice['searchable_id'])
+                        }
+                        payment_records.append(payment_record)
                 
                 # Monitor metrics
                 searchable_requests.labels('get_payments_visitor', 'GET', 200).inc()
@@ -901,16 +794,14 @@ class VisitorPaymentsResource(Resource):
                 searchable_requests.labels('get_payments_visitor', 'GET', 500).inc()
                 return {"error": str(e)}, 500
 
-
 @rest_api.route('/api/payments', methods=['GET'])
 class PaymentsResource(Resource):
     """
-    Retrieves payments data filtered by searchable_id or user's role (buyer/seller)
+    Retrieves payments data filtered by searchable_id or user's role (buyer/seller) using new table structure
     """
     @token_required
     def get(self, current_user):
         with searchable_latency.labels('get_payments').time():
-            # todo: this is a mess, we should refactor it. the logic should be correct though
             try:
                 # Check if filtering by specific searchable_id
                 searchable_id = request.args.get('searchable_id')
@@ -921,44 +812,83 @@ class PaymentsResource(Resource):
                 user_published_searchable_ids = [str(id) for id in user_published_searchable_ids]
                 logger.info(f"user_published_searchable_ids: {user_published_searchable_ids}")
                 
+                payment_records = []
+                
                 if searchable_id and (searchable_id in user_published_searchable_ids):
                     logger.info(f"searchable_id is in user_published_searchable_ids")
-                    # user is the seller
-                    payment_records = get_data_from_kv(type='payment', fkey=searchable_id)
-                    # Mark the current user as the seller for these payments
-                    for payment in payment_records:
-                        payment['seller_id'] = str(current_user.id)
+                    # User is the seller - get payments for this specific searchable
+                    invoices = get_invoices(searchable_id=searchable_id, seller_id=current_user.id)
+                    for invoice in invoices:
+                        payments = get_payments(invoice_id=invoice['id'], status='complete')
+                        for payment in payments:
+                            # Convert to old format for compatibility
+                            payment_record = {
+                                'pkey': invoice['external_id'],
+                                'fkey': str(invoice['searchable_id']),
+                                'amount': float(payment['amount']),
+                                'status': payment['status'],
+                                'buyer_id': str(invoice['buyer_id']),
+                                'seller_id': str(current_user.id),
+                                'timestamp': int(payment['created_at'].timestamp()),
+                                'searchable_id': str(invoice['searchable_id'])
+                            }
+                            payment_records.append(payment_record)
 
                 elif searchable_id:
-                    # user is the buyer
-                    # todo: to optimize - use db filters
-                    payment_records = get_data_from_kv(type='payment')
-                    payment_records = [payment for payment in payment_records 
-                                     if payment.get('buyer_id') == str(current_user.id)] 
-                    
-                    # Mark the current user as the seller if they own the searchable item
-                    for payment in payment_records:
-                        if payment.get('fkey') in user_published_searchable_ids:
-                            payment['seller_id'] = str(current_user.id)
+                    # User is the buyer - get payments where they are the buyer
+                    invoices = get_invoices(searchable_id=searchable_id, buyer_id=current_user.id)
+                    for invoice in invoices:
+                        payments = get_payments(invoice_id=invoice['id'], status='complete')
+                        for payment in payments:
+                            payment_record = {
+                                'pkey': invoice['external_id'],
+                                'fkey': str(invoice['searchable_id']),
+                                'amount': float(payment['amount']),
+                                'status': payment['status'],
+                                'buyer_id': str(current_user.id),
+                                'seller_id': str(invoice['seller_id']),
+                                'timestamp': int(payment['created_at'].timestamp()),
+                                'searchable_id': str(invoice['searchable_id'])
+                            }
+                            payment_records.append(payment_record)
                 else:
-                    # profile page
-                    payment_records = []
-                    # Get payments where user is seller (payments for their searchable items)
+                    # Profile page - get all payments where user is buyer or seller
+                    # Get payments where user is seller
                     if user_published_searchable_ids:
-                        seller_payments = get_data_from_kv(type='payment', fkey=user_published_searchable_ids)
-                        for payment in seller_payments:
-                            payment['seller_id'] = str(current_user.id)
-                        payment_records.extend(seller_payments)
+                        for searchable_id in user_published_searchable_ids:
+                            invoices = get_invoices(searchable_id=searchable_id, seller_id=current_user.id)
+                            for invoice in invoices:
+                                payments = get_payments(invoice_id=invoice['id'], status='complete')
+                                for payment in payments:
+                                    payment_record = {
+                                        'pkey': invoice['external_id'],
+                                        'fkey': str(invoice['searchable_id']),
+                                        'amount': float(payment['amount']),
+                                        'status': payment['status'],
+                                        'buyer_id': str(invoice['buyer_id']),
+                                        'seller_id': str(current_user.id),
+                                        'timestamp': int(payment['created_at'].timestamp()),
+                                        'searchable_id': str(invoice['searchable_id'])
+                                    }
+                                    payment_records.append(payment_record)
                     
                     # Get payments where user is buyer
-                    buyer_payments = get_data_from_kv(type='payment')
-                    # todo: to optimize - use db filters
-                    buyer_payments = [payment for payment in buyer_payments 
-                                     if payment.get('buyer_id') == str(current_user.id)]
-                    payment_records.extend(buyer_payments)
-                    
+                    buyer_invoices = get_invoices(buyer_id=current_user.id)
+                    for invoice in buyer_invoices:
+                        payments = get_payments(invoice_id=invoice['id'], status='complete')
+                        for payment in payments:
+                            payment_record = {
+                                'pkey': invoice['external_id'],
+                                'fkey': str(invoice['searchable_id']),
+                                'amount': float(payment['amount']),
+                                'status': payment['status'],
+                                'buyer_id': str(current_user.id),
+                                'seller_id': str(invoice['seller_id']),
+                                'timestamp': int(payment['created_at'].timestamp()),
+                                'searchable_id': str(invoice['searchable_id'])
+                            }
+                            payment_records.append(payment_record)
 
-                # todo: we should only return the latest x payments, but that is a scalability issue
                 # Record metrics
                 searchable_requests.labels('get_payments', 'GET', 200).inc()
                 

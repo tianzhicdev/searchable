@@ -265,163 +265,369 @@ def get_searchableIds_by_user(user_id):
         print(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
         return []
 
-def get_data_from_kv(type=None, pkey=None, fkey=None):
+def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=None, status=None):
     """
-    Retrieves data from the key-value store based on specified parameters
+    Retrieves invoices from the invoice table based on specified parameters
     
     Args:
-        type: The type of data to retrieve (required) - can be a single value or list
-        pkey: The primary key to filter by (optional) - can be a single value or list
-        fkey: The foreign key to filter by (optional) - can be a single value or list
+        buyer_id: Filter by buyer ID (optional)
+        seller_id: Filter by seller ID (optional)
+        searchable_id: Filter by searchable item ID (optional)
+        external_id: Filter by external ID (BTCPay/Stripe ID) (optional)
+        status: Filter by status (optional)
         
     Returns:
-        List of data records matching the criteria, or empty list if none found
+        List of invoice records matching the criteria
     """
     try:
-        if not type:
-            print("Error: type parameter is required for get_data_from_kv")
-            return []
-        
-        # Build query dynamically based on provided parameters
-        query = "SELECT data, pkey, fkey FROM kv WHERE "
-        
-        # Handle type parameter (single value or list)
-        if isinstance(type, list):
-            if not type:  # Empty list check
-                print("Error: type list cannot be empty")
-                return []
-            type_values = "', '".join([str(t) for t in type])
-            query += f"type IN ('{type_values}')"
-        else:
-            query += f"type = '{type}'"
-        
-        # Handle pkey parameter (single value or list)
-        if pkey:
-            if isinstance(pkey, list):
-                if pkey:  # Only if list is not empty
-                    pkey_values = "', '".join([str(p) for p in pkey])
-                    query += f" AND pkey IN ('{pkey_values}')"
-            else:
-                query += f" AND pkey = '{pkey}'"
-        
-        # Handle fkey parameter (single value or list)
-        if fkey:
-            if isinstance(fkey, list):
-                if fkey:  # Only if list is not empty
-                    fkey_values = "', '".join([str(f) for f in fkey])
-                    query += f" AND fkey IN ('{fkey_values}')"
-            else:
-                query += f" AND fkey = '{fkey}'"
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Execute the query with string interpolation
+        # Build query dynamically
+        conditions = []
+        if buyer_id is not None:
+            if isinstance(buyer_id, list):
+                buyer_ids = "', '".join([str(b) for b in buyer_id])
+                conditions.append(f"buyer_id IN ('{buyer_ids}')")
+            else:
+                conditions.append(f"buyer_id = '{buyer_id}'")
+        
+        if seller_id is not None:
+            if isinstance(seller_id, list):
+                seller_ids = "', '".join([str(s) for s in seller_id])
+                conditions.append(f"seller_id IN ('{seller_ids}')")
+            else:
+                conditions.append(f"seller_id = '{seller_id}'")
+        
+        if searchable_id is not None:
+            if isinstance(searchable_id, list):
+                searchable_ids = "', '".join([str(s) for s in searchable_id])
+                conditions.append(f"searchable_id IN ('{searchable_ids}')")
+            else:
+                conditions.append(f"searchable_id = '{searchable_id}'")
+        
+        if external_id:
+            conditions.append(f"external_id = '{external_id}'")
+        
+        if status:
+            conditions.append(f"status = '{status}'")
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        query = f"""
+            SELECT id, buyer_id, seller_id, searchable_id, amount, fee, currency, 
+                   type, external_id, status, created_at, metadata
+            FROM invoice
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
+        
         execute_sql(cur, query)
         
         results = []
         for row in cur.fetchall():
-            data = row[0].copy() if row[0] else {}  # Make a copy to avoid modifying the original
-            data['pkey'] = row[1]
-            data['fkey'] = row[2]
-            results.append(data)
-            
+            invoice = {
+                'id': row[0],
+                'buyer_id': row[1],
+                'seller_id': row[2],
+                'searchable_id': row[3],
+                'amount': float(row[4]),
+                'fee': float(row[5]),
+                'currency': row[6],
+                'type': row[7],
+                'external_id': row[8],
+                'status': row[9],
+                'created_at': row[10],
+                'metadata': row[11]
+            }
+            results.append(invoice)
+        
         cur.close()
         conn.close()
-        
         return results
+        
     except Exception as e:
-        print(f"Error retrieving data from KV store: {str(e)}")
+        print(f"Error retrieving invoices: {str(e)}")
         return []
 
-def get_balance_by_currency(user_id):
+def get_payments(invoice_id=None, invoice_ids=None, status=None):
     """
-    Get user balance from payments and withdrawals
+    Retrieves payments from the payment table
+    
+    Args:
+        invoice_id: Filter by specific invoice ID (optional)
+        invoice_ids: Filter by list of invoice IDs (optional)
+        status: Filter by payment status (optional)
+        
+    Returns:
+        List of payment records matching the criteria
     """
     try:
-        balance_by_currency = {
-            'sats': 0,
-            'usdt': 0,
-        }
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        print(f"Calculating balance for user_id: {user_id}")
+        conditions = []
+        if invoice_id is not None:
+            conditions.append(f"invoice_id = {invoice_id}")
         
-        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.terminal_id = {user_id};""")
-        searchable_results = cur.fetchall()
+        if invoice_ids is not None:
+            invoice_ids_str = ','.join([str(i) for i in invoice_ids])
+            conditions.append(f"invoice_id IN ({invoice_ids_str})")
         
-        for searchable in searchable_results:
-            searchable_id = searchable[0]
-            searchable_data = searchable[1]
-            
-            if not isinstance(searchable_data, dict):
-                searchable_data = json.loads(searchable[1])
-                
-            try:
-                searchable_currency = searchable_data['payloads']['public']['currency'].lower()
-                
-                execute_sql(cur, f"""
-                    SELECT i.data 
-                    FROM kv i
-                    JOIN kv p ON i.pkey = p.pkey AND p.type = 'payment' AND (LOWER(p.data->>'status') = 'complete' OR LOWER(p.data->>'status') = 'settled')
-                    WHERE i.type = 'invoice' AND i.fkey = '{searchable_id}'
-                """)
-                invoice_results = cur.fetchall()
-                
-                for invoice_result in invoice_results:
-                    invoice_data = invoice_result[0]
-                    if invoice_data and 'selections' in invoice_data:
-                        selections = invoice_data['selections']
-                        
-                        calculated_invoice = calc_invoice(searchable_data, selections)
-                        
-                        if searchable_currency == 'sats':
-                            balance_by_currency['sats'] += calculated_invoice['amount_sats']
-                            print(f"Added {calculated_invoice['amount_sats']} sats from searchable {searchable_id}")
-                        elif searchable_currency == 'usdt':
-                            balance_by_currency['usdt'] += calculated_invoice['amount_usd_cents'] / 100  # Convert cents to dollars
-                            print(f"Added {calculated_invoice['amount_usd_cents'] / 100} USDT from searchable {searchable_id}")
-            except KeyError as ke:
-                print(f"KeyError processing searchable {searchable_id}: {str(ke)}")
-                continue
+        if status:
+            conditions.append(f"status = '{status}'")
         
-        execute_sql(cur, f"""
-            SELECT data->>'user_id' as user_id, data->>'amount' as amount, data->>'currency' as currency, pkey as withdraw_id 
-            FROM kv 
-            WHERE type = 'withdrawal' AND data->>'user_id' = '{user_id}'
-        """)
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
         
-        withdrawal_results = cur.fetchall()
+        query = f"""
+            SELECT id, invoice_id, amount, fee, currency, type, external_id, 
+                   status, created_at, metadata
+            FROM payment
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
         
-        for withdrawal in withdrawal_results:
-            amount = withdrawal[1]
-            currency = withdrawal[2]
-            withdraw_id = withdrawal[3]
-            
-            if amount is not None and currency is not None:
-                try:
-                    amount_float = float(amount)
-                    if currency in balance_by_currency:
-                        balance_by_currency[currency] -= amount_float
-                        print(f"Subtracted {amount_float} {currency} from withdrawal {withdraw_id}")
-                    else:
-                        print(f"Unknown currency in withdrawal {withdraw_id}: {currency}")
-                except ValueError:
-                    print(f"Invalid amount format in withdrawal {withdraw_id}: {amount}")
+        execute_sql(cur, query)
         
-        print(f"Final balance for user {user_id}: {balance_by_currency}")
-        return balance_by_currency
+        results = []
+        for row in cur.fetchall():
+            payment = {
+                'id': row[0],
+                'invoice_id': row[1],
+                'amount': float(row[2]),
+                'fee': float(row[3]),
+                'currency': row[4],
+                'type': row[5],
+                'external_id': row[6],
+                'status': row[7],
+                'created_at': row[8],
+                'metadata': row[9]
+            }
+            results.append(payment)
+        
+        cur.close()
+        conn.close()
+        return results
         
     except Exception as e:
-        print(f"Error calculating balance for user {user_id}: {str(e)}")
-        raise e
-    finally:
-        if 'cur' in locals() and cur:
-            cur.close()
-        if 'conn' in locals() and conn:
-            conn.close()
+        print(f"Error retrieving payments: {str(e)}")
+        return []
+
+def get_withdrawals(user_id=None, status=None, currency=None):
+    """
+    Retrieves withdrawals from the withdrawal table
+    
+    Args:
+        user_id: Filter by user ID (optional)
+        status: Filter by withdrawal status (optional)
+        currency: Filter by currency (optional)
+        
+    Returns:
+        List of withdrawal records matching the criteria
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        conditions = []
+        if user_id is not None:
+            conditions.append(f"user_id = {user_id}")
+        
+        if status:
+            conditions.append(f"status = '{status}'")
+        
+        if currency:
+            conditions.append(f"currency = '{currency}'")
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        query = f"""
+            SELECT id, user_id, amount, fee, currency, type, external_id, 
+                   status, created_at, metadata
+            FROM withdrawal
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
+        
+        execute_sql(cur, query)
+        
+        results = []
+        for row in cur.fetchall():
+            withdrawal = {
+                'id': row[0],
+                'user_id': row[1],
+                'amount': float(row[2]),
+                'fee': float(row[3]),
+                'currency': row[4],
+                'type': row[5],
+                'external_id': row[6],
+                'status': row[7],
+                'created_at': row[8],
+                'metadata': row[9]
+            }
+            results.append(withdrawal)
+        
+        cur.close()
+        conn.close()
+        return results
+        
+    except Exception as e:
+        print(f"Error retrieving withdrawals: {str(e)}")
+        return []
+
+def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata=None):
+    """
+    Creates a new invoice record
+    
+    Args:
+        buyer_id: ID of the buyer
+        seller_id: ID of the seller  
+        searchable_id: ID of the searchable item
+        amount: Invoice amount
+        currency: Currency (sats, usdt)
+        invoice_type: Type of invoice (lightning, stripe)
+        external_id: External invoice ID (BTCPay, Stripe)
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        dict: Created invoice record or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, f"""
+            INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, currency, type, external_id, metadata)
+            VALUES ({buyer_id}, {seller_id}, {searchable_id}, {amount}, '{currency}', '{invoice_type}', '{external_id}', {Json(metadata)})
+            RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, status, created_at, metadata
+        """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        invoice = {
+            'id': row[0],
+            'buyer_id': row[1],
+            'seller_id': row[2],
+            'searchable_id': row[3],
+            'amount': float(row[4]),
+            'fee': float(row[5]),
+            'currency': row[6],
+            'type': row[7],
+            'external_id': row[8],
+            'status': row[9],
+            'created_at': row[10],
+            'metadata': row[11]
+        }
+        
+        cur.close()
+        conn.close()
+        return invoice
+        
+    except Exception as e:
+        print(f"Error creating invoice: {str(e)}")
+        return None
+
+def create_payment(invoice_id, amount, currency, payment_type, external_id=None, metadata=None):
+    """
+    Creates a new payment record
+    
+    Args:
+        invoice_id: ID of the associated invoice
+        amount: Payment amount
+        currency: Currency (sats, usdt)
+        payment_type: Type of payment (lightning, stripe)
+        external_id: External payment ID (optional)
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        dict: Created payment record or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, f"""
+            INSERT INTO payment (invoice_id, amount, currency, type, external_id, metadata)
+            VALUES ({invoice_id}, {amount}, '{currency}', '{payment_type}', '{external_id}', {Json(metadata)})
+            RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
+        """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        payment = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8],
+            'metadata': row[9]
+        }
+        
+        cur.close()
+        conn.close()
+        return payment
+        
+    except Exception as e:
+        print(f"Error creating payment: {str(e)}")
+        return None
+
+def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=None, metadata=None):
+    """
+    Creates a new withdrawal record
+    
+    Args:
+        user_id: ID of the user
+        amount: Withdrawal amount
+        currency: Currency (sats, usdt)
+        withdrawal_type: Type of withdrawal (lightning, bank_transfer)
+        external_id: External transaction ID (optional)
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        dict: Created withdrawal record or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, f"""
+            INSERT INTO withdrawal (user_id, amount, currency, type, external_id, metadata)
+            VALUES ({user_id}, {amount}, '{currency}', '{withdrawal_type}', '{external_id}', {Json(metadata)})
+            RETURNING id, user_id, amount, fee, currency, type, external_id, status, created_at, metadata
+        """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        withdrawal = {
+            'id': row[0],
+            'user_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8],
+            'metadata': row[9]
+        }
+        
+        cur.close()
+        conn.close()
+        return withdrawal
+        
+    except Exception as e:
+        print(f"Error creating withdrawal: {str(e)}")
+        return None
 
 def decode_lightning_invoice(invoice):
     """
@@ -539,37 +745,33 @@ def check_payment(invoice_id):
         # If payment is settled, record it in our database
         if invoice_data['status'].lower() in ('settled', 'complete'):
             
-            # Get the searchable_id from the invoice record
-            invoice_records = get_data_from_kv(type='invoice', pkey=invoice_id)
+            # Get the invoice record from our database using external_id
+            invoice_records = get_invoices(external_id=invoice_id)
             
             if invoice_records:
                 invoice_record = invoice_records[0]
-                searchable_id = invoice_record.get('fkey')
                 
-                # Store payment record
-                payment_record = {
-                    "amount": int(invoice_data.get('amount', invoice_record.get('amount', 0))),
-                    "status": 'complete',
-                    "buyer_id": invoice_record.get('buyer_id', 'unknown'),
-                    "timestamp": int(time.time()),
-                    "searchable_id": str(searchable_id),
-                    "address": invoice_record.get('address', ''),
-                    "tel": invoice_record.get('tel', ''),
-                    "description": invoice_record.get('description', ''),
-                    "buyer_paid_amount": int(invoice_record.get('amount', 0)),
-                    "buyer_paid_currency": 'sats',
-                }
+                # Check if payment already exists
+                existing_payments = get_payments(invoice_id=invoice_record['id'])
                 
-                conn = get_db_connection()
-                cur = conn.cursor()
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, pkey, fkey, data)
-                    VALUES ('payment', '{invoice_id}', '{searchable_id}', {Json(payment_record)})
-                    ON CONFLICT (type, pkey, fkey) 
-                    DO NOTHING
-                """, commit=True, connection=conn)
-                cur.close()
-                conn.close()
+                if not existing_payments:
+                    # Create payment record
+                    payment_metadata = {
+                        "btcpay_status": invoice_data['status'],
+                        "timestamp": int(time.time()),
+                        "address": invoice_record['metadata'].get('address', ''),
+                        "tel": invoice_record['metadata'].get('tel', ''),
+                        "description": invoice_record['metadata'].get('description', ''),
+                    }
+                    
+                    create_payment(
+                        invoice_id=invoice_record['id'],
+                        amount=invoice_record['amount'],
+                        currency=invoice_record['currency'],
+                        payment_type=invoice_record['type'],
+                        external_id=invoice_id,
+                        metadata=payment_metadata
+                    )
         
         # Return the payment status
         return invoice_data
@@ -600,38 +802,35 @@ def check_stripe_payment(session_id):
         
         # If payment is successful, record it in our database
         if payment_status == 'paid' or payment_status == 'complete':
-            # Get the invoice record from our database
-            invoice_records = get_data_from_kv(type='invoice', pkey=session_id)
+            # Get the invoice record from our database using external_id
+            invoice_records = get_invoices(external_id=session_id)
             
             if invoice_records:
                 invoice_record = invoice_records[0]
-                searchable_id = invoice_record.get('fkey')
                 
-                # Store payment record
-                payment_record = {
-                    "amount": invoice_record['amount'],  # Will raise KeyError if amount doesn't exist
-                    "status": "complete",
-                    "buyer_id": invoice_record.get('buyer_id', 'unknown'),
-                    "timestamp": int(time.time()),
-                    "searchable_id": str(searchable_id),
-                    "address": invoice_record.get('address', ''),
-                    "tel": invoice_record.get('tel', ''),
-                    "payment_type": "stripe",
-                    "description": invoice_record.get('description', ''),
-                    "buyer_paid_amount": invoice_record['amount'],
-                    "buyer_paid_currency": 'usdt',
-                }
+                # Check if payment already exists
+                existing_payments = get_payments(invoice_id=invoice_record['id'])
                 
-                conn = get_db_connection()
-                cur = conn.cursor()
-                execute_sql(cur, f"""
-                    INSERT INTO kv (type, pkey, fkey, data)
-                    VALUES ('payment', '{session_id}', '{searchable_id}', {Json(payment_record)})
-                    ON CONFLICT (type, pkey, fkey) 
-                    DO NOTHING
-                """, commit=True, connection=conn)
-                cur.close()
-                conn.close()
+                if not existing_payments:
+                    # Create payment record
+                    payment_metadata = {
+                        "stripe_status": payment_status,
+                        "timestamp": int(time.time()),
+                        "address": invoice_record['metadata'].get('address', ''),
+                        "tel": invoice_record['metadata'].get('tel', ''),
+                        "description": invoice_record['metadata'].get('description', ''),
+                        "stripe_session_id": session_id,
+                        "amount_total": checkout_session.amount_total,
+                    }
+                    
+                    create_payment(
+                        invoice_id=invoice_record['id'],
+                        amount=invoice_record['amount'],
+                        currency=invoice_record['currency'],
+                        payment_type=invoice_record['type'],
+                        external_id=session_id,
+                        metadata=payment_metadata
+                    )
         
         # Return the payment status information
         return {
@@ -840,7 +1039,7 @@ def get_amount_to_withdraw(invoice):
 
 def get_receipts(user_id=None, searchable_id=None):
     """
-    Retrieves payment receipts for a user or a specific searchable item
+    Retrieves payment receipts for a user or a specific searchable item using new table structure
     
     Args:
         user_id (str, optional): The ID of the user to get receipts for
@@ -863,77 +1062,76 @@ def get_receipts(user_id=None, searchable_id=None):
         # Build the WHERE clause based on provided parameters
         where_conditions = []
         if user_id:
-            where_conditions.append(f"(s.terminal_id = '{user_id}' OR p.data->>'buyer_id' = '{user_id}')")
+            where_conditions.append(f"(i.seller_id = {user_id} OR i.buyer_id = {user_id})")
         if searchable_id:
-            where_conditions.append(f"s.searchable_id = '{searchable_id}'")
+            where_conditions.append(f"i.searchable_id = {searchable_id}")
             
         where_clause = " AND ".join(where_conditions)
 
-        seller_query = f"""
-            SELECT s.searchable_id, 
-                    s.searchable_data as searchable_data,
-                    i.pkey as id, 
-                    s.searchable_data->'payloads'->'public'->>'currency' as currency, 
-                    i.data->'selections' AS selections, 
-                    p.data->>'status' as status,
-                    p.data as payment_data,
-                    p.data->>'timestamp' as timestamp,
-                    p.data->>'buyer_id' as buyer_id,
-                    s.terminal_id as seller_id,
-                    p.data->>'tracking' as tracking,
-                    p.data->>'rating' as rating,
-                    p.data->>'review' as review,
-                    s.terminal_id as seller_id
-            FROM searchables s 
-            JOIN kv i ON s.searchable_id::text = i.fkey 
-            JOIN kv p ON i.pkey = p.pkey 
-            WHERE i.type = 'invoice' 
-            AND p.type = 'payment' 
-            AND {where_clause}
-            AND (p.data->>'status' = 'complete' OR p.data->>'status' = 'Settled')
+        query = f"""
+            SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.currency, i.type,
+                   i.external_id, i.created_at, i.metadata,
+                   p.id as payment_id, p.amount as payment_amount, p.currency as payment_currency,
+                   p.status as payment_status, p.created_at as payment_created_at, p.metadata as payment_metadata,
+                   s.searchable_data
+            FROM invoice i 
+            JOIN payment p ON i.id = p.invoice_id 
+            JOIN searchables s ON i.searchable_id = s.searchable_id
+            WHERE {where_clause}
+            AND p.status = 'complete'
+            ORDER BY p.created_at DESC
         """
-        execute_sql(cur, seller_query)
-        seller_results = cur.fetchall()
+        
+        execute_sql(cur, query)
+        results = cur.fetchall()
 
         payments = []
         
-        for result in seller_results:
-            searchable_id, searchable_data, invoice_id, currency, selections, status, payment_data, timestamp, buyer_id, seller_id, tracking, rating, review, seller_id = result
+        for result in results:
+            (invoice_id, buyer_id, seller_id, searchable_id, invoice_amount, invoice_currency, invoice_type,
+             external_id, invoice_created_at, invoice_metadata,
+             payment_id, payment_amount, payment_currency, payment_status, payment_created_at, payment_metadata,
+             searchable_data) = result
             
             # Calculate invoice details to get the seller's share
             try:
-                invoice_details = calc_invoice(searchable_data, selections)
+                # Get selections from invoice metadata
+                selections = invoice_metadata.get('selections', [])
                 
-                # Create payment record with seller information
+                if selections and searchable_data:
+                    invoice_details = calc_invoice(searchable_data, selections)
+                    description = invoice_details.get("description", "")
+                else:
+                    description = invoice_metadata.get('description', '')
+                
+                # Create payment record
                 payment_public = {
                     'item': str(searchable_id),
-                    'id': invoice_id,
-                    'currency': currency,
-                    'description': invoice_details.get("description", ""),
-                    'status': status,
-                    'timestamp': payment_data.get('timestamp', ''),
-                    'tracking': payment_data.get('tracking', ''),
-                    'rating': payment_data.get('rating', ''),
-                    'review': payment_data.get('review', ''),
+                    'id': external_id,
+                    'currency': invoice_currency,
+                    'description': description,
+                    'status': payment_status,
+                    'timestamp': payment_metadata.get('timestamp', int(payment_created_at.timestamp())),
+                    'tracking': payment_metadata.get('tracking', ''),
+                    'rating': payment_metadata.get('rating', ''),
+                    'review': payment_metadata.get('review', ''),
+                    'amount': float(invoice_amount)
                 }
 
-                if currency == 'usdt':
-                    payment_public['amount'] = invoice_details.get("amount_usd", 0)
-                elif currency == 'sats':
-                    payment_public['amount'] = invoice_details.get("amount_sats", 0)
-                
                 payment_private = {
                     'buyer_id': str(buyer_id),
                     'seller_id': str(seller_id),
                 }
+                
                 payment = {
                     'public': payment_public,
                     'private': payment_private
                 }
                 
                 payments.append(payment)
+                
             except Exception as calc_error:
-                print(f"Error calculating invoice details for searchable {searchable_id}: {str(calc_error)}")
+                print(f"Error processing receipt for invoice {invoice_id}: {str(calc_error)}")
         
         cur.close()
         conn.close()
@@ -942,4 +1140,383 @@ def get_receipts(user_id=None, searchable_id=None):
     except Exception as e:
         print(f"Error retrieving receipts: {str(e)}")
         return []
+
+def get_balance_by_currency(user_id):
+    """
+    Get user balance from payments and withdrawals using new table structure
+    """
+    try:
+        balance_by_currency = {
+            'sats': 0,
+            'usdt': 0,
+        }
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        print(f"Calculating balance for user_id: {user_id}")
+        
+        # Get all searchables published by this user
+        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.terminal_id = {user_id};""")
+        searchable_results = cur.fetchall()
+        
+        for searchable in searchable_results:
+            searchable_id = searchable[0]
+            searchable_data = searchable[1]
+            
+            if not isinstance(searchable_data, dict):
+                searchable_data = json.loads(searchable[1])
+                
+            try:
+                searchable_currency = searchable_data['payloads']['public']['currency'].lower()
+                
+                # Get paid invoices for this searchable (seller earnings)
+                execute_sql(cur, f"""
+                    SELECT i.amount, i.currency, i.metadata
+                    FROM invoice i
+                    JOIN payment p ON i.id = p.invoice_id
+                    WHERE i.searchable_id = {searchable_id} 
+                    AND i.seller_id = {user_id}
+                    AND p.status = 'complete'
+                """)
+                
+                paid_invoices = cur.fetchall()
+                
+                for invoice_result in paid_invoices:
+                    amount, currency, metadata = invoice_result
+                    
+                    # Convert currency to standard format
+                    if currency.lower() == 'sats':
+                        balance_by_currency['sats'] += float(amount)
+                        print(f"Added {amount} sats from searchable {searchable_id}")
+                    elif currency.lower() in ['usdt', 'usd']:
+                        balance_by_currency['usdt'] += float(amount)
+                        print(f"Added {amount} USDT from searchable {searchable_id}")
+                        
+            except KeyError as ke:
+                print(f"KeyError processing searchable {searchable_id}: {str(ke)}")
+                continue
+        
+        # Subtract withdrawals
+        execute_sql(cur, f"""
+            SELECT amount, currency
+            FROM withdrawal 
+            WHERE user_id = {user_id}
+            AND status IN ('complete', 'settled', 'SUCCEEDED')
+        """)
+        
+        withdrawal_results = cur.fetchall()
+        
+        for withdrawal in withdrawal_results:
+            amount, currency = withdrawal
+            
+            if amount is not None and currency is not None:
+                try:
+                    amount_float = float(amount)
+                    if currency.lower() == 'sats':
+                        balance_by_currency['sats'] -= amount_float
+                        print(f"Subtracted {amount_float} sats from withdrawal")
+                    elif currency.lower() in ['usdt', 'usd']:
+                        balance_by_currency['usdt'] -= amount_float
+                        print(f"Subtracted {amount_float} USDT from withdrawal")
+                except ValueError:
+                    print(f"Invalid amount format in withdrawal: {amount}")
+        
+        print(f"Final balance for user {user_id}: {balance_by_currency}")
+        return balance_by_currency
+        
+    except Exception as e:
+        print(f"Error calculating balance for user {user_id}: {str(e)}")
+        raise e
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+
+def create_rating(invoice_id, user_id, rating, review=None, metadata=None):
+    """
+    Creates a new rating record
+    
+    Args:
+        invoice_id: ID of the associated invoice
+        user_id: ID of the user creating the rating
+        rating: Rating value (0-5)
+        review: Review text (optional)
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        dict: Created rating record or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, f"""
+            INSERT INTO rating (invoice_id, user_id, rating, review, metadata)
+            VALUES ({invoice_id}, {user_id}, {rating}, '{review or ''}', {Json(metadata)})
+            RETURNING id, invoice_id, user_id, rating, review, metadata, created_at
+        """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        rating_record = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'user_id': row[2],
+            'rating': float(row[3]),
+            'review': row[4],
+            'metadata': row[5],
+            'created_at': row[6]
+        }
+        
+        cur.close()
+        conn.close()
+        return rating_record
+        
+    except Exception as e:
+        print(f"Error creating rating: {str(e)}")
+        return None
+
+def get_ratings(invoice_id=None, user_id=None):
+    """
+    Retrieves ratings from the rating table
+    
+    Args:
+        invoice_id: Filter by invoice ID (optional)
+        user_id: Filter by user ID (optional)
+        
+    Returns:
+        List of rating records matching the criteria
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        conditions = []
+        if invoice_id is not None:
+            conditions.append(f"invoice_id = {invoice_id}")
+        
+        if user_id is not None:
+            conditions.append(f"user_id = {user_id}")
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        query = f"""
+            SELECT id, invoice_id, user_id, rating, review, metadata, created_at
+            FROM rating
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
+        
+        execute_sql(cur, query)
+        
+        results = []
+        for row in cur.fetchall():
+            rating = {
+                'id': row[0],
+                'invoice_id': row[1],
+                'user_id': row[2],
+                'rating': float(row[3]),
+                'review': row[4],
+                'metadata': row[5],
+                'created_at': row[6]
+            }
+            results.append(rating)
+        
+        cur.close()
+        conn.close()
+        return results
+        
+    except Exception as e:
+        print(f"Error retrieving ratings: {str(e)}")
+        return []
+
+def create_invoice_note(invoice_id, user_id, buyer_seller, content, metadata=None):
+    """
+    Creates a new invoice note record
+    
+    Args:
+        invoice_id: ID of the associated invoice
+        user_id: ID of the user creating the note
+        buyer_seller: 'buyer' or 'seller'
+        content: Note content
+        metadata: Additional metadata (optional)
+        
+    Returns:
+        dict: Created note record or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, f"""
+            INSERT INTO invoice_note (invoice_id, user_id, buyer_seller, content, metadata)
+            VALUES ({invoice_id}, {user_id}, '{buyer_seller}', '{content}', {Json(metadata)})
+            RETURNING id, invoice_id, user_id, buyer_seller, content, metadata, created_at
+        """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        note = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'user_id': row[2],
+            'buyer_seller': row[3],
+            'content': row[4],
+            'metadata': row[5],
+            'created_at': row[6]
+        }
+        
+        cur.close()
+        conn.close()
+        return note
+        
+    except Exception as e:
+        print(f"Error creating invoice note: {str(e)}")
+        return None
+
+def get_invoice_notes(invoice_id=None, user_id=None):
+    """
+    Retrieves invoice notes from the invoice_note table
+    
+    Args:
+        invoice_id: Filter by invoice ID (optional)
+        user_id: Filter by user ID (optional)
+        
+    Returns:
+        List of note records matching the criteria
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        conditions = []
+        if invoice_id is not None:
+            conditions.append(f"invoice_id = {invoice_id}")
+        
+        if user_id is not None:
+            conditions.append(f"user_id = {user_id}")
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        query = f"""
+            SELECT id, invoice_id, user_id, buyer_seller, content, metadata, created_at
+            FROM invoice_note
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
+        
+        execute_sql(cur, query)
+        
+        results = []
+        for row in cur.fetchall():
+            note = {
+                'id': row[0],
+                'invoice_id': row[1],
+                'user_id': row[2],
+                'buyer_seller': row[3],
+                'content': row[4],
+                'metadata': row[5],
+                'created_at': row[6]
+            }
+            results.append(note)
+        
+        cur.close()
+        conn.close()
+        return results
+        
+    except Exception as e:
+        print(f"Error retrieving invoice notes: {str(e)}")
+        return []
+
+def update_payment_metadata(payment_id, metadata_updates):
+    """
+    Updates payment metadata (for tracking, etc.)
+    
+    Args:
+        payment_id: ID of the payment to update
+        metadata_updates: Dictionary of metadata updates
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get current metadata
+        execute_sql(cur, f"SELECT metadata FROM payment WHERE id = {payment_id}")
+        result = cur.fetchone()
+        
+        if not result:
+            return False
+        
+        current_metadata = result[0] or {}
+        updated_metadata = {**current_metadata, **metadata_updates}
+        
+        execute_sql(cur, f"""
+            UPDATE payment 
+            SET metadata = {Json(updated_metadata)}
+            WHERE id = {payment_id}
+        """, commit=True, connection=conn)
+        
+        cur.close()
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"Error updating payment metadata: {str(e)}")
+        return False
+
+def update_withdrawal_status(withdrawal_id, status, metadata_updates=None):
+    """
+    Updates withdrawal status
+    
+    Args:
+        withdrawal_id: ID of the withdrawal to update
+        status: New status
+        metadata_updates: Optional metadata updates
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if metadata_updates:
+            # Get current metadata and update it
+            execute_sql(cur, f"SELECT metadata FROM withdrawal WHERE id = {withdrawal_id}")
+            result = cur.fetchone()
+            
+            if result:
+                current_metadata = result[0] or {}
+                updated_metadata = {**current_metadata, **metadata_updates}
+                
+                execute_sql(cur, f"""
+                    UPDATE withdrawal 
+                    SET status = '{status}', metadata = {Json(updated_metadata)}
+                    WHERE id = {withdrawal_id}
+                """, commit=True, connection=conn)
+            else:
+                return False
+        else:
+            execute_sql(cur, f"""
+                UPDATE withdrawal 
+                SET status = '{status}'
+                WHERE id = {withdrawal_id}
+            """, commit=True, connection=conn)
+        
+        cur.close()
+        conn.close()
+        return True
+        
+    except Exception as e:
+        print(f"Error updating withdrawal status: {str(e)}")
+        return False
 

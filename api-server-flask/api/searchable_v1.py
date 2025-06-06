@@ -22,13 +22,16 @@ from .helper import (
     check_stripe_payment,
     get_terminal, 
     get_searchableIds_by_user, 
-    get_data_from_kv, 
     execute_sql,
     Json,
     get_withdrawal_timestamp,
     get_withdrawal_status,
     calc_invoice,
-    setup_logger
+    setup_logger,
+    get_withdrawals,
+    get_invoices,
+    get_ratings,
+    create_invoice
 )
 import time
 import stripe
@@ -553,23 +556,13 @@ class RemoveSearchableItem(Resource):
 @rest_api.route('/api/v1/refresh-payments-by-searchable/<searchable_id>', methods=['GET'])
 class RefreshPaymentsBySearchable(Resource):
     """
-    Refreshes the payment status for all invoices associated with a searchable item
+    Refreshes the payment status for all invoices associated with a searchable item using new table structure
     """
     @track_metrics('refresh_payments_by_searchable')
     def get(self, searchable_id, request_origin='unknown'):
         try:
-            # Get all invoices for this searchable_id
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            execute_sql(cur, f"""
-                SELECT pkey, data FROM kv
-                WHERE type = 'invoice' AND fkey = '{searchable_id}'
-            """)
-            
-            invoices = cur.fetchall()
-            cur.close()
-            conn.close()
+            # Get all invoices for this searchable_id using new table structure
+            invoices = get_invoices(searchable_id=searchable_id)
             
             if not invoices:
                 return {"message": "No invoices found for this searchable item"}, 200
@@ -578,22 +571,23 @@ class RefreshPaymentsBySearchable(Resource):
             
             # Process each invoice
             for invoice in invoices:
-                invoice_id = invoice[0]
-                invoice_data = invoice[1]
+                invoice_id = invoice['id']
+                external_id = invoice['external_id']
+                invoice_type = invoice['type']
                 
                 # Determine invoice type and check payment status
-                if invoice_data.get('invoice_type') == 'lightning':
-                    payment_status = check_payment(invoice_id)
+                if invoice_type == 'lightning':
+                    payment_status = check_payment(external_id)
                     results.append({
-                        "invoice_id": invoice_id,
+                        "invoice_id": external_id,
                         "type": "lightning",
                         "status": payment_status.get('status', 'unknown'),
                         "data": payment_status
                     })
-                elif invoice_data.get('invoice_type') == 'stripe':
-                    payment_status = check_stripe_payment(invoice_id)
+                elif invoice_type == 'stripe':
+                    payment_status = check_stripe_payment(external_id)
                     results.append({
-                        "invoice_id": invoice_id,
+                        "invoice_id": external_id,
                         "type": "stripe",
                         "status": payment_status.get('status', 'unknown'),
                         "data": payment_status
@@ -721,7 +715,7 @@ class PaymentsByTerminal(Resource):
 @rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
 class WithdrawalsByTerminal(Resource):
     """
-    Retrieves withdrawal data for the authenticated user
+    Retrieves withdrawal data for the authenticated user using new table structure
     
     This endpoint returns all withdrawals made by the authenticated user.
     
@@ -732,35 +726,23 @@ class WithdrawalsByTerminal(Resource):
     @track_metrics('withdrawals_by_terminal')
     def get(self, current_user, request_origin='unknown'):
         try:
-            # Initialize transactions list
-            withdrawals = []
+            # Get withdrawal records for the authenticated user using new table structure
+            withdrawal_records = get_withdrawals(user_id=current_user.id)
             
-            # Get withdrawal records for the authenticated user
-            withdrawal_records = get_data_from_kv(type='withdrawal', fkey=str(current_user.id))
+            withdrawals = []
             for withdrawal in withdrawal_records:
-                # Normalize withdrawal data
                 currency = withdrawal.get('currency', 'sats')
-                if currency == 'sats':
                 
-                    withdrawal_public = {
-                        'id': withdrawal.get('pkey', ''),
-                        'type': 'withdrawal',
-                        'amount': int(withdrawal.get('amount', 0)),
-                        'fee_sat': int(withdrawal.get('fee_sat', 0)),
-                        'value_sat': int(withdrawal.get('value_sat', 0)),
-                        'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
-                        'status': get_withdrawal_status(withdrawal.get('status', [])),
-                        'currency': currency,
-                    }
-                elif currency == 'usdt':
-                    withdrawal_public = {
-                        'id': withdrawal.get('pkey', ''),
-                        'type': 'withdrawal',
-                        'amount': float(withdrawal['amount']),
-                        'timestamp': get_withdrawal_timestamp(withdrawal.get('status', [])),
-                        'status': get_withdrawal_status(withdrawal.get('status', [])),
-                        'currency': currency,
-                    }
+                withdrawal_public = {
+                    'id': withdrawal['external_id'] or str(withdrawal['id']),
+                    'type': 'withdrawal',
+                    'amount': float(withdrawal['amount']),
+                    'fee': float(withdrawal.get('fee', 0)),
+                    'timestamp': int(withdrawal['created_at'].timestamp()),
+                    'status': withdrawal['status'],
+                    'currency': currency,
+                }
+                
                 withdrawal_record = {
                     "public": withdrawal_public,
                 }
@@ -804,7 +786,7 @@ class PaymentsBySearchable(Resource):
 @rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
 class SearchableRating(Resource):
     """
-    Retrieves rating data for a specific searchable item
+    Retrieves rating data for a specific searchable item using new table structure
     
     This endpoint returns the average rating and count of ratings for a searchable item.
     
@@ -815,31 +797,46 @@ class SearchableRating(Resource):
     @track_metrics('searchable_rating')
     def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
-            # Get payments for this searchable item with ratings
-            payments = get_data_from_kv(type='payment', fkey=str(searchable_id))
+            # Get invoices for this searchable item
+            invoices = get_invoices(searchable_id=searchable_id)
             
-            # Extract ratings from payments
+            if not invoices:
+                return {
+                    'average_rating': 0,
+                    'rating_count': 0,
+                }, 200
+            
+            # Get invoice IDs
+            invoice_ids = [invoice['id'] for invoice in invoices]
+            
+            # Get ratings for these invoices
             ratings = []
-            for payment in payments:
-                rating = payment.get('rating')
-                if rating is not None:  # Only include if rating exists
+            for invoice_id in invoice_ids:
+                invoice_ratings = get_ratings(invoice_id=invoice_id)
+                ratings.extend(invoice_ratings)
+            
+            # Extract rating values
+            rating_values = []
+            for rating in ratings:
+                rating_value = rating.get('rating')
+                if rating_value is not None:
                     try:
-                        rating_value = float(rating)
-                        if 0 <= rating_value <= 5:  # Validate rating range
-                            ratings.append(rating_value)
+                        rating_float = float(rating_value)
+                        if 0 <= rating_float <= 5:  # Validate rating range
+                            rating_values.append(rating_float)
                     except (ValueError, TypeError):
                         # Skip invalid ratings
                         continue
             
             # Calculate average rating
-            if ratings:
-                average_rating = sum(ratings) / len(ratings)
+            if rating_values:
+                average_rating = sum(rating_values) / len(rating_values)
             else:
                 average_rating = 0
             
             return {
                 'average_rating': round(average_rating, 1),
-                'rating_count': len(ratings),
+                'rating_count': len(rating_values),
             }, 200
             
         except Exception as e:
@@ -849,7 +846,7 @@ class SearchableRating(Resource):
 @rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
 class TerminalRating(Resource):
     """
-    Retrieves aggregated rating data for all searchables by a terminal
+    Retrieves aggregated rating data for all searchables by a terminal using new table structure
     
     This endpoint returns the average rating and count across all searchables
     published by the specified terminal.
@@ -873,38 +870,46 @@ class TerminalRating(Resource):
                     'searchable_count': 0
                 }, 200
             
-            # Convert all elements in the list to strings to ensure consistency
-            terminal_searchable_ids = [str(id) for id in terminal_searchable_ids]
+            # Get all invoices for these searchables
+            all_invoices = []
+            for searchable_id in terminal_searchable_ids:
+                invoices = get_invoices(searchable_id=searchable_id)
+                all_invoices.extend(invoices)
             
-            # Initialize variables to calculate aggregate rating
-            all_ratings = []
-            rated_searchables = set()
+            if not all_invoices:
+                return {
+                    'terminal_id': terminal_id,
+                    'average_rating': 0,
+                    'rating_count': 0,
+                    'searchable_count': len(terminal_searchable_ids)
+                }, 200
             
-            # Get payments for all searchables published by this terminal
-            payments = get_data_from_kv(type='payment', fkey=terminal_searchable_ids)
-            
-            for payment in payments:
-                rating = payment.get('rating')
-                searchable_id = payment.get('searchable_id')
-                if rating is not None and searchable_id is not None:  # Only include if rating exists
-                    try:
-                        rating_value = float(rating)
-                        if 0 <= rating_value <= 5:  # Validate rating range
-                            all_ratings.append(rating_value)
-                            rated_searchables.add(searchable_id)
-                    except (ValueError, TypeError):
-                        # Skip invalid ratings
-                        continue
+            # Get all ratings for these invoices
+            all_rating_values = []
+            for invoice in all_invoices:
+                invoice_ratings = get_ratings(invoice_id=invoice['id'])
+                for rating in invoice_ratings:
+                    rating_value = rating.get('rating')
+                    if rating_value is not None:
+                        try:
+                            rating_float = float(rating_value)
+                            if 0 <= rating_float <= 5:  # Validate rating range
+                                all_rating_values.append(rating_float)
+                        except (ValueError, TypeError):
+                            # Skip invalid ratings
+                            continue
             
             # Calculate average rating
-            if all_ratings:
-                average_rating = sum(all_ratings) / len(all_ratings)
+            if all_rating_values:
+                average_rating = sum(all_rating_values) / len(all_rating_values)
             else:
                 average_rating = 0
             
             return {
+                'terminal_id': terminal_id,
                 'average_rating': round(average_rating, 1),
-                'rating_count': len(all_ratings),
+                'rating_count': len(all_rating_values),
+                'searchable_count': len(terminal_searchable_ids)
             }, 200
             
         except Exception as e:
@@ -922,42 +927,45 @@ def get_delivery_info(require_address, current_user):
         return {}
 
 
-def insert_invoice_record(invoice_id, searchable_id, invoice_record):
+def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata):
     """
-    Insert an invoice record into the database
+    Insert an invoice record into the database using new table structure
     
     Args:
-        invoice_id (str): The ID of the invoice
-        searchable_id (str): The ID of the searchable item
-        invoice_record (dict): The invoice data to store
+        buyer_id: ID of the buyer
+        seller_id: ID of the seller
+        searchable_id: ID of the searchable item
+        amount: Invoice amount
+        currency: Currency (sats, usdt)
+        invoice_type: Type of invoice (lightning, stripe)
+        external_id: External invoice ID (BTCPay, Stripe)
+        metadata: Additional metadata
         
     Returns:
-        bool: True if successful, False otherwise
-        
-    Raises:
-        Exception: If there's an error during database operation
+        dict: Created invoice record or None if failed
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        invoice = create_invoice(
+            buyer_id=buyer_id,
+            seller_id=seller_id,
+            searchable_id=searchable_id,
+            amount=amount,
+            currency=currency,
+            invoice_type=invoice_type,
+            external_id=external_id,
+            metadata=metadata
+        )
         
-        execute_sql(cur, f"""
-            INSERT INTO kv (type, pkey, fkey, data)
-            VALUES ('invoice', '{invoice_id}', '{searchable_id}', {Json(invoice_record)})
-        """, commit=True, connection=conn)
-        
-        cur.close()
-        conn.close()
-        return True
+        if invoice:
+            logger.info(f"Invoice created with ID: {invoice['id']}")
+            return invoice
+        else:
+            logger.error("Failed to create invoice")
+            return None
+            
     except Exception as e:
         logger.error(f"Error inserting invoice record: {str(e)}")
-        if 'conn' in locals() and conn:
-            try:
-                conn.rollback()
-                conn.close()
-            except:
-                pass
-        raise
+        return None
 
 @rest_api.route('/api/v1/create-invoice', methods=['POST'])
 class CreateInvoiceV1(Resource):
@@ -1002,6 +1010,10 @@ class CreateInvoiceV1(Resource):
             logger.debug(f"searchable_data: {searchable_data}")
             delivery_info = get_delivery_info(require_address, current_user)
             
+            # Get seller_id from searchable data
+            seller_id = searchable_data.get('terminal_id')
+            if not seller_id:
+                return {"error": "Invalid searchable item - missing seller information"}, 400
             
             # Calculate invoice details using our new function
             invoice_details = calc_invoice(searchable_data, selections)
@@ -1022,24 +1034,28 @@ class CreateInvoiceV1(Resource):
                 if 'id' not in response:
                     return {"error": "failed to create invoice, please try again later"}, 500
                 
-                # Store invoice record
-                invoice_record = {
-                    "amount": int(amount_sats),
-                    "buyer_id": str(buyer_id),
-                    "timestamp": int(time.time()),
-                    "searchable_id": str(searchable_id),
-                    "invoice_id": response['id'],
+                # Store invoice record metadata
+                invoice_metadata = {
                     "address": delivery_info.get('address', ''),
                     "tel": delivery_info.get('tel', ''),
-                    "invoice_type": "lightning",
-                    "description": description,  # Add description to the stored record
+                    "description": description,
                     "selections": selections,
-                    "buyer_paid_amount": int(amount_sats),
-                    "buyer_paid_currency": 'sats',
                 }
                 
                 # Use the helper function to insert the record
-                insert_invoice_record(response['id'], searchable_id, invoice_record)
+                invoice_record = insert_invoice_record(
+                    buyer_id=buyer_id,
+                    seller_id=seller_id, 
+                    searchable_id=searchable_id,
+                    amount=amount_sats,
+                    currency='sats',
+                    invoice_type='lightning',
+                    external_id=response['id'],
+                    metadata=invoice_metadata
+                )
+                
+                if not invoice_record:
+                    return {"error": "Failed to create invoice record"}, 500
                 
                 return response, 200
                 
@@ -1067,23 +1083,28 @@ class CreateInvoiceV1(Resource):
                     cancel_url=cancel_url,
                 )
                 
-                invoice_record = {
-                    "amount": round(amount_usd_cents_with_fee/100, 2),
-                    "buyer_id": str(buyer_id),
-                    "timestamp": int(time.time()),
-                    "searchable_id": str(searchable_id),
-                    "invoice_id": session.id,
+                # Store invoice record metadata
+                invoice_metadata = {
                     "address": delivery_info.get('address', ''),
                     "tel": delivery_info.get('tel', ''),
-                    "invoice_type": "stripe",
                     "description": description,
                     "selections": selections,
-                    "buyer_paid_amount": round(amount_usd_cents_with_fee/100, 2),
-                    "buyer_paid_currency": 'usdt',
                 }
                 
-
-                insert_invoice_record(session.id, searchable_id, invoice_record)
+                # Use the helper function to insert the record
+                invoice_record = insert_invoice_record(
+                    buyer_id=buyer_id,
+                    seller_id=seller_id,
+                    searchable_id=searchable_id,
+                    amount=amount_usd_cents_with_fee/100,
+                    currency='usdt',
+                    invoice_type='stripe',
+                    external_id=session.id,
+                    metadata=invoice_metadata
+                )
+                
+                if not invoice_record:
+                    return {"error": "Failed to create invoice record"}, 500
                 
                 return {
                     'url': session.url,
