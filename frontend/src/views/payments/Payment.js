@@ -125,20 +125,35 @@ const Payment = ({ payment }) => {
                 style={{ marginBottom: '16px', cursor: 'pointer' }}
             >
                         <Box display="flex" flexDirection="row" flexWrap="wrap" alignItems="center">
-                            {publicPaymentEntries.map(([key, value]) => (
-                                <Typography 
-                                    key={key} 
-                                    variant="body1" 
-                                    style={{ 
-                                        marginRight: '16px',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        maxWidth: '100%'
-                                    }}
-                                >
-                                    <span style={{ color: '#3899ef' }}>{key}:</span> <span>{typeof value === 'number' && key.includes('amount') ? `${value}` : value}</span>
-                                </Typography>
-                            ))}
+                            {publicPaymentEntries.map(([key, value]) => {
+                                // Handle array values (like selections)
+                                let displayValue = value;
+                                if (Array.isArray(value)) {
+                                    displayValue = value.map(item => {
+                                        if (typeof item === 'object' && item !== null) {
+                                            return item.name || JSON.stringify(item);
+                                        }
+                                        return item;
+                                    }).join(', ');
+                                } else if (typeof value === 'object' && value !== null) {
+                                    displayValue = JSON.stringify(value);
+                                }
+                                
+                                return (
+                                    <Typography 
+                                        key={key} 
+                                        variant="body1" 
+                                        style={{ 
+                                            marginRight: '16px',
+                                            overflowWrap: 'break-word',
+                                            wordBreak: 'break-word',
+                                            maxWidth: '100%'
+                                        }}
+                                    >
+                                        <span style={{ color: '#3899ef' }}>{key}:</span> <span>{typeof displayValue === 'number' && key.includes('amount') ? `${displayValue}` : displayValue}</span>
+                                    </Typography>
+                                );
+                            })}
                  
                             <Typography variant="body1" style={{ marginRight: '16px' }}>
                                     {isWithdrawal ? '[WITHDRAWAL]' : ''} 
