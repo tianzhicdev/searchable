@@ -2,7 +2,7 @@
 
 import os, random, string
 from datetime import timedelta
-from .helper import setup_logger
+from .logging_config import setup_logger
 
 # Set up the logger
 logger = setup_logger(__name__, 'config.log')
@@ -63,4 +63,4 @@ class BaseConfig():
     if USE_SQLITE:
 
         # This will create a file in <app> FOLDER
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3') 

@@ -1,23 +1,21 @@
-# Standard library imports
 import os
 import jwt
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 
-# Third-party imports
 import requests
-from psycopg2.extras import Json
 from flask import request
 from flask_restx import Resource, fields
 
-# Local application imports
-from . import rest_api
-from .config import BaseConfig
-from .models import db, Users, JWTTokenBlocklist
-from .helper import get_db_connection, setup_logger  # Import get_db_connection and setup_logger from helper
+# Import from our new structure
+from .. import rest_api
+from ..common.config import BaseConfig
+from ..common.models import db, Users, JWTTokenBlocklist
+from ..common.database import get_db_connection, execute_sql, Json
+from ..common.logging_config import setup_logger
 
 # Set up the logger
-logger = setup_logger(__name__, 'routes.log')
+logger = setup_logger(__name__, 'auth.log')
 
 # Test backdoor for development
 DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
@@ -150,9 +148,8 @@ def token_optional(f):
 
 
 """
-    Flask-Restx routes
+    Authentication Routes
 """
-
 
 @rest_api.route('/api/user_event', methods=['POST'])
 class UserEvent(Resource):
@@ -340,3 +337,6 @@ class GitHubLogin(Resource):
                     "username": user_json['username'],
                     "token": token,
                 }}, 200
+
+# Export decorators for use in other route modules
+__all__ = ['token_required', 'token_optional']

@@ -1,0 +1,816 @@
+# Searchable routes
+import os
+import re
+import math
+import geohash2
+from flask import request
+from flask_restx import Resource
+
+# Import from our new structure
+from .. import rest_api
+from .auth import token_required, token_optional
+from ..common.metrics import track_metrics
+from ..common.data_helpers import (
+    get_db_connection,
+    execute_sql,
+    Json,
+    get_searchable,
+    get_searchableIds_by_user,
+    get_terminal,
+    get_receipts,
+    get_ratings,
+    get_balance_by_currency
+)
+from ..common.logging_config import setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'searchable.log')
+
+@rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['GET'])
+class GetSearchableItem(Resource):
+    """
+    Retrieves a specific searchable item by its ID
+    """
+    @token_optional
+    @track_metrics('get_searchable_item_v2')
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            searchable_data = get_searchable(searchable_id)
+            
+            if not searchable_data:
+                return {"error": "Searchable item not found"}, 404
+            
+            return searchable_data, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/searchable/create', methods=['POST'])
+class CreateSearchable(Resource):
+    """
+    Creates a new searchable item
+    """
+    @token_required
+    @track_metrics('create_searchable_v2')
+    def post(self, current_user, request_origin='unknown'):
+        logger.info(f"Creating searchable for user: {current_user.id} {current_user.username}")
+        conn = None
+        try:
+            data = request.get_json()
+            if not data:
+                return {"error": "Invalid input"}, 400
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Add terminal info to the searchable data
+            data['terminal_id'] = str(current_user.id)
+            
+            # Extract location data
+            latitude = None
+            longitude = None
+            
+            # Check if location data should be used
+            use_location = data.get('payloads', {}).get('public', {}).get('use_location', False)
+            
+            if use_location:
+                try:
+                    latitude = float(data['payloads']['public']['latitude'])
+                    longitude = float(data['payloads']['public']['longitude'])
+                except:
+                    return {"error": "Location data is required when use_location is true"}, 400
+            else:
+                logger.info("Location usage disabled for this searchable")
+            
+            # Insert into searchables table
+            logger.info("Executing database insert...")
+            sql = f"INSERT INTO searchables (terminal_id, searchable_data) VALUES ('{current_user.id}', {Json(data)}) RETURNING searchable_id;"
+            execute_sql(cur, sql)
+            searchable_id = cur.fetchone()[0]
+            
+            # If location data is provided, insert into searchable_geo table
+            if use_location and (latitude is not None) and (longitude is not None):
+                # Calculate geohash for the coordinates
+                geohash = geohash2.encode(latitude, longitude, precision=9)
+                
+                # Insert into searchable_geo table
+                geo_sql = f"""
+                    INSERT INTO searchable_geo (searchable_id, latitude, longitude, geohash)
+                    VALUES ({searchable_id}, {latitude}, {longitude}, '{geohash}')
+                """
+                execute_sql(cur, geo_sql)
+            
+            logger.info(f"Added searchable {searchable_id}")
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            return {"searchable_id": searchable_id}, 201
+        except Exception as e:
+            # Enhanced error logging
+            import traceback
+            error_traceback = traceback.format_exc()
+            logger.error(f"Error creating searchable: {str(e)}")
+            logger.error(f"Traceback: {error_traceback}")
+            
+            # Ensure database connection is closed
+            if conn:
+                try:
+                    conn.rollback()
+                    conn.close()
+                except:
+                    pass
+            
+            return {"error": str(e), "error_details": error_traceback}, 500
+
+@rest_api.route('/api/v1/searchable/search', methods=['GET'])
+class SearchSearchables(Resource):
+    """
+    Search for searchable items based on location and optional query terms
+    """
+    @token_optional
+    @track_metrics('search_searchables_v2')
+    def get(self, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            # Parse and validate request parameters
+            params = self._parse_request_params()
+            if 'error' in params:
+                return params, 400
+            
+            # Query database for results
+            results, total_count = self._query_database(
+                params['lat'], 
+                params['lng'], 
+                params['max_distance'],
+                params['query_term'],
+                params['use_location'],
+                params.get('filters', {})
+            )
+            
+            # Apply pagination after filtering by actual distance
+            paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
+            
+            # Enrich paginated results with usernames
+            self._enrich_results_with_usernames(paginated_results)
+            
+            # Format and return response
+            return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
+            
+        except Exception as e:
+            logger.error(f"Error in search: {str(e)}")
+            return {"error": str(e)}, 500
+
+    def _parse_request_params(self):
+        """Parse and validate request parameters"""
+        try:
+            # Get parameters with defaults
+            lat = request.args.get('lat')
+            lng = request.args.get('lng')
+            max_distance = request.args.get('max_distance', 100000)
+            query_term = request.args.get('q', '')
+            page_number = int(request.args.get('page', 1))
+            page_size = int(request.args.get('page_size', 20))
+            use_location = request.args.get('use_location', 'true').lower() == 'true'
+            filters_param = request.args.get('filters', '{}')
+            
+            # Validate location parameters if location is used
+            if use_location:
+                if not lat or not lng:
+                    return {"error": "Latitude and longitude are required when use_location is true"}
+                try:
+                    lat = float(lat)
+                    lng = float(lng)
+                    max_distance = int(max_distance)
+                except ValueError:
+                    return {"error": "Invalid latitude, longitude, or max_distance"}
+            else:
+                lat = lng = None
+                max_distance = None
+            
+            # Parse filters
+            try:
+                import json
+                filters = json.loads(filters_param)
+            except json.JSONDecodeError:
+                filters = {}
+            
+            # Validate pagination
+            if page_number < 1:
+                page_number = 1
+            if page_size < 1 or page_size > 100:
+                page_size = 20
+            
+            return {
+                'lat': lat,
+                'lng': lng,
+                'max_distance': max_distance,
+                'query_term': query_term,
+                'page_number': page_number,
+                'page_size': page_size,
+                'use_location': use_location,
+                'filters': filters
+            }
+        except Exception as e:
+            return {"error": f"Parameter parsing error: {str(e)}"}
+
+    def _calculate_distance(self, lat1, lng1, lat2, lng2):
+        """Calculate distance between two coordinates using Haversine formula"""
+        R = 6371000  # Earth's radius in meters
+        
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        delta_lat = math.radians(lat2 - lat1)
+        delta_lng = math.radians(lng2 - lng1)
+        
+        a = (math.sin(delta_lat / 2) ** 2 +
+             math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        
+        return R * c
+
+    def _tokenize_text(self, text):
+        """Tokenize text for matching"""
+        if not text:
+            return []
+        
+        # Convert to lowercase and split by non-alphanumeric characters
+        tokens = re.findall(r'[a-zA-Z0-9]+', text.lower())
+        return tokens
+
+    def _calculate_match_score(self, query_tokens, item_data):
+        """Calculate relevance score for text matching"""
+        if not query_tokens:
+            return 1.0  # Default score when no query
+        
+        score = 0.0
+        
+        # Search in various fields of the item
+        searchable_fields = []
+        try:
+            public_data = item_data.get('payloads', {}).get('public', {})
+            searchable_fields.extend([
+                public_data.get('title', ''),
+                public_data.get('description', ''),
+                ' '.join([item.get('name', '') for item in public_data.get('selectables', [])])
+            ])
+        except:
+            pass
+        
+        # Check each field
+        for field in searchable_fields:
+            field_tokens = self._tokenize_text(field)
+            field_matches = sum(1 for token in query_tokens if token in field_tokens)
+            if field_matches > 0:
+                score += field_matches / len(query_tokens)
+        
+        return score
+
+    def _query_database(self, lat, lng, max_distance, query_term, use_location, filters={}):
+        """Query database for searchable items"""
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        try:
+            if use_location:
+                # Use geospatial search
+                results = self._query_searchable_geo(cur, lat, lng, max_distance, "")
+            else:
+                # Query all searchables without location filtering
+                execute_sql(cur, """
+                    SELECT s.searchable_id, s.searchable_data, NULL as distance
+                    FROM searchables s
+                    WHERE s.searchable_data->>'removed' IS NULL 
+                    OR s.searchable_data->>'removed' != 'true'
+                    ORDER BY s.searchable_id DESC
+                """)
+                results = cur.fetchall()
+            
+            # Convert to list format and apply text filtering
+            items = []
+            query_tokens = self._tokenize_text(query_term)
+            
+            for result in results:
+                searchable_id, searchable_data, distance = result
+                
+                # Add searchable_id to data
+                item_data = dict(searchable_data)
+                item_data['searchable_id'] = searchable_id
+                
+                # Apply text filtering
+                if query_tokens:
+                    match_score = self._calculate_match_score(query_tokens, item_data)
+                    if match_score == 0:
+                        continue  # Skip items that don't match
+                    item_data['relevance_score'] = match_score
+                
+                # Add distance if available
+                if distance is not None:
+                    item_data['distance'] = round(distance, 2)
+                
+                items.append(item_data)
+            
+            # Sort by relevance if text search was performed
+            if query_tokens:
+                items.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
+            
+            total_count = len(items)
+            
+            cur.close()
+            conn.close()
+            
+            return items, total_count
+            
+        except Exception as e:
+            logger.error(f"Database query error: {str(e)}")
+            raise e
+        finally:
+            if 'cur' in locals() and cur:
+                cur.close()
+            if 'conn' in locals() and conn:
+                conn.close()
+
+    def _query_searchable_geo(self, cur, lat, lng, max_distance, where_clause):
+        """Query searchable_geo table for location-based search"""
+        # Use PostGIS point distance query for better performance
+        sql = f"""
+            SELECT s.searchable_id, s.searchable_data,
+                   ST_Distance(
+                       ST_GeogFromText('POINT({lng} {lat})'),
+                       ST_GeogFromText('POINT(' || sg.longitude || ' ' || sg.latitude || ')')
+                   ) as distance
+            FROM searchables s
+            JOIN searchable_geo sg ON s.searchable_id = sg.searchable_id
+            WHERE ST_DWithin(
+                ST_GeogFromText('POINT({lng} {lat})'),
+                ST_GeogFromText('POINT(' || sg.longitude || ' ' || sg.latitude || ')'),
+                {max_distance}
+            )
+            AND (s.searchable_data->>'removed' IS NULL OR s.searchable_data->>'removed' != 'true')
+            {where_clause}
+            ORDER BY distance
+        """
+        
+        execute_sql(cur, sql)
+        return cur.fetchall()
+
+    def _apply_pagination(self, results, page_number, page_size):
+        """Apply pagination to results"""
+        start_index = (page_number - 1) * page_size
+        end_index = start_index + page_size
+        return results[start_index:end_index]
+
+    def _format_response(self, results, page_number, page_size, total_count):
+        """Format the final response"""
+        total_pages = math.ceil(total_count / page_size)
+        
+        return {
+            "results": results,
+            "pagination": {
+                "current_page": page_number,
+                "page_size": page_size,
+                "total_count": total_count,
+                "total_pages": total_pages
+            }
+        }
+
+    def _enrich_results_with_usernames(self, results):
+        """Add username information to results"""
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get unique terminal_ids from results
+            terminal_ids = set()
+            for item in results:
+                terminal_id = item.get('terminal_id')
+                if terminal_id:
+                    terminal_ids.add(terminal_id)
+            
+            if not terminal_ids:
+                return
+            
+            # Query usernames for all terminal_ids
+            terminal_ids_str = "', '".join(str(tid) for tid in terminal_ids)
+            execute_sql(cur, f"""
+                SELECT id, username FROM users WHERE id IN ('{terminal_ids_str}')
+            """)
+            
+            # Create mapping
+            username_map = {}
+            for row in cur.fetchall():
+                user_id, username = row
+                username_map[str(user_id)] = username
+            
+            # Add usernames to results
+            for item in results:
+                terminal_id = item.get('terminal_id')
+                if terminal_id and str(terminal_id) in username_map:
+                    item['username'] = username_map[str(terminal_id)]
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            logger.error(f"Error enriching with usernames: {str(e)}")
+            # Continue without usernames rather than failing
+
+@rest_api.route('/api/v1/searchable/remove/<int:searchable_id>', methods=['PUT'])
+class RemoveSearchableItem(Resource):
+    """
+    Soft removes a searchable item by marking it as removed
+    """
+    @token_required
+    @track_metrics('remove_searchable_item')
+    def put(self, current_user, searchable_id, request_origin='unknown'):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # First, check if the searchable exists and belongs to the current user
+            execute_sql(cur, f"""
+                SELECT searchable_data FROM searchables 
+                WHERE searchable_id = {searchable_id} 
+                AND terminal_id = {current_user.id}
+            """)
+            
+            result = cur.fetchone()
+            if not result:
+                return {"error": "Searchable item not found or access denied"}, 404
+            
+            searchable_data = result[0]
+            
+            # Mark as removed
+            searchable_data['removed'] = 'true'
+            
+            # Update the database
+            execute_sql(cur, f"""
+                UPDATE searchables 
+                SET searchable_data = {Json(searchable_data)}
+                WHERE searchable_id = {searchable_id}
+            """, commit=True, connection=conn)
+            
+            cur.close()
+            conn.close()
+            
+            return {"success": True, "message": "Searchable item marked as removed"}, 200
+            
+        except Exception as e:
+            logger.error(f"Error removing searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/terminal/<int:terminal_id>', methods=['GET'])
+class GetUserTerminal(Resource):
+    """
+    Retrieves terminal information for a specific user
+    """
+    @token_required
+    @track_metrics('get_terminal')
+    def get(self, current_user, terminal_id, request_origin='unknown'):
+        try:
+            terminal_data = get_terminal(terminal_id)
+            
+            if not terminal_data:
+                return {"error": "Terminal not found"}, 404
+            
+            return terminal_data, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving terminal {terminal_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/terminal', methods=['GET', 'PUT'])
+class UserTerminal(Resource):
+    """
+    Get or update user terminal information
+    """
+    @token_required
+    @track_metrics('get_terminal_v1')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            terminal_data = get_terminal(current_user.id)
+            
+            if not terminal_data:
+                return {"message": "Terminal not found", "terminal_id": current_user.id}, 404
+            
+            return terminal_data, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving terminal for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+    @token_required
+    @track_metrics('update_terminal')
+    def put(self, current_user, request_origin='unknown'):
+        try:
+            data = request.get_json()
+            if not data:
+                return {"error": "Invalid input"}, 400
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Check if terminal exists
+            execute_sql(cur, f"""
+                SELECT terminal_id FROM terminal WHERE terminal_id = '{current_user.id}'
+            """)
+            
+            if cur.fetchone():
+                # Update existing terminal
+                execute_sql(cur, f"""
+                    UPDATE terminal 
+                    SET terminal_data = {Json(data)}
+                    WHERE terminal_id = '{current_user.id}'
+                """, commit=True, connection=conn)
+                message = "Terminal updated successfully"
+            else:
+                # Create new terminal
+                execute_sql(cur, f"""
+                    INSERT INTO terminal (terminal_id, terminal_data) 
+                    VALUES ('{current_user.id}', {Json(data)})
+                """, commit=True, connection=conn)
+                message = "Terminal created successfully"
+            
+            cur.close()
+            conn.close()
+            
+            return {"success": True, "message": message}, 200
+            
+        except Exception as e:
+            logger.error(f"Error updating terminal for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/payments-by-terminal', methods=['GET'])
+class PaymentsByTerminal(Resource):
+    """
+    Retrieves payments (receipts) for the current user's terminal
+    """
+    @token_required
+    @track_metrics('payments_by_terminal')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            receipts = get_receipts(user_id=current_user.id)
+            return {"receipts": receipts}, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving payments for terminal {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
+class WithdrawalsByTerminal(Resource):
+    """
+    Retrieves withdrawals for the current user's terminal
+    """
+    @token_required
+    @track_metrics('withdrawals_by_terminal')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            # Get balance by currency
+            balance = get_balance_by_currency(current_user.id)
+            
+            # Return balance information
+            return {
+                "balance": balance
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving withdrawals for terminal {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/payments-by-searchable/<string:searchable_id>', methods=['GET'])
+class PaymentsBySearchable(Resource):
+    """
+    Retrieves payments for a specific searchable item
+    """
+    @token_optional
+    @track_metrics('payments_by_searchable')
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            receipts = get_receipts(searchable_id=searchable_id)
+            return {"receipts": receipts}, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving payments for searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
+class SearchableRating(Resource):
+    """
+    Retrieves rating information for a searchable item
+    """
+    @token_optional
+    @track_metrics('searchable_rating')
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get ratings for this searchable from invoice/payment/rating tables
+            sql = f"""
+                SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
+                FROM rating r
+                JOIN invoice i ON r.invoice_id = i.id
+                WHERE i.searchable_id = {searchable_id}
+            """
+            
+            execute_sql(cur, sql)
+            result = cur.fetchone()
+            
+            if result and result[0] is not None:
+                avg_rating = float(result[0])
+                total_ratings = int(result[1])
+            else:
+                avg_rating = 0
+                total_ratings = 0
+            
+            # Get individual ratings with reviews
+            ratings_sql = f"""
+                SELECT r.rating, r.review, r.created_at, u.username
+                FROM rating r
+                JOIN invoice i ON r.invoice_id = i.id
+                LEFT JOIN users u ON r.user_id = u.id
+                WHERE i.searchable_id = {searchable_id}
+                ORDER BY r.created_at DESC
+                LIMIT 10
+            """
+            
+            execute_sql(cur, ratings_sql)
+            individual_ratings = []
+            
+            for row in cur.fetchall():
+                rating, review, created_at, username = row
+                individual_ratings.append({
+                    "rating": float(rating),
+                    "review": review,
+                    "created_at": created_at.isoformat() if created_at else None,
+                    "username": username
+                })
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "searchable_id": searchable_id,
+                "average_rating": round(avg_rating, 2),
+                "total_ratings": total_ratings,
+                "individual_ratings": individual_ratings
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
+class TerminalRating(Resource):
+    """
+    Retrieves rating information for a terminal (user)
+    """
+    @token_optional
+    @track_metrics('terminal_rating')
+    def get(self, terminal_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get average rating for all searchables belonging to this terminal
+            sql = f"""
+                SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
+                FROM rating r
+                JOIN invoice i ON r.invoice_id = i.id
+                WHERE i.seller_id = {terminal_id}
+            """
+            
+            execute_sql(cur, sql)
+            result = cur.fetchone()
+            
+            if result and result[0] is not None:
+                avg_rating = float(result[0])
+                total_ratings = int(result[1])
+            else:
+                avg_rating = 0
+                total_ratings = 0
+            
+            # Get recent ratings for this terminal
+            ratings_sql = f"""
+                SELECT r.rating, r.review, r.created_at, u.username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title
+                FROM rating r
+                JOIN invoice i ON r.invoice_id = i.id
+                JOIN searchables s ON i.searchable_id = s.searchable_id
+                LEFT JOIN users u ON r.user_id = u.id
+                WHERE i.seller_id = {terminal_id}
+                ORDER BY r.created_at DESC
+                LIMIT 10
+            """
+            
+            execute_sql(cur, ratings_sql)
+            individual_ratings = []
+            
+            for row in cur.fetchall():
+                rating, review, created_at, username, item_title = row
+                individual_ratings.append({
+                    "rating": float(rating),
+                    "review": review,
+                    "created_at": created_at.isoformat() if created_at else None,
+                    "username": username,
+                    "item_title": item_title
+                })
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "terminal_id": terminal_id,
+                "average_rating": round(avg_rating, 2),
+                "total_ratings": total_ratings,
+                "individual_ratings": individual_ratings
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+# Legacy routes from searchable_routes.py for backward compatibility
+@rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
+class GetSearchableItemLegacy(Resource):
+    """Legacy endpoint for backward compatibility"""
+    def get(self, searchable_id):
+        # Delegate to the new endpoint
+        resource = GetSearchableItem()
+        return resource.get(searchable_id)
+
+@rest_api.route('/api/searchable', methods=['POST'], strict_slashes=False)
+class CreateSearchableLegacy(Resource):
+    """Legacy endpoint for backward compatibility"""
+    @token_required
+    def post(self, current_user):
+        # Delegate to the new endpoint
+        resource = CreateSearchable()
+        return resource.post(current_user)
+
+@rest_api.route('/api/searchable/search', methods=['GET'])
+class SearchSearchablesLegacy(Resource):
+    """Legacy endpoint for backward compatibility"""
+    def get(self):
+        # Delegate to the new endpoint
+        resource = SearchSearchables()
+        return resource.get()
+
+@rest_api.route('/api/remove-searchable-item/<int:searchable_id>', methods=['PUT'])
+class RemoveSearchableItemLegacy(Resource):
+    """Legacy endpoint for backward compatibility"""
+    @token_required
+    def put(self, current_user, searchable_id):
+        # Delegate to the new endpoint
+        resource = RemoveSearchableItem()
+        return resource.put(current_user, searchable_id)
+
+@rest_api.route('/api/balance', methods=['GET'])
+class BalanceResource(Resource):
+    """Get user balance"""
+    @token_required
+    def get(self, current_user):
+        try:
+            balance = get_balance_by_currency(current_user.id)
+            return {"balance": balance}, 200
+        except Exception as e:
+            logger.error(f"Error retrieving balance for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/profile', methods=['GET', 'PUT'])
+class ProfileResource(Resource):
+    """User profile management"""
+    @token_required
+    def get(self, current_user):
+        try:
+            terminal_data = get_terminal(current_user.id)
+            return {"profile": terminal_data}, 200
+        except Exception as e:
+            logger.error(f"Error retrieving profile for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+    @token_required
+    def put(self, current_user):
+        try:
+            data = request.get_json()
+            if not data:
+                return {"error": "Invalid input"}, 400
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Update or create terminal record
+            execute_sql(cur, f"""
+                INSERT INTO terminal (terminal_id, terminal_data) 
+                VALUES ('{current_user.id}', {Json(data)})
+                ON CONFLICT (terminal_id) 
+                DO UPDATE SET terminal_data = {Json(data)}
+            """, commit=True, connection=conn)
+            
+            cur.close()
+            conn.close()
+            
+            return {"success": True, "message": "Profile updated successfully"}, 200
+            
+        except Exception as e:
+            logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500 

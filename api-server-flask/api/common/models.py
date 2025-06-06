@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
-from .helper import setup_logger
+from .logging_config import setup_logger
 
 # Set up the logger
 logger = setup_logger(__name__, 'models.log')
@@ -77,4 +77,4 @@ class JWTTokenBlocklist(db.Model):
 
     def save(self):
         db.session.add(self)
-        db.session.commit()
+        db.session.commit() 

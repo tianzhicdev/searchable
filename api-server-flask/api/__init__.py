@@ -8,10 +8,10 @@ import sys
 from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
-from .models import db
+from .common.models import db
 
 app = Flask(__name__)
-app.config.from_object('api.config.BaseConfig')
+app.config.from_object('api.common.config.BaseConfig')
 
 # Initialize API here
 rest_api = Api(app, version="1.0", title="Users API")
@@ -20,13 +20,9 @@ db.init_app(app)
 CORS(app)
 
 # Import routes after initializing rest_api to avoid circular imports
+# Using new organized structure
 from .routes import *
-from .searchable_routes import *
-from .searchable_v1 import *
-from .searchable_v1_no_auth import *
-from .searchable_v1_withdrawal import *
-# from .searchable_v1_kv import *
-from .searchable_v1_files import *
+
 # Setup database
 @app.before_first_request
 def initialize_database():
@@ -41,10 +37,6 @@ def initialize_database():
         # fallback to SQLite
         print('> Database initialization failed, exiting application')
         sys.exit(1)  # Exit with error code 1 to indicate failure
-        # BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
-        # print('> Fallback to SQLite ')
-        # db.create_all()
 
 """
    Custom responses

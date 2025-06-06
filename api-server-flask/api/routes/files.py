@@ -1,16 +1,19 @@
+# File operations routes
 import os
 import requests
 import json
-from flask import request, jsonify
-from flask_restx import Resource
 import uuid
-from . import rest_api
-from .routes import token_required
-from .helper import get_db_connection, execute_sql, Json, setup_logger
-import math
+from flask import request
+from flask_restx import Resource
+
+# Import from our new structure
+from .. import rest_api
+from .auth import token_required
+from ..common.data_helpers import get_db_connection, execute_sql, Json
+from ..common.logging_config import setup_logger
 
 # Set up the logger
-logger = setup_logger(__name__, 'searchable_v1_files.log')
+logger = setup_logger(__name__, 'files.log')
 
 # File server configuration
 FILE_SERVER_URL = os.environ.get('FILE_SERVER_URL')
@@ -98,7 +101,6 @@ class UploadFile(Resource):
         except Exception as e:
             logger.exception(f"Error during file upload: {str(e)}")
             return {"error": f"File upload failed: {str(e)}"}, 500
-
 
 @rest_api.route('/api/v1/files/<int:file_id>', methods=['GET'])
 class GetFile(Resource):
@@ -199,16 +201,16 @@ class ListFiles(Resource):
             cur.close()
             conn.close()
             
-            # Calculate total pages
-            total_pages = math.ceil(total_count / per_page) if total_count > 0 else 0
+            # Calculate pagination info
+            total_pages = (total_count + per_page - 1) // per_page
             
             return {
                 "files": files,
                 "pagination": {
-                    "total_count": total_count,
-                    "total_pages": total_pages,
                     "current_page": page,
-                    "per_page": per_page
+                    "per_page": per_page,
+                    "total_count": total_count,
+                    "total_pages": total_pages
                 }
             }, 200
             
@@ -219,7 +221,7 @@ class ListFiles(Resource):
 @rest_api.route('/api/v1/files/<int:file_id>', methods=['DELETE'])
 class DeleteFile(Resource):
     """
-    Delete a file by ID
+    Delete a file (both metadata from database and file from file server)
     """
     @token_required
     def delete(self, current_user, file_id, request_origin='unknown'):
@@ -227,9 +229,9 @@ class DeleteFile(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # First, get the file details to check permissions and get the UUID
+            # First, get the file metadata to check ownership and get URI
             execute_sql(cur, f"""
-                SELECT uri, metadata
+                SELECT file_id, uri, metadata
                 FROM files
                 WHERE file_id = {file_id}
             """)
@@ -239,37 +241,38 @@ class DeleteFile(Resource):
             if not result:
                 return {"error": "File not found"}, 404
                 
-            uri, metadata = result
+            db_file_id, uri, metadata = result
             
             # Check if the user has permission to delete this file
             if metadata.get('user_id') != current_user.id:
                 return {"error": "Access denied"}, 403
-                
-            # Extract the file_id (UUID) from the URI
-            # URI format: {FILE_SERVER_URL}/api/file/download?file_id={uuid}
-            uuid_from_uri = uri.split('file_id=')[-1]
             
-            # Delete from the file server
+            # Extract the UUID from the URI to delete from file server
             try:
-                # Note: File server should have a delete endpoint. If not, this part can be adjusted.
-                # Here we're assuming a RESTful endpoint for file deletion
-                delete_url = f"{FILE_SERVER_URL}/api/file/delete?file_id={uuid_from_uri}"
-                response = requests.delete(delete_url)
+                # URI format: "http://fileserver/api/file/download?file_id=uuid"
+                file_uuid = uri.split('file_id=')[1] if 'file_id=' in uri else None
                 
-                if response.status_code not in [200, 204]:
-                    logger.warning(f"File server returned non-success status code: {response.status_code}, body: {response.text}")
-                    # Continue with local deletion even if file server deletion fails
+                if file_uuid and FILE_SERVER_URL:
+                    # Delete from file server
+                    delete_response = requests.delete(
+                        f"{FILE_SERVER_URL}/api/file/delete",
+                        params={'file_id': file_uuid}
+                    )
+                    
+                    if delete_response.status_code != 200:
+                        logger.warning(f"Failed to delete file from file server: {delete_response.text}")
+                        # Continue with database deletion even if file server deletion fails
+                
             except Exception as e:
-                logger.warning(f"Failed to delete file from file server: {str(e)}")
-                # Continue with local deletion even if file server deletion fails
-                
-            # Delete the file record from the database
+                logger.warning(f"Error deleting file from file server: {str(e)}")
+                # Continue with database deletion even if file server deletion fails
+            
+            # Delete metadata from database
             execute_sql(cur, f"""
                 DELETE FROM files
                 WHERE file_id = {file_id}
-            """)
+            """, commit=True, connection=conn)
             
-            conn.commit()
             cur.close()
             conn.close()
             
@@ -277,4 +280,4 @@ class DeleteFile(Resource):
             
         except Exception as e:
             logger.exception(f"Error deleting file: {str(e)}")
-            return {"error": f"Failed to delete file: {str(e)}"}, 500
+            return {"error": f"Failed to delete file: {str(e)}"}, 500 

@@ -1,12 +1,11 @@
 from prometheus_client import Counter, Histogram, Summary, generate_latest, REGISTRY
 from functools import wraps
 from flask import request
-from .helper import setup_logger
+from .logging_config import setup_logger
 
 # Set up the logger
-logger = setup_logger(__name__, 'track_metrics.log')
+logger = setup_logger(__name__, 'metrics.log')
 
-# Define Prometheus metrics (these should match those in searchable_v1.py)
 # Define Prometheus metrics
 searchable_requests = Counter('searchable_v1_requests_total', 'Total number of searchable API v1 requests', 
                              ['endpoint', 'method', 'status', 'origin'])
@@ -58,3 +57,4 @@ def track_metrics(endpoint):
         return decorated
     return decorator
 
+__all__ = ['track_metrics', 'searchable_requests', 'searchable_latency', 'search_results_count', 'generate_latest', 'REGISTRY'] 
