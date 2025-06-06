@@ -822,7 +822,6 @@ class DownloadSearchableFile(Resource):
     Download a file from a searchable item after verifying payment
     """
     @token_optional
-    @track_metrics('download_searchable_file')
     def get(self, searchable_id, file_id, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
             # Get buyer ID - use current_user.id if available, otherwise use visitor_id
