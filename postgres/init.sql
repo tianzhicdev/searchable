@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS payment (
     currency TEXT NOT NULL CHECK (currency = 'usd'),
     type TEXT NOT NULL CHECK (type = 'stripe'),
     external_id TEXT, -- External payment ID if available
-    status TEXT NOT NULL CHECK (status IN ('pending', 'complete')) DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'failed')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS withdrawal (
     currency TEXT NOT NULL CHECK (currency = 'usd'),
     type TEXT NOT NULL CHECK (type = 'bank_transfer'),
     external_id TEXT, -- Transaction ID
-    status TEXT NOT NULL CHECK (status IN ('pending', 'complete')) DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'failed')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
