@@ -121,6 +121,7 @@ def get_searchable(searchable_id):
 def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=None, status=None):
     """
     Retrieves invoices from the invoice table based on specified parameters
+    Note: Status is now determined by related payment records
     """
     try:
         conn = get_db_connection()
@@ -131,39 +132,47 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
         if buyer_id is not None:
             if isinstance(buyer_id, list):
                 buyer_ids = "', '".join([str(b) for b in buyer_id])
-                conditions.append(f"buyer_id IN ('{buyer_ids}')")
+                conditions.append(f"i.buyer_id IN ('{buyer_ids}')")
             else:
-                conditions.append(f"buyer_id = '{buyer_id}'")
+                conditions.append(f"i.buyer_id = '{buyer_id}'")
         
         if seller_id is not None:
             if isinstance(seller_id, list):
                 seller_ids = "', '".join([str(s) for s in seller_id])
-                conditions.append(f"seller_id IN ('{seller_ids}')")
+                conditions.append(f"i.seller_id IN ('{seller_ids}')")
             else:
-                conditions.append(f"seller_id = '{seller_id}'")
+                conditions.append(f"i.seller_id = '{seller_id}'")
         
         if searchable_id is not None:
             if isinstance(searchable_id, list):
                 searchable_ids = "', '".join([str(s) for s in searchable_id])
-                conditions.append(f"searchable_id IN ('{searchable_ids}')")
+                conditions.append(f"i.searchable_id IN ('{searchable_ids}')")
             else:
-                conditions.append(f"searchable_id = '{searchable_id}'")
+                conditions.append(f"i.searchable_id = '{searchable_id}'")
         
         if external_id:
-            conditions.append(f"external_id = '{external_id}'")
-        
-        if status:
-            conditions.append(f"status = '{status}'")
+            conditions.append(f"i.external_id = '{external_id}'")
         
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         
+        # Join with payment table to get status
         query = f"""
-            SELECT id, buyer_id, seller_id, searchable_id, amount, fee, currency, 
-                   type, external_id, status, created_at, metadata
-            FROM invoice
+            SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.fee, i.currency, 
+                   i.type, i.external_id, i.created_at, i.metadata,
+                   COALESCE(p.status, 'pending') as status
+            FROM invoice i 
+            LEFT JOIN payment p ON i.id = p.invoice_id
             WHERE {where_clause}
-            ORDER BY created_at DESC
         """
+        
+        # Add status filter if provided
+        if status:
+            if status == 'pending':
+                query += " AND p.status IS NULL"
+            else:
+                query += f" AND p.status = '{status}'"
+        
+        query += " ORDER BY i.created_at DESC"
         
         execute_sql(cur, query)
         
@@ -179,9 +188,9 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
                 'currency': row[6],
                 'type': row[7],
                 'external_id': row[8],
-                'status': row[9],
-                'created_at': row[10],
-                'metadata': row[11]
+                'created_at': row[9],
+                'metadata': row[10],
+                'status': row[11]  # Status from payment or 'pending'
             }
             results.append(invoice)
         
@@ -305,6 +314,7 @@ def get_withdrawals(user_id=None, status=None, currency=None):
 def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata=None):
     """
     Creates a new invoice record
+    Note: Status is now determined by related payment records, not stored in invoice
     """
     try:
         conn = get_db_connection()
@@ -315,7 +325,7 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
         execute_sql(cur, f"""
             INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, currency, type, external_id, metadata)
             VALUES ({buyer_id}, {seller_id}, {searchable_id}, {amount}, '{currency}', '{invoice_type}', '{external_id}', {Json(metadata)})
-            RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, status, created_at, metadata
+            RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
         """, commit=True, connection=conn)
         
         row = cur.fetchone()
@@ -330,9 +340,9 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
             'currency': row[6],
             'type': row[7],
             'external_id': row[8],
-            'status': row[9],
-            'created_at': row[10],
-            'metadata': row[11]
+            'created_at': row[9],
+            'metadata': row[10],
+            'status': 'pending'  # New invoices start as pending
         }
         
         cur.close()
@@ -727,6 +737,47 @@ def get_receipts(user_id=None, searchable_id=None):
         print(f"Error retrieving receipts: {str(e)}")
         return []
 
+def get_user_paid_files(user_id, searchable_id):
+    """
+    Get the specific files that a user has paid for in a searchable item
+    Returns a set of file IDs that the user can download
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get all completed payments by this user for this searchable item
+        query = f"""
+            SELECT i.metadata
+            FROM invoice i 
+            JOIN payment p ON i.id = p.invoice_id 
+            WHERE i.buyer_id = {user_id}
+            AND i.searchable_id = {searchable_id}
+            AND p.status = 'complete'
+        """
+        
+        execute_sql(cur, query)
+        results = cur.fetchall()
+        
+        paid_file_ids = set()
+        
+        for result in results:
+            invoice_metadata = result[0]
+            if invoice_metadata and 'selections' in invoice_metadata:
+                selections = invoice_metadata['selections']
+                for selection in selections:
+                    if selection.get('type') == 'downloadable':
+                        paid_file_ids.add(str(selection.get('id')))
+        
+        cur.close()
+        conn.close()
+        
+        return paid_file_ids
+        
+    except Exception as e:
+        print(f"Error retrieving user paid files: {str(e)}")
+        return set()
+
 def get_balance_by_currency(user_id):
     """
     Get user balance from payments and withdrawals using new table structure
@@ -883,5 +934,6 @@ __all__ = [
     'refresh_stripe_payment',
     'get_receipts',
     'get_balance_by_currency',
-    'get_ratings'
+    'get_ratings',
+    'get_user_paid_files'
 ] 

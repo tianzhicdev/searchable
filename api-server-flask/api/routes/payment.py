@@ -17,7 +17,8 @@ from ..common.data_helpers import (
     create_invoice,
     create_payment,
     update_payment_status,
-    get_invoices
+    get_invoices,
+    get_user_paid_files
 )
 from ..common.payment_helpers import (
     get_btc_price,
@@ -402,4 +403,32 @@ class CreateInvoiceV1(Resource):
             
         except Exception as e:
             logger.error(f"Error creating invoice: {str(e)}")
+            return {"error": str(e)}, 500 
+
+@rest_api.route('/api/v1/user-paid-files/<searchable_id>', methods=['GET'])
+class UserPaidFiles(Resource):
+    """
+    Get the files that the current user has paid for in a searchable item
+    """
+    @token_optional
+    @track_metrics('user_paid_files')
+    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            # Get user ID - use account user ID if available, otherwise use visitor ID
+            user_id = current_user.id if current_user else visitor_id
+            
+            if not user_id:
+                return {"error": "User authentication required"}, 401
+            
+            # Get the files this user has paid for
+            paid_file_ids = get_user_paid_files(user_id, searchable_id)
+            
+            return {
+                "searchable_id": searchable_id,
+                "user_id": str(user_id),
+                "paid_file_ids": list(paid_file_ids)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error getting user paid files for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500 

@@ -69,6 +69,7 @@ const DownloadableSearchableDetails = () => {
   // Download states
   const [downloadingFiles, setDownloadingFiles] = useState({});
   const [paidFiles, setPaidFiles] = useState(new Set());
+  const [userPaidFiles, setUserPaidFiles] = useState(new Set());
   
   useEffect(() => {
     fetchItemDetails();
@@ -113,6 +114,7 @@ const DownloadableSearchableDetails = () => {
       fetchPayments();
       fetchRatings();
       refreshPaymentsBySearchable();
+      fetchUserPaidFiles();
     }
   }, [SearchableItem]);
   
@@ -149,7 +151,7 @@ const DownloadableSearchableDetails = () => {
   }, [SearchableItem]);
   
   useEffect(() => {
-    // Update paid files from payment history
+    // Update paid files from payment history (for display purposes only - shows files purchased by anyone)
     if (searchablePayments && searchablePayments.length > 0) {
       const paidFileIds = new Set();
       searchablePayments.forEach(payment => {
@@ -355,6 +357,7 @@ const DownloadableSearchableDetails = () => {
           
           // Refresh payments list after successful payment
           fetchPayments();
+          fetchUserPaidFiles();
         } else {
           console.log("Payment in final state (not successful)");
         }
@@ -544,6 +547,7 @@ const DownloadableSearchableDetails = () => {
           showAlert("Credit card payment successful! You can now download your files.");
           // Refresh payments list after successful payment
           fetchPayments();
+          fetchUserPaidFiles();
         } else if (paymentStatus === 'open' || paymentStatus === 'processing') {
           console.log("Stripe payment still in progress, scheduling next check in 3 seconds");
           paymentCheckRef.current = setTimeout(() => checkStripePaymentStatus(sessionId), 3000);
@@ -569,8 +573,27 @@ const DownloadableSearchableDetails = () => {
     }
   };
   
+  // Add new function to fetch user-specific paid files
+  const fetchUserPaidFiles = async () => {
+    try {
+      const response = await backend.get(`v1/user-paid-files/${id}`);
+      const userPaidFileIds = new Set(response.data.paid_file_ids);
+      setUserPaidFiles(userPaidFileIds);
+    } catch (err) {
+      console.error("Error fetching user paid files:", err);
+      // Set empty set if there's an error (user probably hasn't paid)
+      setUserPaidFiles(new Set());
+    }
+  };
+  
   // Download file function
   const downloadFile = async (fileId, fileName) => {
+    // Check if user has paid for this specific file
+    if (!userPaidFiles.has(fileId.toString())) {
+      showAlert("You haven't paid for this file yet", "error");
+      return;
+    }
+    
     setDownloadingFiles(prev => ({ ...prev, [fileId]: true }));
     
     try {
@@ -616,7 +639,8 @@ const DownloadableSearchableDetails = () => {
           Available Files:
         </Typography>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
-          const isPaid = paidFiles.has(file.fileId.toString());
+          const isPaidByCurrentUser = userPaidFiles.has(file.fileId.toString());
+          const isPaidBySomeone = paidFiles.has(file.fileId.toString());
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
@@ -628,7 +652,7 @@ const DownloadableSearchableDetails = () => {
               py={1}
               width="100%"
               style={{ 
-                backgroundColor: isPaid ? '#e8f5e8' : 'transparent',
+                backgroundColor: isPaidByCurrentUser ? '#e8f5e8' : isPaidBySomeone ? '#fff3cd' : 'transparent',
                 padding: '8px',
                 borderRadius: '4px',
                 marginBottom: '4px'
@@ -636,7 +660,7 @@ const DownloadableSearchableDetails = () => {
             >
               <Box flex={1}>
                 <Box display="flex" alignItems="center">
-                  {!isPaid ? (
+                  {!isPaidByCurrentUser ? (
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -657,11 +681,16 @@ const DownloadableSearchableDetails = () => {
                       {file.description}
                     </Typography>
                     <Typography variant="body2">{formatCurrency(file.price)}</Typography>
+                    {isPaidBySomeone && !isPaidByCurrentUser && (
+                      <Typography variant="caption" color="secondary">
+                        (Purchased by others)
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               </Box>
               
-              {isPaid && (
+              {isPaidByCurrentUser && (
                 <Button
                   variant="outlined"
                   size="small"

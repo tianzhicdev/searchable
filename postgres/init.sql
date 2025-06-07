@@ -80,7 +80,6 @@ CREATE TABLE IF NOT EXISTS invoice (
     currency TEXT NOT NULL,
     type TEXT NOT NULL, -- 'lightning' or 'stripe'
     external_id TEXT NOT NULL UNIQUE, -- BTCPay invoice ID or Stripe session ID
-    status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -99,9 +98,6 @@ CREATE INDEX IF NOT EXISTS idx_invoice_type ON invoice(type);
 
 -- Index on external_id for faster lookups
 CREATE INDEX IF NOT EXISTS idx_invoice_external_id ON invoice(external_id);
-
--- Index on status for faster lookups
-CREATE INDEX IF NOT EXISTS idx_invoice_status ON invoice(status);
 
 -- Index on created_at for faster date-based queries
 CREATE INDEX IF NOT EXISTS idx_invoice_created_at ON invoice(created_at);
