@@ -1,0 +1,8 @@
+version: '3'
+services:
+  usdt-api:
+    build: .
+    ports:
+      - "3100:3100"
+    env_file:
+      - /usr/local/.secrets.env
