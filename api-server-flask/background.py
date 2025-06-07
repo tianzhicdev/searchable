@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timedelta
 
 # Import from the new common modules
-from api.common.database import get_db_connection
+from api.common.database import get_db_connection, execute_sql
 from api.common.data_helpers import (
     get_invoices, 
     get_payments, 
@@ -46,7 +46,7 @@ def check_invoice_payments():
         cur = conn.cursor()
         
         # Query for invoices without completed payments within the time window
-        cur.execute("""
+        execute_sql(cur, f"""
             SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
                    i.amount, i.currency, i.created_at, i.metadata
             FROM invoice i 
@@ -129,7 +129,7 @@ def process_pending_withdrawals():
                         'status': PaymentStatus.COMPLETE.value
                     }
                     
-                    cur.execute("""
+                    execute_sql(cur, """
                         UPDATE withdrawal 
                         SET status = %s, metadata = %s
                         WHERE id = %s
@@ -158,7 +158,7 @@ def process_pending_withdrawals():
                         'timestamp': int(time.time())
                     }
                     
-                    cur.execute("""
+                    execute_sql(cur, """
                         UPDATE withdrawal 
                         SET status = %s, metadata = %s
                         WHERE id = %s

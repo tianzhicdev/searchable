@@ -115,7 +115,7 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, 
 @rest_api.route('/api/v1/check-payment/<string:invoice_id>', methods=['GET'])
 class CheckPayment(Resource):
     """
-    Checks the status of a payment via BTCPay Server
+    Checks the status of a Stripe payment
     """
     @track_metrics('check_payment')
     def get(self, invoice_id, request_origin='unknown'):
@@ -232,30 +232,17 @@ class CreateCheckoutSession(Resource):
             success_url='http://localhost:4242/success',
             cancel_url='http://localhost:4242/cancel',
         )
-        print('stripe session: ', session)
+        logger.info(f'Stripe session created: {session.id}')
 
         return {
             'url': session.url
         }, 200
 
-@rest_api.route('/api/v1/get-btc-price', methods=['GET'])
-class GetBtcPrice(Resource):
-    """
-    Retrieves the current BTC price in USD with caching
-    """
-    @track_metrics('get_btc_price')
-    def get(self, request_origin='unknown'):
-        try:
-            btc_price_response, status_code = get_btc_price()
-            return btc_price_response, status_code
-        except Exception as e:
-            logger.error(f"Error fetching BTC price: {str(e)}")
-            return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/create-invoice', methods=['POST'])
 class CreateInvoiceV1(Resource):
     """
-    Creates a payment invoice - either Lightning Network or Stripe
+    Creates a payment invoice using Stripe
     
     Supports both authenticated users and visitors
     """

@@ -41,7 +41,7 @@ def get_terminal(terminal_id):
             
         return result[0]
     except Exception as e:
-        print(f"Error retrieving profile for terminal_id {terminal_id}: {str(e)}")
+        logger.error(f"Error retrieving profile for terminal_id {terminal_id}: {str(e)}")
         return None
 
 def get_searchableIds_by_user(user_id):
@@ -72,7 +72,7 @@ def get_searchableIds_by_user(user_id):
         
         return searchable_ids
     except Exception as e:
-        print(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
+        logger.error(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
         return []
 
 def get_searchable(searchable_id):
@@ -112,7 +112,7 @@ def get_searchable(searchable_id):
         return item_data
         
     except Exception as e:
-        print(f"Error retrieving searchable item {searchable_id}: {str(e)}")
+        logger.error(f"Error retrieving searchable item {searchable_id}: {str(e)}")
         # Ensure connection is closed even if an error occurs
         if 'conn' in locals() and conn:
             conn.close()
@@ -199,7 +199,7 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
         return results
         
     except Exception as e:
-        print(f"Error retrieving invoices: {str(e)}")
+        logger.error(f"Error retrieving invoices: {str(e)}")
         return []
 
 def get_payments(invoice_id=None, invoice_ids=None, status=None):
@@ -254,7 +254,7 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
         return results
         
     except Exception as e:
-        print(f"Error retrieving payments: {str(e)}")
+        logger.error(f"Error retrieving payments: {str(e)}")
         return []
 
 def get_withdrawals(user_id=None, status=None, currency=None):
@@ -308,7 +308,7 @@ def get_withdrawals(user_id=None, status=None, currency=None):
         return results
         
     except Exception as e:
-        print(f"Error retrieving withdrawals: {str(e)}")
+        logger.error(f"Error retrieving withdrawals: {str(e)}")
         return []
 
 def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata=None):
@@ -350,7 +350,7 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
         return invoice
         
     except Exception as e:
-        print(f"Error creating invoice: {str(e)}")
+        logger.error(f"Error creating invoice: {str(e)}")
         return None
 
 def create_payment(invoice_id, amount, currency, payment_type, external_id=None, metadata=None):
@@ -389,7 +389,7 @@ def create_payment(invoice_id, amount, currency, payment_type, external_id=None,
         return payment
         
     except Exception as e:
-        print(f"Error creating payment: {str(e)}")
+        logger.error(f"Error creating payment: {str(e)}")
         return None
 
 def update_payment_status(payment_id, status, metadata=None):
@@ -438,7 +438,7 @@ def update_payment_status(payment_id, status, metadata=None):
         return payment
         
     except Exception as e:
-        print(f"Error updating payment status: {str(e)}")
+        logger.error(f"Error updating payment status: {str(e)}")
         return None
 
 def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=None, metadata=None):
@@ -477,7 +477,7 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
         return withdrawal
         
     except Exception as e:
-        print(f"Error creating withdrawal: {str(e)}")
+        logger.error(f"Error creating withdrawal: {str(e)}")
         return None
 
 def check_payment(session_id):
@@ -552,7 +552,7 @@ def check_payment(session_id):
         }
         
     except Exception as e:
-        print(f"Error checking payment status: {str(e)}")
+        logger.error(f"Error checking payment status: {str(e)}")
         return {"error": str(e)}
 
 def refresh_stripe_payment(session_id):
@@ -563,7 +563,7 @@ def refresh_stripe_payment(session_id):
         # Retrieve the checkout session from Stripe
         checkout_session = stripe.checkout.Session.retrieve(session_id)
         # Log the checkout session for debugging
-        print(f"Stripe checkout session: {checkout_session}")
+        logger.info(f"Stripe checkout session: {checkout_session}")
         
         # Get payment status
         payment_status = checkout_session.payment_status
@@ -600,7 +600,7 @@ def refresh_stripe_payment(session_id):
                     )
                 else:
                     # Fallback: Create payment record if none exists (shouldn't happen with new flow)
-                    print(f"Warning: No payment record found for invoice {invoice_record['id']}, creating new payment record")
+                    logger.warning(f"No payment record found for invoice {invoice_record['id']}, creating new payment record")
                     payment_metadata = {
                         "stripe_status": payment_status,
                         "timestamp": int(time.time()),
@@ -629,10 +629,10 @@ def refresh_stripe_payment(session_id):
         }
         
     except stripe.error.StripeError as e:
-        print(f"Stripe error checking payment status: {str(e)}")
+        logger.error(f"Stripe error checking payment status: {str(e)}")
         return {"error": str(e)}
     except Exception as e:
-        print(f"Error checking Stripe payment status: {str(e)}")
+        logger.error(f"Error checking Stripe payment status: {str(e)}")
         return {"error": str(e)}
 
 def get_receipts(user_id=None, searchable_id=None):
@@ -640,7 +640,7 @@ def get_receipts(user_id=None, searchable_id=None):
     Retrieves payment receipts for a user or a specific searchable item using new table structure
     """
     if user_id is None and searchable_id is None:
-        print("Error: Either user_id or searchable_id must be provided")
+        logger.error("Either user_id or searchable_id must be provided")
         return []
         
     try:
@@ -720,14 +720,14 @@ def get_receipts(user_id=None, searchable_id=None):
                 payments.append(payment)
                 
             except Exception as calc_error:
-                print(f"Error processing receipt for invoice {invoice_id}: {str(calc_error)}")
+                logger.error(f"Error processing receipt for invoice {invoice_id}: {str(calc_error)}")
         
         cur.close()
         conn.close()
         
         return payments
     except Exception as e:
-        print(f"Error retrieving receipts: {str(e)}")
+        logger.error(f"Error retrieving receipts: {str(e)}")
         return []
 
 def get_user_paid_files(user_id, searchable_id):
@@ -768,7 +768,7 @@ def get_user_paid_files(user_id, searchable_id):
         return paid_file_ids
         
     except Exception as e:
-        print(f"Error retrieving user paid files: {str(e)}")
+        logger.error(f"Error retrieving user paid files: {str(e)}")
         return set()
 
 def get_balance_by_currency(user_id):
@@ -783,7 +783,7 @@ def get_balance_by_currency(user_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        print(f"Calculating balance for user_id: {user_id}")
+        logger.info(f"Calculating balance for user_id: {user_id}")
         
         # Get all searchables published by this user
         execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.terminal_id = {user_id};""")
@@ -818,10 +818,10 @@ def get_balance_by_currency(user_id):
                     # All payments are in USD
                     if currency.lower() in ['usdt', 'usd']:
                         balance_by_currency['usd'] += float(amount)
-                        print(f"Added ${amount} USD from searchable {searchable_id}")
+                        logger.debug(f"Added ${amount} USD from searchable {searchable_id}")
                         
             except KeyError as ke:
-                print(f"KeyError processing searchable {searchable_id}: {str(ke)}")
+                logger.error(f"KeyError processing searchable {searchable_id}: {str(ke)}")
                 continue
         
         # Subtract withdrawals
@@ -842,15 +842,15 @@ def get_balance_by_currency(user_id):
                     amount_float = float(amount)
                     if currency.lower() in ['usdt', 'usd']:
                         balance_by_currency['usd'] -= amount_float
-                        print(f"Subtracted ${amount_float} USD from withdrawal")
+                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal")
                 except ValueError:
-                    print(f"Invalid amount format in withdrawal: {amount}")
+                    logger.error(f"Invalid amount format in withdrawal: {amount}")
         
-        print(f"Final balance for user {user_id}: {balance_by_currency}")
+        logger.info(f"Final balance for user {user_id}: {balance_by_currency}")
         return balance_by_currency
         
     except Exception as e:
-        print(f"Error calculating balance for user {user_id}: {str(e)}")
+        logger.error(f"Error calculating balance for user {user_id}: {str(e)}")
         raise e
     finally:
         if 'cur' in locals() and cur:
@@ -902,7 +902,7 @@ def get_ratings(invoice_id=None, user_id=None):
         return results
         
     except Exception as e:
-        print(f"Error retrieving ratings: {str(e)}")
+        logger.error(f"Error retrieving ratings: {str(e)}")
         return []
 
 __all__ = [

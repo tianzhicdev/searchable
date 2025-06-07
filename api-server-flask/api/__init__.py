@@ -9,6 +9,10 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 from .common.models import db
+from .common.logging_config import setup_logger
+
+# Set up the logger
+logger = setup_logger(__name__, 'api_init.log')
 
 app = Flask(__name__)
 app.config.from_object('api.common.config.BaseConfig')
@@ -27,15 +31,15 @@ from .routes import *
 @app.before_first_request
 def initialize_database():
     try:
-        print("Initializing database...")
-        print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        logger.info("Initializing database...")
+        logger.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
         db.create_all()
         
-        print('> Successfully initialized the database')
+        logger.info('Successfully initialized the database')
     except Exception as e:
-        print('> Error: DBMS Exception: ' + str(e) )
+        logger.error('DBMS Exception: ' + str(e))
         # fallback to SQLite
-        print('> Database initialization failed, exiting application')
+        logger.error('Database initialization failed, exiting application')
         sys.exit(1)  # Exit with error code 1 to indicate failure
 
 """

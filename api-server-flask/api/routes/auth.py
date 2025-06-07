@@ -169,7 +169,7 @@ class UserEvent(Resource):
         try:
             conn = get_db_connection()
             cur = conn.cursor()
-            cur.execute(
+            execute_sql(cur,
                 "INSERT INTO user_event (visitor_id, data) VALUES (%s, %s) RETURNING id;",
                 (visitor_id, Json(data))
             )
