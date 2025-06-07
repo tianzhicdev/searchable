@@ -4,7 +4,7 @@ import stripe
 from psycopg2.extras import Json
 from .database import get_db_connection, execute_sql
 from .logging_config import setup_logger
-from .payment_helpers import calc_invoice
+from .models import PaymentStatus, PaymentType, Currency
 
 # Set up the logger
 logger = setup_logger(__name__, 'data_helpers.log')
@@ -480,38 +480,22 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
         print(f"Error creating withdrawal: {str(e)}")
         return None
 
-def check_payment(invoice_id):
+def check_payment(session_id):
     """
-    Checks the status of a payment via BTCPay Server and updates the database if settled.
+    Checks the status of a Stripe payment session and updates the database if paid.
     """
     try:
-        # Import here to avoid circular imports
-        import requests
-        import os
+        # Retrieve the checkout session from Stripe
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
         
-        BTC_PAY_URL = "https://generous-purpose.metalseed.io"
-        STORE_ID = os.environ.get('BTCPAY_STORE_ID', "")
-        BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
+        # Get payment status
+        payment_status = checkout_session.payment_status
         
-        # Make request to BTCPay Server to check payment status
-        response = requests.get(
-            f"{BTC_PAY_URL}/api/v1/stores/{STORE_ID}/invoices/{invoice_id}",
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'token {BTCPAY_SERVER_GREENFIELD_API_KEY}'
-            }
-        )
-        
-        if response.status_code != 200:
-            return {"error": f"Failed to check payment status: {response.text}"}
-                
-        invoice_data = response.json()
-        
-        # If payment is settled, update the payment status in our database
-        if invoice_data['status'].lower() in ('settled', 'complete'):
+        # If payment is successful, update the payment status in our database
+        if payment_status in ('paid', 'complete'):
             
             # Get the invoice record from our database using external_id
-            invoice_records = get_invoices(external_id=invoice_id)
+            invoice_records = get_invoices(external_id=session_id)
             
             if invoice_records:
                 invoice_record = invoice_records[0]
@@ -524,39 +508,48 @@ def check_payment(invoice_id):
                     payment_record = existing_payments[0]
                     payment_metadata = {
                         **payment_record['metadata'],  # Preserve existing metadata
-                        "btcpay_status": invoice_data['status'],
+                        "stripe_status": payment_status,
                         "timestamp": int(time.time()),
                         "address": invoice_record['metadata'].get('address', ''),
                         "tel": invoice_record['metadata'].get('tel', ''),
                         "description": invoice_record['metadata'].get('description', ''),
+                        "stripe_session_id": session_id,
+                        "amount_total": checkout_session.amount_total,
                     }
                     
                     update_payment_status(
                         payment_id=payment_record['id'],
-                        status='complete',
+                        status=PaymentStatus.COMPLETE.value,
                         metadata=payment_metadata
                     )
                 else:
                     # Fallback: Create payment record if none exists (shouldn't happen with new flow)
                     payment_metadata = {
-                        "btcpay_status": invoice_data['status'],
+                        "stripe_status": payment_status,
                         "timestamp": int(time.time()),
                         "address": invoice_record['metadata'].get('address', ''),
                         "tel": invoice_record['metadata'].get('tel', ''),
                         "description": invoice_record['metadata'].get('description', ''),
+                        "stripe_session_id": session_id,
+                        "amount_total": checkout_session.amount_total,
                     }
                     
                     create_payment(
                         invoice_id=invoice_record['id'],
                         amount=invoice_record['amount'],
-                        currency=invoice_record['currency'],
-                        payment_type=invoice_record['type'],
-                        external_id=invoice_id,
+                        currency=Currency.USD.value,
+                        payment_type=PaymentType.STRIPE.value,
+                        external_id=session_id,
                         metadata=payment_metadata
                     )
         
         # Return the payment status
-        return invoice_data
+        return {
+            'status': payment_status,
+            'amount_total': checkout_session.amount_total,
+            'currency': Currency.USD.value,
+            'session_id': session_id
+        }
         
     except Exception as e:
         print(f"Error checking payment status: {str(e)}")
@@ -602,7 +595,7 @@ def refresh_stripe_payment(session_id):
                     
                     update_payment_status(
                         payment_id=payment_record['id'],
-                        status='complete',
+                        status=PaymentStatus.COMPLETE.value,
                         metadata=payment_metadata
                     )
                 else:
@@ -621,8 +614,8 @@ def refresh_stripe_payment(session_id):
                     create_payment(
                         invoice_id=invoice_record['id'],
                         amount=invoice_record['amount'],
-                        currency=invoice_record['currency'],
-                        payment_type=invoice_record['type'],
+                        currency=Currency.USD.value,
+                        payment_type=PaymentType.STRIPE.value,
                         external_id=session_id,
                         metadata=payment_metadata
                     )
@@ -632,7 +625,7 @@ def refresh_stripe_payment(session_id):
             "status": payment_status,
             "session_id": session_id,
             "amount_total": checkout_session.amount_total,
-            "currency": checkout_session.currency
+            "currency": Currency.USD.value
         }
         
     except stripe.error.StripeError as e:
@@ -784,8 +777,7 @@ def get_balance_by_currency(user_id):
     """
     try:
         balance_by_currency = {
-            'sats': 0,
-            'usdt': 0,
+            'usd': 0,
         }
         
         conn = get_db_connection()
@@ -815,7 +807,7 @@ def get_balance_by_currency(user_id):
                     JOIN payment p ON i.id = p.invoice_id
                     WHERE i.searchable_id = {searchable_id} 
                     AND i.seller_id = {user_id}
-                    AND p.status = 'complete'
+                    AND p.status = '{PaymentStatus.COMPLETE.value}'
                 """)
                 
                 paid_invoices = cur.fetchall()
@@ -823,13 +815,10 @@ def get_balance_by_currency(user_id):
                 for invoice_result in paid_invoices:
                     amount, currency, metadata = invoice_result
                     
-                    # Convert currency to standard format
-                    if currency.lower() == 'sats':
-                        balance_by_currency['sats'] += float(amount)
-                        print(f"Added {amount} sats from searchable {searchable_id}")
-                    elif currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usdt'] += float(amount)
-                        print(f"Added {amount} USDT from searchable {searchable_id}")
+                    # All payments are in USD
+                    if currency.lower() in ['usdt', 'usd']:
+                        balance_by_currency['usd'] += float(amount)
+                        print(f"Added ${amount} USD from searchable {searchable_id}")
                         
             except KeyError as ke:
                 print(f"KeyError processing searchable {searchable_id}: {str(ke)}")
@@ -840,7 +829,7 @@ def get_balance_by_currency(user_id):
             SELECT amount, currency
             FROM withdrawal 
             WHERE user_id = {user_id}
-            AND status IN ('complete', 'settled', 'SUCCEEDED')
+            AND status = '{PaymentStatus.COMPLETE.value}'
         """)
         
         withdrawal_results = cur.fetchall()
@@ -851,12 +840,9 @@ def get_balance_by_currency(user_id):
             if amount is not None and currency is not None:
                 try:
                     amount_float = float(amount)
-                    if currency.lower() == 'sats':
-                        balance_by_currency['sats'] -= amount_float
-                        print(f"Subtracted {amount_float} sats from withdrawal")
-                    elif currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usdt'] -= amount_float
-                        print(f"Subtracted {amount_float} USDT from withdrawal")
+                    if currency.lower() in ['usdt', 'usd']:
+                        balance_by_currency['usd'] -= amount_float
+                        print(f"Subtracted ${amount_float} USD from withdrawal")
                 except ValueError:
                     print(f"Invalid amount format in withdrawal: {amount}")
         

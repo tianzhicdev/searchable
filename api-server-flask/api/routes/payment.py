@@ -21,10 +21,11 @@ from ..common.data_helpers import (
     get_user_paid_files
 )
 from ..common.payment_helpers import (
-    get_btc_price,
-    calc_invoice,
-    create_lightning_invoice
+    create_stripe_checkout_session,
+    verify_stripe_payment,
+    calc_invoice
 )
+from ..common.models import PaymentStatus, PaymentType, Currency
 from ..common.logging_config import setup_logger
 
 # Set up the logger
@@ -48,8 +49,8 @@ def validate_payment_request(data):
     
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
-    if invoice_type and invoice_type not in ['lightning', 'stripe']:
-        raise ValueError("Invalid invoice_type. Must be 'lightning' or 'stripe'")
+    if invoice_type and invoice_type not in ['stripe']:
+        raise ValueError("Invalid invoice_type. Must be 'stripe'")
     
     return {
         'invoice_type': invoice_type, 
@@ -100,7 +101,8 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, 
                 currency=currency,
                 payment_type=invoice_type,
                 external_id=external_id,
-                metadata=payment_metadata
+                metadata=payment_metadata,
+                status=PaymentStatus.PENDING.value
             )
             return invoice
         else:
@@ -149,16 +151,7 @@ class RefreshPayment(Resource):
         if not invoice_type:
             return {"error": "invoice_type is required"}, 400
             
-        if invoice_type == 'lightning':
-            invoice_id = data.get('invoice_id')
-            if not invoice_id:
-                return {"error": "invoice_id is required for lightning payments"}, 400
-                
-            # Use our helper function to check lightning payment status
-            invoice_data = check_payment(invoice_id)
-            return invoice_data, 200
-            
-        elif invoice_type == 'stripe':
+        if invoice_type == 'stripe':
             session_id = data.get('session_id')
             if not session_id:
                 return {"error": "session_id is required for stripe payments"}, 400
@@ -168,7 +161,7 @@ class RefreshPayment(Resource):
             return payment_data, 200
             
         else:
-            return {"error": "Invalid invoice_type. Must be 'lightning' or 'stripe'"}, 400
+            return {"error": "Invalid invoice_type. Must be 'stripe'"}, 400
 
 @rest_api.route('/api/v1/refresh-payments-by-searchable/<searchable_id>', methods=['GET'])
 class RefreshPaymentsBySearchable(Resource):
@@ -192,16 +185,8 @@ class RefreshPaymentsBySearchable(Resource):
                 external_id = invoice['external_id']
                 invoice_type = invoice['type']
                 
-                # Determine invoice type and check payment status
-                if invoice_type == 'lightning':
-                    payment_status = check_payment(external_id)
-                    results.append({
-                        "invoice_id": external_id,
-                        "type": "lightning",
-                        "status": payment_status.get('status', 'unknown'),
-                        "data": payment_status
-                    })
-                elif invoice_type == 'stripe':
+                # Check payment status for Stripe payments only
+                if invoice_type == 'stripe':
                     payment_status = refresh_stripe_payment(external_id)
                     results.append({
                         "invoice_id": external_id,
@@ -305,49 +290,14 @@ class CreateInvoiceV1(Resource):
             if not seller_id:
                 return {"error": "Invalid searchable item - missing seller information"}, 400
             
-            # Calculate invoice details using our new function
+            # Calculate invoice details
             invoice_details = calc_invoice(searchable_data, selections)
             
-            amount_sats = invoice_details["amount_sats"]
             amount_usd_cents = invoice_details["amount_usd_cents"]
             description = invoice_details["description"]
 
-            # ======= end of get searchable data =======
-            
-            if invoice_type == 'lightning':
-                response = create_lightning_invoice(amount=amount_sats)
-                logger.info(f"lightning invoice creation response: {response}")
-
-                # Check if invoice ID exists
-                if 'id' not in response:
-                    return {"error": "failed to create invoice, please try again later"}, 500
-                
-                # Store invoice record metadata
-                invoice_metadata = {
-                    "address": delivery_info.get('address', ''),
-                    "tel": delivery_info.get('tel', ''),
-                    "description": description,
-                    "selections": selections,
-                }
-                
-                # Use the helper function to insert the record
-                invoice_record = insert_invoice_record(
-                    buyer_id=buyer_id,
-                    seller_id=seller_id, 
-                    searchable_id=searchable_id,
-                    amount=amount_sats,
-                    currency='sats',
-                    invoice_type='lightning',
-                    external_id=response['id'],
-                    metadata=invoice_metadata
-                )
-                
-                if not invoice_record:
-                    return {"error": "Failed to create invoice record"}, 500
-                
-                return response, 200
-                
-            elif invoice_type == 'stripe':
+            # Process Stripe checkout (USD only)
+            if invoice_type == 'stripe':
                 # Process Stripe checkout
                 success_url = data.get('success_url')
                 cancel_url = data.get('cancel_url')
@@ -358,7 +308,7 @@ class CreateInvoiceV1(Resource):
                 session = stripe.checkout.Session.create(
                     line_items=[{
                         'price_data': {
-                            'currency': 'usd',
+                            'currency': Currency.USD.value,
                             'product_data': {
                                 'name': item_name, 
                             },
@@ -385,8 +335,8 @@ class CreateInvoiceV1(Resource):
                     seller_id=seller_id,
                     searchable_id=searchable_id,
                     amount=amount_usd_cents_with_fee/100,
-                    currency='usd',
-                    invoice_type='stripe',
+                    currency=Currency.USD.value,
+                    invoice_type=PaymentType.STRIPE.value,
                     external_id=session.id,
                     metadata=invoice_metadata
                 )
@@ -399,7 +349,7 @@ class CreateInvoiceV1(Resource):
                     'session_id': session.id
                 }, 200
             else:
-                return {"error": "Invalid invoice type. Must be 'lightning' or 'stripe'"}, 400
+                return {"error": "Invalid invoice type. Must be 'stripe'"}, 400
             
         except Exception as e:
             logger.error(f"Error creating invoice: {str(e)}")

@@ -1,10 +1,21 @@
 from datetime import datetime
+from enum import Enum
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from .logging_config import setup_logger
 
 # Set up the logger
 logger = setup_logger(__name__, 'models.log')
+
+class PaymentStatus(Enum):
+    PENDING = 'pending'
+    COMPLETE = 'complete'
+
+class PaymentType(Enum):
+    STRIPE = 'stripe'
+
+class Currency(Enum):
+    USD = 'usd'
 
 db = SQLAlchemy()
 

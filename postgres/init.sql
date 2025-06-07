@@ -77,9 +77,9 @@ CREATE TABLE IF NOT EXISTS invoice (
     searchable_id INTEGER NOT NULL,
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
-    currency TEXT NOT NULL,
-    type TEXT NOT NULL, -- 'lightning' or 'stripe'
-    external_id TEXT NOT NULL UNIQUE, -- BTCPay invoice ID or Stripe session ID
+    currency TEXT NOT NULL CHECK (currency = 'usd'),
+    type TEXT NOT NULL CHECK (type = 'stripe'),
+    external_id TEXT NOT NULL UNIQUE, -- Stripe session ID
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -108,10 +108,10 @@ CREATE TABLE IF NOT EXISTS payment (
     invoice_id INTEGER NOT NULL REFERENCES invoice(id) ON DELETE CASCADE,
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
-    currency TEXT NOT NULL,
-    type TEXT NOT NULL, -- 'lightning' or 'stripe'
+    currency TEXT NOT NULL CHECK (currency = 'usd'),
+    type TEXT NOT NULL CHECK (type = 'stripe'),
     external_id TEXT, -- External payment ID if available
-    status TEXT NOT NULL DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending', 'complete')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -134,10 +134,10 @@ CREATE TABLE IF NOT EXISTS withdrawal (
     user_id INTEGER NOT NULL,
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
-    currency TEXT NOT NULL, -- 'sats' or 'usdt'
-    type TEXT NOT NULL, -- 'lightning' or 'bank_transfer' etc
-    external_id TEXT, -- Lightning invoice or transaction ID
-    status TEXT NOT NULL DEFAULT 'pending',
+    currency TEXT NOT NULL CHECK (currency = 'usd'),
+    type TEXT NOT NULL CHECK (type = 'bank_transfer'),
+    external_id TEXT, -- Transaction ID
+    status TEXT NOT NULL CHECK (status IN ('pending', 'complete')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );

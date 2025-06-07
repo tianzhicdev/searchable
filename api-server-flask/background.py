@@ -7,10 +7,17 @@ import json
 import os
 from datetime import datetime, timedelta
 
-from api import get_db_connection
-from api.helper import check_stripe_payment, pay_lightning_invoice, check_payment, Json, execute_sql, get_data_from_kv, get_db_connection
-
-# from api.searchable_routes import Json, execute_sql, get_data_from_kv
+# Import from the new common modules
+from api.common.database import get_db_connection
+from api.common.data_helpers import (
+    get_invoices, 
+    get_payments, 
+    get_withdrawals,
+    update_payment_status,
+    check_payment,
+    refresh_stripe_payment
+)
+from api.common.models import PaymentStatus, PaymentType
 
 # Configure logging
 logging.basicConfig(
@@ -19,14 +26,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger('background')
 
-# BTCPay Server configuration
-BTC_PAY_URL = "https://generous-purpose.metalseed.io"
-STORE_ID = "Gzuaf7U3aQtHKA1cpsrWAkxs3Lc5ZnKiCaA6WXMMXmDn"
-BTCPAY_SERVER_GREENFIELD_API_KEY = os.environ.get('BTCPAY_SERVER_GREENFIELD_API_KEY', '')
-
 # Configuration
 CHECK_INVOICE_INTERVAL = 60  # Check invoices every 60 seconds
-PROCESS_WITHDRAWAL_INTERVAL = 5  # Process withdrawals every 120 seconds
+PROCESS_WITHDRAWAL_INTERVAL = 5  # Process withdrawals every 5 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 
@@ -36,56 +38,39 @@ def check_invoice_payments():
     """
     logger.info("Starting invoice payment check")
     try:
-        # Get all invoices without corresponding payments
+        # Get timestamp for filtering (only check recent invoices)
+        cutoff_time = datetime.now() - timedelta(hours=MAX_INVOICE_AGE_HOURS)
+        
+        # Get all invoices from the last 24 hours that don't have completed payments
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Get timestamp for filtering (only check recent invoices)
-        cutoff_time = int((datetime.now() - timedelta(hours=MAX_INVOICE_AGE_HOURS)).timestamp())
+        # Query for invoices without completed payments within the time window
+        cur.execute("""
+            SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
+                   i.amount, i.currency, i.created_at, i.metadata
+            FROM invoice i 
+            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = 'complete'
+            WHERE i.created_at >= %s 
+            AND p.id IS NULL
+        """, (cutoff_time,))
         
-        # Find all invoices
-        invoice_records = get_data_from_kv(type='invoice')
-        # todo: improve the perf by using timestamp cutoff_time
+        invoices = cur.fetchall()
+        cur.close()
+        conn.close()
         
         # Track processed invoices
         processed_count = 0
         paid_count = 0
         
-        for invoice in invoice_records:
-            # Skip older invoices
-            if invoice.get('timestamp', 0) < cutoff_time:
-                continue
+        for invoice_row in invoices:
+            invoice_id, external_id, invoice_type, searchable_id, buyer_id, seller_id, amount, currency, created_at, metadata = invoice_row
                 
-            invoice_id = invoice.get('pkey')
-            searchable_id = invoice.get('fkey')
-            
-            if not invoice_id or not searchable_id:
-                # this never happens
-                continue
-                
-            # Check if payment already exists
-            payment_records = get_data_from_kv(type='payment', pkey=invoice_id)
-            if payment_records:
-                # Already processed this invoice
-                continue
-                
-            # Check payment status using our helper function
-            if invoice.get('invoice_type') == 'lightning':
+            # Check payment status for Stripe payments only
+            if invoice_type == 'stripe':
                 try:
-                    invoice_data = check_payment(invoice_id)
-                    processed_count += 1
-                    
-                    # If payment is settled, it has been recorded by the helper function
-                    if invoice_data.get('status', '').lower() in ('settled', 'complete'):
-                        paid_count += 1
-                        logger.info(f"Recorded payment for invoice {invoice_id}")
-                    
-                except Exception as e:
-                    logger.error(f"Error checking payment status for invoice {invoice_id}: {str(e)}")
-            elif invoice.get('invoice_type') == 'stripe':
-                try:
-                    session_id = invoice_id
-                    payment_data = check_stripe_payment(session_id)
+                    session_id = external_id
+                    payment_data = refresh_stripe_payment(session_id)
                     processed_count += 1
                     
                     # If payment is paid, it has been recorded by the helper function
@@ -94,10 +79,7 @@ def check_invoice_payments():
                         logger.info(f"Recorded Stripe payment for session {session_id}")
                         
                 except Exception as e:
-                    logger.error(f"Error checking Stripe payment status for session {invoice_id}: {str(e)}")
-        
-        cur.close()
-        conn.close()
+                    logger.error(f"Error checking Stripe payment status for session {external_id}: {str(e)}")
         
         logger.info(f"Completed invoice check: processed {processed_count} invoices, recorded {paid_count} payments")
         
@@ -112,120 +94,77 @@ def process_pending_withdrawals():
     """
     logger.info("Starting withdrawal processing")
     try:
-        # Get pending withdrawals
-        withdrawal_records = get_data_from_kv(type='withdrawal')
+        # Get pending withdrawals using the new helper function
+        withdrawal_records = get_withdrawals(status='pending')
         
         # Track stats
         processed_count = 0
         
         for withdrawal in withdrawal_records:
-            # Check if this withdrawal is pending
-            status_history = withdrawal.get('status', [])
+            withdrawal_id = withdrawal['id']
+            user_id = withdrawal['user_id']
+            amount = withdrawal['amount']
+            currency = withdrawal['currency']
+            withdrawal_type = withdrawal['type']
+            external_id = withdrawal['external_id']
+            metadata = withdrawal.get('metadata', {})
             
-            # Get the most recent status
-            current_status = status_history[-1][0] if status_history else 'unknown'
-            
-            # Skip if already processed or failed
-            if current_status.lower() not in ('pending', 'unknown'):
-                continue
-                
-            invoice = withdrawal.get('invoice')
-            if not invoice:
-                continue
-                
             processed_count += 1
             
             try:
-                # Handle different currencies
-                currency = withdrawal.get('currency', 'sats')
-                
-                if currency.lower() == 'usdt':
-                    # Process USDT withdrawal
-                    address = withdrawal.get('address')
-                    amount = withdrawal.get('amount')
-                    USDT_DECIMALS = 6
+                if currency.lower() == 'usd':
+                    # Process USD withdrawal (bank transfer)
+                    address = metadata.get('address')
+                    if not address:
+                        raise Exception("USD withdrawal missing address")
                     
-                    response = requests.post('http://host.docker.internal:3100/send', json={
-                        'to': address,
-                        'amount': amount * 10 ** USDT_DECIMALS
-                    })
+                    # For USD withdrawals, mark as complete immediately
+                    # In a real system, this would integrate with a bank transfer API
+                    conn = get_db_connection()
+                    cur = conn.cursor()
                     
-                    logger.info(f"USDT server response: {response.json()}")
+                    updated_metadata = {
+                        **metadata,
+                        'processed_timestamp': int(time.time()),
+                        'status': 'completed'
+                    }
                     
-                    if response.status_code == 200:
-                        # Get transaction ID from response
-                        tx_hash = response.json().get('txHash')
-                        
-                        # Update the withdrawal record with successful status
-                        conn = get_db_connection()
-                        cur = conn.cursor()
-                        
-                        execute_sql(cur, f"""
-                            UPDATE kv 
-                            SET data = {Json({
-                                **withdrawal,
-                                'tx_hash': tx_hash,
-                                'status': status_history + [('complete', int(time.time()))]
-                            })}
-                            WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                        """, commit=True, connection=conn)
-                        
-                        cur.close()
-                        conn.close()
-                        
-                        logger.info(f"Processed USDT withdrawal to {address} for amount {amount}")
-                    else:
-                        raise Exception(f"USDT service error: {response.text}")
+                    cur.execute("""
+                        UPDATE withdrawal 
+                        SET status = %s, metadata = %s
+                        WHERE id = %s
+                    """, (PaymentStatus.COMPLETE.value, json.dumps(updated_metadata), withdrawal_id))
                     
-                else:  # Default to sats/BTC
-                    # Process Bitcoin Lightning withdrawal
-                    payment_response = pay_lightning_invoice(invoice)
-                    if "error" in payment_response:
-                        logger.error(f"Lightning payment failed: {payment_response['error']}")
-                        raise Exception(f"Lightning payment failed: {payment_response['error']}")
-                    else:
-                        fee_sat = payment_response.get('fee_sat', 0)
-                        value_sat = payment_response.get('value_sat', 0)
-                        
-                        # Update the withdrawal record with payment response
-                        conn = get_db_connection()
-                        cur = conn.cursor()
-                        
-                        execute_sql(cur, f"""
-                            UPDATE kv 
-                            SET data = {Json({
-                                **withdrawal,
-                                'fee_sat': fee_sat,
-                                'value_sat': value_sat,
-                                'amount': int(value_sat) + int(fee_sat),
-                                'status': status_history + [(payment_response.get('status', 'unknown'), int(time.time()))]
-                            })}
-                            WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                        """, commit=True, connection=conn)
-                        
-                        cur.close()
-                        conn.close()
-                        
-                        logger.info(f"Processed sats withdrawal for invoice {invoice}: {payment_response.get('status', 'unknown')}")
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    
+                    logger.info(f"Processed USD withdrawal to {address} for amount ${amount}")
+                    
+                else:
+                    logger.warning(f"Unsupported currency for withdrawal: {currency}")
                 
             except Exception as e:
-                logger.error(f"Error processing withdrawal {invoice}: {str(e)}")
+                logger.error(f"Error processing withdrawal {withdrawal_id}: {str(e)}")
                 
                 # Update status to failed
                 try:
                     conn = get_db_connection()
                     cur = conn.cursor()
                     
-                    execute_sql(cur, f"""
-                        UPDATE kv 
-                        SET data = {Json({
-                            **withdrawal,
-                            'status': status_history + [('failed', int(time.time()))],
-                            'error': str(e)
-                        })}
-                        WHERE type = 'withdrawal' AND pkey = '{invoice}'
-                    """, commit=True, connection=conn)
+                    updated_metadata = {
+                        **metadata,
+                        'error': str(e),
+                        'timestamp': int(time.time())
+                    }
                     
+                    cur.execute("""
+                        UPDATE withdrawal 
+                        SET status = 'failed', metadata = %s
+                        WHERE id = %s
+                    """, (json.dumps(updated_metadata), withdrawal_id))
+                    
+                    conn.commit()
                     cur.close()
                     conn.close()
                 except Exception as e2:
