@@ -82,7 +82,7 @@ const Profile = () => {
       
       // Update to store both USDT and sats values from the response
       setBalance({
-        usdt: balanceResponse.data.usdt || 0,
+        usdt: balanceResponse.data.usd || 0,
         sats: balanceResponse.data.sats || 0
       });
     } catch (err) {
