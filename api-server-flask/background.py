@@ -51,9 +51,9 @@ def check_invoice_payments():
                    i.amount, i.currency, i.created_at, i.metadata
             FROM invoice i 
             LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = '{PaymentStatus.COMPLETE.value}'
-            WHERE i.created_at >= %s 
+            WHERE i.created_at >= '{cutoff_time}'
             AND p.id IS NULL
-        """, (cutoff_time,))
+        """)
         
         invoices = cur.fetchall()
         cur.close()
