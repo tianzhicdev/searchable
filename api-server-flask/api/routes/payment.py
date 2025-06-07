@@ -102,7 +102,6 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, 
                 payment_type=invoice_type,
                 external_id=external_id,
                 metadata=payment_metadata,
-                status=PaymentStatus.PENDING.value
             )
             return invoice
         else:
