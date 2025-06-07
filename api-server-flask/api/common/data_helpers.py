@@ -382,6 +382,55 @@ def create_payment(invoice_id, amount, currency, payment_type, external_id=None,
         print(f"Error creating payment: {str(e)}")
         return None
 
+def update_payment_status(payment_id, status, metadata=None):
+    """
+    Updates the status and metadata of an existing payment record
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if metadata is not None:
+            execute_sql(cur, f"""
+                UPDATE payment 
+                SET status = '{status}', metadata = {Json(metadata)}
+                WHERE id = {payment_id}
+                RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
+            """, commit=True, connection=conn)
+        else:
+            execute_sql(cur, f"""
+                UPDATE payment 
+                SET status = '{status}'
+                WHERE id = {payment_id}
+                RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
+            """, commit=True, connection=conn)
+        
+        row = cur.fetchone()
+        
+        if not row:
+            return None
+            
+        payment = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8],
+            'metadata': row[9]
+        }
+        
+        cur.close()
+        conn.close()
+        return payment
+        
+    except Exception as e:
+        print(f"Error updating payment status: {str(e)}")
+        return None
+
 def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=None, metadata=None):
     """
     Creates a new withdrawal record
@@ -448,7 +497,7 @@ def check_payment(invoice_id):
                 
         invoice_data = response.json()
         
-        # If payment is settled, record it in our database
+        # If payment is settled, update the payment status in our database
         if invoice_data['status'].lower() in ('settled', 'complete'):
             
             # Get the invoice record from our database using external_id
@@ -460,8 +509,25 @@ def check_payment(invoice_id):
                 # Check if payment already exists
                 existing_payments = get_payments(invoice_id=invoice_record['id'])
                 
-                if not existing_payments:
-                    # Create payment record
+                if existing_payments:
+                    # Update existing payment record
+                    payment_record = existing_payments[0]
+                    payment_metadata = {
+                        **payment_record['metadata'],  # Preserve existing metadata
+                        "btcpay_status": invoice_data['status'],
+                        "timestamp": int(time.time()),
+                        "address": invoice_record['metadata'].get('address', ''),
+                        "tel": invoice_record['metadata'].get('tel', ''),
+                        "description": invoice_record['metadata'].get('description', ''),
+                    }
+                    
+                    update_payment_status(
+                        payment_id=payment_record['id'],
+                        status='complete',
+                        metadata=payment_metadata
+                    )
+                else:
+                    # Fallback: Create payment record if none exists (shouldn't happen with new flow)
                     payment_metadata = {
                         "btcpay_status": invoice_data['status'],
                         "timestamp": int(time.time()),
@@ -486,9 +552,9 @@ def check_payment(invoice_id):
         print(f"Error checking payment status: {str(e)}")
         return {"error": str(e)}
 
-def check_stripe_payment(session_id):
+def refresh_stripe_payment(session_id):
     """
-    Checks the status of a Stripe payment session and records it in the database if successful
+    Checks the status of a Stripe payment session and updates the payment status accordingly
     """
     try:
         # Retrieve the checkout session from Stripe
@@ -499,7 +565,7 @@ def check_stripe_payment(session_id):
         # Get payment status
         payment_status = checkout_session.payment_status
         
-        # If payment is successful, record it in our database
+        # If payment is successful, update the payment status in our database
         if payment_status == 'paid' or payment_status == 'complete':
             # Get the invoice record from our database using external_id
             invoice_records = get_invoices(external_id=session_id)
@@ -510,8 +576,28 @@ def check_stripe_payment(session_id):
                 # Check if payment already exists
                 existing_payments = get_payments(invoice_id=invoice_record['id'])
                 
-                if not existing_payments:
-                    # Create payment record
+                if existing_payments:
+                    # Update existing payment record
+                    payment_record = existing_payments[0]
+                    payment_metadata = {
+                        **payment_record['metadata'],  # Preserve existing metadata
+                        "stripe_status": payment_status,
+                        "timestamp": int(time.time()),
+                        "address": invoice_record['metadata'].get('address', ''),
+                        "tel": invoice_record['metadata'].get('tel', ''),
+                        "description": invoice_record['metadata'].get('description', ''),
+                        "stripe_session_id": session_id,
+                        "amount_total": checkout_session.amount_total,
+                    }
+                    
+                    update_payment_status(
+                        payment_id=payment_record['id'],
+                        status='complete',
+                        metadata=payment_metadata
+                    )
+                else:
+                    # Fallback: Create payment record if none exists (shouldn't happen with new flow)
+                    print(f"Warning: No payment record found for invoice {invoice_record['id']}, creating new payment record")
                     payment_metadata = {
                         "stripe_status": payment_status,
                         "timestamp": int(time.time()),
@@ -791,9 +877,10 @@ __all__ = [
     'get_withdrawals',
     'create_invoice',
     'create_payment', 
+    'update_payment_status',
     'create_withdrawal',
     'check_payment',
-    'check_stripe_payment',
+    'refresh_stripe_payment',
     'get_receipts',
     'get_balance_by_currency',
     'get_ratings'

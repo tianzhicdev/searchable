@@ -23,7 +23,7 @@ from .data_helpers import (
     create_payment, 
     create_withdrawal,
     check_payment,
-    check_stripe_payment,
+    refresh_stripe_payment,
     get_receipts,
     get_balance_by_currency,
     get_ratings
@@ -73,7 +73,7 @@ __all__ = [
     'create_payment',
     'create_withdrawal',
     'check_payment',
-    'check_stripe_payment',
+    'refresh_stripe_payment',
     'get_receipts',
     'get_balance_by_currency',
     'get_ratings'

@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS payment (
     currency TEXT NOT NULL,
     type TEXT NOT NULL, -- 'lightning' or 'stripe'
     external_id TEXT, -- External payment ID if available
-    status TEXT NOT NULL DEFAULT 'complete',
+    status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );

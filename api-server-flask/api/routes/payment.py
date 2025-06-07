@@ -3,6 +3,7 @@ import os
 import stripe
 from flask import request
 from flask_restx import Resource
+import time
 
 # Import from our new structure
 from .. import rest_api
@@ -10,10 +11,12 @@ from .auth import token_required, token_optional
 from ..common.metrics import track_metrics
 from ..common.data_helpers import (
     check_payment, 
-    check_stripe_payment,
+    refresh_stripe_payment,
     get_searchable,
     get_terminal,
     create_invoice,
+    create_payment,
+    update_payment_status,
     get_invoices
 )
 from ..common.payment_helpers import (
@@ -64,8 +67,9 @@ def get_delivery_info(require_address, current_user):
         return {}
 
 def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata):
-    """Insert an invoice record into the database"""
+    """Insert an invoice record and corresponding unpaid payment record into the database"""
     try:
+        # Create the invoice record
         invoice = create_invoice(
             buyer_id=buyer_id,
             seller_id=seller_id,
@@ -79,6 +83,24 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, 
         
         if invoice:
             logger.info(f"Invoice created with ID: {invoice['id']}")
+            
+            # Create corresponding unpaid payment record
+            payment_metadata = {
+                "address": metadata.get('address', ''),
+                "tel": metadata.get('tel', ''),
+                "description": metadata.get('description', ''),
+                "selections": metadata.get('selections', []),
+                "timestamp": int(time.time())
+            }
+            
+            payment = create_payment(
+                invoice_id=invoice['id'],
+                amount=amount,
+                currency=currency,
+                payment_type=invoice_type,
+                external_id=external_id,
+                metadata=payment_metadata
+            )
             return invoice
         else:
             logger.error("Failed to create invoice")
@@ -141,7 +163,7 @@ class RefreshPayment(Resource):
                 return {"error": "session_id is required for stripe payments"}, 400
                 
             # Use our helper function to check stripe payment status
-            payment_data = check_stripe_payment(session_id)
+            payment_data = refresh_stripe_payment(session_id)
             return payment_data, 200
             
         else:
@@ -179,7 +201,7 @@ class RefreshPaymentsBySearchable(Resource):
                         "data": payment_status
                     })
                 elif invoice_type == 'stripe':
-                    payment_status = check_stripe_payment(external_id)
+                    payment_status = refresh_stripe_payment(external_id)
                     results.append({
                         "invoice_id": external_id,
                         "type": "stripe",
@@ -362,7 +384,7 @@ class CreateInvoiceV1(Resource):
                     seller_id=seller_id,
                     searchable_id=searchable_id,
                     amount=amount_usd_cents_with_fee/100,
-                    currency='usdt',
+                    currency='usd',
                     invoice_type='stripe',
                     external_id=session.id,
                     metadata=invoice_metadata
