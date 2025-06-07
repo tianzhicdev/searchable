@@ -91,6 +91,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - web_network
+  
+  usdt-api:
+    build: 
+      context: ./tether_on_eth
+    ports:
+      - "3100:3100"
+    env_file:
+      - ./api-server-flask/.secrets.env
 
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
