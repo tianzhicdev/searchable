@@ -17,18 +17,13 @@ import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
-  const [balance, setBalance] = useState({ usdt: null, sats: null });
+  const [balance, setBalance] = useState({ usd: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [profileData, setProfileData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   
-  // Withdrawal states
-  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
-  const [invoice, setInvoice] = useState('');
-  const [withdrawalLoading, setWithdrawalLoading] = useState(false);
-  const [withdrawalError, setWithdrawalError] = useState(null);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [transformedWithdrawals, setTransformedWithdrawals] = useState([]);
   
@@ -80,10 +75,9 @@ const Profile = () => {
       const balanceResponse = await backend.get('balance');
       console.log("Balance response:", balanceResponse.data);
       
-      // Update to store both USDT and sats values from the response
+      // Update to store USD value from the response
       setBalance({
-        usdt: balanceResponse.data.usd || 0,
-        sats: balanceResponse.data.sats || 0
+        usd: balanceResponse.data.balance?.usd || 0
       });
     } catch (err) {
       console.error('Error fetching user payment data:', err);
@@ -111,68 +105,11 @@ const Profile = () => {
     }
   };
   
-  const handleWithdrawalClick = () => {
-    setWithdrawDialogOpen(true);
-    setInvoice('');
-    setWithdrawalError(null);
-  };
-
   const handleWithdrawalUSDTClick = () => {
     setUsdtWithdrawDialogOpen(true);
     setUsdtWithdrawalAddress('');
     setUsdtWithdrawalAmount('');
     setUsdtWithdrawalError(null);
-  };
-  
-  const handleCloseWithdrawDialog = () => {
-    setWithdrawDialogOpen(false);
-  };
-  
-  const handleInvoiceChange = (e) => {
-    setInvoice(e.target.value);
-  };
-  
-  const handleSubmitWithdrawal = async () => {
-    if (!invoice || invoice.trim() === '') {
-      setWithdrawalError('Please enter a valid Lightning invoice');
-      return;
-    }
-    
-    setWithdrawalLoading(true);
-    setWithdrawalError(null);
-    
-    try {
-      const response = await backend.post(
-        'v1/withdrawal-sats',
-        { invoice: invoice.trim() }
-      );
-      
-      console.log('Withdrawal response:', response.data);
-      setWithdrawalSuccess(true);
-      setWithdrawDialogOpen(false);
-      
-      // Refresh balance after successful withdrawal
-      fetchBalance();
-      
-    } catch (err) {
-      console.error('Error processing withdrawal:', err);
-      
-      // Check for specific insufficient funds error
-      if (err.response?.status === 400 && 
-          err.response?.data?.error === "Insufficient funds" &&
-          err.response?.data?.available_balance !== undefined &&
-          err.response?.data?.withdrawal_amount !== undefined) {
-        
-        // Format error message with balance information
-        const errorMsg = `Insufficient funds. Available balance: ${err.response.data.available_balance} sats, 
-                          Withdrawal amount: ${err.response.data.withdrawal_amount} sats`;
-        setWithdrawalError(errorMsg);
-      } else {
-        setWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
-      }
-    } finally {
-      setWithdrawalLoading(false);
-    }
   };
   
   const handleCloseSuccessMessage = () => {
@@ -220,8 +157,8 @@ const Profile = () => {
       return;
     }
     
-    if (parseFloat(usdtWithdrawalAmount) > balance.usdt) {
-      setUsdtWithdrawalError(`Insufficient funds. Available balance: ${balance.usdt} USDT`);
+    if (parseFloat(usdtWithdrawalAmount) > balance.usd) {
+      setUsdtWithdrawalError(`Insufficient funds. Available balance: $${balance.usd} USD`);
       return;
     }
     
@@ -230,7 +167,7 @@ const Profile = () => {
     
     try {
       const response = await backend.post(
-        'v1/withdrawal-usdt',
+        'v1/withdrawal-usd',
         { 
           address: usdtWithdrawalAddress.trim(),
           amount: parseFloat(usdtWithdrawalAmount)
@@ -250,7 +187,7 @@ const Profile = () => {
       // Handle error response
       if (err.response?.status === 400 && 
           err.response?.data?.error === "Insufficient funds") {
-        const errorMsg = `Insufficient funds. Available balance: $${balance.usdt} USDT`;
+        const errorMsg = `Insufficient funds. Available balance: $${balance.usd} USD`;
         setUsdtWithdrawalError(errorMsg);
       } else {
         setUsdtWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
@@ -295,20 +232,12 @@ const Profile = () => {
             }}>
               View Your Items
             </MenuItem>
-            {balance.sats > 0 && !loading && (
-              <MenuItem onClick={() => {
-                handleMenuClose();
-                handleWithdrawalClick();
-              }}>
-                Withdraw sats
-              </MenuItem>
-            )}
-            {balance.usdt > 0 && !loading && (
+            {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {
                 handleMenuClose();
                 handleWithdrawalUSDTClick();
               }}>
-                Withdraw usdt
+                Withdraw USD as USDT
               </MenuItem>
             )}
             <MenuItem onClick={() => {
@@ -366,20 +295,12 @@ const Profile = () => {
             ) : error ? (
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
-              <>
-                <Typography variant="body1">
-                  <span className={classes.infoLabel}>BTC Balance:</span>
-                  <span className={classes.infoValue}>
-                    {balance.sats} sats
-                  </span>
-                </Typography>
-                <Typography variant="body1">
-                  <span className={classes.infoLabel}>USDT Balance:</span>
-                  <span className={classes.infoValue}>
-                    ${balance.usdt} USDT
-                  </span>
-                </Typography>
-              </>
+              <Typography variant="body1">
+                <span className={classes.infoLabel}>USD Balance:</span>
+                <span className={classes.infoValue}>
+                  ${balance.usd} USD
+                </span>
+              </Typography>
             )}
           </Box>
         </Paper>
@@ -392,41 +313,6 @@ const Profile = () => {
 
       </Grid>
     
-      
-      {/* Withdrawal Dialog */}
-      <Dialog open={withdrawDialogOpen} onClose={handleCloseWithdrawDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Withdraw via Lightning Network</DialogTitle>
-        <DialogContent>
-          <TextField
-            id="invoice"
-            type="text"
-            value={invoice}
-            onChange={handleInvoiceChange}
-            placeholder="lnbc..."
-            variant="outlined"
-            fullWidth
-            margin="normal"
-          />
-          {withdrawalError && (
-            <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
-              {withdrawalError}
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseWithdrawDialog}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmitWithdrawal} 
-            variant="contained"
-            color="primary"
-            disabled={withdrawalLoading} // todo: need to remove this shit. it is ugly
-          >
-            {withdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
-          </Button>
-        </DialogActions>
-      </Dialog>
       
       {/* USDT Withdrawal Dialog */}
       <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth>
@@ -461,7 +347,7 @@ const Profile = () => {
             </Typography>
           )}
           <Typography variant="body2" style={{ marginTop: 16 }}>
-            Available balance: ${balance.usdt} USDT
+            Available balance: ${balance.usd} USD
           </Typography>
         </DialogContent>
         <DialogActions>

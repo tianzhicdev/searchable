@@ -41,7 +41,6 @@ const SearchableDetails = () => {
   const [checkingPayment, setCheckingPayment] = useState(false);
 
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [usdPrice, setUsdPrice] = useState(null); //todo: perhaps we cache it in the backend
   
   // Payment related
   const [invoice, setInvoice] = useState(null);
@@ -68,7 +67,7 @@ const SearchableDetails = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   
   // Add new state to track the currency
-  const [currency, setCurrency] = useState('sats');
+  const [currency, setCurrency] = useState('usd');
   
   useEffect(() => {
     fetchItemDetails();
@@ -94,17 +93,8 @@ const SearchableDetails = () => {
   
   useEffect(() => {
     if (SearchableItem) {
-      // Set the currency based on the item's configuration
-      if (SearchableItem.payloads.public.currency === 'usdt') {
-        setCurrency('usdt');
-      } else {
-        setCurrency('sats');
-      }
-      
-      // Only convert sats to USD if we're not using USDT
-      if (SearchableItem.payloads.public.price && currency !== 'usdt') {
-        convertSatsToUSD(SearchableItem.payloads.public.price);
-      }
+      // All items now use USD currency
+      setCurrency('usd');
     }
   }, [SearchableItem]);
   
@@ -130,10 +120,7 @@ const SearchableDetails = () => {
       });
       setTotalPrice(total);
       
-      // Update USD price based on total, only if not using USDT
-      if (total > 0 && currency !== 'usdt') {
-        convertSatsToUSD(total);
-      }
+      // Total price is already in USD
     }
   }, [selectedVariations, SearchableItem, currency]);
   
@@ -202,22 +189,6 @@ const SearchableDetails = () => {
     return  `${rating.toFixed(1)}/5(${count})`
   };
   
-  const convertSatsToUSD = async (sats) => {
-    setPriceLoading(true);
-    try {
-      const response = await backend.get('v1/get-btc-price');
-      
-      if (response.data && response.data.price) {
-        const btcPrice = response.data.price;
-        const usdValue = (sats / 100000000) * btcPrice;
-        setUsdPrice(usdValue);
-      }
-    } catch (error) {
-      console.error("Error fetching BTC price:", error);
-    } finally {
-      setPriceLoading(false);
-    }
-  };
   
   const handleQuantityChange = (id, change) => {
     setSelectedVariations(prev => {
@@ -227,7 +198,7 @@ const SearchableDetails = () => {
     });
   };
   
-  const createInvoice = async (invoiceType = 'lightning') => {
+  const createInvoice = async (invoiceType = 'stripe') => {
     if (!SearchableItem) return;
     
     // Validate if we have any selections
@@ -283,11 +254,7 @@ const SearchableDetails = () => {
       
       const response = await backend.post('v1/create-invoice', payload);
       
-      if (invoiceType === 'lightning') {
-        setInvoice(response.data);
-        setPaymentDialogOpen(true);
-        checkPaymentStatus(response.data.id);
-      } else if (invoiceType === 'stripe' && response.data.url) {
+      if (invoiceType === 'stripe' && response.data.url) {
         window.location.href = response.data.url;
         
         // If we have a session_id, set up polling for Stripe payment status
@@ -447,7 +414,7 @@ const SearchableDetails = () => {
     }, 5000);
   };
   
-  // Update both button click handlers to use the same createInvoice function
+  // Payment button handler - now only uses Stripe
   const handlePayButtonClick = () => {
     // Check if user is logged in
     const isUserLoggedIn = !!account?.user;
@@ -463,8 +430,8 @@ const SearchableDetails = () => {
       }
     }
     
-    // Proceed with Lightning invoice creation
-    createInvoice('lightning');
+    // Create Stripe checkout session
+    createInvoice('stripe');
   };
   
   const handleStripePayButtonClick = async () => {
@@ -474,11 +441,9 @@ const SearchableDetails = () => {
     if (isUserLoggedIn) {
       fetchProfileData();
       
-      // Check if price is too low for credit card payment (only for sats)
-      if (
-        (currency !== 'usdt' && totalPrice < 1000 ) || (currency === 'usdt' && totalPrice < 1)
-      ) {
-        showAlert("Amount too low for credit card payment. Please use Lightning instead.", "warning");
+      // Check if price meets minimum payment amount
+      if (totalPrice < 1) {
+        showAlert("Amount too low for payment. Minimum payment is $1 USD.", "warning");
         return;
       }
 
