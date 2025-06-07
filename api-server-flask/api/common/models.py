@@ -10,6 +10,7 @@ logger = setup_logger(__name__, 'models.log')
 class PaymentStatus(Enum):
     PENDING = 'pending'
     COMPLETE = 'complete'
+    FAILED = 'failed'
 
 class PaymentType(Enum):
     STRIPE = 'stripe'

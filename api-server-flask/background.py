@@ -50,7 +50,7 @@ def check_invoice_payments():
             SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
                    i.amount, i.currency, i.created_at, i.metadata
             FROM invoice i 
-            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = 'complete'
+            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = '{PaymentStatus.COMPLETE.value}'
             WHERE i.created_at >= %s 
             AND p.id IS NULL
         """, (cutoff_time,))
@@ -95,7 +95,7 @@ def process_pending_withdrawals():
     logger.info("Starting withdrawal processing")
     try:
         # Get pending withdrawals using the new helper function
-        withdrawal_records = get_withdrawals(status='pending')
+        withdrawal_records = get_withdrawals(status=PaymentStatus.PENDING.value)
         
         # Track stats
         processed_count = 0
@@ -126,7 +126,7 @@ def process_pending_withdrawals():
                     updated_metadata = {
                         **metadata,
                         'processed_timestamp': int(time.time()),
-                        'status': 'completed'
+                        'status': PaymentStatus.COMPLETE.value
                     }
                     
                     cur.execute("""
@@ -160,9 +160,9 @@ def process_pending_withdrawals():
                     
                     cur.execute("""
                         UPDATE withdrawal 
-                        SET status = 'failed', metadata = %s
+                        SET status = %s, metadata = %s
                         WHERE id = %s
-                    """, (json.dumps(updated_metadata), withdrawal_id))
+                    """, (PaymentStatus.FAILED.value, json.dumps(updated_metadata), withdrawal_id))
                     
                     conn.commit()
                     cur.close()
