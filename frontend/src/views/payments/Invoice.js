@@ -24,6 +24,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     
     // State for notes
     const [notes, setNotes] = useState([]);
+    const [noteCount, setNoteCount] = useState(0);
     const [loadingNotes, setLoadingNotes] = useState(false);
     const [newNote, setNewNote] = useState('');
     const [submittingNote, setSubmittingNote] = useState(false);
@@ -32,10 +33,16 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     const [hasRated, setHasRated] = useState(false);
     const [loadingRatingStatus, setLoadingRatingStatus] = useState(false);
 
-    // Check if user can rate this invoice
+    // Initialize component data
     useEffect(() => {
-        if (userRole === 'buyer' && invoice.id) {
-            checkCanRate();
+        if (invoice.id) {
+            // Fetch note count for display
+            fetchNoteCount();
+            
+            // Check if user can rate this invoice (buyers only)
+            if (userRole === 'buyer') {
+                checkCanRate();
+            }
         }
     }, [invoice.id, userRole]);
 
@@ -62,11 +69,24 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
         setNotesExpanded(!notesExpanded);
     };
 
+    const fetchNoteCount = async () => {
+        try {
+            const response = await Backend.get(`v1/invoice/${invoice.id}/notes`);
+            const fetchedNotes = response.data.notes || [];
+            setNoteCount(fetchedNotes.length);
+        } catch (error) {
+            console.error('Error fetching note count:', error);
+            setNoteCount(0);
+        }
+    };
+
     const fetchNotes = async () => {
         try {
             setLoadingNotes(true);
             const response = await Backend.get(`v1/invoice/${invoice.id}/notes`);
-            setNotes(response.data.notes || []);
+            const fetchedNotes = response.data.notes || [];
+            setNotes(fetchedNotes);
+            setNoteCount(fetchedNotes.length);
         } catch (error) {
             console.error('Error fetching notes:', error);
         } finally {
@@ -90,6 +110,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                 created_at: new Date().toISOString()
             };
             setNotes([...notes, newNoteData]);
+            setNoteCount(noteCount + 1);
             setNewNote('');
         } catch (error) {
             console.error('Error submitting note:', error);
@@ -231,7 +252,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 onClick={handleNotesExpandClick}
                                 size="small"
                             >
-                                Notes ({notes.length})
+                                Notes ({noteCount})
                             </Button>
                             
                             {userRole === 'buyer' && !hasRated && !loadingRatingStatus && (
