@@ -120,7 +120,7 @@ def process_pending_withdrawals():
                     
                     USDT_DECIMALS = 6 # todo: real and sepolia can be diff here 
                     
-                    response = requests.post('http://usdt-api/send', json={
+                    response = requests.post('http://usdt-api:3100/send', json={
                         'to': address,
                         'amount': amount * 10 ** USDT_DECIMALS
                     })
@@ -173,11 +173,11 @@ def process_pending_withdrawals():
                         'timestamp': int(time.time())
                     }
                     
-                    execute_sql(cur, """
+                    execute_sql(cur, f"""
                         UPDATE withdrawal 
-                        SET status = %s, metadata = %s
-                        WHERE id = %s
-                    """, (PaymentStatus.FAILED.value, json.dumps(updated_metadata), withdrawal_id))
+                        SET status = '{PaymentStatus.FAILED.value}', metadata = '{json.dumps(updated_metadata)}'
+                        WHERE id = '{withdrawal_id}'
+                    """)
                     
                     conn.commit()
                     cur.close()
