@@ -21,6 +21,7 @@ from ..common.data_helpers import (
     get_receipts,
     get_ratings,
     get_balance_by_currency,
+    get_withdrawals,
     can_user_rate_invoice,
     create_rating,
     get_invoice_notes,
@@ -572,12 +573,12 @@ class WithdrawalsByTerminal(Resource):
     @track_metrics('withdrawals_by_terminal')
     def get(self, current_user, request_origin='unknown'):
         try:
-            # Get balance by currency
-            balance = get_balance_by_currency(current_user.id)
+            # Get actual withdrawals from database
+            withdrawals = get_withdrawals(user_id=current_user.id)
             
-            # Return balance information
+            # Return withdrawal information
             return {
-                "balance": balance
+                "withdrawals": withdrawals
             }, 200
             
         except Exception as e:
