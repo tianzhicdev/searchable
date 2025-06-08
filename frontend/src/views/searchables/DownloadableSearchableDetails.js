@@ -13,7 +13,7 @@ import GetAppIcon from '@material-ui/icons/GetApp';
 import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
-import PaymentList from '../payments/PaymentList';
+import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
@@ -73,8 +73,15 @@ const DownloadableSearchableDetails = () => {
   const [userPaidFiles, setUserPaidFiles] = useState(new Set());
   
   useEffect(() => {
+    // Check if user is authenticated
+    if (!account?.isLoggedIn) {
+      setError('You must be logged in to view this item');
+      setLoading(false);
+      return;
+    }
+    
     fetchItemDetails();
-  }, [id]);
+  }, [id, account]);
   
   useEffect(() => {
     const checkOwnership = async () => {
@@ -112,9 +119,7 @@ const DownloadableSearchableDetails = () => {
   
   useEffect(() => {
     if (SearchableItem) {
-      fetchPayments();
       fetchRatings();
-      refreshPaymentsBySearchable();
       fetchUserPaidFiles();
     }
   }, [SearchableItem]);
@@ -875,7 +880,13 @@ const DownloadableSearchableDetails = () => {
         </Grid>
         </Paper>
         
-        <PaymentList receipts={searchablePayments} />
+        <InvoiceList 
+          searchableId={id} 
+          onRatingSubmitted={() => {
+            // Refresh ratings when a new rating is submitted
+            fetchRatings();
+          }}
+        />
         </Grid>
       )}
 

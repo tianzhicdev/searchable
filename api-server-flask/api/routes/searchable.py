@@ -22,7 +22,10 @@ from ..common.data_helpers import (
     get_ratings,
     get_balance_by_currency,
     can_user_rate_invoice,
-    create_rating
+    create_rating,
+    get_invoice_notes,
+    create_invoice_note,
+    get_invoices_for_searchable
 )
 from ..common.logging_config import setup_logger
 
@@ -34,9 +37,9 @@ class GetSearchableItem(Resource):
     """
     Retrieves a specific searchable item by its ID
     """
-    @token_optional
+    @token_required
     @track_metrics('get_searchable_item_v2')
-    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+    def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
             searchable_data = get_searchable(searchable_id)
             
@@ -132,9 +135,9 @@ class SearchSearchables(Resource):
     """
     Search for searchable items based on location and optional query terms
     """
-    @token_optional
+    @token_required
     @track_metrics('search_searchables_v2')
-    def get(self, current_user=None, visitor_id=None, request_origin='unknown'):
+    def get(self, current_user, request_origin='unknown'):
         try:
             # Parse and validate request parameters
             params = self._parse_request_params()
@@ -580,20 +583,27 @@ class WithdrawalsByTerminal(Resource):
             logger.error(f"Error retrieving withdrawals for terminal {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/payments-by-searchable/<string:searchable_id>', methods=['GET'])
-class PaymentsBySearchable(Resource):
+@rest_api.route('/api/v1/invoices-by-searchable/<string:searchable_id>', methods=['GET'])
+class InvoicesBySearchable(Resource):
     """
-    Retrieves payments for a specific searchable item
+    Retrieves invoices for a specific searchable item with proper user filtering
     """
-    @token_optional
-    @track_metrics('payments_by_searchable')
-    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+    @token_required
+    @track_metrics('invoices_by_searchable')
+    def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
-            receipts = get_receipts(searchable_id=searchable_id)
-            return {"receipts": receipts}, 200
+            # Determine if user is seller or buyer for this searchable
+            searchable = get_searchable(searchable_id)
+            if not searchable:
+                return {"error": "Searchable item not found"}, 404
+            
+            user_role = 'seller' if str(searchable.get('terminal_id')) == str(current_user.id) else 'buyer'
+            
+            invoices = get_invoices_for_searchable(searchable_id, current_user.id, user_role)
+            return {"invoices": invoices, "user_role": user_role}, 200
             
         except Exception as e:
-            logger.error(f"Error retrieving payments for searchable {searchable_id}: {str(e)}")
+            logger.error(f"Error retrieving invoices for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/searchable/<int:searchable_id>', methods=['GET'])
@@ -601,9 +611,9 @@ class SearchableRating(Resource):
     """
     Retrieves rating information for a searchable item
     """
-    @token_optional
+    @token_required
     @track_metrics('searchable_rating')
-    def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
+    def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -668,9 +678,9 @@ class TerminalRating(Resource):
     """
     Retrieves rating information for a terminal (user)
     """
-    @token_optional
+    @token_required
     @track_metrics('terminal_rating')
-    def get(self, terminal_id, current_user=None, visitor_id=None, request_origin='unknown'):
+    def get(self, current_user, terminal_id, request_origin='unknown'):
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -875,6 +885,84 @@ class UserPurchases(Resource):
             logger.error(f"Error retrieving purchases for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
+@rest_api.route('/api/v1/invoice/<int:invoice_id>/notes', methods=['GET'])
+class InvoiceNotes(Resource):
+    """
+    Get all notes for a specific invoice
+    """
+    @token_required
+    @track_metrics('get_invoice_notes')
+    def get(self, current_user, invoice_id, request_origin='unknown'):
+        try:
+            notes = get_invoice_notes(invoice_id)
+            return {"notes": notes}, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving notes for invoice {invoice_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/invoice/<int:invoice_id>/notes', methods=['POST'])
+class CreateInvoiceNote(Resource):
+    """
+    Create a new note for an invoice
+    """
+    @token_required
+    @track_metrics('create_invoice_note')
+    def post(self, current_user, invoice_id, request_origin='unknown'):
+        try:
+            data = request.get_json()
+            
+            if not data or not data.get('content'):
+                return {"error": "Note content is required"}, 400
+            
+            content = data.get('content').strip()
+            if not content:
+                return {"error": "Note content cannot be empty"}, 400
+            
+            # Determine if user is buyer or seller for this invoice
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            query = f"""
+                SELECT buyer_id, seller_id FROM invoice WHERE id = {invoice_id}
+            """
+            execute_sql(cur, query)
+            result = cur.fetchone()
+            
+            if not result:
+                return {"error": "Invoice not found"}, 404
+            
+            buyer_id, seller_id = result
+            cur.close()
+            conn.close()
+            
+            # Determine user role
+            if str(current_user.id) == str(buyer_id):
+                buyer_seller = 'buyer'
+            elif str(current_user.id) == str(seller_id):
+                buyer_seller = 'seller'
+            else:
+                return {"error": "Access denied - not a party to this invoice"}, 403
+            
+            # Create the note
+            note = create_invoice_note(
+                invoice_id=invoice_id,
+                user_id=current_user.id,
+                content=content,
+                buyer_seller=buyer_seller,
+                metadata=data.get('metadata', {})
+            )
+            
+            return {
+                "success": True,
+                "message": "Note created successfully",
+                "note": note
+            }, 201
+            
+        except Exception as e:
+            logger.error(f"Error creating note for invoice {invoice_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
 # Legacy routes from searchable_routes.py for backward compatibility
 @rest_api.route('/api/searchable-item/<int:searchable_id>', methods=['GET'])
 class GetSearchableItemLegacy(Resource):
@@ -966,14 +1054,11 @@ class DownloadSearchableFile(Resource):
     """
     Download a file from a searchable item after verifying payment
     """
-    @token_optional
-    def get(self, searchable_id, file_id, current_user=None, visitor_id=None, request_origin='unknown'):
+    @token_required
+    def get(self, current_user, searchable_id, file_id, request_origin='unknown'):
         try:
-            # Get buyer ID - use current_user.id if available, otherwise use visitor_id
-            buyer_id = current_user.id if current_user else visitor_id
-            
-            if not buyer_id:
-                return {"error": "Authentication required for file downloads"}, 401
+            # Get buyer ID from authenticated user
+            buyer_id = current_user.id
             
             # Get the searchable item data
             searchable_data = get_searchable(searchable_id)

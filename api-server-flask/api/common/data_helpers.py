@@ -1000,6 +1000,156 @@ def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None)
         logger.error(f"Error creating rating: {str(e)}")
         raise e
 
+def get_invoice_notes(invoice_id):
+    """
+    Get all notes for a specific invoice
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = f"""
+            SELECT n.id, n.invoice_id, n.user_id, n.buyer_seller, n.content, 
+                   n.metadata, n.created_at, u.username
+            FROM invoice_note n
+            LEFT JOIN users u ON n.user_id = u.id
+            WHERE n.invoice_id = {invoice_id}
+            ORDER BY n.created_at ASC
+        """
+        
+        execute_sql(cur, query)
+        notes = []
+        
+        for row in cur.fetchall():
+            note = {
+                'id': row[0],
+                'invoice_id': row[1],
+                'user_id': row[2],
+                'buyer_seller': row[3],
+                'content': row[4],
+                'metadata': row[5],
+                'created_at': row[6].isoformat() if row[6] else None,
+                'username': row[7]
+            }
+            notes.append(note)
+        
+        cur.close()
+        conn.close()
+        
+        return notes
+        
+    except Exception as e:
+        logger.error(f"Error retrieving invoice notes: {str(e)}")
+        return []
+
+def create_invoice_note(invoice_id, user_id, content, buyer_seller, metadata=None):
+    """
+    Create a new note for an invoice
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if metadata is None:
+            metadata = {}
+        
+        query = f"""
+            INSERT INTO invoice_note (invoice_id, user_id, buyer_seller, content, metadata, created_at)
+            VALUES ({invoice_id}, '{user_id}', '{buyer_seller}', %s, {Json(metadata)}, CURRENT_TIMESTAMP)
+            RETURNING id
+        """
+        
+        cur.execute(query, (content,))
+        note_id = cur.fetchone()[0]
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        logger.info(f"Invoice note created with ID: {note_id}")
+        return {
+            'id': note_id,
+            'invoice_id': invoice_id,
+            'user_id': user_id,
+            'buyer_seller': buyer_seller,
+            'content': content,
+            'metadata': metadata
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating invoice note: {str(e)}")
+        raise e
+
+def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
+    """
+    Get invoices for a searchable item filtered by user role
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if user_role == 'seller':
+            # Sellers see all invoices for their searchable items
+            query = f"""
+                SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                       i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                       i.metadata, p.status as payment_status, p.created_at as payment_date,
+                       u.username as buyer_username
+                FROM invoice i
+                LEFT JOIN payment p ON i.id = p.invoice_id
+                LEFT JOIN users u ON i.buyer_id = u.id
+                WHERE i.searchable_id = {searchable_id}
+                AND i.seller_id = '{user_id}'
+                AND p.status = 'complete'
+                ORDER BY i.created_at DESC
+            """
+        else:
+            # Buyers see only their own paid invoices
+            query = f"""
+                SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                       i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                       i.metadata, p.status as payment_status, p.created_at as payment_date,
+                       u.username as seller_username
+                FROM invoice i
+                LEFT JOIN payment p ON i.id = p.invoice_id
+                LEFT JOIN users u ON i.seller_id = u.id
+                WHERE i.searchable_id = {searchable_id}
+                AND i.buyer_id = '{user_id}'
+                AND p.status = 'complete'
+                ORDER BY i.created_at DESC
+            """
+        
+        execute_sql(cur, query)
+        invoices = []
+        
+        for row in cur.fetchall():
+            invoice = {
+                'id': row[0],
+                'buyer_id': row[1],
+                'seller_id': row[2],
+                'searchable_id': row[3],
+                'amount': float(row[4]),
+                'fee': float(row[5]) if row[5] else 0,
+                'currency': row[6],
+                'type': row[7],
+                'external_id': row[8],
+                'created_at': row[9].isoformat() if row[9] else None,
+                'metadata': row[10],
+                'payment_status': row[11],
+                'payment_date': row[12].isoformat() if row[12] else None,
+                'other_party_username': row[13]  # buyer_username for seller, seller_username for buyer
+            }
+            invoices.append(invoice)
+        
+        cur.close()
+        conn.close()
+        
+        return invoices
+        
+    except Exception as e:
+        logger.error(f"Error retrieving invoices for searchable: {str(e)}")
+        return []
+
 __all__ = [
     'get_terminal',
     'get_searchableIds_by_user', 
@@ -1018,5 +1168,8 @@ __all__ = [
     'get_ratings',
     'get_user_paid_files',
     'can_user_rate_invoice',
-    'create_rating'
+    'create_rating',
+    'get_invoice_notes',
+    'create_invoice_note',
+    'get_invoices_for_searchable'
 ] 
