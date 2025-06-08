@@ -25,7 +25,8 @@ from ..common.data_helpers import (
     create_rating,
     get_invoice_notes,
     create_invoice_note,
-    get_invoices_for_searchable
+    get_invoices_for_searchable,
+    get_user_all_invoices
 )
 from ..common.logging_config import setup_logger
 
@@ -961,6 +962,34 @@ class CreateInvoiceNote(Resource):
             
         except Exception as e:
             logger.error(f"Error creating note for invoice {invoice_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/user/invoices', methods=['GET'])
+class UserInvoices(Resource):
+    """
+    Get all invoices for the current user (both as buyer and seller)
+    """
+    @token_required
+    @track_metrics('user_invoices')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            invoices = get_user_all_invoices(current_user.id)
+            
+            # Separate into purchases and sales for easier frontend handling
+            purchases = [inv for inv in invoices if inv['user_role'] == 'buyer']
+            sales = [inv for inv in invoices if inv['user_role'] == 'seller']
+            
+            return {
+                "invoices": invoices,
+                "purchases": purchases,
+                "sales": sales,
+                "total_count": len(invoices),
+                "purchases_count": len(purchases),
+                "sales_count": len(sales)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving invoices for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
 # Legacy routes from searchable_routes.py for backward compatibility

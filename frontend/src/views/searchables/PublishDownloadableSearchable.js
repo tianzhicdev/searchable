@@ -22,7 +22,7 @@ const PublishDownloadableSearchable = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    currency: 'sats' // Default currency selection
+    currency: 'usd' // Default currency selection
   });
   
   // State for downloadable files
@@ -37,9 +37,6 @@ const PublishDownloadableSearchable = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
-  // State variables for USD conversion
-  const [btcPrice, setBtcPrice] = useState(null);
-  const [priceLoading, setPriceLoading] = useState(false);
   
   const account = useSelector((state) => state.account);
   const history = useHistory();
@@ -233,7 +230,7 @@ const PublishDownloadableSearchable = () => {
       setFormData({
         title: '',
         description: '',
-        currency: 'sats'
+        currency: 'usd'
       });
       setImages([]);
       setPreviewImages([]);
@@ -252,35 +249,6 @@ const PublishDownloadableSearchable = () => {
     }
   };
   
-  // Add effect to fetch BTC price when component mounts
-  useEffect(() => {
-    fetchBtcPrice();
-  }, []);
-  
-  // Function to fetch current BTC price
-  const fetchBtcPrice = async () => {
-    setPriceLoading(true);
-    try {
-      const response = await backend.get(
-        'v1/get-btc-price'
-      );
-      if (response.data && response.data.bitcoin && response.data.bitcoin.usd) {
-        setBtcPrice(response.data.bitcoin.usd);
-      }
-    } catch (error) {
-      console.error("Error fetching BTC price:", error);
-    } finally {
-      setPriceLoading(false);
-    }
-  };
-  
-  // Calculate USD price for a given satoshi amount
-  const calculateUsdPrice = (satoshis) => {
-    if (satoshis && btcPrice) {
-      return (parseFloat(satoshis) / 100000000) * btcPrice;
-    }
-    return null;
-  };
   
   // Function to format USD price
   const formatUSD = (price) => {
@@ -351,28 +319,6 @@ const PublishDownloadableSearchable = () => {
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Currency Settings
-                </Typography>
-
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Typography variant="body2">Use Satoshis</Typography>
-                  <Box mx={1}>
-                    <Switch
-                      checked={formData.currency === 'sats'}
-                      onChange={(e) => {
-                        setFormData({
-                          ...formData,
-                          currency: e.target.checked ? 'sats' : 'usdt'
-                        });
-                      }}
-                      name="currency_switch"
-                    />
-                  </Box>
-                  <Typography variant="caption" className={classes.formHelp}>
-                    Toggle to switch between Satoshis and USD
-                  </Typography>
-                </Box>
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>
@@ -469,7 +415,7 @@ const PublishDownloadableSearchable = () => {
                   
                   <Box display="flex" alignItems="center">
                     <TextField
-                      placeholder={formData.currency === 'sats' ? "Price (Sats)" : "Price (USD)"}
+                      placeholder="Price (USD)"
                       type="number"
                       size="small"
                       name="price"
@@ -509,20 +455,8 @@ const PublishDownloadableSearchable = () => {
                         </Box>
                         <Box style={{ flex: 1, textAlign: 'right' }}>
                           <Typography variant="body2">
-                            {formData.currency === 'sats' ? 
-                              `${item.price} sats` : 
-                              `${formatUSD(item.price)}`}
+                            {formatUSD(item.price)}
                           </Typography>
-                          {formData.currency === 'sats' && btcPrice && (
-                            <Typography variant="caption" display="block" style={{ marginTop: 2 }}>
-                              ≈ {formatUSD(calculateUsdPrice(item.price))}
-                            </Typography>
-                          )}
-                          {formData.currency === 'usdt' && btcPrice && (
-                            <Typography variant="caption" display="block" style={{ marginTop: 2 }}>
-                              ≈ {Math.round((item.price * 100000000) / btcPrice)} sats
-                            </Typography>
-                          )}
                         </Box>
                         <IconButton 
                           size="small" 

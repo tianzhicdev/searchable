@@ -1150,6 +1150,85 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
         logger.error(f"Error retrieving invoices for searchable: {str(e)}")
         return []
 
+def get_user_all_invoices(user_id):
+    """
+    Get all invoices for a user (both as buyer and seller)
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get invoices where user is buyer
+        buyer_query = f"""
+            SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                   i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                   i.metadata, p.status as payment_status, p.created_at as payment_date,
+                   u.username as seller_username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
+                   'buyer' as user_role
+            FROM invoice i
+            LEFT JOIN payment p ON i.id = p.invoice_id
+            LEFT JOIN users u ON i.seller_id = u.id
+            LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
+            WHERE i.buyer_id = '{user_id}'
+            AND p.status = 'complete'
+        """
+        
+        # Get invoices where user is seller
+        seller_query = f"""
+            SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                   i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                   i.metadata, p.status as payment_status, p.created_at as payment_date,
+                   u.username as buyer_username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
+                   'seller' as user_role
+            FROM invoice i
+            LEFT JOIN payment p ON i.id = p.invoice_id
+            LEFT JOIN users u ON i.buyer_id = u.id
+            LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
+            WHERE i.seller_id = '{user_id}'
+            AND p.status = 'complete'
+        """
+        
+        # Combine both queries with UNION
+        combined_query = f"""
+            ({buyer_query})
+            UNION ALL
+            ({seller_query})
+            ORDER BY payment_date DESC
+        """
+        
+        execute_sql(cur, combined_query)
+        invoices = []
+        
+        for row in cur.fetchall():
+            invoice = {
+                'id': row[0],
+                'buyer_id': row[1],
+                'seller_id': row[2],
+                'searchable_id': row[3],
+                'amount': float(row[4]),
+                'fee': float(row[5]) if row[5] else 0,
+                'currency': row[6],
+                'type': row[7],
+                'external_id': row[8],
+                'created_at': row[9].isoformat() if row[9] else None,
+                'metadata': row[10],
+                'payment_status': row[11],
+                'payment_date': row[12].isoformat() if row[12] else None,
+                'other_party_username': row[13],
+                'item_title': row[14],
+                'user_role': row[15]  # 'buyer' or 'seller'
+            }
+            invoices.append(invoice)
+        
+        cur.close()
+        conn.close()
+        
+        return invoices
+        
+    except Exception as e:
+        logger.error(f"Error retrieving user invoices: {str(e)}")
+        return []
+
 __all__ = [
     'get_terminal',
     'get_searchableIds_by_user', 
@@ -1171,5 +1250,6 @@ __all__ = [
     'create_rating',
     'get_invoice_notes',
     'create_invoice_note',
-    'get_invoices_for_searchable'
+    'get_invoices_for_searchable',
+    'get_user_all_invoices'
 ] 

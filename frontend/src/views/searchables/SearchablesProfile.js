@@ -41,7 +41,7 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
             {/* Only show price if it's in public payload */}
             {publicData.price && (
               <Typography variant="body2">
-                Price: {publicData.price} Sats
+                Price: ${publicData.price}
               </Typography>
             )}
 

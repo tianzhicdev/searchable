@@ -13,6 +13,7 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
+import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
 const Profile = () => {
@@ -306,13 +307,10 @@ const Profile = () => {
         </Paper>
       </Grid>
       
-      {/* Transaction History Section
+      {/* Invoice History Section */}
       <Grid item xs={12} className={classes.gridItem}>
-          
-            <PaymentList receipts={transactions}  />
-
-      </Grid> */}
-    
+        <UserInvoices />
+      </Grid>
       
       {/* USDT Withdrawal Dialog */}
       <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth>
