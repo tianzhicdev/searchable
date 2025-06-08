@@ -5,6 +5,7 @@ from psycopg2.extras import Json
 from .database import get_db_connection, execute_sql
 from .logging_config import setup_logger
 from .models import PaymentStatus, PaymentType, Currency
+from .payment_helpers import calc_invoice
 
 # Set up the logger
 logger = setup_logger(__name__, 'data_helpers.log')
@@ -188,7 +189,7 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
                 'currency': row[6],
                 'type': row[7],
                 'external_id': row[8],
-                'created_at': row[9],
+                'created_at': row[9].isoformat() if row[9] else None,
                 'metadata': row[10],
                 'status': row[11]  # Status from payment or 'pending'
             }
@@ -244,7 +245,7 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
                 'type': row[5],
                 'external_id': row[6],
                 'status': row[7],
-                'created_at': row[8],
+                'created_at': row[8].isoformat() if row[8] else None,
                 'metadata': row[9]
             }
             results.append(payment)
@@ -298,7 +299,7 @@ def get_withdrawals(user_id=None, status=None, currency=None):
                 'type': row[5],
                 'external_id': row[6],
                 'status': row[7],
-                'created_at': row[8],
+                'created_at': row[8].isoformat() if row[8] else None,
                 'metadata': row[9]
             }
             results.append(withdrawal)
@@ -340,7 +341,7 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
             'currency': row[6],
             'type': row[7],
             'external_id': row[8],
-            'created_at': row[9],
+            'created_at': row[9].isoformat() if row[9] else None,
             'metadata': row[10],
             'status': 'pending'  # New invoices start as pending
         }
@@ -380,7 +381,7 @@ def create_payment(invoice_id, amount, currency, payment_type, external_id=None,
             'type': row[5],
             'external_id': row[6],
             'status': row[7],
-            'created_at': row[8],
+            'created_at': row[8].isoformat() if row[8] else None,
             'metadata': row[9]
         }
         
@@ -429,7 +430,7 @@ def update_payment_status(payment_id, status, metadata=None):
             'type': row[5],
             'external_id': row[6],
             'status': row[7],
-            'created_at': row[8],
+            'created_at': row[8].isoformat() if row[8] else None,
             'metadata': row[9]
         }
         
@@ -468,7 +469,7 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
             'type': row[5],
             'external_id': row[6],
             'status': row[7],
-            'created_at': row[8],
+            'created_at': row[8].isoformat() if row[8] else None,
             'metadata': row[9]
         }
         
@@ -721,6 +722,8 @@ def get_receipts(user_id=None, searchable_id=None):
                 
             except Exception as calc_error:
                 logger.error(f"Error processing receipt for invoice {invoice_id}: {str(calc_error)}")
+                # Re-raise the error to surface it to the caller
+                raise calc_error
         
         cur.close()
         conn.close()
@@ -728,7 +731,8 @@ def get_receipts(user_id=None, searchable_id=None):
         return payments
     except Exception as e:
         logger.error(f"Error retrieving receipts: {str(e)}")
-        return []
+        # Re-raise the error to surface it to the caller
+        raise e
 
 def get_user_paid_files(user_id, searchable_id):
     """
@@ -893,7 +897,7 @@ def get_ratings(invoice_id=None, user_id=None):
                 'rating': float(row[3]),
                 'review': row[4],
                 'metadata': row[5],
-                'created_at': row[6]
+                'created_at': row[6].isoformat() if row[6] else None
             }
             results.append(rating)
         
