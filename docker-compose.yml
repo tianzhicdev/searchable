@@ -99,6 +99,8 @@ services:
       - "3100:3100"
     env_file:
       - ./api-server-flask/.secrets.env
+    networks:
+      - web_network
 
 volumes:
   frontend_build:  # Shared volume between frontend and nginx

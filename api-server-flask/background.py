@@ -113,34 +113,49 @@ def process_pending_withdrawals():
             
             try:
                 if currency.lower() == 'usd':
-                    # Process USD withdrawal (bank transfer)
+                    # Process USDT withdrawal
                     address = metadata.get('address')
                     if not address:
-                        raise Exception("USD withdrawal missing address")
+                        raise Exception("USDT withdrawal missing address")
                     
-                    # For USD withdrawals, mark as complete immediately
-                    # In a real system, this would integrate with a bank transfer API
-                    conn = get_db_connection()
-                    cur = conn.cursor()
+                    USDT_DECIMALS = 6 # todo: real and sepolia can be diff here 
                     
-                    updated_metadata = {
-                        **metadata,
-                        'processed_timestamp': int(time.time()),
-                        'status': PaymentStatus.COMPLETE.value
-                    }
+                    response = requests.post('http://usdt-api/send', json={
+                        'to': address,
+                        'amount': amount * 10 ** USDT_DECIMALS
+                    })
                     
-                    execute_sql(cur, f"""
-                        UPDATE withdrawal 
-                        SET status = '{PaymentStatus.COMPLETE.value}', metadata = '{json.dumps(updated_metadata)}'
-                        WHERE id = '{withdrawal_id}'
-                    """)
+                    logger.info(f"USDT server response: {response.json()}")
                     
-                    conn.commit()
-                    cur.close()
-                    conn.close()
-                    
-                    logger.info(f"Processed USD withdrawal to {address} for amount ${amount}")
-                    
+                    if response.status_code == 200:
+                        # Get transaction ID from response
+                        tx_hash = response.json().get('txHash')
+                        
+                        # Update the withdrawal record with successful status
+                        conn = get_db_connection()
+                        cur = conn.cursor()
+                        
+                        updated_metadata = {
+                            **metadata,
+                            'tx_hash': tx_hash,
+                            'processed_timestamp': int(time.time()),
+                            'status': PaymentStatus.COMPLETE.value
+                        }
+                        
+                        execute_sql(cur, f"""
+                            UPDATE withdrawal 
+                            SET status = '{PaymentStatus.COMPLETE.value}', metadata = '{json.dumps(updated_metadata)}'
+                            WHERE id = '{withdrawal_id}'
+                        """)
+                        
+                        conn.commit()
+                        cur.close()
+                        conn.close()
+                        
+                        logger.info(f"Processed USDT withdrawal to {address} for amount {amount} USDT, tx_hash: {tx_hash}")
+                    else:
+                        raise Exception(f"USDT service error: {response.text}")
+                        
                 else:
                     logger.warning(f"Unsupported currency for withdrawal: {currency}")
                 
