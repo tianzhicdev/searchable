@@ -1167,7 +1167,7 @@ def get_user_all_invoices(user_id):
             SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
-                   u.username as seller_username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
+                   u.username as seller_username, s.searchable_data->'payloads'->'public'->>'title' as item_title,
                    'buyer' as user_role
             FROM invoice i
             LEFT JOIN payment p ON i.id = p.invoice_id
@@ -1182,7 +1182,7 @@ def get_user_all_invoices(user_id):
             SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
-                   u.username as buyer_username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
+                   u.username as buyer_username, s.searchable_data->'payloads'->'public'->>'title' as item_title,
                    'seller' as user_role
             FROM invoice i
             LEFT JOIN payment p ON i.id = p.invoice_id
@@ -1231,7 +1231,7 @@ def get_user_all_invoices(user_id):
         
     except Exception as e:
         logger.error(f"Error retrieving user invoices: {str(e)}")
-        return []
+        raise e
 
 __all__ = [
     'get_terminal',
