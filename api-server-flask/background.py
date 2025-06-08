@@ -129,11 +129,11 @@ def process_pending_withdrawals():
                         'status': PaymentStatus.COMPLETE.value
                     }
                     
-                    execute_sql(cur, """
+                    execute_sql(cur, f"""
                         UPDATE withdrawal 
-                        SET status = %s, metadata = %s
-                        WHERE id = %s
-                    """, (PaymentStatus.COMPLETE.value, json.dumps(updated_metadata), withdrawal_id))
+                        SET status = '{PaymentStatus.COMPLETE.value}', metadata = '{json.dumps(updated_metadata)}'
+                        WHERE id = '{withdrawal_id}'
+                    """)
                     
                     conn.commit()
                     cur.close()
