@@ -18,6 +18,7 @@ import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
+import RatingDisplay from '../../components/Rating/RatingDisplay';
 
 const DownloadableSearchableDetails = () => {
 
@@ -202,13 +203,14 @@ const DownloadableSearchableDetails = () => {
       
       // Fetch terminal (seller) rating if terminal_id is available
       if (SearchableItem.terminal_id) {
-        // Set dummy terminal rating data
-        // const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
-        // setTerminalRating(terminalResponse.data);
-        setTerminalRating({
-          average_rating: 4.5,
-          rating_count: 128
-        });
+        try {
+          const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
+          setTerminalRating(terminalResponse.data);
+        } catch (terminalErr) {
+          console.error("Error fetching terminal ratings:", terminalErr);
+          // Set empty rating data if fetch fails
+          setTerminalRating({ average_rating: 0, total_ratings: 0 });
+        }
       }
     } catch (err) {
       console.error("Error fetching ratings:", err);
@@ -794,19 +796,17 @@ const DownloadableSearchableDetails = () => {
                       </Typography>
                     
                     {/* Display item rating */}
-                    <Box mt={1} display="flex" alignItems="center">
                     {!loadingRatings && searchableRating && (
-                        <Typography variant="body1" style={{ marginRight: 8 }}>
-                         Rating {renderStarRating(searchableRating.average_rating, searchableRating.rating_count)}
-                     </Typography>
-
+                      <Box mt={2} mb={2}>
+                        <RatingDisplay
+                          averageRating={searchableRating.average_rating || 0}
+                          totalRatings={searchableRating.total_ratings || 0}
+                          individualRatings={searchableRating.individual_ratings || []}
+                          showIndividualRatings={true}
+                          maxIndividualRatings={3}
+                        />
+                      </Box>
                     )}
-                    {!loadingRatings && terminalRating && (
-                            <Typography variant="body1" style={{ marginRight: 8 }}>
-                               User Rating: {renderStarRating(terminalRating.average_rating, terminalRating.rating_count)}
-                            </Typography>
-                            
-                        )}</Box>
 
                     
                     <Divider style={{ width: '100%' }} />

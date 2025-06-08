@@ -20,7 +20,9 @@ from ..common.data_helpers import (
     get_terminal,
     get_receipts,
     get_ratings,
-    get_balance_by_currency
+    get_balance_by_currency,
+    can_user_rate_invoice,
+    create_rating
 )
 from ..common.logging_config import setup_logger
 
@@ -728,6 +730,149 @@ class TerminalRating(Resource):
             
         except Exception as e:
             logger.error(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/submit', methods=['POST'])
+class SubmitRating(Resource):
+    """
+    Submit a rating for a purchased item
+    """
+    @token_required
+    @track_metrics('submit_rating')
+    def post(self, current_user, request_origin='unknown'):
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return {"error": "Request data is required"}, 400
+            
+            # Validate required fields
+            invoice_id = data.get('invoice_id')
+            rating_value = data.get('rating')
+            review = data.get('review', '')
+            
+            if not invoice_id:
+                return {"error": "invoice_id is required"}, 400
+            
+            if rating_value is None:
+                return {"error": "rating is required"}, 400
+            
+            # Validate rating value
+            try:
+                rating_value = float(rating_value)
+                if not (0 <= rating_value <= 5):
+                    return {"error": "Rating must be between 0 and 5"}, 400
+            except (ValueError, TypeError):
+                return {"error": "Invalid rating value"}, 400
+            
+            # Create the rating
+            rating_result = create_rating(
+                user_id=current_user.id,
+                invoice_id=invoice_id,
+                rating_value=rating_value,
+                review=review,
+                metadata=data.get('metadata', {})
+            )
+            
+            return {
+                "success": True,
+                "message": "Rating submitted successfully",
+                "rating": rating_result
+            }, 201
+            
+        except ValueError as ve:
+            logger.warning(f"Rating validation error for user {current_user.id}: {str(ve)}")
+            return {"error": str(ve)}, 400
+        except Exception as e:
+            logger.error(f"Error submitting rating for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rating/can-rate/<int:invoice_id>', methods=['GET'])
+class CanRateInvoice(Resource):
+    """
+    Check if the current user can rate a specific invoice
+    """
+    @token_required
+    @track_metrics('can_rate_invoice')
+    def get(self, current_user, invoice_id, request_origin='unknown'):
+        try:
+            can_rate, message = can_user_rate_invoice(current_user.id, invoice_id)
+            
+            return {
+                "can_rate": can_rate,
+                "message": message,
+                "invoice_id": invoice_id
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error checking if user {current_user.id} can rate invoice {invoice_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/user/purchases', methods=['GET'])
+class UserPurchases(Resource):
+    """
+    Get all purchases (completed payments) for the current user that can be rated
+    """
+    @token_required
+    @track_metrics('user_purchases')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get all completed payments for this user with invoice and searchable details
+            query = f"""
+                SELECT 
+                    i.id as invoice_id,
+                    i.searchable_id,
+                    i.amount,
+                    i.currency,
+                    i.created_at as invoice_created,
+                    p.created_at as payment_completed,
+                    s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
+                    s.searchable_data->>'payloads'->>'public'->>'description' as item_description,
+                    EXISTS(
+                        SELECT 1 FROM rating r 
+                        WHERE r.invoice_id = i.id AND r.user_id = '{current_user.id}'
+                    ) as already_rated
+                FROM invoice i
+                JOIN payment p ON i.id = p.invoice_id
+                JOIN searchables s ON i.searchable_id = s.searchable_id
+                WHERE i.buyer_id = '{current_user.id}'
+                AND p.status = 'complete'
+                ORDER BY p.created_at DESC
+            """
+            
+            execute_sql(cur, query)
+            purchases = []
+            
+            for row in cur.fetchall():
+                invoice_id, searchable_id, amount, currency, invoice_created, payment_completed, item_title, item_description, already_rated = row
+                
+                purchase = {
+                    "invoice_id": invoice_id,
+                    "searchable_id": searchable_id,
+                    "amount": float(amount),
+                    "currency": currency,
+                    "invoice_created": invoice_created.isoformat() if invoice_created else None,
+                    "payment_completed": payment_completed.isoformat() if payment_completed else None,
+                    "item_title": item_title,
+                    "item_description": item_description,
+                    "already_rated": bool(already_rated),
+                    "can_rate": not bool(already_rated)
+                }
+                purchases.append(purchase)
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "purchases": purchases,
+                "total_count": len(purchases)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving purchases for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
 # Legacy routes from searchable_routes.py for backward compatibility

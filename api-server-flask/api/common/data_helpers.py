@@ -905,6 +905,101 @@ def get_ratings(invoice_id=None, user_id=None):
         logger.error(f"Error retrieving ratings: {str(e)}")
         return []
 
+def can_user_rate_invoice(user_id, invoice_id):
+    """
+    Check if a user can rate an invoice (must have completed payment and not already rated)
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Check if user has a completed payment for this invoice
+        payment_query = f"""
+            SELECT p.status, i.buyer_id
+            FROM payment p
+            JOIN invoice i ON p.invoice_id = i.id
+            WHERE i.id = {invoice_id}
+            AND i.buyer_id = '{user_id}'
+            AND p.status = 'complete'
+        """
+        
+        execute_sql(cur, payment_query)
+        payment_result = cur.fetchone()
+        
+        if not payment_result:
+            return False, "No completed payment found for this invoice"
+        
+        # Check if user has already rated this invoice
+        rating_query = f"""
+            SELECT id FROM rating
+            WHERE invoice_id = {invoice_id}
+            AND user_id = '{user_id}'
+        """
+        
+        execute_sql(cur, rating_query)
+        rating_result = cur.fetchone()
+        
+        if rating_result:
+            return False, "You have already rated this item"
+        
+        cur.close()
+        conn.close()
+        
+        return True, "User can rate this invoice"
+        
+    except Exception as e:
+        logger.error(f"Error checking if user can rate invoice: {str(e)}")
+        return False, f"Error: {str(e)}"
+
+def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None):
+    """
+    Create a new rating for an invoice
+    """
+    try:
+        # Validate rating value
+        if not (0 <= rating_value <= 5):
+            raise ValueError("Rating must be between 0 and 5")
+        
+        # Check if user can rate this invoice
+        can_rate, message = can_user_rate_invoice(user_id, invoice_id)
+        if not can_rate:
+            raise ValueError(message)
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Set default metadata if none provided
+        if metadata is None:
+            metadata = {}
+        
+        # Insert rating
+        query = f"""
+            INSERT INTO rating (invoice_id, user_id, rating, review, metadata, created_at)
+            VALUES ({invoice_id}, '{user_id}', {rating_value}, %s, {Json(metadata)}, CURRENT_TIMESTAMP)
+            RETURNING id
+        """
+        
+        cur.execute(query, (review,))
+        rating_id = cur.fetchone()[0]
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        logger.info(f"Rating created with ID: {rating_id}")
+        return {
+            'id': rating_id,
+            'invoice_id': invoice_id,
+            'user_id': user_id,
+            'rating': rating_value,
+            'review': review,
+            'metadata': metadata
+        }
+        
+    except Exception as e:
+        logger.error(f"Error creating rating: {str(e)}")
+        raise e
+
 __all__ = [
     'get_terminal',
     'get_searchableIds_by_user', 
@@ -921,5 +1016,7 @@ __all__ = [
     'get_receipts',
     'get_balance_by_currency',
     'get_ratings',
-    'get_user_paid_files'
+    'get_user_paid_files',
+    'can_user_rate_invoice',
+    'create_rating'
 ] 
