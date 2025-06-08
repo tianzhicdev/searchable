@@ -11,7 +11,7 @@ import {
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import axios from 'axios';
-import PaymentList from '../payments/PaymentList';
+// import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
@@ -306,12 +306,12 @@ const Profile = () => {
         </Paper>
       </Grid>
       
-      {/* Transaction History Section */}
+      {/* Transaction History Section
       <Grid item xs={12} className={classes.gridItem}>
           
             <PaymentList receipts={transactions}  />
 
-      </Grid>
+      </Grid> */}
     
       
       {/* USDT Withdrawal Dialog */}
