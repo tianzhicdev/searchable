@@ -7,6 +7,7 @@ from . import searchable
 from . import files
 from . import withdrawals
 from . import metrics
+from . import profiles
 
 # This ensures all routes are registered when the package is imported
-__all__ = ['auth', 'payment', 'searchable', 'files', 'withdrawals', 'metrics'] 
+__all__ = ['auth', 'payment', 'searchable', 'files', 'withdrawals', 'metrics', 'profiles'] 

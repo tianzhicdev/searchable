@@ -1262,6 +1262,224 @@ def get_user_all_invoices(user_id):
         logger.error(f"Error retrieving user invoices: {str(e)}")
         raise e
 
+def get_user_profile(user_id):
+    """
+    Retrieve a user profile by user_id
+    
+    Args:
+        user_id: The user ID to retrieve the profile for
+        
+    Returns:
+        dict: The user profile data or None if not found
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, """
+            SELECT id, user_id, username, profile_image_url, introduction, 
+                   metadata, created_at, updated_at
+            FROM user_profile
+            WHERE user_id = %s
+        """, params=(user_id,))
+        
+        result = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if not result:
+            return None
+            
+        return {
+            'id': result[0],
+            'user_id': result[1],
+            'username': result[2],
+            'profile_image_url': result[3],
+            'introduction': result[4],
+            'metadata': result[5],
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving user profile for user_id {user_id}: {str(e)}")
+        return None
+
+def create_user_profile(user_id, username, profile_image_url=None, introduction=None, metadata=None):
+    """
+    Create a new user profile
+    
+    Args:
+        user_id: The user ID
+        username: The username
+        profile_image_url: Optional profile image URL
+        introduction: Optional user introduction
+        metadata: Optional additional metadata
+        
+    Returns:
+        dict: The created user profile data or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        metadata = metadata or {}
+        
+        execute_sql(cur, """
+            INSERT INTO user_profile (user_id, username, profile_image_url, introduction, metadata)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id, user_id, username, profile_image_url, introduction, 
+                      metadata, created_at, updated_at
+        """, params=(user_id, username, profile_image_url, introduction, Json(metadata)), 
+        commit=True, connection=conn)
+        
+        result = cur.fetchone()
+        
+        profile = {
+            'id': result[0],
+            'user_id': result[1],
+            'username': result[2],
+            'profile_image_url': result[3],
+            'introduction': result[4],
+            'metadata': result[5],
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
+        }
+        
+        cur.close()
+        conn.close()
+        return profile
+        
+    except Exception as e:
+        logger.error(f"Error creating user profile: {str(e)}")
+        return None
+
+def update_user_profile(user_id, username=None, profile_image_url=None, introduction=None, metadata=None):
+    """
+    Update an existing user profile
+    
+    Args:
+        user_id: The user ID
+        username: Optional new username
+        profile_image_url: Optional new profile image URL
+        introduction: Optional new introduction
+        metadata: Optional new metadata
+        
+    Returns:
+        dict: The updated user profile data or None if failed
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Build dynamic update query based on provided fields
+        update_fields = []
+        params = []
+        
+        if username is not None:
+            update_fields.append("username = %s")
+            params.append(username)
+            
+        if profile_image_url is not None:
+            update_fields.append("profile_image_url = %s")
+            params.append(profile_image_url)
+            
+        if introduction is not None:
+            update_fields.append("introduction = %s")
+            params.append(introduction)
+            
+        if metadata is not None:
+            update_fields.append("metadata = %s")
+            params.append(Json(metadata))
+        
+        # Add user_id as the last parameter for WHERE clause
+        params.append(user_id)
+        
+        if not update_fields:
+            # No fields to update
+            cur.close()
+            conn.close()
+            return get_user_profile(user_id)
+        
+        query = f"""
+            UPDATE user_profile 
+            SET {', '.join(update_fields)}
+            WHERE user_id = %s
+            RETURNING id, user_id, username, profile_image_url, introduction, 
+                      metadata, created_at, updated_at
+        """
+        
+        execute_sql(cur, query, params=params, commit=True, connection=conn)
+        
+        result = cur.fetchone()
+        
+        if not result:
+            cur.close()
+            conn.close()
+            return None
+            
+        profile = {
+            'id': result[0],
+            'user_id': result[1],
+            'username': result[2],
+            'profile_image_url': result[3],
+            'introduction': result[4],
+            'metadata': result[5],
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
+        }
+        
+        cur.close()
+        conn.close()
+        return profile
+        
+    except Exception as e:
+        logger.error(f"Error updating user profile: {str(e)}")
+        return None
+
+def get_user_profile_by_username(username):
+    """
+    Retrieve a user profile by username
+    
+    Args:
+        username: The username to search for
+        
+    Returns:
+        dict: The user profile data or None if not found
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, """
+            SELECT id, user_id, username, profile_image_url, introduction, 
+                   metadata, created_at, updated_at
+            FROM user_profile
+            WHERE username = %s
+        """, params=(username,))
+        
+        result = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        if not result:
+            return None
+            
+        return {
+            'id': result[0],
+            'user_id': result[1],
+            'username': result[2],
+            'profile_image_url': result[3],
+            'introduction': result[4],
+            'metadata': result[5],
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving user profile by username {username}: {str(e)}")
+        return None
+
 __all__ = [
     'get_terminal',
     'get_searchableIds_by_user', 
@@ -1284,5 +1502,9 @@ __all__ = [
     'get_invoice_notes',
     'create_invoice_note',
     'get_invoices_for_searchable',
-    'get_user_all_invoices'
+    'get_user_all_invoices',
+    'get_user_profile',
+    'create_user_profile',
+    'update_user_profile',
+    'get_user_profile_by_username'
 ] 

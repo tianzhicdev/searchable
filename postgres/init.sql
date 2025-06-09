@@ -200,3 +200,41 @@ CREATE INDEX IF NOT EXISTS idx_rating_rating ON rating(rating);
 -- Index on created_at for faster date-based queries
 CREATE INDEX IF NOT EXISTS idx_rating_created_at ON rating(created_at);
 
+-- User profiles table for public profile information
+CREATE TABLE IF NOT EXISTS user_profile (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE, -- References users.id
+    username TEXT NOT NULL, -- Duplicated from users table for faster access
+    profile_image_url TEXT, -- URL to profile image
+    introduction TEXT, -- User's bio/introduction
+    metadata JSONB NOT NULL DEFAULT '{}', -- Additional profile data
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index on user_id for faster lookups
+CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile(user_id);
+
+-- Index on username for faster lookups
+CREATE INDEX IF NOT EXISTS idx_user_profile_username ON user_profile(username);
+
+-- Index on created_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_user_profile_created_at ON user_profile(created_at);
+
+-- Index on updated_at for faster date-based queries
+CREATE INDEX IF NOT EXISTS idx_user_profile_updated_at ON user_profile(updated_at);
+
+-- Function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger to automatically update updated_at on user_profile changes
+CREATE TRIGGER update_user_profile_updated_at 
+    BEFORE UPDATE ON user_profile 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
