@@ -22,6 +22,24 @@
   background: #000000 !important; // PURE BLACK BACKGROUND EVERYWHERE
 }
 
+// Ensure text is not black on black background
+* {
+  color: inherit !important;
+}
+
+// Force visible text colors
+input, textarea, span, div, p {
+  color: #fbe9e7 !important; // Light orange for readability
+}
+
+// Profile section specific fixes
+.MuiTypography-h4,
+.MuiTypography-subtitle2,
+.MuiTypography-subtitle1,
+.MuiTypography-body2 {
+  color: #fbe9e7 !important; // Light orange for profile text
+}
+
 // Override body and root to ensure pure black
 body, #root, html {
   background: #000000 !important;
@@ -68,11 +86,9 @@ body, #root, html {
 // Icons - Light Blue ONLY (no border on icons themselves)
 .MuiSvgIcon-root {
   color: #3899ef !important; // Light Blue for icons
-  fill: none !important; // NO FILL
-  stroke: #3899ef !important;
-  stroke-width: 1px !important;
+  fill: #3899ef !important; // Fill with light blue so they're visible
   border: none !important; // NO BORDER ON ICONS THEMSELVES
-  background: #000000 !important;
+  background: transparent !important; // Icons don't need background
 }
 
 // Button specific overrides
