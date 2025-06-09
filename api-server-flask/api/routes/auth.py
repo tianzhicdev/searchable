@@ -171,7 +171,7 @@ class UserEvent(Resource):
             cur = conn.cursor()
             execute_sql(cur,
                 "INSERT INTO user_event (visitor_id, data) VALUES (%s, %s) RETURNING id;",
-                (visitor_id, Json(data))
+                params=(visitor_id, Json(data))
             )
             event_id = cur.fetchone()[0]
             conn.commit()

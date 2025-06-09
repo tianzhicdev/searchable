@@ -4,20 +4,20 @@ CREATE TABLE IF NOT EXISTS searchables (
     searchable_data JSONB NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS searchable_geo (
-    searchable_id INTEGER NOT NULL,
-    latitude FLOAT NOT NULL,
-    longitude FLOAT NOT NULL,
-    geohash TEXT NOT NULL,
-    PRIMARY KEY (searchable_id),
-    FOREIGN KEY (searchable_id) REFERENCES searchables(searchable_id) ON DELETE CASCADE
-);
+-- CREATE TABLE IF NOT EXISTS searchable_geo (
+--     searchable_id INTEGER NOT NULL,
+--     latitude FLOAT NOT NULL,
+--     longitude FLOAT NOT NULL,
+--     geohash TEXT NOT NULL,
+--     PRIMARY KEY (searchable_id),
+--     FOREIGN KEY (searchable_id) REFERENCES searchables(searchable_id) ON DELETE CASCADE
+-- );
 
--- Index for geohash to improve search performance
-CREATE INDEX IF NOT EXISTS idx_searchable_geo_geohash ON searchable_geo(geohash);
+-- -- Index for geohash to improve search performance
+-- CREATE INDEX IF NOT EXISTS idx_searchable_geo_geohash ON searchable_geo(geohash);
 
--- Index for coordinates to support direct lat/long queries
-CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
+-- -- Index for coordinates to support direct lat/long queries
+-- CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
 
 CREATE TABLE IF NOT EXISTS kv (
     type TEXT NOT NULL,

@@ -3,7 +3,7 @@ import {
   Typography, Paper, Box, Divider
 } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
-const SearchablesProfile = ({ item, onClick, formatDistance }) => {
+const SearchablesProfile = ({ item, onClick }) => {
   const classes = useComponentStyles();
 
   // Extract data from the new structure
@@ -45,11 +45,6 @@ const SearchablesProfile = ({ item, onClick, formatDistance }) => {
               </Typography>
             )}
 
-            {item.distance && (
-              <Typography variant="body2">
-                Distance: {formatDistance(item.distance)}
-              </Typography>
-            )}
             
             {publicData.category && (
               <Typography variant="body2">
