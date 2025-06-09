@@ -268,10 +268,10 @@ const Profile = () => {
       </Grid>
       
       {/* Personal Information Section */}
-      <Grid item xs={12} className={classes.gridItem}>
-        <Paper elevation={3} className={classes.paper}>
+      <Grid item xs={12} style={{ padding: '4px' }}>
+        <Paper elevation={3} style={{ padding: '8px', margin: '4px', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px' }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" style={{ padding: 0, margin: 0 }}>
-            <Typography variant="h6" className={classes.sectionTitle}>
+            <Typography variant="h6" className={classes.staticText}>
               Personal Information
             </Typography>
           </Box>
@@ -295,18 +295,18 @@ const Profile = () => {
           )}
 
           <Box >
-            <Typography variant="body2" component="span" className={classes.infoLabel}>
+            <Typography variant="body2" component="span" className={classes.staticText}>
               Username:
             </Typography>
-            <Typography variant="body1" component="span" className={classes.infoValue}>
+            <Typography variant="body1" component="span" className={classes.userText}>
               {account.user.username}
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body2" component="span" className={classes.infoLabel}>
+            <Typography variant="body2" component="span" className={classes.staticText}>
               Email:
             </Typography>
-            <Typography variant="body1" component="span" className={classes.infoValue}>
+            <Typography variant="body1" component="span" className={classes.userText}>
               {account.user.email}
             </Typography>
           </Box>
@@ -316,18 +316,18 @@ const Profile = () => {
           ) : profileData && (
             <>
               <Box>
-                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                <Typography variant="body2" component="span" className={classes.staticText}>
                   Address:
                 </Typography>
-                <Typography variant="body1" component="span" className={classes.infoValue}>
+                <Typography variant="body1" component="span" className={classes.userText}>
                   {profileData.address || 'Not provided'}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                <Typography variant="body2" component="span" className={classes.staticText}>
                   Telephone:
                 </Typography>
-                <Typography variant="body1" component="span" className={classes.infoValue}>
+                <Typography variant="body1" component="span" className={classes.userText}>
                   {profileData.tel || 'Not provided'}
                 </Typography>
               </Box>
@@ -340,11 +340,11 @@ const Profile = () => {
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
               <Box>
-                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                <Typography variant="body2" component="span" className={classes.staticText}>
                   USD Balance:
                 </Typography>
                 
-                <Typography variant="body1" component="span" className={classes.infoValue}>
+                <Typography variant="body1" component="span" className={classes.userText}>
                   ${balance.usd} USD
                 </Typography>
               </Box>
@@ -354,7 +354,7 @@ const Profile = () => {
       </Grid>
       
       {/* Invoice History Section */}
-      <Grid item xs={12} className={classes.gridItem}>
+      <Grid item xs={12} style={{ padding: '4px' }}>
         <UserInvoices />
       </Grid>
       
