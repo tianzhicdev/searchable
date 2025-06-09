@@ -16,24 +16,30 @@
   font-style: normal;
 }
 
-// GLOBAL FONT ENFORCEMENT - FreePixel everywhere
+// GLOBAL FONT AND BACKGROUND ENFORCEMENT - FreePixel everywhere with pure black background
 * {
   font-family: 'FreePixel', 'Courier New', monospace !important;
-  background: transparent !important; // NO FILLS ANYWHERE
+  background: #000000 !important; // PURE BLACK BACKGROUND EVERYWHERE
+}
+
+// Override body and root to ensure pure black
+body, #root, html {
+  background: #000000 !important;
+  background-color: #000000 !important;
 }
 
 // GLOBAL COLOR ENFORCEMENT
 // Overril-UI colors to use only our 3 colors
 
-// Remove all background colors
+// Set all component backgrounds to pure black
 .MuiPaper-root,
 .MuiCard-root,
 .MuiDialog-paper,
 .MuiMenu-paper,
 .MuiPopover-paper,
 .MuiDrawer-paper {
-  background-color: transparent !important;
-  background: transparent !important;
+  background-color: #000000 !important;
+  background: #000000 !important;
 }
 
 // User provided data/text - Light Orange ONLY
@@ -43,7 +49,7 @@
 .MuiOutlinedInput-input {
   color: #fbe9e7 !important; // Light Orange for user content
   font-family: 'FreePixel', 'Courier New', monospace !important;
-  background: transparent !important;
+  background: #000000 !important;
 }
 
 // System/static text - Dark Orange ONLY
@@ -56,23 +62,23 @@
 .MuiChip-label {
   color: #d84315 !important; // Dark Orange for system text
   font-family: 'FreePixel', 'Courier New', monospace !important;
-  background: transparent !important;
+  background: #000000 !important;
 }
 
-// Icons - Light Blue with Dark Orange Border ONLY
+// Icons - Light Blue ONLY (no border on icons themselves)
 .MuiSvgIcon-root {
   color: #3899ef !important; // Light Blue for icons
   fill: none !important; // NO FILL
   stroke: #3899ef !important;
   stroke-width: 1px !important;
-  border: 1px solid #d84315 !important; // Dark Orange border
-  background: transparent !important;
+  border: none !important; // NO BORDER ON ICONS THEMSELVES
+  background: #000000 !important;
 }
 
 // Button specific overrides
 .MuiButton-root {
   color: #d84315 !important; // Dark Orange text
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   font-family: 'FreePixel', 'Courier New', monospace !important;
   padding: 4px 8px !important;
@@ -80,7 +86,7 @@
   border-radius: 0px !important;
   
   &:hover {
-    background: transparent !important;
+    background: #000000 !important;
     border: 1px solid #d84315 !important;
   }
   
@@ -88,7 +94,7 @@
     color: #3899ef !important;
     fill: none !important;
     stroke: #3899ef !important;
-    border: 1px solid #d84315 !important;
+    border: none !important;
   }
 }
 
@@ -97,7 +103,7 @@
 .MuiOutlinedInput-root,
 .MuiFormControl-root {
   font-family: 'FreePixel', 'Courier New', monospace !important;
-  background: transparent !important;
+  background: #000000 !important;
   
   .MuiOutlinedInput-notchedOutline {
     border: 1px solid #d84315 !important;
@@ -116,7 +122,7 @@
 // Cards and Papers
 .MuiCard-root,
 .MuiPaper-root {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   border-radius: 0px !important;
   padding: 4px !important;
@@ -125,7 +131,7 @@
 
 // Chips
 .MuiChip-root {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   border-radius: 0px !important;
   font-family: 'FreePixel', 'Courier New', monospace !important;
@@ -142,56 +148,56 @@
 
 // Tables
 .MuiTable-root {
-  background: transparent !important;
+  background: #000000 !important;
   
   .MuiTableCell-root {
     border: 1px solid #d84315 !important;
-    background: transparent !important;
+    background: #000000 !important;
     font-family: 'FreePixel', 'Courier New', monospace !important;
   }
   
   .MuiTableCell-head {
     color: #d84315 !important; // System text
-    background: transparent !important;
+    background: #000000 !important;
   }
   
   .MuiTableCell-body {
     color: #fbe9e7 !important; // User content
-    background: transparent !important;
+    background: #000000 !important;
   }
 }
 
 // Dialogs
 .MuiDialog-paper {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   border-radius: 0px !important;
   
   .MuiDialogTitle-root {
     color: #d84315 !important; // System text
     font-family: 'FreePixel', 'Courier New', monospace !important;
-    background: transparent !important;
+    background: #000000 !important;
     padding: 8px !important;
   }
   
   .MuiDialogContent-root {
-    background: transparent !important;
+    background: #000000 !important;
     padding: 8px !important;
   }
   
   .MuiDialogActions-root {
-    background: transparent !important;
+    background: #000000 !important;
     padding: 8px !important;
   }
 }
 
 // Lists
 .MuiList-root {
-  background: transparent !important;
+  background: #000000 !important;
   padding: 4px !important;
   
   .MuiListItem-root {
-    background: transparent !important;
+    background: #000000 !important;
     padding: 2px 4px !important;
     
     .MuiListItemText-primary {
@@ -206,17 +212,17 @@
 
 // Menus
 .MuiMenu-paper {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   border-radius: 0px !important;
   
   .MuiMenuItem-root {
     color: #d84315 !important;
-    background: transparent !important;
+    background: #000000 !important;
     font-family: 'FreePixel', 'Courier New', monospace !important;
     
     &:hover {
-      background: transparent !important;
+      background: #000000 !important;
       color: #d84315 !important;
     }
   }
@@ -224,7 +230,7 @@
 
 // Avatars
 .MuiAvatar-root {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   color: #d84315 !important;
   width: 24px !important;
@@ -239,7 +245,7 @@
 }
 
 .MuiLinearProgress-root {
-  background: transparent !important;
+  background: #000000 !important;
   
   .MuiLinearProgress-bar {
     background: #3899ef !important;
@@ -249,7 +255,7 @@
 // Switches and checkboxes
 .MuiSwitch-root {
   .MuiSwitch-track {
-    background: transparent !important;
+    background: #000000 !important;
     border: 1px solid #d84315 !important;
   }
   
@@ -279,7 +285,7 @@
 // Snackbars and Alerts
 .MuiSnackbar-root,
 .MuiAlert-root {
-  background: transparent !important;
+  background: #000000 !important;
   border: 1px solid #d84315 !important;
   border-radius: 0px !important;
   font-family: 'FreePixel', 'Courier New', monospace !important;
@@ -304,7 +310,7 @@
 .MuiBox-root {
   padding: 2px !important;
   margin: 2px !important;
-  background: transparent !important;
+  background: #000000 !important;
 }
 
 // Ensure proper alignment

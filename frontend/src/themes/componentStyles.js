@@ -83,7 +83,9 @@ const useComponentStyles = makeStyles((theme) => ({
         padding: '8px',
         margin: '4px',
         fontFamily: '"FreePixel", "Courier New", monospace',
-        backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000'
+        backgroundColor: '#000000',
+        border: '1px solid #d84315',
+        borderRadius: '0px'
     },
     
     gridItem: {
@@ -271,6 +273,52 @@ const useComponentStyles = makeStyles((theme) => ({
             padding: '2px !important',
             margin: '2px !important'
         }
+    },
+    
+    // ===== CONSISTENT UI COMPONENTS =====
+    // Standard section header
+    sectionHeader: {
+        color: '#d84315', // Dark Orange for system text
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontSize: '1rem',
+        marginBottom: '8px',
+        padding: '4px 0',
+        textAlign: 'left',
+        display: 'block',
+        width: '100%'
+    },
+    
+    // File listing container with proper alignment
+    fileListContainer: {
+        padding: '4px',
+        margin: '0',
+        width: '100%',
+        backgroundColor: '#000000',
+        border: '1px solid #d84315',
+        borderRadius: '0px'
+    },
+    
+    // Individual file item with consistent styling
+    fileItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '4px',
+        margin: '2px 0',
+        backgroundColor: '#000000',
+        border: '1px solid #d84315',
+        borderRadius: '0px',
+        width: '100%'
+    },
+    
+    // Consistent component wrapper
+    componentWrapper: {
+        backgroundColor: '#000000',
+        border: '1px solid #d84315',
+        borderRadius: '0px',
+        padding: '4px',
+        margin: '2px',
+        fontFamily: '"FreePixel", "Courier New", monospace'
     }
 }));
 
