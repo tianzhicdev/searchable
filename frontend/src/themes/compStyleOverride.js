@@ -8,7 +8,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: `
               @font-face {
                 font-family: 'FreePixel';
-                src: url('/fonts/FreePixel.ttf') format('truetype');
+                src: url('../../../public/fonts/FreePixel.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
                 font-display: swap;
