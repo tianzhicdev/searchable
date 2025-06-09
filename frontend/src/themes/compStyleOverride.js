@@ -7,8 +7,8 @@ export function componentStyleOverrides(theme) {
         MuiCssBaseline: {
             styleOverrides: `
               @font-face {
-                font-family: 'EightBitDragon';
-                src: url('/fonts/EightBitDragon-anqx.ttf') format('truetype');
+                font-family: 'FreePixel';
+                src: url('/fonts/FreePixel.ttf') format('truetype');
                 font-weight: normal;
                 font-style: normal;
                 font-display: swap;
@@ -95,7 +95,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     borderRadius: '0px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.colors.orangeMain,
                     border: `1px solid ${theme.colors.orangeMain}`,
                 }
@@ -107,7 +107,7 @@ export function componentStyleOverrides(theme) {
             },
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     border: `1px solid ${theme.colors.orangeMain}`,
                     borderRadius: '0px',
                     padding: '8px',
@@ -123,11 +123,11 @@ export function componentStyleOverrides(theme) {
                 root: {
                     color: theme.colors.textDark,
                     padding: '24px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 title: {
                     fontSize: '1.125rem',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -135,7 +135,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     padding: '24px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -143,7 +143,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     padding: '24px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -153,7 +153,7 @@ export function componentStyleOverrides(theme) {
                     color: theme.darkTextPrimary,
                     paddingTop: '10px',
                     paddingBottom: '10px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     '&.Mui-selected': {
                         color: theme.menuSelected,
                         backgroundColor: theme.menuSelectedBack,
@@ -179,7 +179,7 @@ export function componentStyleOverrides(theme) {
                 root: {
                     color: theme.darkTextPrimary,
                     minWidth: '36px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -187,7 +187,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 primary: {
                     color: theme.textDark,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -196,11 +196,11 @@ export function componentStyleOverrides(theme) {
                 input: {
                     color: theme.textDark,
                     backgroundColor: theme.colors.primaryDark,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     '&::placeholder': {
                         color: theme.darkTextSecondary,
                         fontSize: '1rem',
-                        fontFamily: '"EightBitDragon", "Courier New", monospace'
+                        fontFamily: '"FreePixel", "Courier New", monospace'
                     }
                 }
             }
@@ -210,7 +210,7 @@ export function componentStyleOverrides(theme) {
                 root: {
                     background: theme.colors.primaryDark,
                     borderRadius: '0px',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     border: `1px solid ${theme.colors.orangeMain}`,
                 },
                 input: {
@@ -229,7 +229,7 @@ export function componentStyleOverrides(theme) {
                     '& .MuiOutlinedInput-input': {
                         backgroundColor: theme.colors.primaryDark,
                         borderRadius: 0,
-                        fontFamily: '"EightBitDragon", "Courier New", monospace'
+                        fontFamily: '"FreePixel", "Courier New", monospace'
                     },
                     '& .MuiInputBase-root': {
                         borderRadius: 0
@@ -250,7 +250,7 @@ export function componentStyleOverrides(theme) {
         MuiSlider: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     '&.Mui-disabled': {
                         color: theme.colors.grey300
                     }
@@ -261,7 +261,7 @@ export function componentStyleOverrides(theme) {
                 },
                 valueLabel: {
                     color: theme.colors.primaryLight,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -270,14 +270,14 @@ export function componentStyleOverrides(theme) {
                 root: {
                     color: theme.colors.primaryDark,
                     background: theme.colors.primary200,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
         MuiChip: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     '&.MuiChip-deletable .MuiChip-deleteIcon': {
                         color: 'inherit'
                     }
@@ -289,36 +289,36 @@ export function componentStyleOverrides(theme) {
                 tooltip: {
                     color: theme.paper,
                     background: theme.colors.grey700,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
         MuiTypography: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 caption: {
                     color: theme.colors.lightBlue,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
         MuiTable: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
         MuiTableCell: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.textDark
                 },
                 head: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.colors.lightBlue
                 }
             }
@@ -326,14 +326,14 @@ export function componentStyleOverrides(theme) {
         MuiTableHead: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
         MuiTablePagination: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.textDark
                 },
                 selectIcon: {
@@ -346,14 +346,14 @@ export function componentStyleOverrides(theme) {
                     color: theme.textDark
                 },
                 menuItem: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 displayedRows: {
                     margin: 0,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 selectLabel:{
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 toolbar: {
                     '& > p:nth-of-type(1)': {
@@ -375,7 +375,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     borderColor: theme.colors.lightBlue,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
         },
@@ -393,7 +393,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontSize: '1rem',
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.orangeMain,
                     '&:hover': {
                         backgroundColor: theme.menuSelectedBack,
@@ -420,7 +420,7 @@ export function componentStyleOverrides(theme) {
         MuiTablePagination: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     color: theme.textDark
                 },
                 selectIcon: {
@@ -433,14 +433,14 @@ export function componentStyleOverrides(theme) {
                     color: theme.textDark
                 },
                 menuItem: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 displayedRows: {
                     margin: 0,
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 selectLabel:{
-                    fontFamily: '"EightBitDragon", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 toolbar: {
                     '& > p:nth-of-type(1)': {
@@ -452,7 +452,7 @@ export function componentStyleOverrides(theme) {
         MuiAlert: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"EightBitDragon", "Courier New", monospace',
+                    fontFamily: '"FreePixel", "Courier New", monospace',
                     borderRadius: '0px',
                     border: `1px solid ${theme.colors.orangeMain}`,
                     position: 'fixed',
