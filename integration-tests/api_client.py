@@ -101,6 +101,73 @@ class SearchableAPIClient:
         response.raise_for_status()
         return response.json()
     
+    def create_invoice(self, searchable_id: int, selections: list, invoice_type: str = "stripe") -> Dict[str, Any]:
+        """Create an invoice for purchasing a searchable item"""
+        url = f"{self.base_url}/v1/create-invoice"
+        data = {
+            "searchable_id": searchable_id,
+            "selections": selections,
+            "invoice_type": invoice_type,
+            "success_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel"
+        }
+        
+        # Add required headers for optional auth
+        headers = {'use-jwt': 'true'}
+        response = self.session.post(url, json=data, headers=headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def check_payment_status(self, session_id: str) -> Dict[str, Any]:
+        """Check the status of a payment"""
+        url = f"{self.base_url}/v1/check-payment/{session_id}"
+        
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def refresh_payment(self, session_id: str, invoice_type: str = "stripe") -> Dict[str, Any]:
+        """Refresh payment status"""
+        url = f"{self.base_url}/v1/refresh-payment"
+        data = {
+            "session_id": session_id,
+            "invoice_type": invoice_type
+        }
+        
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_user_paid_files(self, searchable_id: int) -> Dict[str, Any]:
+        """Get files that the user has paid for"""
+        url = f"{self.base_url}/v1/user-paid-files/{searchable_id}"
+        
+        # Add required headers for optional auth
+        headers = {'use-jwt': 'true'}
+        response = self.session.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def download_file(self, searchable_id: int, file_id: int) -> requests.Response:
+        """Download a file from a searchable item"""
+        url = f"{self.base_url}/v1/download-file/{searchable_id}/{file_id}"
+        
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT, stream=True)
+        return response
+    
+    def complete_payment_directly(self, session_id: str, test_uuid: str = None) -> Dict[str, Any]:
+        """Directly mark a payment as complete via database update (test helper)"""
+        # This simulates what background.py would do
+        url = f"{self.base_url}/v1/test/complete-payment"
+        data = {
+            "session_id": session_id,
+            "test_uuid": test_uuid
+        }
+        
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
     def logout(self):
         """Clear authentication token"""
         if self.token:
