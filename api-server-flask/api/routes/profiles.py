@@ -33,46 +33,53 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def save_profile_image(image_data, user_id):
+def validate_and_process_profile_image(image_data):
     """
-    Save profile image from base64 data
+    Validate and process profile image from base64 data
     
     Args:
-        image_data: Base64 encoded image data
-        user_id: User ID for unique filename
+        image_data: Base64 encoded image data (data URL format)
         
     Returns:
-        str: URL/path to saved image or None if failed
+        str: Processed base64 image data or None if validation failed
     """
     try:
-        # Ensure upload directory exists
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        # Handle data URL format (data:image/png;base64,...)
+        if image_data.startswith('data:'):
+            # Extract mime type and base64 data
+            header, base64_data = image_data.split(',', 1)
+            
+            # Validate mime type
+            if 'image/' not in header:
+                raise ValueError("Invalid image format")
+            
+            # Extract file type
+            mime_type = header.split(';')[0].split(':')[1]
+            file_extension = mime_type.split('/')[1].lower()
+            
+            # Validate file extension
+            if file_extension not in ALLOWED_EXTENSIONS:
+                raise ValueError(f"Unsupported image format: {file_extension}")
+        else:
+            # Assume it's just base64 data without data URL prefix
+            base64_data = image_data
         
-        # Decode base64 data
-        if ',' in image_data:
-            # Remove data URL prefix if present
-            image_data = image_data.split(',')[1]
-        
-        image_binary = base64.b64decode(image_data)
+        # Decode and validate size
+        image_binary = base64.b64decode(base64_data)
         
         # Check file size
         if len(image_binary) > MAX_FILE_SIZE:
-            raise ValueError("Image file too large")
+            raise ValueError("Image file too large (max 5MB)")
         
-        # Generate unique filename
-        file_extension = 'png'  # Default to PNG
-        filename = f"profile_{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        
-        # Save file
-        with open(filepath, 'wb') as f:
-            f.write(image_binary)
-        
-        # Return relative URL (assuming files are served from /static/profiles/)
-        return f"/static/profiles/{filename}"
+        # Return the complete data URL for database storage
+        if image_data.startswith('data:'):
+            return image_data
+        else:
+            # Add data URL prefix if not present (assume PNG)
+            return f"data:image/png;base64,{base64_data}"
         
     except Exception as e:
-        logger.error(f"Error saving profile image: {str(e)}")
+        logger.error(f"Error validating profile image: {str(e)}")
         return None
 
 @rest_api.route('/api/v1/profile/<int:user_id>', methods=['GET'])
@@ -232,9 +239,9 @@ class UpdateMyProfile(Resource):
             # Handle profile image upload
             profile_image_url = None
             if profile_image_data:
-                profile_image_url = save_profile_image(profile_image_data, user_id)
+                profile_image_url = validate_and_process_profile_image(profile_image_data)
                 if not profile_image_url:
-                    return {"error": "Failed to save profile image"}, 400
+                    return {"error": "Invalid profile image or file too large"}, 400
             
             # Check if profile exists
             existing_profile = get_user_profile(user_id)
@@ -294,9 +301,9 @@ class CreateMyProfile(Resource):
             # Handle profile image upload
             profile_image_url = None
             if profile_image_data:
-                profile_image_url = save_profile_image(profile_image_data, user_id)
+                profile_image_url = validate_and_process_profile_image(profile_image_data)
                 if not profile_image_url:
-                    return {"error": "Failed to save profile image"}, 400
+                    return {"error": "Invalid profile image or file too large"}, 400
             
             # Create new profile
             profile = create_user_profile(

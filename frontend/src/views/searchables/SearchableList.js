@@ -77,17 +77,16 @@ const SearchableList = ({ criteria }) => {
     try {
       const response = await backend.get('v1/searchable/search', {
         params: {
-          page_number: page,
+          page: page,
           page_size: calculateOptimalPageSize(),
-          query_term: criteria.searchTerm,
-          filters: criteria.filters || {},
-          use_location: false
+          q: criteria.searchTerm || '',
+          filters: JSON.stringify(criteria.filters || {})
         }
       });
 
       setSearchResults(response.data.results);
       setPagination({
-        page: response.data.pagination.page,
+        page: response.data.pagination.current_page,
         pageSize: response.data.pagination.page_size,
         totalCount: response.data.pagination.total_count,
         totalPages: response.data.pagination.total_pages
@@ -95,7 +94,7 @@ const SearchableList = ({ criteria }) => {
       setInitialItemsLoaded(true);
       
       // Save current search state to localStorage
-      localStorage.setItem('searchablesPage', response.data.pagination.page);
+      localStorage.setItem('searchablesPage', response.data.pagination.current_page);
       localStorage.setItem('searchablesTerm', criteria.searchTerm);
     } catch (err) {
       console.error("Error searching:", err);
