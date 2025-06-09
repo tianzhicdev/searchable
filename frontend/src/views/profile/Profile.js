@@ -339,12 +339,15 @@ const Profile = () => {
             ) : error ? (
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
-              <Typography variant="body2" component="span" className={classes.infoLabel}>
-                USD Balance:
-              </Typography>
-              <Typography variant="body1" component="span" className={classes.infoValue}>
-                ${balance.usd} USD
-              </Typography>
+              <Box>
+                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                  USD Balance:
+                </Typography>
+                
+                <Typography variant="body1" component="span" className={classes.infoValue}>
+                  ${balance.usd} USD
+                </Typography>
+              </Box>
             )}
           </Box>
         </Paper>
