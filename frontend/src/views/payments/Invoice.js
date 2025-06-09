@@ -253,7 +253,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 startIcon={<Message className={classes.iconColor} />}
                                 onClick={handleNotesExpandClick}
                                 size="small"
-                                className={`${classes.freePixelFont} ${classes.systemText} ${classes.marginXs}`}
+                                className={`${classes.eightBitDragonFont} ${classes.systemText} ${classes.marginXs}`}
                             >
                                 Notes ({noteCount})
                             </Button>
@@ -263,7 +263,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                     startIcon={<Star className={classes.iconColor} />}
                                     onClick={() => setRatingDialogOpen(true)}
                                     size="small"
-                                    className={`${classes.freePixelFont} ${classes.systemText} ${classes.marginXs}`}
+                                    className={`${classes.eightBitDragonFont} ${classes.systemText} ${classes.marginXs}`}
                                 >
                                     Rate Purchase
                                 </Button>
@@ -328,7 +328,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         multiline
                                         maxRows={3}
                                         size="small"
-                                        className={classes.freePixelFont}
+                                        className={classes.eightBitDragonFont}
                                         style={{ marginRight: '4px' }}
                                     />
                                     <Button

@@ -28,8 +28,8 @@ export function theme(customization) {
         divider: color.grey200,
         customization: {
             ...customization,
-            // CENTRALIZED FONT SYSTEM - Only FreePixel font allowed
-            fontFamily: '"FreePixel", "Courier New", monospace'
+            // CENTRALIZED FONT SYSTEM - Only EightBitDragon font allowed
+            fontFamily: '"EightBitDragon", "Courier New", monospace'
         },
         // CENTRALIZED COLOR USAGE MAPPING
         colors: {
