@@ -7,34 +7,34 @@
 
 // Import FreePixel font
 @font-face {
-  font-family: 'FreePixel';
-  src: url('../fonts/FreePixel.ttf') format('truetype');
+  font-family: 'EightBitDragon';
+  src: url('../fonts/EightBitDragon-anqx.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
-// GLOBAL FONT ENFORCEMENT - FreePixel everywhere
+// GLOBAL FONT ENFORCEMENT - EightBitDragon everywhere
 * {
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
 }
 
 // Material-UI component overrides
 .MuiTypography-root {
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
 }
 
 .MuiButton-root {
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
   padding: 4px 8px !important;
   margin: 2px !important;
   min-width: auto !important;
 }
 
 .MuiTextField-root {
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
   
   .MuiInputBase-input {
-    font-family: 'FreePixel', 'Courier New', monospace !important;
+    font-family: 'EightBitDragon', 'Courier New', monospace !important;
     padding: 4px !important;
   }
 }
@@ -68,7 +68,7 @@
   
   .MuiDialogTitle-root {
     padding: 8px !important;
-    font-family: 'FreePixel', 'Courier New', monospace !important;
+    font-family: 'EightBitDragon', 'Courier New', monospace !important;
   }
 }
 
@@ -131,12 +131,12 @@
 
 // Chip overrides
 .MuiChip-root {
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
   padding: 2px 4px !important;
   height: auto !important;
   
   .MuiChip-label {
-    font-family: 'FreePixel', 'Courier New', monospace !important;
+    font-family: 'EightBitDragon', 'Courier New', monospace !important;
     padding: 2px 4px !important;
   }
 }
@@ -154,12 +154,12 @@
 // Form controls
 .MuiFormLabel-root {
   color: #d84315 !important; // Dark Orange for form labels
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
 }
 
 .MuiInputBase-root {
   color: #fbe9e7 !important; // Light Orange for input text
-  font-family: 'FreePixel', 'Courier New', monospace !important;
+  font-family: 'EightBitDragon', 'Courier New', monospace !important;
 }
 
 // Remove excessive spacing from all components
