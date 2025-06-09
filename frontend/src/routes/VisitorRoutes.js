@@ -2,6 +2,7 @@ import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
 import Searchables from '../views/searchables/Searchables';
 import DownloadableSearchableDetails from '../views/searchables/DownloadableSearchableDetails';
+import UserProfile from '../views/profile/UserProfile';
 import Declaration from '../views/static/Declaration';
 import FAQ from '../views/static/FAQ';
 import TermsAndConditions from '../views/static/TermsAndConditions';
@@ -13,11 +14,12 @@ const VisitorRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/searchables', '/searchable-item/:id', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started']}>
+        <Route path={['/searchables', '/searchable-item/:id', '/profile/:identifier', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started']}>
             <Switch location={location} key={location.pathname}>
                 {/* Public routes accessible to unregistered visitors */}
                 <Route exact path="/searchables" component={Searchables} />
                 <Route exact path="/searchable-item/:id" component={DownloadableSearchableDetails} />
+                <Route path="/profile/:identifier" component={UserProfile} />
                 <Route exact path="/declaration" component={Declaration} />
                 <Route exact path="/faq" component={FAQ} />
                 <Route exact path="/terms-and-conditions" component={TermsAndConditions} />
