@@ -103,8 +103,7 @@ const Searchables = () => {
   };
 
   return (
-    <div style={{ maxWidth: '60%', margin: '0 auto', width: '100%' }}>
-      <Grid container spacing={2}>
+    <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box >
             {account.isLoggedIn ? (
@@ -173,8 +172,7 @@ const Searchables = () => {
       />
 
 
-      </Grid>
-    </div>
+    </Grid>
   );
 };
 
