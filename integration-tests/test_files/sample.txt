@@ -1,0 +1,7 @@
+This is a sample test file for integration testing.
+It contains some dummy content to test file upload functionality.
+Created for testing the searchable platform.
+
+Line 4
+Line 5
+End of file.

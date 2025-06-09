@@ -5,7 +5,6 @@ import storage from 'redux-persist/lib/storage';
 // reducer import
 import customizationReducer from './customizationReducer';
 import accountReducer from './accountReducer';
-import locationReducer from './locationReducer';
 
 //-----------------------|| COMBINE REDUCER ||-----------------------//
 
@@ -19,14 +18,6 @@ const reducer = combineReducers({
         accountReducer
     ),
     customization: customizationReducer,
-    location: persistReducer(
-        {
-            key: 'location',
-            storage,
-            keyPrefix: 'ungovernable-'
-        },
-        locationReducer
-    )
 });
 
 export default reducer;

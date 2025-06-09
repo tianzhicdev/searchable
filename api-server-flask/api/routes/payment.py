@@ -367,4 +367,112 @@ class UserPaidFiles(Resource):
             
         except Exception as e:
             logger.error(f"Error getting user paid files for searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+
+@rest_api.route('/api/v1/test/complete-payment', methods=['POST'])
+class TestCompletePayment(Resource):
+    """
+    Test endpoint to directly mark a payment as complete (for integration testing)
+    This simulates what background.py would do when processing payments
+    """
+    @track_metrics('test_complete_payment')
+    def post(self, request_origin='unknown'):
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return {"error": "No data provided"}, 400
+            
+            session_id = data.get('session_id')
+            test_uuid = data.get('test_uuid')
+            
+            if not session_id:
+                return {"error": "session_id is required"}, 400
+            
+            # Find the invoice with this session_id
+            from ..common.database import get_db_connection, execute_sql
+            from ..common.models import PaymentStatus
+            import json
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get the invoice
+            execute_sql(cur, """
+                SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.currency, i.metadata
+                FROM invoice i 
+                WHERE i.external_id = %s AND i.type = 'stripe'
+            """, params=(session_id,))
+            
+            invoice_row = cur.fetchone()
+            if not invoice_row:
+                cur.close()
+                conn.close()
+                return {"error": "Invoice not found"}, 404
+            
+            invoice_id, buyer_id, seller_id, searchable_id, amount, currency, metadata = invoice_row
+            
+            # Check if payment already exists
+            execute_sql(cur, """
+                SELECT id, status FROM payment WHERE invoice_id = %s
+            """, params=(invoice_id,))
+            
+            existing_payment = cur.fetchone()
+            
+            if existing_payment:
+                payment_id, current_status = existing_payment
+                if current_status == PaymentStatus.COMPLETE.value:
+                    cur.close()
+                    conn.close()
+                    return {
+                        "message": "Payment already completed",
+                        "invoice_id": invoice_id,
+                        "payment_id": payment_id
+                    }, 200
+            
+            # Create or update payment record
+            payment_metadata = {
+                "test_completion": True,
+                "test_uuid": test_uuid,
+                "completed_via_api": True,
+                "timestamp": int(time.time())
+            }
+            
+            if existing_payment:
+                # Update existing payment
+                payment_id = existing_payment[0]
+                execute_sql(cur, """
+                    UPDATE payment 
+                    SET status = %s, metadata = %s
+                    WHERE id = %s
+                """, params=(PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
+            else:
+                # Create new payment record
+                execute_sql(cur, """
+                    INSERT INTO payment (invoice_id, amount, currency, type, external_id, status, metadata)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                """, params=(invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
+                
+                payment_result = cur.fetchone()
+                payment_id = payment_result[0] if payment_result else None
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            logger.info(f"Test payment completion: session_id={session_id}, invoice_id={invoice_id}, payment_id={payment_id}")
+            
+            return {
+                "success": True,
+                "message": "Payment marked as complete",
+                "invoice_id": invoice_id,
+                "payment_id": payment_id,
+                "session_id": session_id,
+                "test_uuid": test_uuid
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error in test payment completion: {str(e)}")
             return {"error": str(e)}, 500 

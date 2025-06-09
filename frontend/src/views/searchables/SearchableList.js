@@ -26,7 +26,6 @@ const SearchableList = ({ criteria }) => {
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
 
   const account = useSelector((state) => state.account);
-  const location = useSelector((state) => state.location);
   const history = useHistory();
 
   // Calculate optimal page size based on viewport height
@@ -61,38 +60,28 @@ const SearchableList = ({ criteria }) => {
     setPagination(prev => ({...prev, pageSize: newPageSize}));
   }, [viewportHeight]);
 
-  // Load initial random items when location is available
+  // Load initial items
   useEffect(() => {
-    if (location.latitude && location.longitude) {
-      if (localStorage.getItem('searchablesPage')) {
-        handleSearch(parseInt(localStorage.getItem('searchablesPage')));
-      } else {
-        handleSearch(1)
-      }
+    if (localStorage.getItem('searchablesPage')) {
+      handleSearch(parseInt(localStorage.getItem('searchablesPage')));
+    } else {
+      handleSearch(1)
     }
-  }, [location.latitude, location.longitude, criteria.searchTerm, criteria.distance, criteria.filters]);
+  }, [criteria.searchTerm, criteria.filters]);
 
   // Function to handle search
   const handleSearch = async (page = 1) => {
-    if (!location.latitude || !location.longitude) {
-      setError("Location is required to search. Please enable location services.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
       const response = await backend.get('v1/searchable/search', {
         params: {
-          lat: location.latitude,
-          lng: location.longitude,
-          max_distance: criteria.distance,
           page_number: page,
           page_size: calculateOptimalPageSize(),
           query_term: criteria.searchTerm,
           filters: criteria.filters || {},
-          use_location: criteria.distance == 100000000 ? false : true
+          use_location: false
         }
       });
 
@@ -108,7 +97,6 @@ const SearchableList = ({ criteria }) => {
       // Save current search state to localStorage
       localStorage.setItem('searchablesPage', response.data.pagination.page);
       localStorage.setItem('searchablesTerm', criteria.searchTerm);
-      localStorage.setItem('searchablesMaxDistance', criteria.distance);
     } catch (err) {
       console.error("Error searching:", err);
       setError("An error occurred while searching. Please try again.");
@@ -122,14 +110,6 @@ const SearchableList = ({ criteria }) => {
     handleSearch(newPage);
   };
 
-  // Function to format distance
-  const formatDistance = (meters) => {
-    if (meters < 1000) {
-      return `${Math.round(meters)} m`;
-    } else {
-      return `${(meters / 1000).toFixed(1)} km`;
-    }
-  };
 
   // Generate pagination buttons
   const renderPaginationButtons = () => {
@@ -206,7 +186,6 @@ const SearchableList = ({ criteria }) => {
                 key={item.searchable_id}
                 item={item}
                 onClick={() => handleItemClick(item.searchable_id)} 
-                formatDistance={formatDistance}
               />
             ))}
           </Grid>
@@ -224,8 +203,8 @@ const SearchableList = ({ criteria }) => {
           <Paper elevation={2}>
             <Typography variant="body1">
               {pagination.totalCount === 0 ? 
-                "No items found. Try adjusting your search criteria or increasing the distance." : 
-                "Use the search button to find items near you."}
+                "No items found. Try adjusting your search criteria." : 
+                "Use the search button to find items."}
             </Typography>
           </Paper>
         </Grid>
