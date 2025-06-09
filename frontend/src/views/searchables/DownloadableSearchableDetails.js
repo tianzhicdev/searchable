@@ -527,8 +527,8 @@ const DownloadableSearchableDetails = () => {
     }
     
     return (
-      <Box className={classes.fileListContainer}>
-        <Typography variant="h6" className={classes.sectionHeader}>
+      <Box style={{ padding: '4px', margin: '0', width: '100%', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px' }}>
+        <Typography variant="h6" className={classes.staticText}>
           Available Files:
         </Typography>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
@@ -539,7 +539,7 @@ const DownloadableSearchableDetails = () => {
           return (
             <Box 
               key={file.fileId} 
-              className={classes.fileItem}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px', margin: '2px 0', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', width: '100%' }}
             >
               <Box flex={1}>
                 <Box display="flex" alignItems="center">
@@ -654,14 +654,14 @@ const DownloadableSearchableDetails = () => {
       
       {!loading && SearchableItem && (
         <Grid item xs={12}>
-          <div className={classes.componentWrapper}>
+          <div style={{ backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', padding: '4px', margin: '2px', fontFamily: '"FreePixel", "Courier New", monospace' }}>
             {/* Title and Rating */}
             <Typography variant="h3" className={classes.userText}>
               {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
             </Typography>
             
             {!loadingRatings && searchableRating && (
-              <div className={classes.marginSm}>
+              <div style={{ margin: '4px' }}>
                 <RatingDisplay
                   averageRating={searchableRating.average_rating || 0}
                   totalRatings={searchableRating.total_ratings || 0}
@@ -674,7 +674,7 @@ const DownloadableSearchableDetails = () => {
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-              <div className={classes.marginSm}>
+              <div style={{ margin: '4px' }}>
                 {SearchableItem.payloads.public.images.map((image, index) => (
                   <ZoomableImage 
                     key={index}
@@ -690,7 +690,7 @@ const DownloadableSearchableDetails = () => {
             {renderDownloadableFiles()}
             
             {/* Payment Button */}
-            <div className={classes.marginMd}>
+            <div style={{ margin: '8px' }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -704,7 +704,7 @@ const DownloadableSearchableDetails = () => {
             
             {/* Remove Button for Owner */}
             {isOwner && (
-              <div className={classes.marginSm}>
+              <div style={{ margin: '4px' }}>
                 <Button
                   variant="contained"
                   onClick={handleRemoveItem}

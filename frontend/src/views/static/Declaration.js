@@ -22,7 +22,7 @@ const Declaration = () => {
                 </Box>
 
                 {/* Introduction Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Our Mission
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -34,7 +34,7 @@ const Declaration = () => {
                 <Divider className={classes.divider} />
 
                 {/* Vision Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Our Vision
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -43,7 +43,7 @@ const Declaration = () => {
                     is global, efficient, and user-friendly.
                 </Typography>
                 
-                <Typography variant="h4" className={classes.itemTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Core Values
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -55,7 +55,7 @@ const Declaration = () => {
                 <Divider className={classes.divider} />
 
                 {/* Team Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Our Team
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -64,7 +64,7 @@ const Declaration = () => {
                     technology, web development, and user experience design.
                 </Typography>
                 
-                <Typography variant="h4" className={classes.itemTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Join Our Community
                 </Typography>
                 <Typography variant="body1" paragraph>

@@ -19,7 +19,7 @@ const FAQ = () => {
 
 
                 {/* Introduction Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     What is {config.BRANDING_CONFIG.domain}?
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -31,7 +31,7 @@ const FAQ = () => {
                 <Divider className={classes.divider} />
 
                 {/* Terms Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     How does it work?
                 </Typography>
                 <Typography variant="body1" paragraph>
@@ -41,20 +41,20 @@ const FAQ = () => {
                 <Divider className={classes.divider} />
 
                 {/* Privacy Section */}
-                <Typography variant="h4" className={classes.itemTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     How do I get paid?
                 </Typography>
-                <Typography variant="body1" className={classes.itemDescription}>
+                <Typography variant="body1" className={classes.staticText}>
                     You can withdraw your funds by visiting your profile and clicking the "Withdraw" button. The system will prompt you to provide a Lightning Network invoice, which you can generate using services like CashApp, Strike, or any wallet that supports Lightning Network. Withdrawals are processed immediately and typically complete within 2 minutes.
                 </Typography>
 
                 <Divider className={classes.divider} />
 
                 {/* Privacy Section */}
-                <Typography variant="h4" className={classes.itemTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     Why should I use {config.BRANDING_CONFIG.domain}?
                 </Typography>
-                <Typography variant="body1" className={classes.itemDescription}>
+                <Typography variant="body1" className={classes.staticText}>
                   We offer a seamless user experience with no KYC (Know Your Customer) requirements for registration, withdrawals, or purchases. Our platform is designed to be more efficient, user-friendly, and cost-effective compared to alternatives in the market. At {config.BRANDING_CONFIG.domain}, we are committed to upholding the principles of privacy and freedom for all our users.
                 </Typography>
             </Paper>

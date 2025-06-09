@@ -23,7 +23,7 @@ const GettingStarted = () => {
                 </Box>
 
                 {/* Introduction Section */}
-                <Typography variant="h4" className={classes.sectionTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     How do I sell on {config.BRANDING_CONFIG.domain}?
                 </Typography>
 
@@ -60,7 +60,7 @@ const GettingStarted = () => {
                   For "Personal" or "Local Business" listings, you have the option to specify your location. Customers purchasing from these categories will not need to create an account to complete their transaction.
                   For "Online Business" listings, location information is not required. However, customers will need to register an account and provide their shipping address to complete their purchase.
                 </Typography>
-                <Typography variant="h4" className={classes.itemTitle}>
+                <Typography variant="h4" className={classes.staticText}>
                     How do I get paid?
                 </Typography>
 
@@ -83,7 +83,7 @@ const GettingStarted = () => {
                         style={{ maxWidth: '100%', height: 'auto' }} 
                     />
                 </Box>
-                <Typography variant="body1" className={classes.itemDescription}>
+                <Typography variant="body1" className={classes.staticText}>
                     You can withdraw your funds by visiting your profile and clicking the "Withdraw" button. The system will prompt you to provide a Lightning Network invoice, which you can generate using services like CashApp, Strike, or any wallet that supports Lightning Network. Withdrawals are processed immediately and typically complete immediately.
                 </Typography>
 
