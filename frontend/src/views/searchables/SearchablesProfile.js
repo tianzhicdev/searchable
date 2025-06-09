@@ -1,10 +1,12 @@
 import React from 'react';
 import { 
-  Typography, Paper, Box, Divider
+  Typography, Paper, Box, Divider, Link
 } from '@material-ui/core';
+import { useHistory } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles';
 const SearchablesProfile = ({ item, onClick }) => {
   const classes = useComponentStyles();
+  const history = useHistory();
 
   // Extract data from the new structure
   const publicData = item.payloads?.public || {};
@@ -14,6 +16,14 @@ const SearchablesProfile = ({ item, onClick }) => {
   const truncateText = (text, maxLength) => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
+  // Handle username click to navigate to user profile
+  const handleUsernameClick = (e) => {
+    e.stopPropagation(); // Prevent triggering the item click
+    if (item.username) {
+      history.push(`/profile/${item.username}`);
+    }
   };
 
   return (
@@ -34,7 +44,21 @@ const SearchablesProfile = ({ item, onClick }) => {
           <Box>
             {item.username && (
               <Typography variant="body2">
-                Posted by: {truncateText(item.username, 30)}
+                Posted by: <Link 
+                  component="button"
+                  variant="body2"
+                  onClick={handleUsernameClick}
+                  style={{ 
+                    textDecoration: 'underline',
+                    color: '#1976d2',
+                    cursor: 'pointer',
+                    padding: 0,
+                    border: 'none',
+                    background: 'none'
+                  }}
+                >
+                  {truncateText(item.username, 30)}
+                </Link>
               </Typography>
             )}
             

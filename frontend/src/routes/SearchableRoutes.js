@@ -4,6 +4,7 @@ import NavMotion from '../layout/NavMotion';
 import AuthGuard from './../utils/route-guard/AuthGuard';
 import PublishDownloadableSearchable from '../views/searchables/PublishDownloadableSearchable';
 import Profile from '../views/profile/Profile';
+import UserProfile from '../views/profile/UserProfile';
 import PurchaseRatings from '../views/ratings/PurchaseRatings';
 
 // // login routing
@@ -26,6 +27,7 @@ const SearchableRoutes = () => {
                 </AuthGuard>
                 
                 {/* Public routes accessible to unregistered visitors */}
+                <Route path="/profile/:identifier" component={UserProfile} />
             </Switch>
         </Route>
     );
