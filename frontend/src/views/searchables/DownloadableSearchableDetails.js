@@ -650,102 +650,75 @@ const DownloadableSearchableDetails = () => {
       
       {!loading && SearchableItem && (
         <Grid item xs={12}>
-        <Paper elevation={3}>
-        <Grid item xs={12}>
-            <Box p={1}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Box
-                    sx={{
-                      '@media (max-width:600px)': {
-                        padding: '4px',
-                      },
-                    }}
-                  >
-                      
-                      <Typography variant="h3" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                        {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
-                      </Typography>
-                    
-                    {/* Display item rating */}
-                    {!loadingRatings && searchableRating && (
-                      <Box mt={2} mb={2}>
-                        <RatingDisplay
-                          averageRating={searchableRating.average_rating || 0}
-                          totalRatings={searchableRating.total_ratings || 0}
-                          individualRatings={searchableRating.individual_ratings || []}
-                          showIndividualRatings={true}
-                          maxIndividualRatings={3}
-                        />
-                      </Box>
-                    )}
+          <div className={classes.componentWrapper}>
+            {/* Title and Rating */}
+            <Typography variant="h3" className={classes.userText}>
+              {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
+            </Typography>
+            
+            {!loadingRatings && searchableRating && (
+              <div className={classes.marginSm}>
+                <RatingDisplay
+                  averageRating={searchableRating.average_rating || 0}
+                  totalRatings={searchableRating.total_ratings || 0}
+                  individualRatings={searchableRating.individual_ratings || []}
+                  showIndividualRatings={true}
+                  maxIndividualRatings={3}
+                />
+              </div>
+            )}
 
-                    
-                    <Divider style={{ width: '100%' }} />
-                  </Box>
-                </Grid>
-                
-                {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-                  <Grid item xs={12} md={6}>
-                    <Grid container spacing={1}>
-                      {SearchableItem.payloads.public.images.map((image, index) => (
-                        <Grid item xs={12} sm={6} key={index}>
-                          <ZoomableImage 
-                            src={`data:image/jpeg;base64,${image}`} 
-                            alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
-                            style={{ maxWidth: '100%', height: 'auto' }}
-                          />
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Grid>
-                )}
-                
-                <Grid item xs={12} md={SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 ? 6 : 12}>
-                  <Grid container spacing={2}>
-                    {renderDownloadableFiles()}
-                  
-                    <Grid item xs={12}>
-                      <Box mt={3} display="flex" justifyContent="center">
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={handleStripePayButtonClick}
-                          disabled={creatingInvoice || totalPrice === 0}
-                          fullWidth
-                        >
-                          Pay with Credit Card (3.5% fee)
-                        </Button>
-                      </Box>
-                    </Grid>
-                    
-                    {isOwner && (
-                      <Grid item xs={12}>
-                        <Box mt={3} display="flex" justifyContent="center">
-                          <Button
-                            variant="contained"
-                            onClick={handleRemoveItem}
-                            disabled={isRemoving}
-                          >
-                            Remove Item
-                          </Button>
-                        </Box>
-                      </Grid>
-                    )}
-                  </Grid>
-                </Grid>
-              </Grid>
-            </Box>
-        </Grid>
-        </Paper>
-        
-        <InvoiceList 
-          searchableId={id} 
-          onRatingSubmitted={() => {
-            // Refresh ratings when a new rating is submitted
-            fetchRatings();
-          }}
-        />
+            {/* Images */}
+            {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
+              <div className={classes.marginSm}>
+                {SearchableItem.payloads.public.images.map((image, index) => (
+                  <ZoomableImage 
+                    key={index}
+                    src={`data:image/jpeg;base64,${image}`} 
+                    alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
+                    style={{ maxWidth: '200px', height: 'auto', margin: '4px' }}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Files Section */}
+            {renderDownloadableFiles()}
+            
+            {/* Payment Button */}
+            <div className={classes.marginMd}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleStripePayButtonClick}
+                disabled={creatingInvoice || totalPrice === 0}
+                fullWidth
+              >
+                Pay with Credit Card (3.5% fee)
+              </Button>
+            </div>
+            
+            {/* Remove Button for Owner */}
+            {isOwner && (
+              <div className={classes.marginSm}>
+                <Button
+                  variant="contained"
+                  onClick={handleRemoveItem}
+                  disabled={isRemoving}
+                  fullWidth
+                >
+                  Remove Item
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          <InvoiceList 
+            searchableId={id} 
+            onRatingSubmitted={() => {
+              fetchRatings();
+            }}
+          />
         </Grid>
       )}
 
