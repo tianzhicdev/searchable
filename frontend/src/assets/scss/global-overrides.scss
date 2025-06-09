@@ -1,0 +1,213 @@
+/* 
+ * GLOBAL CSS OVERRIDES - Centralized Styling System
+ * Only 3 colors allowed: Light Orange, Dark Orange, Light Blue
+ * Only FreePixel font allowed
+ * Minimal spacing enforced
+ */
+
+// Import FreePixel font
+@font-face {
+  font-family: 'FreePixel';
+  src: url('../fonts/FreePixel.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+// GLOBAL FONT ENFORCEMENT - FreePixel everywhere
+* {
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+}
+
+// Material-UI component overrides
+.MuiTypography-root {
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+}
+
+.MuiButton-root {
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+  padding: 4px 8px !important;
+  margin: 2px !important;
+  min-width: auto !important;
+}
+
+.MuiTextField-root {
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+  
+  .MuiInputBase-input {
+    font-family: 'FreePixel', 'Courier New', monospace !important;
+    padding: 4px !important;
+  }
+}
+
+.MuiCard-root {
+  padding: 4px !important;
+  margin: 4px !important;
+}
+
+.MuiCardContent-root {
+  padding: 8px !important;
+  
+  &:last-child {
+    padding-bottom: 8px !important;
+  }
+}
+
+.MuiBox-root {
+  padding: 2px !important;
+  margin: 2px !important;
+}
+
+.MuiDialog-paper {
+  .MuiDialogContent-root {
+    padding: 8px !important;
+  }
+  
+  .MuiDialogActions-root {
+    padding: 8px !important;
+  }
+  
+  .MuiDialogTitle-root {
+    padding: 8px !important;
+    font-family: 'FreePixel', 'Courier New', monospace !important;
+  }
+}
+
+.MuiList-root {
+  padding: 4px !important;
+  
+  .MuiListItem-root {
+    padding: 2px 4px !important;
+  }
+}
+
+.MuiGrid-container {
+  .MuiGrid-item {
+    padding: 4px !important;
+  }
+}
+
+// CENTRALIZED COLOR CLASSES - Apply globally
+.user-text {
+  color: #fbe9e7 !important; // Light Orange - user provided data/text
+}
+
+.system-text {
+  color: #d84315 !important; // Dark Orange - static/system texts
+}
+
+.icon-color {
+  color: #3899ef !important; // Light Blue - icons
+}
+
+// Override Material-UI default colors to use our system
+.MuiTypography-colorPrimary {
+  color: #fbe9e7 !important; // Light Orange for primary text
+}
+
+.MuiTypography-colorSecondary {
+  color: #d84315 !important; // Dark Orange for secondary text
+}
+
+.MuiTypography-colorTextPrimary {
+  color: #fbe9e7 !important; // Light Orange for primary text content
+}
+
+.MuiTypography-colorTextSecondary {
+  color: #d84315 !important; // Dark Orange for secondary text content
+}
+
+.MuiSvgIcon-root {
+  color: #3899ef !important; // Light Blue for all icons
+}
+
+.MuiButton-containedPrimary {
+  background-color: #d84315 !important; // Dark Orange for primary buttons
+  color: #fbe9e7 !important; // Light Orange text on buttons
+}
+
+.MuiButton-textPrimary {
+  color: #d84315 !important; // Dark Orange for text buttons
+}
+
+// Chip overrides
+.MuiChip-root {
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+  padding: 2px 4px !important;
+  height: auto !important;
+  
+  .MuiChip-label {
+    font-family: 'FreePixel', 'Courier New', monospace !important;
+    padding: 2px 4px !important;
+  }
+}
+
+.MuiChip-colorPrimary {
+  background-color: #d84315 !important;
+  color: #fbe9e7 !important;
+}
+
+.MuiChip-colorSecondary {
+  background-color: #fbe9e7 !important;
+  color: #d84315 !important;
+}
+
+// Form controls
+.MuiFormLabel-root {
+  color: #d84315 !important; // Dark Orange for form labels
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+}
+
+.MuiInputBase-root {
+  color: #fbe9e7 !important; // Light Orange for input text
+  font-family: 'FreePixel', 'Courier New', monospace !important;
+}
+
+// Remove excessive spacing from all components
+.MuiPaper-root {
+  padding: 8px !important;
+  margin: 4px !important;
+}
+
+// Avatar minimization
+.MuiAvatar-root {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 0.75rem !important;
+}
+
+// Border radius removal (pixel art style)
+.MuiPaper-rounded {
+  border-radius: 0px !important;
+}
+
+.MuiButton-root {
+  border-radius: 0px !important;
+}
+
+.MuiCard-root {
+  border-radius: 0px !important;
+}
+
+.MuiChip-root {
+  border-radius: 0px !important;
+}
+
+.MuiTextField-root .MuiOutlinedInput-root {
+  border-radius: 0px !important;
+}
+
+// Minimal spacing utilities
+.minimal-spacing {
+  padding: 2px !important;
+  margin: 2px !important;
+  
+  * {
+    padding: 2px !important;
+    margin: 2px !important;
+  }
+}
+
+.ultra-minimal {
+  padding: 1px !important;
+  margin: 1px !important;
+}

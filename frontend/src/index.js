@@ -15,6 +15,7 @@ import Footer from './components/Footer';
 
 // style + assets
 import './assets/scss/style.scss';
+import './assets/scss/global-overrides.scss';
 import 'leaflet/dist/leaflet.css';
 
 //-----------------------|| REACT DOM RENDER  ||-----------------------//

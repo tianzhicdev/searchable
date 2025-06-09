@@ -13,9 +13,11 @@ import { Rating } from '@material-ui/lab';
 import PropTypes from 'prop-types';
 import Backend from '../utilities/Backend';
 import RatingComponent from '../../components/Rating/RatingComponent';
+import useComponentStyles from '../../themes/componentStyles';
 
 const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     const account = useSelector((state) => state.account);
+    const classes = useComponentStyles();
     
     // State for UI controls
     const [expanded, setExpanded] = useState(false);
@@ -179,65 +181,65 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
     return (
         <>
-            <Paper style={{ marginBottom: '16px' }}>
-                <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="h6">
+            <Paper className={`${classes.invoiceCard} ${classes.minimalSpacing}`}>
+                <CardContent className={classes.paddingSm}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
+                        <Box display="flex" alignItems="center" className={classes.marginXs}>
+                            <Typography variant="h6" className={classes.invoiceTitle}>
                                 Invoice #{invoice.id}
                             </Typography>
                             {getStatusChip()}
                             {getRoleChip()}
                         </Box>
                         
-                        <Box display="flex" alignItems="center" gap={1}>
-                            <Typography variant="h6" color="primary">
+                        <Box display="flex" alignItems="center" className={classes.marginXs}>
+                            <Typography variant="h6" className={classes.invoiceAmount}>
                                 {formatCurrency(invoice.amount, invoice.currency)}
                             </Typography>
-                            <IconButton size="small" onClick={handleExpandClick}>
-                                {expanded ? <ExpandLess /> : <ExpandMore />}
+                            <IconButton size="small" onClick={handleExpandClick} className={classes.iconButton}>
+                                {expanded ? <ExpandLess className={classes.iconColor} /> : <ExpandMore className={classes.iconColor} />}
                             </IconButton>
                         </Box>
                     </Box>
 
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="body2" color="textSecondary">
+                    <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
+                        <Typography variant="body2" className={classes.systemText}>
                             {userRole === 'buyer' ? 'Seller' : 'Buyer'}: {invoice.other_party_username || 'Unknown'}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary">
+                        <Typography variant="body2" className={classes.systemText}>
                             {formatDate(invoice.payment_date)}
                         </Typography>
                     </Box>
 
                     <Collapse in={expanded}>
-                        <Divider style={{ margin: '16px 0' }} />
+                        <Divider className={classes.divider} />
                         
                         {/* Invoice Details */}
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6}>
-                                <Typography variant="subtitle2" gutterBottom>
+                        <Grid container spacing={1} className={classes.paddingSm}>
+                            <Grid item xs={12} sm={6} className={classes.paddingXs}>
+                                <Typography variant="subtitle2" className={classes.systemText}>
                                     Payment Details
                                 </Typography>
-                                <Typography variant="body2">
+                                <Typography variant="body2" className={classes.userText}>
                                     Type: {invoice.type?.toUpperCase() || 'N/A'}
                                 </Typography>
-                                <Typography variant="body2">
+                                <Typography variant="body2" className={classes.userText}>
                                     Created: {formatDate(invoice.created_at)}
                                 </Typography>
                                 {invoice.fee > 0 && (
-                                    <Typography variant="body2">
+                                    <Typography variant="body2" className={classes.userText}>
                                         Fee: {formatCurrency(invoice.fee, invoice.currency)}
                                     </Typography>
                                 )}
                             </Grid>
                             
                             {selections.length > 0 && (
-                                <Grid item xs={12} sm={6}>
-                                    <Typography variant="subtitle2" gutterBottom>
+                                <Grid item xs={12} sm={6} className={classes.paddingXs}>
+                                    <Typography variant="subtitle2" className={classes.systemText}>
                                         Items Purchased
                                     </Typography>
                                     {selections.map((selection, index) => (
-                                        <Typography key={index} variant="body2">
+                                        <Typography key={index} variant="body2" className={classes.userText}>
                                             {selection.name || `Item ${selection.id}`}
                                         </Typography>
                                     ))}
@@ -246,21 +248,22 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                         </Grid>
 
                         {/* Action Buttons */}
-                        <Box mt={2} display="flex" gap={1}>
+                        <Box className={`${classes.marginMd} ${classes.paddingXs}`} display="flex">
                             <Button
-                                startIcon={<Message />}
+                                startIcon={<Message className={classes.iconColor} />}
                                 onClick={handleNotesExpandClick}
                                 size="small"
+                                className={`${classes.freePixelFont} ${classes.systemText} ${classes.marginXs}`}
                             >
                                 Notes ({noteCount})
                             </Button>
                             
                             {userRole === 'buyer' && !hasRated && !loadingRatingStatus && (
                                 <Button
-                                    startIcon={<Star />}
+                                    startIcon={<Star className={classes.iconColor} />}
                                     onClick={() => setRatingDialogOpen(true)}
-                                    color="primary"
                                     size="small"
+                                    className={`${classes.freePixelFont} ${classes.systemText} ${classes.marginXs}`}
                                 >
                                     Rate Purchase
                                 </Button>
@@ -269,44 +272,48 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
                         {/* Notes Section */}
                         <Collapse in={notesExpanded}>
-                            <Box mt={2}>
-                                <Divider style={{ marginBottom: '16px' }} />
-                                <Typography variant="subtitle2" gutterBottom>
+                            <Box className={classes.marginSm}>
+                                <Divider className={classes.divider} />
+                                <Typography variant="subtitle2" className={classes.systemText}>
                                     Communication
                                 </Typography>
                                 
                                 {/* Notes List */}
                                 {notes.length > 0 ? (
-                                    <List dense>
+                                    <List dense className={classes.paddingXs}>
                                         {notes.map((note) => (
-                                            <ListItem key={note.id} alignItems="flex-start">
-                                                <Avatar style={{ marginRight: 8, width: 32, height: 32 }}>
+                                            <ListItem key={note.id} alignItems="flex-start" className={classes.paddingXs}>
+                                                <Avatar style={{ marginRight: 4, width: 24, height: 24 }}>
                                                     {note.buyer_seller === 'buyer' ? 'B' : 'S'}
                                                 </Avatar>
                                                 <ListItemText
                                                     primary={
                                                         <Box display="flex" justifyContent="space-between">
-                                                            <Typography variant="body2">
+                                                            <Typography variant="body2" className={classes.systemText}>
                                                                 {note.username} ({note.buyer_seller})
                                                             </Typography>
-                                                            <Typography variant="caption" color="textSecondary">
+                                                            <Typography variant="caption" className={classes.systemText}>
                                                                 {formatDate(note.created_at)}
                                                             </Typography>
                                                         </Box>
                                                     }
-                                                    secondary={note.content}
+                                                    secondary={
+                                                        <Typography variant="body2" className={classes.userText}>
+                                                            {note.content}
+                                                        </Typography>
+                                                    }
                                                 />
                                             </ListItem>
                                         ))}
                                     </List>
                                 ) : (
-                                    <Typography variant="body2" color="textSecondary" style={{ fontStyle: 'italic' }}>
+                                    <Typography variant="body2" className={classes.systemText}>
                                         No messages yet
                                     </Typography>
                                 )}
 
                                 {/* Add Note Input */}
-                                <Box display="flex" gap={1} mt={2}>
+                                <Box display="flex" className={`${classes.marginSm} ${classes.paddingXs}`}>
                                     <TextField
                                         fullWidth
                                         placeholder="Add a message..."
@@ -321,16 +328,18 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         multiline
                                         maxRows={3}
                                         size="small"
+                                        className={classes.freePixelFont}
+                                        style={{ marginRight: '4px' }}
                                     />
                                     <Button
                                         onClick={handleSubmitNote}
                                         disabled={!newNote.trim() || submittingNote}
-                                        color="primary"
                                         variant="contained"
                                         size="small"
-                                        style={{ minWidth: '40px', padding: '8px' }}
+                                        className={`${classes.paddingXs} ${classes.iconButton}`}
+                                        style={{ minWidth: '32px' }}
                                     >
-                                        <Send fontSize="small" />
+                                        <Send fontSize="small" className={classes.iconColor} />
                                     </Button>
                                 </Box>
                             </Box>

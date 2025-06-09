@@ -26,29 +26,36 @@ export function theme(customization) {
         menuSelected: color.secondaryDark,
         menuSelectedBack: color.secondaryLight,
         divider: color.grey200,
-        customization: customization,
-        fonts: {
-            // Define font families
-            fontFamily: {
-                primary: '"FreePixel", sans-serif', 
-                secondary: '"Open Sans", "Helvetica", "Arial", sans-serif',
-                code: '"Fira Code", "Consolas", monospace'
-            },
-            // Define custom font weights
-            fontWeight: {
-                light: 300,
-                regular: 400,
-                medium: 500,
-                bold: 700
-            },
-            // Define custom font sizes
-            fontSize: {
-                xs: '0.75rem',
-                sm: '0.875rem',
-                md: '1rem',
-                lg: '1.25rem',
-                xl: '1.5rem'
-            }
+        customization: {
+            ...customization,
+            // CENTRALIZED FONT SYSTEM - Only FreePixel font allowed
+            fontFamily: '"FreePixel", "Courier New", monospace'
+        },
+        // CENTRALIZED COLOR USAGE MAPPING
+        colors: {
+            // User provided data/text (descriptions, item titles) - Light Orange
+            userText: color.lightOrange,
+            userContent: color.lightOrange,
+            
+            // Static/system texts - Dark Orange  
+            systemText: color.darkOrange,
+            staticText: color.darkOrange,
+            
+            // Icons - Light Blue
+            iconColor: color.lightBlue,
+            iconAccent: color.lightBlue,
+            
+            // Background system
+            background: color.background,
+            paper: color.paper
+        },
+        // CENTRALIZED SPACING SYSTEM - Minimal spacing
+        spacing: {
+            xs: '2px',    // Extra small spacing
+            sm: '4px',    // Small spacing  
+            md: '8px',    // Medium spacing
+            lg: '12px',   // Large spacing
+            xl: '16px'    // Extra large spacing
         }
     };
 
