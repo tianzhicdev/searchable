@@ -142,8 +142,7 @@ const UserInvoices = () => {
   }
 
   return (
-    <Box>
-      {/* Statistics Cards */}
+      <Paper>
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
         <Paper style={{ padding: 16, flex: 1, minWidth: 200 }}>
           <Box display="flex" alignItems="center" gap={1}>
@@ -188,8 +187,6 @@ const UserInvoices = () => {
         </Paper>
       </Box>
 
-      {/* Tabs for switching between purchases and sales */}
-      <Paper>
         <Tabs 
           value={activeTab} 
           onChange={handleTabChange}
@@ -200,7 +197,9 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <ShoppingCart />
-                <span>My Purchases</span>
+                <Typography variant="h6" color="secondary">
+                  My Purchases
+                </Typography>
                 <Chip label={stats.purchasesCount} size="small" />
               </Box>
             }
@@ -209,7 +208,9 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <Store />
-                <span>My Sales</span>
+                <Typography variant="h6" color="secondary">
+                  My Sales
+                </Typography>
                 <Chip label={stats.salesCount} size="small" />
               </Box>
             }
@@ -218,7 +219,9 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <Receipt />
-                <span>All Invoices</span>
+                <Typography variant="h6" color="secondary">
+                  All Invoices
+                </Typography>
                 <Chip label={invoices.length} size="small" />
               </Box>
             }
@@ -227,7 +230,9 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <AccountBalanceWallet />
-                <span>Withdrawals</span>
+                <Typography variant="h6" color="secondary">
+                  Withdrawals
+                </Typography>
                 <Chip label={stats.withdrawalsCount} size="small" />
               </Box>
             }
@@ -388,7 +393,7 @@ const UserInvoices = () => {
           )}
         </Box>
       </Paper>
-    </Box>
+
   );
 };
 
