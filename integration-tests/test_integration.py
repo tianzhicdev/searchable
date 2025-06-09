@@ -253,11 +253,11 @@ class TestSearchableIntegration:
         
         # Create selections based on searchable type
         if public_data.get('type') == 'downloadable' and 'selectables' in public_data:
-            # Use the actual selectables from the searchable
-            selections = [public_data['selectables'][0]['id']]  # Select first downloadable
+            # Use the actual selectables from the searchable (full object, not just ID)
+            selections = [public_data['selectables'][0]]  # Select first downloadable object
         else:
-            # For service type, create a basic selection
-            selections = [1]  # Generic selection
+            # For service type, create a basic selection object
+            selections = [{"id": 1, "type": "service", "name": "Basic Service", "price": 1.99}]
         
         try:
             response = self.client.create_invoice(
