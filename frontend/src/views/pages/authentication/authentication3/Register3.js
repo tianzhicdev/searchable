@@ -47,10 +47,10 @@ const Register = () => {
                                                         gutterBottom
                                                         variant={matchDownSM ? 'h3' : 'h2'}
                                                     >
-                                                        Sign up2
+                                                        Sign up
                                                     </Typography>
                                                     <Typography variant="caption" fontSize="16px" textAlign={matchDownSM ? 'center' : ''}>
-                                                        Enter1 your credentials to continue
+                                                        Enter your credentials to continue
                                                     </Typography>
                                                 </Stack>
                                             </Grid>

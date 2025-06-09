@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Typography } from '@material-ui/core';
 import './Questions.css';
 import { LANDING_QUESTIONS, MULTIPLE_CHOICE_QUESTIONS, FREE_QUESTIONS, BASIC_QUESTIONS, BINARY_QUESTIONS } from './config';
 import landing from '../../assets/images/landing.jpg';
@@ -295,9 +296,9 @@ function Questions() {
           Question {currentMultiChoiceIndex}/{totalMultiChoiceQuestions}
           
         </div>
-        <label className="question-label md:w-4/5 lg:w-3/4 md:max-w-2xl md:text-xl lg:text-2xl" htmlFor={currentQuestion.id}>
+        <Typography variant="h4" component="label" className="question-label md:w-4/5 lg:w-3/4 md:max-w-2xl md:text-xl lg:text-2xl" htmlFor={currentQuestion.id}>
           {currentQuestion.question}
-        </label>
+        </Typography>
         <div className="input-container md:my-12">
           {currentQuestion.type === 'landing' ? (
             <div className="button-group md:gap-4 md:w-4/5 lg:w-3/4 md:max-w-xl">
@@ -405,12 +406,16 @@ function Questions() {
 
   return (
     <div className="Questions md:py-6 lg:py-8" style={appStyle}>
-      <label className="app-title md:text-3xl lg:text-4xl">2Genders - Find Your Match</label>
+      <Typography variant="h2" component="h1" className="app-title md:text-3xl lg:text-4xl">
+        2Genders - Find Your Match
+      </Typography>
       {/* <div className="progress-indicator md:text-xl lg:text-2xl">
         Question {currentStep + 1}/{questionsWithImages.length}
       </div> */}
       {message ? (
-        <label className="question-label md:w-4/5 lg:w-3/4 md:max-w-2xl md:text-xl lg:text-2xl">{message}</label>
+        <Typography variant="h4" component="div" className="question-label md:w-4/5 lg:w-3/4 md:max-w-2xl md:text-xl lg:text-2xl">
+          {message}
+        </Typography>
       ) : (
         <form onSubmit={currentStep === questionsWithImages.length - 1 ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}
               className="md:h-auto flex flex-col justify-between">

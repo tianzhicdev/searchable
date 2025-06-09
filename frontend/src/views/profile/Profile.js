@@ -295,15 +295,19 @@ const Profile = () => {
           )}
 
           <Box >
-            <Typography variant="body1">
-              <span className={classes.infoLabel}>Username:</span>
-              <span className={classes.infoValue}>{account.user.username}</span>
+            <Typography variant="body2" component="span" className={classes.infoLabel}>
+              Username:
+            </Typography>
+            <Typography variant="body1" component="span" className={classes.infoValue}>
+              {account.user.username}
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body1">
-              <span className={classes.infoLabel}>Email:</span>
-              <span className={classes.infoValue}>{account.user.email}</span>
+            <Typography variant="body2" component="span" className={classes.infoLabel}>
+              Email:
+            </Typography>
+            <Typography variant="body1" component="span" className={classes.infoValue}>
+              {account.user.email}
             </Typography>
           </Box>
           
@@ -312,15 +316,19 @@ const Profile = () => {
           ) : profileData && (
             <>
               <Box>
-                <Typography variant="body1">
-                  <span className={classes.infoLabel}>Address:</span>
-                  <span className={classes.infoValue}>{profileData.address || 'Not provided'}</span>
+                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                  Address:
+                </Typography>
+                <Typography variant="body1" component="span" className={classes.infoValue}>
+                  {profileData.address || 'Not provided'}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body1">
-                  <span className={classes.infoLabel}>Telephone:</span>
-                  <span className={classes.infoValue}>{profileData.tel || 'Not provided'}</span>
+                <Typography variant="body2" component="span" className={classes.infoLabel}>
+                  Telephone:
+                </Typography>
+                <Typography variant="body1" component="span" className={classes.infoValue}>
+                  {profileData.tel || 'Not provided'}
                 </Typography>
               </Box>
             </>
@@ -331,11 +339,11 @@ const Profile = () => {
             ) : error ? (
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
-              <Typography variant="body1">
-                <span className={classes.infoLabel}>USD Balance:</span>
-                <span className={classes.infoValue}>
-                  ${balance.usd} USD
-                </span>
+              <Typography variant="body2" component="span" className={classes.infoLabel}>
+                USD Balance:
+              </Typography>
+              <Typography variant="body1" component="span" className={classes.infoValue}>
+                ${balance.usd} USD
               </Typography>
             )}
           </Box>
@@ -371,7 +379,7 @@ const Profile = () => {
             fullWidth
             margin="normal"
             InputProps={{
-              startAdornment: <span style={{ marginRight: 8 }}>$</span>,
+              startAdornment: <Typography component="span" style={{ marginRight: 8 }}>$</Typography>,
             }}
           />
           {usdtWithdrawalError && (

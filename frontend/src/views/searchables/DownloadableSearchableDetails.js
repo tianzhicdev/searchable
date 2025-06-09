@@ -217,7 +217,11 @@ const DownloadableSearchableDetails = () => {
   const renderStarRating = (rating, count = null) => {
     if (rating === null || rating === undefined) return null;
     
-    return  `${rating.toFixed(1)}/5(${count})`
+    return (
+      <Typography variant="body2" component="span" className={classes.systemText}>
+        {rating.toFixed(1)}/5({count})
+      </Typography>
+    );
   };
   
   const handleFileSelection = (id, checked) => {
