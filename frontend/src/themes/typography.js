@@ -4,8 +4,8 @@
  */
 export function themeTypography(theme) {
     return {
-        // ENFORCE EIGHTBITDRAGON FONT EVERYWHERE
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        // ENFORCE FREEPIXEL FONT EVERYWHERE
+        fontFamily: '"FreePixel", "Courier New", monospace',
         h6: {
             fontWeight: 500,
             color: theme.heading,

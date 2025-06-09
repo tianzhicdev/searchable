@@ -12,29 +12,29 @@ import { makeStyles } from '@material-ui/styles';
 const useComponentStyles = makeStyles((theme) => ({
     
     // ===== CENTRALIZED FONT SYSTEM =====
-    eightBitDragonFont: {
-        fontFamily: '"EightBitDragon", "Courier New", monospace !important'
+    freePixelFont: {
+        fontFamily: '"FreePixel", "Courier New", monospace !important'
     },
     
     // ===== CENTRALIZED COLOR CLASSES =====
     // User provided content (descriptions, titles) - Light Orange
     userText: {
         color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     userContent: {
         color: theme.appColors?.userContent || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     // Static/system text - Dark Orange
     systemText: {
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     staticText: {
         color: theme.appColors?.staticText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     // Icons - Light Blue
@@ -66,7 +66,7 @@ const useComponentStyles = makeStyles((theme) => ({
     
     // ===== LAYOUT COMPONENTS =====
     container: {
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         padding: '8px',
         margin: '4px'
     },
@@ -76,65 +76,65 @@ const useComponentStyles = makeStyles((theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     paper: {
         padding: '8px',
         margin: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000'
     },
     
     gridItem: {
         padding: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     // ===== TEXT COMPONENTS =====
     // User content text (descriptions, item titles) - Light Orange
     itemTitle: {
         color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         fontWeight: 'normal',
         marginBottom: '4px'
     },
     
     itemDescription: {
         color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '4px'
     },
     
     // System/static text - Dark Orange
     sectionTitle: {
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '8px',
         fontWeight: 'normal'
     },
     
     infoLabel: {
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         fontWeight: 'normal',
         marginRight: '4px'
     },
     
     infoValue: {
         color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     // ===== FORM COMPONENTS =====
     formGroup: {
         marginBottom: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     formLabel: {
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '4px',
         display: 'block'
     },
@@ -145,7 +145,7 @@ const useComponentStyles = makeStyles((theme) => ({
         marginTop: '8px',
         '& > *': {
             marginLeft: '4px',
-            fontFamily: '"EightBitDragon", "Courier New", monospace'
+            fontFamily: '"FreePixel", "Courier New", monospace'
         }
     },
     
@@ -186,7 +186,7 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     paginationButton: {
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         marginRight: '4px',
         border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
@@ -210,7 +210,7 @@ const useComponentStyles = makeStyles((theme) => ({
         border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
         borderRadius: '0px',
         marginBottom: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     successMessage: {
@@ -220,27 +220,27 @@ const useComponentStyles = makeStyles((theme) => ({
         border: `1px solid ${theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7'}`,
         borderRadius: '0px',
         marginBottom: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     // ===== MINIMAL INVOICE/PAYMENT STYLES =====
     invoiceCard: {
         padding: '8px',
         margin: '4px',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000',
         border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`
     },
     
     invoiceTitle: {
         color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '4px'
     },
     
     invoiceAmount: {
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace',
+        fontFamily: '"FreePixel", "Courier New", monospace',
         fontWeight: 'normal'
     },
     
@@ -249,7 +249,7 @@ const useComponentStyles = makeStyles((theme) => ({
         textAlign: 'center',
         padding: '8px',
         color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
-        fontFamily: '"EightBitDragon", "Courier New", monospace'
+        fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
     divider: {
