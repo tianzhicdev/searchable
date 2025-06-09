@@ -186,31 +186,36 @@ class SearchSearchables(Resource):
         tokens = re.findall(r'[a-zA-Z0-9]+', text.lower())
         return tokens
 
-    def _calculate_match_score(self, query_tokens, item_data):
-        """Calculate relevance score for text matching"""
-        if not query_tokens:
+    def _calculate_match_score(self, query_term, item_data):
+        """Calculate relevance score for simple substring matching"""
+        if not query_term:
             return 1.0  # Default score when no query
         
+        query_lower = query_term.lower()
         score = 0.0
         
-        # Search in various fields of the item
-        searchable_fields = []
+        # Search in various fields of the item for substring matches
         try:
             public_data = item_data.get('payloads', {}).get('public', {})
-            searchable_fields.extend([
-                public_data.get('title', ''),
-                public_data.get('description', ''),
-                ' '.join([item.get('name', '') for item in public_data.get('selectables', [])])
-            ])
-        except:
+            
+            # Check title (highest weight)
+            title = public_data.get('title', '').lower()
+            if query_lower in title:
+                score += 2.0
+            
+            # Check description (medium weight)
+            description = public_data.get('description', '').lower()
+            if query_lower in description:
+                score += 1.0
+            
+            # Check selectables (lower weight)
+            selectables_text = ' '.join([item.get('name', '') for item in public_data.get('selectables', [])]).lower()
+            if query_lower in selectables_text:
+                score += 0.5
+                
+        except Exception as e:
+            logger.error(f"Error calculating match score: {str(e)}")
             pass
-        
-        # Check each field
-        for field in searchable_fields:
-            field_tokens = self._tokenize_text(field)
-            field_matches = sum(1 for token in query_tokens if token in field_tokens)
-            if field_matches > 0:
-                score += field_matches / len(query_tokens)
         
         return score
 
@@ -232,7 +237,6 @@ class SearchSearchables(Resource):
             
             # Convert to list format and apply text filtering
             items = []
-            query_tokens = self._tokenize_text(query_term)
             
             for result in results:
                 searchable_id, searchable_data = result
@@ -242,8 +246,8 @@ class SearchSearchables(Resource):
                 item_data['searchable_id'] = searchable_id
                 
                 # Apply text filtering
-                if query_tokens:
-                    match_score = self._calculate_match_score(query_tokens, item_data)
+                if query_term:
+                    match_score = self._calculate_match_score(query_term, item_data)
                     if match_score == 0:
                         continue  # Skip items that don't match
                     item_data['relevance_score'] = match_score
@@ -251,7 +255,7 @@ class SearchSearchables(Resource):
                 items.append(item_data)
             
             # Sort by relevance if text search was performed
-            if query_tokens:
+            if query_term:
                 items.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
             
             total_count = len(items)
@@ -616,7 +620,7 @@ class TerminalRating(Resource):
             
             # Get recent ratings for this terminal
             ratings_sql = f"""
-                SELECT r.rating, r.review, r.created_at, u.username, s.searchable_data->>'payloads'->>'public'->>'title' as item_title
+                SELECT r.rating, r.review, r.created_at, u.username, s.searchable_data->'payloads'->'public'->>'title' as item_title
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
                 JOIN searchables s ON i.searchable_id = s.searchable_id
