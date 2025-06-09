@@ -19,11 +19,11 @@ const useComponentStyles = makeStyles((theme) => ({
     // ===== CENTRALIZED COLOR CLASSES =====
     // User provided content (descriptions, titles) - Light Orange
     userText: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c',
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     userContent: {
-        color: theme.appColors?.userContent || theme.colors?.lightOrange || '#f4402c ',
+        color: theme.appColors?.userContent || theme.colors?.lightOrange || '#f4402c',
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
@@ -319,6 +319,39 @@ const useComponentStyles = makeStyles((theme) => ({
         padding: '4px',
         margin: '2px',
         fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // ===== TYPOGRAPHY VARIANTS FOR EASY USAGE =====
+    // Typography variants for user content (light orange)
+    userTypography: {
+        color: '#f4402c',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // Typography variants for system text (dark orange)
+    systemTypography: {
+        color: '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // Typography for headings (system text)
+    headingTypography: {
+        color: '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontWeight: 'normal'
+    },
+    
+    // Typography for body text (user content)
+    bodyTypography: {
+        color: '#f4402c',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // Typography for captions/labels (system text)
+    captionTypography: {
+        color: '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontSize: '0.75rem'
     }
 }));
 
