@@ -444,14 +444,14 @@ class TestCompletePayment(Resource):
                 payment_id = existing_payment[0]
                 execute_sql(cur, """
                     UPDATE payment 
-                    SET status = %s, metadata = %s, updated_at = NOW()
+                    SET status = %s, metadata = %s
                     WHERE id = %s
                 """, params=(PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
             else:
                 # Create new payment record
                 execute_sql(cur, """
-                    INSERT INTO payment (invoice_id, amount, currency, payment_type, external_id, status, metadata, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    INSERT INTO payment (invoice_id, amount, currency, type, external_id, status, metadata)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, params=(invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
                 
