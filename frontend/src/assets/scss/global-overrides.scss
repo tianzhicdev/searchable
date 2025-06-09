@@ -1,6 +1,6 @@
 /* 
  * GLOBAL CSS OVERRIDES - Strict 3-Color System
- * Light Orange (#fbe9e7): User provided data/text ONLY
+ * Light Orange (#f4402c): User provided data/text ONLY
  * Dark Orange (#d84315): Static/system texts ONLY
  * Light Blue (#3899ef): Icons ONLY (no fill, with dark orange border)
  * NO OTHER COLORS ALLOWED
@@ -35,7 +35,7 @@ body, html, #root,
 
 // Force visible text colors
 input, textarea, span, div, p {
-  color: #fbe9e7 !important; // Light orange for readability
+  //   // Light orange for readability
 }
 
 // Fix all white text to light orange
@@ -51,7 +51,7 @@ input, textarea, span, div, p {
 .MuiTypography-body2,
 .MuiTypography-caption,
 .MuiTypography-overline {
-  color: #fbe9e7 !important; // Light orange for all text
+  //   // Light orange for all text
 }
 
 // Specific overrides for any remaining white text
@@ -59,7 +59,7 @@ input, textarea, span, div, p {
 [style*="color: #ffffff"],
 [style*="color: #fff"],
 [style*="color: rgb(255, 255, 255)"] {
-  color: #fbe9e7 !important; // Force light orange
+  //   // Force light orange
 }
 
 // Override body and root to ensure pure black with max width constraint
@@ -96,7 +96,7 @@ main,
 .MuiInputBase-input,
 .MuiTextField-root input,
 .MuiOutlinedInput-input {
-  color: #fbe9e7 !important; // Light Orange for user content
+    // Light Orange for user content
   font-family: 'FreePixel', 'Courier New', monospace !important;
   background: #000000 !important;
 }
@@ -214,7 +214,7 @@ svg.MuiSvgIcon-root,
   }
   
   .MuiTableCell-body {
-    color: #fbe9e7 !important; // User content
+      // User content
     background: #000000 !important;
   }
 }
@@ -257,7 +257,7 @@ svg.MuiSvgIcon-root,
     }
     
     .MuiListItemText-secondary {
-      color: #fbe9e7 !important; // User content
+        // User content
     }
   }
 }
@@ -404,7 +404,7 @@ p, span, div {
 
 .MuiTypography-body1,
 .MuiTypography-body2 {
-  color: #fbe9e7 !important; // User content for body text
+    // User content for body text
 }
 
 .MuiTypography-caption,

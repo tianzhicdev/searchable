@@ -3,7 +3,7 @@ import { makeStyles } from '@material-ui/styles';
 /**
  * CENTRALIZED COMPONENT STYLES - Consistent UI with minimal spacing
  * COLORS: Only 3 colors allowed
- * - Light Orange (#fbe9e7): User provided data/text (descriptions, item titles)
+ * - Light Orange (#f4402c): User provided data/text (descriptions, item titles)
  * - Dark Orange (#d84315): Static/system texts
  * - Light Blue (#3899ef): Icons
  * FONT: Only FreePixel font
@@ -19,11 +19,11 @@ const useComponentStyles = makeStyles((theme) => ({
     // ===== CENTRALIZED COLOR CLASSES =====
     // User provided content (descriptions, titles) - Light Orange
     userText: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     userContent: {
-        color: theme.appColors?.userContent || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userContent || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
@@ -96,14 +96,14 @@ const useComponentStyles = makeStyles((theme) => ({
     // ===== TEXT COMPONENTS =====
     // User content text (descriptions, item titles) - Light Orange
     itemTitle: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace',
         fontWeight: 'normal',
         marginBottom: '4px'
     },
     
     itemDescription: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '4px'
     },
@@ -124,7 +124,7 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     infoValue: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
@@ -218,8 +218,8 @@ const useComponentStyles = makeStyles((theme) => ({
     successMessage: {
         padding: '8px',
         backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000',
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
-        border: `1px solid ${theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7'}`,
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
+        border: `1px solid ${theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c '}`,
         borderRadius: '0px',
         marginBottom: '4px',
         fontFamily: '"FreePixel", "Courier New", monospace'
@@ -235,7 +235,7 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     invoiceTitle: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#f4402c ',
         fontFamily: '"FreePixel", "Courier New", monospace',
         marginBottom: '4px'
     },
