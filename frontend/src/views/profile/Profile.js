@@ -6,10 +6,11 @@ import useComponentStyles from '../../themes/componentStyles'; // Import shared 
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert,
-  Menu, MenuItem, IconButton
+  Menu, MenuItem, IconButton, Avatar
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import PersonIcon from '@material-ui/icons/Person';
 import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
@@ -23,6 +24,7 @@ const Profile = () => {
   const [error, setError] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [profileData, setProfileData] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
@@ -44,6 +46,7 @@ const Profile = () => {
   useEffect(() => {
     fetchBalance();
     fetchProfileData();
+    fetchUserProfile();
   }, [account.user, account.token]);
   
   const fetchBalance = async () => {
@@ -103,6 +106,19 @@ const Profile = () => {
       // We don't set global error here to avoid affecting other components
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    if (!account.user || !account.user._id) return;
+    
+    try {
+      const response = await backend.get('v1/profile');
+      console.log("User profile response:", response.data);
+      setUserProfile(response.data.profile);
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      // Profile might not exist yet, which is fine
     }
   };
   
@@ -259,6 +275,25 @@ const Profile = () => {
               Personal Information
             </Typography>
           </Box>
+
+          {/* Profile Picture and Introduction */}
+          {userProfile && (
+            <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+              <Avatar 
+                src={userProfile.profile_image_url} 
+                alt={userProfile.username}
+                style={{ width: 80, height: 80, marginBottom: 8 }}
+              >
+                {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
+              </Avatar>
+              {userProfile.introduction && (
+                <Typography variant="body2" align="center" style={{ marginTop: 8, fontStyle: 'italic' }}>
+                  "{userProfile.introduction}"
+                </Typography>
+              )}
+            </Box>
+          )}
+
           <Box >
             <Typography variant="body1">
               <span className={classes.infoLabel}>Username:</span>
