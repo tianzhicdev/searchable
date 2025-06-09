@@ -19,9 +19,10 @@ import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
+import useComponentStyles from '../../themes/componentStyles';
 
 const DownloadableSearchableDetails = () => {
-
+  const classes = useComponentStyles();
   const dispatch = useDispatch();
 
   // Item data
@@ -522,8 +523,8 @@ const DownloadableSearchableDetails = () => {
     }
     
     return (
-      <Box p={1} width="100%">
-        <Typography variant="h6" gutterBottom>
+      <Box className={classes.fileListContainer}>
+        <Typography variant="h6" className={classes.sectionHeader}>
           Available Files:
         </Typography>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
@@ -534,17 +535,7 @@ const DownloadableSearchableDetails = () => {
           return (
             <Box 
               key={file.fileId} 
-              display="flex" 
-              justifyContent="space-between" 
-              alignItems="center"
-              py={1}
-              width="100%"
-              style={{ 
-                backgroundColor: isPaidByCurrentUser ? '#e8f5e8' : isPaidBySomeone ? '#fff3cd' : 'transparent',
-                padding: '8px',
-                borderRadius: '4px',
-                marginBottom: '4px'
-              }}
+              className={classes.fileItem}
             >
               <Box flex={1}>
                 <Box display="flex" alignItems="center">

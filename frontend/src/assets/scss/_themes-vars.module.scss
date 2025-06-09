@@ -8,9 +8,9 @@ $darkOrange: #d84315;
 // Light Blue: for icons
 $lightBlue: #3899ef;
 
-// Background and paper (black theme)
+// Background and paper (pure black theme)
 $paper: #000000;
-$background: #1a1a1a;
+$background: #000000;
 
 // Derived colors for Material-UI compatibility (using only the 3 main colors)
 // Orange variations
@@ -23,20 +23,20 @@ $blueLight: $lightBlue;      // #3899ef
 $blueMain: #1976d2;          // Slightly darker blue
 $blueDark: #0d47a1;          // Dark blue
 
-// Neutral colors (derived from background)
-$grey50: #1a1a1a;
-$grey100: #2c2c2c;
-$grey200: #404040;
-$grey300: #545454;
-$grey500: #757575;
-$grey600: #8a8a8a;
-$grey700: #9e9e9e;
-$grey900: #e0e0e0;
+// Neutral colors (derived from pure black background)
+$grey50: #000000;
+$grey100: #000000;
+$grey200: #000000;
+$grey300: #000000;
+$grey500: #000000;
+$grey600: #000000;
+$grey700: #000000;
+$grey900: #000000;
 
 // Required Material-UI colors mapped to our system
-$primaryLight: $grey100;
+$primaryLight: $background;
 $primaryMain: $paper;
-$primaryDark: $grey50;
+$primaryDark: $background;
 $primary200: $grey200;
 $primary800: $paper;
 
