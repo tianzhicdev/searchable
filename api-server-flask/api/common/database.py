@@ -26,10 +26,14 @@ def get_db_connection():
         print(f"Client port: {connection_details[3]}")
     return conn
 
-def execute_sql(cursor, sql, commit=False, connection=None):
+def execute_sql(cursor, sql, params=None, commit=False, connection=None):
     """Execute SQL with logging and return results if applicable"""
-    print(f"Executing SQL: {sql.replace(chr(10), ' ')}")
-    cursor.execute(sql)
+    if params:
+        print(f"Executing SQL: {sql.replace(chr(10), ' ')} with params: {params}")
+        cursor.execute(sql, params)
+    else:
+        print(f"Executing SQL: {sql.replace(chr(10), ' ')}")
+        cursor.execute(sql)
     if commit and connection:
         connection.commit()
     return cursor

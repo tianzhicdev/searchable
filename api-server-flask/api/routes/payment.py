@@ -403,7 +403,7 @@ class TestCompletePayment(Resource):
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.currency, i.metadata
                 FROM invoice i 
                 WHERE i.external_id = %s AND i.type = 'stripe'
-            """, (session_id,))
+            """, params=(session_id,))
             
             invoice_row = cur.fetchone()
             if not invoice_row:
@@ -416,7 +416,7 @@ class TestCompletePayment(Resource):
             # Check if payment already exists
             execute_sql(cur, """
                 SELECT id, status FROM payment WHERE invoice_id = %s
-            """, (invoice_id,))
+            """, params=(invoice_id,))
             
             existing_payment = cur.fetchone()
             
@@ -446,14 +446,14 @@ class TestCompletePayment(Resource):
                     UPDATE payment 
                     SET status = %s, metadata = %s, updated_at = NOW()
                     WHERE id = %s
-                """, (PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
+                """, params=(PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
             else:
                 # Create new payment record
                 execute_sql(cur, """
                     INSERT INTO payment (invoice_id, amount, currency, payment_type, external_id, status, metadata, created_at, updated_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                     RETURNING id
-                """, (invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
+                """, params=(invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
                 
                 payment_result = cur.fetchone()
                 payment_id = payment_result[0] if payment_result else None

@@ -983,7 +983,7 @@ def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None)
             RETURNING id
         """
         
-        cur.execute(query, (review,))
+        execute_sql(cur, query, params=(review,))
         rating_id = cur.fetchone()[0]
         
         conn.commit()
@@ -1063,7 +1063,7 @@ def create_invoice_note(invoice_id, user_id, content, buyer_seller, metadata=Non
             RETURNING id
         """
         
-        cur.execute(query, (content,))
+        execute_sql(cur, query, params=(content,))
         note_id = cur.fetchone()[0]
         
         conn.commit()

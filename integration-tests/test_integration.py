@@ -295,17 +295,19 @@ class TestSearchableIntegration:
         
         if self.created_invoice.get('mock'):
             print("⚠ Skipping payment completion test (using mock invoice)")
+            # Mark payment as failed for subsequent tests
+            self.__class__.payment_completed = False
             return
         
         session_id = self.created_invoice.get('session_id')
         assert session_id, "No session ID in invoice"
         
         # Check initial payment status
+        status_response = self.client.check_payment_status(session_id)
+        print(f"  Initial payment status: {status_response.get('status', 'unknown')}")
+        
+        # Use our test endpoint to complete the payment
         try:
-            status_response = self.client.check_payment_status(session_id)
-            print(f"  Initial payment status: {status_response.get('status', 'unknown')}")
-            
-            # Use our test endpoint to complete the payment
             completion_response = self.client.complete_payment_directly(
                 session_id=session_id,
                 test_uuid=self.payment_test_uuid
@@ -318,12 +320,18 @@ class TestSearchableIntegration:
             updated_status = self.client.check_payment_status(session_id)
             print(f"  Updated payment status: {updated_status.get('status', 'unknown')}")
             
+            # Verify payment was actually completed
+            if updated_status.get('status') != 'paid':
+                raise AssertionError(f"Payment status is still {updated_status.get('status')} after completion")
+            
+            self.__class__.payment_completed = True
             print("✓ Payment completion simulation successful")
             
         except Exception as e:
+            self.__class__.payment_completed = False
             print(f"⚠ Payment completion test failed: {e}")
-            # Don't fail the test entirely - this might be expected in some environments
-            print("  (This might be expected if test endpoints are not available)")
+            # Fail the test since the endpoint should be available
+            raise AssertionError(f"Payment completion endpoint failed: {e}")
     
     def test_10_check_user_paid_files(self):
         """Test checking what files the user has paid for"""
@@ -332,25 +340,27 @@ class TestSearchableIntegration:
         assert self.client.token, "No authentication token available"
         assert self.created_searchable_id, "No searchable ID available"
         
-        try:
-            response = self.client.get_user_paid_files(self.created_searchable_id)
-            
-            # Verify response structure
-            assert 'searchable_id' in response, f"No searchable_id in response: {response}"
-            assert 'user_id' in response, "No user_id in response"
-            assert 'paid_file_ids' in response, "No paid_file_ids in response"
-            
-            print(f"✓ User paid files check successful")
-            print(f"  Searchable ID: {response['searchable_id']}")
-            print(f"  User ID: {response['user_id']}")
-            print(f"  Paid file IDs: {response['paid_file_ids']}")
-            
-            # Store for download test
-            self.__class__.paid_file_ids = response['paid_file_ids']
-            
-        except Exception as e:
-            print(f"⚠ User paid files check failed: {e}")
-            self.__class__.paid_file_ids = []  # Empty list for testing
+        response = self.client.get_user_paid_files(self.created_searchable_id)
+        
+        # Verify response structure
+        assert 'searchable_id' in response, f"No searchable_id in response: {response}"
+        assert 'user_id' in response, "No user_id in response"
+        assert 'paid_file_ids' in response, "No paid_file_ids in response"
+        
+        print(f"✓ User paid files check successful")
+        print(f"  Searchable ID: {response['searchable_id']}")
+        print(f"  User ID: {response['user_id']}")
+        print(f"  Paid file IDs: {response['paid_file_ids']}")
+        
+        # Store for download test
+        self.__class__.paid_file_ids = response['paid_file_ids']
+        
+        # If payment was completed successfully, we should have paid files
+        if hasattr(self.__class__, 'payment_completed') and self.payment_completed:
+            assert len(response['paid_file_ids']) > 0, "Payment was completed but no paid file IDs found"
+            print(f"  ✓ Payment completion verified: {len(response['paid_file_ids'])} files available")
+        else:
+            print(f"  ⚠ No payment completion, so no paid files expected")
     
     def test_11_test_file_download_access(self):
         """Test downloading files after payment (if any)"""
@@ -359,26 +369,44 @@ class TestSearchableIntegration:
         assert self.client.token, "No authentication token available"
         assert self.created_searchable_id, "No searchable ID available"
         
-        if not hasattr(self.__class__, 'paid_file_ids') or not self.paid_file_ids:
-            print("⚠ No paid files to test download (expected for test environment)")
+        # If payment was not completed, this test should expect no access
+        if not hasattr(self.__class__, 'payment_completed') or not self.payment_completed:
+            print("⚠ Payment was not completed, testing access denial...")
+            
+            # Get searchable info to try downloading without payment
+            searchable_info = self.client.get_searchable(self.created_searchable_id)
+            public_data = searchable_info['payloads']['public']
+            
+            if public_data.get('type') == 'downloadable' and 'downloadableFiles' in public_data:
+                file_id = public_data['downloadableFiles'][0]['fileId']
+                
+                try:
+                    response = self.client.download_file(self.created_searchable_id, file_id)
+                    # Should fail with 403 or similar
+                    assert response.status_code != 200, f"Download should be denied without payment but got {response.status_code}"
+                    print(f"✓ Access correctly denied without payment (status: {response.status_code})")
+                except Exception as e:
+                    print(f"✓ Access correctly denied without payment: {e}")
+            else:
+                print("✓ No downloadable files to test access denial")
             return
+        
+        # Payment was completed, test should have access
+        if not hasattr(self.__class__, 'paid_file_ids') or not self.paid_file_ids:
+            raise AssertionError("Payment was completed but no paid file IDs available")
         
         # Try to download the first paid file
         first_file_id = self.paid_file_ids[0]
         
-        try:
-            response = self.client.download_file(self.created_searchable_id, first_file_id)
-            
-            # Check if download was successful (we get a response object)
-            if response.status_code == 200:
-                print(f"✓ File download successful")
-                print(f"  File ID: {first_file_id}")
-                print(f"  Content-Type: {response.headers.get('content-type', 'unknown')}")
-            else:
-                print(f"⚠ File download failed with status: {response.status_code}")
-                
-        except Exception as e:
-            print(f"⚠ File download test failed: {e}")
+        response = self.client.download_file(self.created_searchable_id, first_file_id)
+        
+        # Check if download was successful (we get a response object)
+        assert response.status_code == 200, f"File download failed with status: {response.status_code}"
+        
+        print(f"✓ File download successful")
+        print(f"  File ID: {first_file_id}")
+        print(f"  Content-Type: {response.headers.get('content-type', 'unknown')}")
+        print(f"  Content-Length: {response.headers.get('content-length', 'unknown')}")
 
 
 if __name__ == "__main__":
