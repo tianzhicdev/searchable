@@ -2,7 +2,6 @@
 import os
 import re
 import math
-import geohash2
 import requests
 from flask import request
 from flask_restx import Resource
@@ -75,21 +74,6 @@ class CreateSearchable(Resource):
             # Add terminal info to the searchable data
             data['terminal_id'] = str(current_user.id)
             
-            # Extract location data
-            latitude = None
-            longitude = None
-            
-            # Check if location data should be used
-            use_location = data.get('payloads', {}).get('public', {}).get('use_location', False)
-            
-            if use_location:
-                try:
-                    latitude = float(data['payloads']['public']['latitude'])
-                    longitude = float(data['payloads']['public']['longitude'])
-                except:
-                    return {"error": "Location data is required when use_location is true"}, 400
-            else:
-                logger.info("Location usage disabled for this searchable")
             
             # Insert into searchables table
             logger.info("Executing database insert...")
@@ -97,17 +81,6 @@ class CreateSearchable(Resource):
             execute_sql(cur, sql)
             searchable_id = cur.fetchone()[0]
             
-            # If location data is provided, insert into searchable_geo table
-            if use_location and (latitude is not None) and (longitude is not None):
-                # Calculate geohash for the coordinates
-                geohash = geohash2.encode(latitude, longitude, precision=9)
-                
-                # Insert into searchable_geo table
-                geo_sql = f"""
-                    INSERT INTO searchable_geo (searchable_id, latitude, longitude, geohash)
-                    VALUES ({searchable_id}, {latitude}, {longitude}, '{geohash}')
-                """
-                execute_sql(cur, geo_sql)
             
             logger.info(f"Added searchable {searchable_id}")
             
@@ -135,7 +108,7 @@ class CreateSearchable(Resource):
 @rest_api.route('/api/v1/searchable/search', methods=['GET'])
 class SearchSearchables(Resource):
     """
-    Search for searchable items based on location and optional query terms
+    Search for searchable items based on query terms
     """
     @token_required
     @track_metrics('search_searchables_v2')
@@ -148,15 +121,11 @@ class SearchSearchables(Resource):
             
             # Query database for results
             results, total_count = self._query_database(
-                params['lat'], 
-                params['lng'], 
-                params['max_distance'],
                 params['query_term'],
-                params['use_location'],
                 params.get('filters', {})
             )
             
-            # Apply pagination after filtering by actual distance
+            # Apply pagination
             paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
             
             # Enrich paginated results with usernames
@@ -175,26 +144,13 @@ class SearchSearchables(Resource):
             # Get parameters with defaults
             lat = request.args.get('lat')
             lng = request.args.get('lng')
-            max_distance = request.args.get('max_distance', 100000)
             query_term = request.args.get('q', '')
             page_number = int(request.args.get('page', 1))
             page_size = int(request.args.get('page_size', 20))
-            use_location = request.args.get('use_location', 'true').lower() == 'true'
             filters_param = request.args.get('filters', '{}')
             
-            # Validate location parameters if location is used
-            if use_location:
-                if not lat or not lng:
-                    return {"error": "Latitude and longitude are required when use_location is true"}
-                try:
-                    lat = float(lat)
-                    lng = float(lng)
-                    max_distance = int(max_distance)
-                except ValueError:
-                    return {"error": "Invalid latitude, longitude, or max_distance"}
-            else:
-                lat = lng = None
-                max_distance = None
+            # Location is no longer used
+            lat = lng = None
             
             # Parse filters
             try:
@@ -212,30 +168,14 @@ class SearchSearchables(Resource):
             return {
                 'lat': lat,
                 'lng': lng,
-                'max_distance': max_distance,
                 'query_term': query_term,
                 'page_number': page_number,
                 'page_size': page_size,
-                'use_location': use_location,
                 'filters': filters
             }
         except Exception as e:
             return {"error": f"Parameter parsing error: {str(e)}"}
 
-    def _calculate_distance(self, lat1, lng1, lat2, lng2):
-        """Calculate distance between two coordinates using Haversine formula"""
-        R = 6371000  # Earth's radius in meters
-        
-        lat1_rad = math.radians(lat1)
-        lat2_rad = math.radians(lat2)
-        delta_lat = math.radians(lat2 - lat1)
-        delta_lng = math.radians(lng2 - lng1)
-        
-        a = (math.sin(delta_lat / 2) ** 2 +
-             math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lng / 2) ** 2)
-        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        
-        return R * c
 
     def _tokenize_text(self, text):
         """Tokenize text for matching"""
@@ -274,32 +214,28 @@ class SearchSearchables(Resource):
         
         return score
 
-    def _query_database(self, lat, lng, max_distance, query_term, use_location, filters={}):
+    def _query_database(self, query_term, filters={}):
         """Query database for searchable items"""
         conn = get_db_connection()
         cur = conn.cursor()
         
         try:
-            if use_location:
-                # Use geospatial search
-                results = self._query_searchable_geo(cur, lat, lng, max_distance, "")
-            else:
-                # Query all searchables without location filtering
-                execute_sql(cur, """
-                    SELECT s.searchable_id, s.searchable_data, NULL as distance
-                    FROM searchables s
-                    WHERE s.searchable_data->>'removed' IS NULL 
-                    OR s.searchable_data->>'removed' != 'true'
-                    ORDER BY s.searchable_id DESC
-                """)
-                results = cur.fetchall()
+            # Query all searchables
+            execute_sql(cur, """
+                SELECT s.searchable_id, s.searchable_data
+                FROM searchables s
+                WHERE s.searchable_data->>'removed' IS NULL 
+                OR s.searchable_data->>'removed' != 'true'
+                ORDER BY s.searchable_id DESC
+            """)
+            results = cur.fetchall()
             
             # Convert to list format and apply text filtering
             items = []
             query_tokens = self._tokenize_text(query_term)
             
             for result in results:
-                searchable_id, searchable_data, distance = result
+                searchable_id, searchable_data = result
                 
                 # Add searchable_id to data
                 item_data = dict(searchable_data)
@@ -311,10 +247,6 @@ class SearchSearchables(Resource):
                     if match_score == 0:
                         continue  # Skip items that don't match
                     item_data['relevance_score'] = match_score
-                
-                # Add distance if available
-                if distance is not None:
-                    item_data['distance'] = round(distance, 2)
                 
                 items.append(item_data)
             
@@ -338,29 +270,6 @@ class SearchSearchables(Resource):
             if 'conn' in locals() and conn:
                 conn.close()
 
-    def _query_searchable_geo(self, cur, lat, lng, max_distance, where_clause):
-        """Query searchable_geo table for location-based search"""
-        # Use PostGIS point distance query for better performance
-        sql = f"""
-            SELECT s.searchable_id, s.searchable_data,
-                   ST_Distance(
-                       ST_GeogFromText('POINT({lng} {lat})'),
-                       ST_GeogFromText('POINT(' || sg.longitude || ' ' || sg.latitude || ')')
-                   ) as distance
-            FROM searchables s
-            JOIN searchable_geo sg ON s.searchable_id = sg.searchable_id
-            WHERE ST_DWithin(
-                ST_GeogFromText('POINT({lng} {lat})'),
-                ST_GeogFromText('POINT(' || sg.longitude || ' ' || sg.latitude || ')'),
-                {max_distance}
-            )
-            AND (s.searchable_data->>'removed' IS NULL OR s.searchable_data->>'removed' != 'true')
-            {where_clause}
-            ORDER BY distance
-        """
-        
-        execute_sql(cur, sql)
-        return cur.fetchall()
 
     def _apply_pagination(self, results, page_number, page_size):
         """Apply pagination to results"""
