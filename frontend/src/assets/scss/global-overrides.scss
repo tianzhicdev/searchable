@@ -11,7 +11,7 @@
 // Import FreePixel font
 @font-face {
   font-family: 'FreePixel';
-  src: url('/fonts/FreePixel.ttf') format('truetype');
+  src: url('../../../public/fonts/FreePixel.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -23,7 +23,7 @@
 }
 
 // GLOBAL COLOR ENFORCEMENT
-// Override ALL Material-UI colors to use only our 3 colors
+// Overril-UI colors to use only our 3 colors
 
 // Remove all background colors
 .MuiPaper-root,
