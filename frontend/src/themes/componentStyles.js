@@ -19,27 +19,27 @@ const useComponentStyles = makeStyles((theme) => ({
     // ===== CENTRALIZED COLOR CLASSES =====
     // User provided content (descriptions, titles) - Light Orange
     userText: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     userContent: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userContent || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     
     // Static/system text - Dark Orange
     systemText: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     staticText: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.staticText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     
     // Icons - Light Blue
     iconColor: {
-        color: theme.colors?.lightBlue || '#3899ef'
+        color: theme.appColors?.iconColor || theme.colors?.lightBlue || '#3899ef'
     },
     
     // ===== CENTRALIZED SPACING SYSTEM =====
@@ -83,7 +83,7 @@ const useComponentStyles = makeStyles((theme) => ({
         padding: '8px',
         margin: '4px',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
-        backgroundColor: theme.colors?.paper || '#000000'
+        backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000'
     },
     
     gridItem: {
@@ -94,35 +94,35 @@ const useComponentStyles = makeStyles((theme) => ({
     // ===== TEXT COMPONENTS =====
     // User content text (descriptions, item titles) - Light Orange
     itemTitle: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         fontWeight: 'normal',
         marginBottom: '4px'
     },
     
     itemDescription: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         marginBottom: '4px'
     },
     
     // System/static text - Dark Orange
     sectionTitle: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         marginBottom: '8px',
         fontWeight: 'normal'
     },
     
     infoLabel: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         fontWeight: 'normal',
         marginRight: '4px'
     },
     
     infoValue: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     
@@ -133,7 +133,7 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     formLabel: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         marginBottom: '4px',
         display: 'block'
@@ -151,7 +151,7 @@ const useComponentStyles = makeStyles((theme) => ({
     
     // ===== BUTTON COMPONENTS =====
     iconButton: {
-        color: theme.colors?.lightBlue || '#3899ef',
+        color: theme.appColors?.iconColor || theme.colors?.lightBlue || '#3899ef',
         padding: '4px',
         '& .MuiSvgIcon-root': {
             color: theme.colors?.lightBlue || '#3899ef'
@@ -163,7 +163,7 @@ const useComponentStyles = makeStyles((theme) => ({
         maxWidth: '80px',
         maxHeight: '80px',
         objectFit: 'contain',
-        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
         borderRadius: '0px',
         margin: '2px'
     },
@@ -174,7 +174,7 @@ const useComponentStyles = makeStyles((theme) => ({
         height: '100px',
         overflow: 'hidden',
         borderRadius: '0px',
-        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
         margin: '2px'
     },
     
@@ -187,9 +187,9 @@ const useComponentStyles = makeStyles((theme) => ({
     
     paginationButton: {
         fontFamily: '"EightBitDragon", "Courier New", monospace',
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         marginRight: '4px',
-        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
         borderRadius: '0px',
         padding: '4px 8px',
         minWidth: 'auto'
@@ -205,9 +205,9 @@ const useComponentStyles = makeStyles((theme) => ({
     
     errorMessage: {
         padding: '8px',
-        backgroundColor: theme.colors?.paper || '#000000',
-        color: theme.colors?.darkOrange || '#d84315',
-        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
+        border: `1px solid ${theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'}`,
         borderRadius: '0px',
         marginBottom: '4px',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
@@ -215,9 +215,9 @@ const useComponentStyles = makeStyles((theme) => ({
     
     successMessage: {
         padding: '8px',
-        backgroundColor: theme.colors?.paper || '#000000',
-        color: theme.colors?.lightOrange || '#fbe9e7',
-        border: `1px solid ${theme.colors?.lightOrange || '#fbe9e7'}`,
+        backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
+        border: `1px solid ${theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7'}`,
         borderRadius: '0px',
         marginBottom: '4px',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
@@ -228,18 +228,18 @@ const useComponentStyles = makeStyles((theme) => ({
         padding: '8px',
         margin: '4px',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
-        backgroundColor: theme.colors?.paper || '#000000',
+        backgroundColor: theme.appColors?.paper || theme.colors?.paper || '#000000',
         border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`
     },
     
     invoiceTitle: {
-        color: theme.colors?.lightOrange || '#fbe9e7',
+        color: theme.appColors?.userText || theme.colors?.lightOrange || '#fbe9e7',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         marginBottom: '4px'
     },
     
     invoiceAmount: {
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace',
         fontWeight: 'normal'
     },
@@ -248,13 +248,13 @@ const useComponentStyles = makeStyles((theme) => ({
     noResults: {
         textAlign: 'center',
         padding: '8px',
-        color: theme.colors?.darkOrange || '#d84315',
+        color: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315',
         fontFamily: '"EightBitDragon", "Courier New", monospace'
     },
     
     divider: {
         margin: '4px 0',
-        borderColor: theme.colors?.darkOrange || '#d84315'
+        borderColor: theme.appColors?.systemText || theme.colors?.darkOrange || '#d84315'
     },
     
     // Remove all excess spacing for new components
