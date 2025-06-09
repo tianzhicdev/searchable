@@ -484,9 +484,31 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
 def check_payment(session_id):
     """
     Checks the status of a Stripe payment session and updates the database if paid.
+    First checks the database to avoid unnecessary Stripe API calls if already complete.
     """
     try:
-        # Retrieve the checkout session from Stripe
+        # First, check the database for existing payment status
+        invoice_records = get_invoices(external_id=session_id)
+        
+        if invoice_records:
+            invoice_record = invoice_records[0]
+            
+            # Check if payment already exists and is complete
+            existing_payments = get_payments(invoice_id=invoice_record['id'])
+            
+            if existing_payments:
+                payment_record = existing_payments[0]
+                if payment_record['status'] == PaymentStatus.COMPLETE.value:
+                    # Payment is already complete, return early without calling Stripe
+                    return {
+                        'status': PaymentStatus.COMPLETE.value,  # or 'complete' - both indicate successful payment
+                        'amount_total': int(invoice_record['amount']),  # Convert to cents for consistency
+                        'currency': Currency.USD.value,
+                        'session_id': session_id
+                    }
+        
+        # If we reach here, either no payment exists or it's not complete yet
+        # Proceed with Stripe API call
         checkout_session = stripe.checkout.Session.retrieve(session_id)
         
         # Get payment status
@@ -495,13 +517,14 @@ def check_payment(session_id):
         # If payment is successful, update the payment status in our database
         if payment_status in ('paid', 'complete'):
             
-            # Get the invoice record from our database using external_id
-            invoice_records = get_invoices(external_id=session_id)
+            # Get the invoice record from our database using external_id (if not already retrieved)
+            if not invoice_records:
+                invoice_records = get_invoices(external_id=session_id)
             
             if invoice_records:
                 invoice_record = invoice_records[0]
                 
-                # Check if payment already exists
+                # Check if payment already exists (re-check in case of race condition)
                 existing_payments = get_payments(invoice_id=invoice_record['id'])
                 
                 if existing_payments:

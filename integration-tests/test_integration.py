@@ -321,7 +321,7 @@ class TestSearchableIntegration:
             print(f"  Updated payment status: {updated_status.get('status', 'unknown')}")
             
             # Verify payment was actually completed
-            if updated_status.get('status') != 'paid':
+            if updated_status.get('status') != 'complete':
                 raise AssertionError(f"Payment status is still {updated_status.get('status')} after completion")
             
             self.__class__.payment_completed = True
