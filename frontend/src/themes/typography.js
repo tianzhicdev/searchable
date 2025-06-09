@@ -4,7 +4,8 @@
  */
 export function themeTypography(theme) {
     return {
-        fontFamily: theme.customization.fontFamily,
+        // ENFORCE FREEPIXEL FONT EVERYWHERE
+        fontFamily: '"FreePixel", "Courier New", monospace',
         h6: {
             fontWeight: 500,
             color: theme.heading,

@@ -1,289 +1,277 @@
 import { makeStyles } from '@material-ui/styles';
 
 /**
- * Centralized component styles for consistent UI across the application
- * @param {Object} theme - The theme object from Material UI theme provider
- * @returns {Object} - The styles object containing all component styles
+ * CENTRALIZED COMPONENT STYLES - Consistent UI with minimal spacing
+ * COLORS: Only 3 colors allowed
+ * - Light Orange (#fbe9e7): User provided data/text (descriptions, item titles)
+ * - Dark Orange (#d84315): Static/system texts
+ * - Light Blue (#3899ef): Icons
+ * FONT: Only FreePixel font
+ * SPACING: Minimal padding/margins
  */
 const useComponentStyles = makeStyles((theme) => ({
-
-    // Item profile image
+    
+    // ===== CENTRALIZED FONT SYSTEM =====
+    freePixelFont: {
+        fontFamily: '"FreePixel", "Courier New", monospace !important'
+    },
+    
+    // ===== CENTRALIZED COLOR CLASSES =====
+    // User provided content (descriptions, titles) - Light Orange
+    userText: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    userContent: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // Static/system text - Dark Orange
+    systemText: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    staticText: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // Icons - Light Blue
+    iconColor: {
+        color: theme.colors?.lightBlue || '#3899ef'
+    },
+    
+    // ===== CENTRALIZED SPACING SYSTEM =====
+    // Minimal spacing classes
+    spaceXs: { margin: '2px', padding: '2px' },
+    spaceSm: { margin: '4px', padding: '4px' },
+    spaceMd: { margin: '8px', padding: '8px' },
+    spaceLg: { margin: '12px', padding: '12px' },
+    spaceXl: { margin: '16px', padding: '16px' },
+    
+    // Margin only
+    marginXs: { margin: '2px' },
+    marginSm: { margin: '4px' },
+    marginMd: { margin: '8px' },
+    marginLg: { margin: '12px' },
+    marginXl: { margin: '16px' },
+    
+    // Padding only
+    paddingXs: { padding: '2px' },
+    paddingSm: { padding: '4px' },
+    paddingMd: { padding: '8px' },
+    paddingLg: { padding: '12px' },
+    paddingXl: { padding: '16px' },
+    
+    // ===== LAYOUT COMPONENTS =====
+    container: {
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        padding: '8px',
+        margin: '4px'
+    },
+    
+    header: {
+        marginBottom: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    paper: {
+        padding: '8px',
+        margin: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        backgroundColor: theme.colors?.paper || '#000000'
+    },
+    
+    gridItem: {
+        padding: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // ===== TEXT COMPONENTS =====
+    // User content text (descriptions, item titles) - Light Orange
+    itemTitle: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontWeight: 'normal',
+        marginBottom: '4px'
+    },
+    
+    itemDescription: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        marginBottom: '4px'
+    },
+    
+    // System/static text - Dark Orange
+    sectionTitle: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        marginBottom: '8px',
+        fontWeight: 'normal'
+    },
+    
+    infoLabel: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontWeight: 'normal',
+        marginRight: '4px'
+    },
+    
+    infoValue: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // ===== FORM COMPONENTS =====
+    formGroup: {
+        marginBottom: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    formLabel: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        marginBottom: '4px',
+        display: 'block'
+    },
+    
+    formActions: {
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginTop: '8px',
+        '& > *': {
+            marginLeft: '4px',
+            fontFamily: '"FreePixel", "Courier New", monospace'
+        }
+    },
+    
+    // ===== BUTTON COMPONENTS =====
+    iconButton: {
+        color: theme.colors?.lightBlue || '#3899ef',
+        padding: '4px',
+        '& .MuiSvgIcon-root': {
+            color: theme.colors?.lightBlue || '#3899ef'
+        }
+    },
+    
+    // ===== IMAGE COMPONENTS =====
     itemProfileImage: {
         maxWidth: '80px',
         maxHeight: '80px',
         objectFit: 'contain',
-        border: `1px solid ${theme.borders.main} !important`,
-        borderRadius: '0px'
+        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        borderRadius: '0px',
+        margin: '2px'
     },
     
-
-
-  header: {
-    marginBottom: theme.spacing(3),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  sectionTitle: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.text.primary,
-    fontWeight: 500
-  },
-  divider: {
-    margin: theme.spacing(2, 0),
-    border: theme.borders.main
-  },
-  textLink: {
-    textDecoration: 'none'
-  },
-  
-  
-  // Form elements
-  formGroup: {
-    marginBottom: theme.spacing(1)
-  },
-  formLabel: {
-    marginBottom: theme.spacing(1),
-    display: 'block',
-    color: theme.palette.text.secondary,
-    fontWeight: 500
-  },
-  formHelp: {
-    fontSize: '0.75rem',
-    color: theme.palette.text.secondary,
-    marginTop: theme.spacing(0.5)
-  },
-  formActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: theme.spacing(3),
-    '& > *': {
-      marginLeft: theme.spacing(2)
+    imagePreview: {
+        position: 'relative',
+        width: '100px',
+        height: '100px',
+        overflow: 'hidden',
+        borderRadius: '0px',
+        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        margin: '2px'
+    },
+    
+    // ===== NAVIGATION/PAGINATION =====
+    pagination: {
+        display: 'flex',
+        justifyContent: 'center',
+        margin: '8px 0'
+    },
+    
+    paginationButton: {
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        color: theme.colors?.darkOrange || '#d84315',
+        marginRight: '4px',
+        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        borderRadius: '0px',
+        padding: '4px 8px',
+        minWidth: 'auto'
+    },
+    
+    // ===== STATUS/FEEDBACK COMPONENTS =====
+    loading: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '8px'
+    },
+    
+    errorMessage: {
+        padding: '8px',
+        backgroundColor: theme.colors?.paper || '#000000',
+        color: theme.colors?.darkOrange || '#d84315',
+        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`,
+        borderRadius: '0px',
+        marginBottom: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    successMessage: {
+        padding: '8px',
+        backgroundColor: theme.colors?.paper || '#000000',
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        border: `1px solid ${theme.colors?.lightOrange || '#fbe9e7'}`,
+        borderRadius: '0px',
+        marginBottom: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    // ===== MINIMAL INVOICE/PAYMENT STYLES =====
+    invoiceCard: {
+        padding: '8px',
+        margin: '4px',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        backgroundColor: theme.colors?.paper || '#000000',
+        border: `1px solid ${theme.colors?.darkOrange || '#d84315'}`
+    },
+    
+    invoiceTitle: {
+        color: theme.colors?.lightOrange || '#fbe9e7',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        marginBottom: '4px'
+    },
+    
+    invoiceAmount: {
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace',
+        fontWeight: 'normal'
+    },
+    
+    // ===== UTILITY CLASSES =====
+    noResults: {
+        textAlign: 'center',
+        padding: '8px',
+        color: theme.colors?.darkOrange || '#d84315',
+        fontFamily: '"FreePixel", "Courier New", monospace'
+    },
+    
+    divider: {
+        margin: '4px 0',
+        borderColor: theme.colors?.darkOrange || '#d84315'
+    },
+    
+    // Remove all excess spacing for new components
+    minimalSpacing: {
+        padding: '2px !important',
+        margin: '2px !important',
+        '& .MuiCardContent-root': {
+            padding: '4px !important'
+        },
+        '& .MuiDialogContent-root': {
+            padding: '8px !important'
+        },
+        '& .MuiBox-root': {
+            padding: '2px !important',
+            margin: '2px !important'
+        }
     }
-  },
-  searchBar: {
-    padding: '0px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing(2)
-  },
-  // File inputs
-  fileInput: {
-    display: 'none'
-  },
-  fileInputLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: theme.spacing(1, 2),
-    backgroundColor: theme.palette.background.paper,
-    color: theme.palette.text.primary,
-    border: theme.borders.main,
-    borderRadius: '0px',
-    cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover
-    }
-  },
-  
-  // Images and media
-  imagePreviewContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    marginTop: theme.spacing(2),
-    gap: theme.spacing(2)
-  },
-  imagePreview: {
-    position: 'relative',
-    width: '100px',
-    height: '100px',
-    overflow: 'hidden',
-    borderRadius: '0px',
-    border: theme.borders.main
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-    padding: 0,
-    minWidth: 'unset',
-    width: '24px',
-    height: '24px'
-  },
-  
-  // Maps
-  mapContainer: {
-    height: '400px',
-    width: '100%',
-    marginBottom: theme.spacing(2),
-    border: theme.borders.main,
-    borderRadius: '0px'
-  },
-  mapLoading: {
-    height: '400px',
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.palette.background.paper,
-    border: theme.borders.main,
-    borderRadius: '0px'
-  },
-  mapInstruction: {
-    marginBottom: theme.spacing(2),
-    color: theme.palette.text.secondary
-  },
-  
-  // Loading and status indicators
-  loading: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing(4)
-  },
-  loadingIndicator: {
-    position: 'absolute',
-    right: theme.spacing(1),
-    top: '50%',
-    transform: 'translateY(-50%)',
-    display: 'flex',
-    alignItems: 'center',
-    color: theme.palette.text.secondary,
-    fontSize: '0.75rem'
-  },
-  errorMessage: {
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.error.light,
-    color: theme.palette.error.dark,
-    border: theme.borders.main,
-    borderRadius: '0px',
-    marginBottom: theme.spacing(2)
-  },
-  successMessage: {
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.success.light,
-    color: theme.palette.success.dark,
-    border: theme.borders.main,
-    borderRadius: '0px',
-    marginBottom: theme.spacing(2)
-  },
-
-  itemTitle: {
-    marginBottom: theme.spacing(1),
-    color: theme.palette.text.primary,
-    fontWeight: 500
-  },
-  itemDescription: {
-    color: theme.palette.text.secondary,
-    marginBottom: theme.spacing(1)
-  },
-  itemInfo: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    marginTop: theme.spacing(1)
-  },
-  infoItem: {
-    marginRight: theme.spacing(2),
-    marginBottom: theme.spacing(1),
-    color: theme.palette.text.secondary
-  },
-  infoRow: {
-    marginBottom: theme.spacing(1)
-  },
-  infoLabel: {
-    fontWeight: 500,
-    marginRight: theme.spacing(1),
-    color: theme.palette.text.secondary
-  },
-  infoValue: {
-    color: theme.palette.text.primary
-  },
-  
-  // Misc and utilities
-  noResults: {
-    textAlign: 'center',
-    padding: theme.spacing(4),
-    color: theme.palette.text.secondary
-  },
-  
-  pagination: {
-    display: 'flex',
-    justifyContent: 'center',
-    margin: theme.spacing(2, 0)
-  },
-  
-  paginationButton: {
-    fontWeight: 'bold',
-    color: theme.palette.text.primary,
-    marginRight: theme.spacing(1),
-    border: theme.borders.main,
-    borderRadius: theme.shape.borderRadius
-  },
-  activeButton: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText
-  },
-  leftButtons: {
-    display: 'flex'
-  },
-  rightButtons: {
-    display: 'flex',
-    marginLeft: 'auto',
-    justifyContent: 'flex-end',
-    alignItems: 'center'
-  },
-  
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing(3),
-    width: '100%'
-  },
-  
-  zoomableImageDialog: {
-    boxShadow: 'none',
-    borderRadius: 0,
-    position: 'relative',
-  },
-  
-  zoomableImageContent: {
-    padding: '0px !important',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  
-  zoomableImageFull: {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    objectFit: 'contain',
-  },
-  
-  zoomableImageCloseButton: {
-    position: 'absolute',
-    // top: 8,
-    // right: 8,
-    zIndex: 1,
-  },
-  
-  footer: {
-    borderTop: theme.borders.main,
-    backgroundColor: theme.palette.background.paper,
-    marginTop: 'auto',
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover
-    }
-  },
-
 }));
 
-export default useComponentStyles; 
+export default useComponentStyles;
