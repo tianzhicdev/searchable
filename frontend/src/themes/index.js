@@ -15,6 +15,7 @@ export function theme(customization) {
     const color = colors;
 
     let themeOption = {
+        // Keep original colors for Material-UI compatibility
         colors: color,
         heading: color.grey900,
         paper: color.paper,
@@ -31,8 +32,8 @@ export function theme(customization) {
             // CENTRALIZED FONT SYSTEM - Only EightBitDragon font allowed
             fontFamily: '"EightBitDragon", "Courier New", monospace'
         },
-        // CENTRALIZED COLOR USAGE MAPPING
-        colors: {
+        // CENTRALIZED COLOR USAGE MAPPING - Additional colors
+        appColors: {
             // User provided data/text (descriptions, item titles) - Light Orange
             userText: color.lightOrange,
             userContent: color.lightOrange,
