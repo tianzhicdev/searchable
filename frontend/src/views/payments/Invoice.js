@@ -253,7 +253,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 startIcon={<Message className={classes.iconColor} />}
                                 onClick={handleNotesExpandClick}
                                 size="small"
-                                className={`${classes.eightBitDragonFont} ${classes.systemText} ${classes.marginXs}`}
+                                className={`${classes.systemText} ${classes.marginXs}`}
                             >
                                 Notes ({noteCount})
                             </Button>
