@@ -11,7 +11,6 @@ import { store, persister } from './store';
 import * as serviceWorker from './serviceWorker';
 import App from './App';
 import config from './config';
-import Footer from './components/Footer';
 
 // style + assets
 import './assets/scss/style.scss';
@@ -24,10 +23,7 @@ ReactDOM.render(
     <Provider store={store}>
         <PersistGate loading={null} persistor={persister}>
             <BrowserRouter basename={config.basename}>
-                <React.Fragment>
-                    <App />
-                    <Footer />
-                </React.Fragment>
+                <App />
             </BrowserRouter>
         </PersistGate>
     </Provider>,

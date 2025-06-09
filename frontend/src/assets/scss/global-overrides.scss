@@ -16,14 +16,20 @@
   font-style: normal;
 }
 
-// GLOBAL FONT AND BACKGROUND ENFORCEMENT - FreePixel everywhere with pure black background
+// GLOBAL FONT ENFORCEMENT - FreePixel everywhere
 * {
   font-family: 'FreePixel', 'Courier New', monospace !important;
-  background: #000000 !important; // PURE BLACK BACKGROUND EVERYWHERE
+}
+
+// GLOBAL BACKGROUND ENFORCEMENT - Pure black for components only
+body, html, #root,
+.MuiContainer-root,
+.MuiBox-root:not(.MuiSvgIcon-root) {
+  background: #000000 !important;
 }
 
 // Ensure text is not black on black background
-* {
+*:not(.MuiSvgIcon-root) {
   color: inherit !important;
 }
 
@@ -32,18 +38,43 @@ input, textarea, span, div, p {
   color: #fbe9e7 !important; // Light orange for readability
 }
 
-// Profile section specific fixes
+// Fix all white text to light orange
+.MuiTypography-h1,
+.MuiTypography-h2,
+.MuiTypography-h3,
 .MuiTypography-h4,
-.MuiTypography-subtitle2,
+.MuiTypography-h5,
+.MuiTypography-h6,
 .MuiTypography-subtitle1,
-.MuiTypography-body2 {
-  color: #fbe9e7 !important; // Light orange for profile text
+.MuiTypography-subtitle2,
+.MuiTypography-body1,
+.MuiTypography-body2,
+.MuiTypography-caption,
+.MuiTypography-overline {
+  color: #fbe9e7 !important; // Light orange for all text
 }
 
-// Override body and root to ensure pure black
+// Specific overrides for any remaining white text
+[style*="color: white"],
+[style*="color: #ffffff"],
+[style*="color: #fff"],
+[style*="color: rgb(255, 255, 255)"] {
+  color: #fbe9e7 !important; // Force light orange
+}
+
+// Override body and root to ensure pure black with max width constraint
 body, #root, html {
   background: #000000 !important;
   background-color: #000000 !important;
+}
+
+// Global max-width constraint for all pages (industry standard)
+.MuiContainer-root,
+main,
+.main-content {
+  max-width: 1200px !important; // Industry standard max width
+  margin: 0 auto !important;
+  width: 100% !important;
 }
 
 // GLOBAL COLOR ENFORCEMENT
@@ -84,11 +115,16 @@ body, #root, html {
 }
 
 // Icons - Light Blue ONLY (no border on icons themselves)
-.MuiSvgIcon-root {
+.MuiSvgIcon-root,
+svg.MuiSvgIcon-root,
+.MuiSvgIcon-root > *,
+[class*="MuiSvgIcon"] {
   color: #3899ef !important; // Light Blue for icons
   fill: #3899ef !important; // Fill with light blue so they're visible
+  stroke: #3899ef !important; // Stroke also light blue
   border: none !important; // NO BORDER ON ICONS THEMSELVES
   background: transparent !important; // Icons don't need background
+  font-family: inherit !important; // Don't override icon fonts
 }
 
 // Button specific overrides
