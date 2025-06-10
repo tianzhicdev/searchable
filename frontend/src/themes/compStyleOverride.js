@@ -84,10 +84,10 @@ export function componentStyleOverrides(theme) {
         MuiSvgIcon: {
           styleOverrides: {
             root: {
-              color: theme.colors.orangeMain
+              color: theme.colors.lightBlue
             },
             colorSecondary: {
-              color: theme.colors.orangeMain
+              color: theme.colors.lightBlue
             }
           }
         },
