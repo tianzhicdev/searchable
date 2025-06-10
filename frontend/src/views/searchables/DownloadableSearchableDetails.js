@@ -16,10 +16,11 @@ import Collapse from '@material-ui/core/Collapse';
 import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
-import backend from '../utilities/Backend';
+import backend, { isMockMode } from '../../mocks/mockBackend';
 import ZoomableImage from '../../components/ZoomableImage';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import useComponentStyles from '../../themes/componentStyles';
+import { mockAccount } from '../../mocks/mockAuth';
 
 const DownloadableSearchableDetails = () => {
   const classes = useComponentStyles();
@@ -69,8 +70,8 @@ const DownloadableSearchableDetails = () => {
   const [userPaidFiles, setUserPaidFiles] = useState(new Set());
   
   useEffect(() => {
-    // Check if user is authenticated
-    if (!account?.isLoggedIn) {
+    // Check if user is authenticated (skip in mock mode)
+    if (!isMockMode && !account?.isLoggedIn) {
       setError('You must be logged in to view this item');
       setLoading(false);
       return;

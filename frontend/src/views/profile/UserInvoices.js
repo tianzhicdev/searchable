@@ -18,7 +18,7 @@ import {
   TrendingDown,
   AccountBalanceWallet
 } from '@material-ui/icons';
-import Backend from '../utilities/Backend';
+import Backend from '../../mocks/mockBackend';
 import Invoice from '../payments/Invoice';
 import useComponentStyles from '../../themes/componentStyles';
 
