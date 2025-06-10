@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock Mode Verification</title>
+</head>
+<body>
+    <h1>Mock Mode Verification</h1>
+    <div id="status">Checking...</div>
+    <pre id="output"></pre>
+    
+    <script>
+        async function verifyMockMode() {
+            const statusEl = document.getElementById('status');
+            const outputEl = document.getElementById('output');
+            
+            try {
+                // Check if mock mode is active by looking for the indicator
+                const response = await fetch('http://localhost:3000/searchable-item/mock-item-1');
+                const text = await response.text();
+                
+                const hasMockIndicator = text.includes('MOCK MODE');
+                const hasReactApp = text.includes('root');
+                
+                statusEl.innerHTML = `
+                    <p>✅ Server is running</p>
+                    <p>${hasMockIndicator ? '✅' : '❌'} Mock mode indicator ${hasMockIndicator ? 'found' : 'not found'}</p>
+                    <p>${hasReactApp ? '✅' : '❌'} React app ${hasReactApp ? 'loaded' : 'not loaded'}</p>
+                `;
+                
+                outputEl.textContent = `
+To test the mock mode:
+
+1. Open: http://localhost:3000/searchable-item/mock-item-1
+
+2. You should see:
+   - Orange "🔧 MOCK MODE" badge in top-right
+   - "Premium Digital Asset Bundle" title
+   - 3 downloadable files
+   - No authentication error
+
+3. If you see "You must be logged in", the auth bypass is working.
+
+4. Check browser console for [MOCK] prefixed logs.
+                `;
+                
+            } catch (error) {
+                statusEl.innerHTML = '❌ Error: ' + error.message;
+                outputEl.textContent = 'Make sure the React app is running with: npm run start:mock';
+            }
+        }
+        
+        verifyMockMode();
+    </script>
+</body>
+</html>

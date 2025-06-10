@@ -13,6 +13,8 @@ import theme from './themes';
 import StateDebugger from './components/StateDebugger';
 import Terminal from './views/utilities/Terminal';
 import Footer from './components/Footer';
+import MockModeIndicator from './components/MockModeIndicator';
+import './mocks/mockAuth'; // Setup mock auth if in mock mode
 //-----------------------|| APP ||-----------------------//
 
 const App = () => {
@@ -23,6 +25,7 @@ const App = () => {
             <ThemeProvider theme={theme(customization)}>
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
+                <MockModeIndicator />
                 {/* <Box display="flex" justifyContent="center" width="100%"> */}
                     <Container maxWidth="md" style={{ width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Terminal />

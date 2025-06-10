@@ -15,7 +15,7 @@ import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
-import backend from '../utilities/Backend';
+import backend from '../../mocks/mockBackend';
 import { formatDate } from '../utilities/Date';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
