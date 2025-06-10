@@ -8,6 +8,7 @@ import {
   Grid, Typography, Button, Paper, Box, TextField, 
   CircularProgress, Divider, IconButton, MenuItem, Switch
 } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
@@ -17,6 +18,7 @@ import backend from '../utilities/Backend';
 const PublishDownloadableSearchable = () => {
   console.log("PublishDownloadableSearchable component is being rendered");
   const classes = useComponentStyles();
+  const theme = useTheme();
   const dispatch = useDispatch();
   
   const [formData, setFormData] = useState({
@@ -443,7 +445,7 @@ const PublishDownloadableSearchable = () => {
                         alignItems="center" 
                         p={2} 
                         mb={1}
-                        border="1px solid #ff3c00"
+                        border={`1px solid ${theme.palette.primary.main}`}
                       >
                         <Box style={{ flex: 3 }}>
                           <Typography variant="body2" style={{ fontWeight: 'bold' }}>

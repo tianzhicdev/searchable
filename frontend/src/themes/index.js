@@ -8,92 +8,31 @@ import { themePalette } from './palette';
 import { themeTypography } from './typography';
 
 /**
- * Represent theme style and structure as per Material-UI
+ * SIMPLIFIED THEME - Only 5 colors allowed
  * @param {JsonObject} customization customization parameter object
  */
 export function theme(customization) {
-    const color = colors;
-
-    let themeOption = {
-        // Keep original colors for Material-UI compatibility
-        colors: color,
-        heading: color.grey900,
-        paper: color.paper,
-        backgroundDefault: color.paper,
-        background: color.primaryLight,
-        darkTextPrimary: color.grey700,
-        darkTextSecondary: color.grey500,
-        textDark: color.grey900,
-        menuSelected: color.secondaryDark,
-        menuSelectedBack: color.secondaryLight,
-        divider: color.grey200,
+    const themeOption = {
+        colors: colors,
         customization: {
             ...customization,
-            // CENTRALIZED FONT SYSTEM - Only FreePixel font allowed
             fontFamily: '"FreePixel", "Courier New", monospace'
         },
-        // CENTRALIZED COLOR USAGE MAPPING - Additional colors
+        // CENTRALIZED COLOR USAGE - Only 5 colors
         appColors: {
-            // User provided data/text (descriptions, item titles) - Light Orange
-            userText: color.lightOrange,
-            userContent: color.lightOrange,
-            
-            // Static/system texts - Dark Orange  
-            systemText: color.darkOrange,
-            staticText: color.darkOrange,
-            
-            // Icons - Light Blue
-            iconColor: color.lightBlue,
-            iconAccent: color.lightBlue,
-            
-            // Background system
-            background: color.background,
-            paper: color.paper
-        },
-        // CENTRALIZED SPACING SYSTEM - Minimal spacing
-        spacing: {
-            xs: '2px',    // Extra small spacing
-            sm: '4px',    // Small spacing  
-            md: '8px',    // Medium spacing
-            lg: '12px',   // Large spacing
-            xl: '16px'    // Extra large spacing
+            userText: colors.primary,       // User provided data/text
+            staticText: colors.secondary,   // Static/system texts
+            iconColor: colors.highlight,    // Icons and interactive elements
+            alerting: colors.alerting,      // Error states
+            warning: colors.warning         // Warning states
         }
     };
 
     return createTheme({
         direction: 'ltr',
         palette: themePalette(themeOption),
-        borders: {
-            main: `1px solid ${color.orangeMain}`,
-            light: `1px solid ${color.orangeLight}`,
-            dark: `1px solid ${color.orangeDark}`,
-            primary: `1px solid ${color.primaryMain}`,
-            secondary: `1px solid ${color.secondaryMain}`,
-            error: `1px solid ${color.errorMain}`,
-            success: `1px solid ${color.successMain}`,
-            warning: `1px solid ${color.warningMain}`
-        },
-        mixins: {
-            toolbar: {
-                minHeight: '48px',
-                padding: '16px',
-                '@media (min-width: 600px)': {
-                    minHeight: '48px'
-                }
-            }
-        },
-        breakpoints: {
-            values: {
-                xs: 0,
-                sm: 600,
-                md: 960,
-                lg: 1280,
-                xl: 1920
-            }
-        },
         typography: themeTypography(themeOption),
-        components: componentStyleOverrides(themeOption),
-        
+        components: componentStyleOverrides(themeOption)
     });
 }
 

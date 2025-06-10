@@ -3,10 +3,12 @@ import { Dialog, DialogContent, Button } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import useComponentStyles from '../themes/componentStyles';
 import { Box } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 
 const ZoomableImage = ({ src, alt, style, className }) => {
   const [open, setOpen] = useState(false);
   const classes = useComponentStyles();
+  const theme = useTheme();
 
   const handleOpen = () => {
     setOpen(true);
@@ -25,7 +27,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
           ...style, 
           cursor: 'pointer',
           padding: '4px',
-          border: '1px solid #d84315',
+          border: `1px solid ${theme.colors?.primary}`,
           maxWidth: '200px',
           maxHeight: '200px',
           objectFit: 'contain'

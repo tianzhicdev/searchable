@@ -25,7 +25,7 @@ const ColorBox = ({ bgcolor, title, data, dark }) => {
                         alignItems: 'center',
                         py: 4.5,
                         bgcolor: bgcolor,
-                        color: dark ? theme.palette.grey[800] : '#ffffff'
+                        color: dark ? theme.palette.grey[800] : theme.palette.background.paper
                     }}
                 >
                     {title && (
@@ -337,7 +337,7 @@ const UIColor = () => {
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6} md={4} lg={2}>
-                                <ColorBox bgcolor="#fff" data={{ label: 'Pure White', color: '#ffffff' }} title="Pure White" dark />
+                                <ColorBox bgcolor={theme.palette.background.paper} data={{ label: 'Pure White', color: theme.palette.background.paper }} title="Pure White" dark />
                             </Grid>
                         </Grid>
                     </SubCard>

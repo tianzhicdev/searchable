@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Box, Paper, Typography, Fab, Drawer, Tabs, Tab } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import BugReportIcon from '@material-ui/icons/BugReport';
 import CloseIcon from '@material-ui/icons/Close';
 
@@ -8,6 +9,7 @@ const StateDebugger = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [localStorage, setLocalStorage] = useState({});
+  const theme = useTheme();
   // Get the entire Redux state
   const reduxState = useSelector((state) => state);
   
@@ -50,7 +52,7 @@ const StateDebugger = () => {
           right: 20, 
           zIndex: 9999,
           border: '1px solid',
-          borderColor: 'orangeMain'
+          borderColor: theme.palette.warning.main
         }}
       >
         {isOpen ? <CloseIcon /> : <BugReportIcon />}
@@ -66,7 +68,7 @@ const StateDebugger = () => {
             maxHeight: '70vh',
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
             borderTop: '1px solid',
-            borderColor: 'orangeMain'
+            borderColor: theme.palette.warning.main
           }
         }}
       >
@@ -90,7 +92,7 @@ const StateDebugger = () => {
         <Box p={2} sx={{ overflow: 'auto' }}>
           {activeTab === 0 && (
             <pre style={{ 
-              color: '#4fc3f7', 
+              color: theme.palette.secondary.main, 
               margin: 0, 
               textAlign: 'left',
               fontFamily: 'monospace'
@@ -101,7 +103,7 @@ const StateDebugger = () => {
           
           {activeTab === 1 && (
             <pre style={{ 
-              color: '#4fc3f7', 
+              color: theme.palette.secondary.main, 
               margin: 0, 
               textAlign: 'left',
               fontFamily: 'monospace'

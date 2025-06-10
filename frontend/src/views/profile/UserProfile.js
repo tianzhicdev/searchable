@@ -3,6 +3,7 @@ import { useParams, useHistory } from 'react-router-dom';
 import { 
   Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip
 } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PersonIcon from '@material-ui/icons/Person';
 import useComponentStyles from '../../themes/componentStyles';
@@ -10,6 +11,7 @@ import backend from '../utilities/Backend';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
+  const theme = useTheme();
   const { identifier } = useParams(); // Can be username or user_id
   const history = useHistory();
   
@@ -131,7 +133,7 @@ const UserProfile = () => {
                   style={{ width: 100, height: 100 }}
                 />
               ) : (
-                <Avatar style={{ width: 100, height: 100, backgroundColor: '#1976d2' }}>
+                <Avatar style={{ width: 100, height: 100, backgroundColor: theme.palette.secondary.main }}>
                   <PersonIcon style={{ fontSize: 60 }} />
                 </Avatar>
               )}
