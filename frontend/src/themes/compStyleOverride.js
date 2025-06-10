@@ -209,13 +209,13 @@ export function componentStyleOverrides(theme) {
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    background: theme.colors.primaryDark,
+                    background: theme.colors.orangeMain,
                     borderRadius: '0px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     border: `1px solid ${theme.colors.orangeMain}`,
                 },
                 input: {
-                    background: theme.colors.primaryDark,
+                    background: theme.colors.orangeMain,
                     borderRadius: '0px',
                 },
             }
