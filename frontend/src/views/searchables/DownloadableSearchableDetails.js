@@ -559,13 +559,13 @@ const DownloadableSearchableDetails = () => {
                     <CheckIcon style={{ color: 'green', marginRight: 16 }} />
                   )}
                   <Box>
-                    <Typography variant="body1">{file.name}</Typography>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography variant="body1" className={classes.staticText}>{file.name}</Typography>
+                    <Typography variant="body2" className={classes.userText}>
                       {file.description}
                     </Typography>
-                    <Typography variant="body2">{formatCurrency(file.price)}</Typography>
+                    <Typography variant="body2" className={classes.userText}>{formatCurrency(file.price)}</Typography>
                     {isPaidBySomeone && !isPaidByCurrentUser && (
-                      <Typography variant="caption" color="secondary">
+                      <Typography variant="caption" className={classes.userText}>
                         (Purchased by others)
                       </Typography>
                     )}

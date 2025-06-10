@@ -26,6 +26,24 @@ const useComponentStyles = makeStyles((theme) => ({
     iconColor: {
         color: theme.appColors?.iconColor || theme.colors?.lightBlue || '#3899ef'
     },
+
+    // Centralized component styling
+    paper: {
+        padding: 12,
+        marginBottom: 8,
+        backgroundColor: '#000000',
+        border: '1px solid #d84315',
+        borderRadius: '0px'
+    },
+    
+    box: {
+        padding: 4,
+        margin: 2
+    },
+    
+    grid: {
+        padding: 4
+    },
 }));
 
 export default useComponentStyles;
