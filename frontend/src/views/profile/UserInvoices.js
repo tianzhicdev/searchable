@@ -150,7 +150,7 @@ const UserInvoices = () => {
           <Box display="flex" alignItems="center" gap={1}>
             <TrendingDown color="secondary" />
             <Box>
-              <Typography variant="h6" color="secondary">
+              <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalSpent)}
               </Typography>
               <Typography className={classes.staticText} >
@@ -164,7 +164,7 @@ const UserInvoices = () => {
           <Box display="flex" alignItems="center" gap={1}>
             <TrendingUp color="primary" />
             <Box>
-              <Typography variant="h6" color="primary">
+              <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalEarned)}
               </Typography>
               <Typography className={classes.staticText} >
@@ -178,7 +178,7 @@ const UserInvoices = () => {
           <Box display="flex" alignItems="center" gap={1}>
             <AccountBalanceWallet color="action" />
             <Box>
-              <Typography variant="h6" color="textPrimary">
+              <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalWithdrawn)}
               </Typography>
               <Typography className={classes.staticText} >
@@ -199,7 +199,7 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <ShoppingCart />
-                <Typography variant="h6" color="secondary">
+                <Typography variant="h6" className={classes.staticText}>
                   My Purchases
                 </Typography>
                 <Chip label={stats.purchasesCount} size="small" />
@@ -210,7 +210,7 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <Store />
-                <Typography variant="h6" color="secondary">
+                <Typography variant="h6" className={classes.staticText}>
                   My Sales
                 </Typography>
                 <Chip label={stats.salesCount} size="small" />
@@ -221,7 +221,7 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <Receipt />
-                <Typography variant="h6" color="secondary">
+                <Typography variant="h6" className={classes.staticText}>
                   All Invoices
                 </Typography>
                 <Chip label={invoices.length} size="small" />
@@ -232,7 +232,7 @@ const UserInvoices = () => {
             label={
               <Box display="flex" alignItems="center" gap={1}>
                 <AccountBalanceWallet />
-                <Typography variant="h6" color="secondary">
+                <Typography variant="h6" className={classes.staticText}>
                   Withdrawals
                 </Typography>
                 <Chip label={stats.withdrawalsCount} size="small" />
@@ -248,10 +248,10 @@ const UserInvoices = () => {
               {purchases.length === 0 ? (
                 <Box textAlign="center" py={4}>
                   <ShoppingCart style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
-                  <Typography variant="h6" color="textSecondary">
+                  <Typography variant="h6" className={classes.staticText}>
                     No purchases yet
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" className={classes.staticText}>
                     Your purchase history will appear here
                   </Typography>
                 </Box>
@@ -279,10 +279,10 @@ const UserInvoices = () => {
               {sales.length === 0 ? (
                 <Box textAlign="center" py={4}>
                   <Store style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
-                  <Typography variant="h6" color="textSecondary">
+                  <Typography variant="h6" className={classes.staticText}>
                     No sales yet
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" className={classes.staticText}>
                     Your sales history will appear here
                   </Typography>
                 </Box>
@@ -310,10 +310,10 @@ const UserInvoices = () => {
               {invoices.length === 0 ? (
                 <Box textAlign="center" py={4}>
                   <Receipt style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
-                  <Typography variant="h6" color="textSecondary">
+                  <Typography variant="h6" className={classes.staticText}>
                     No invoices yet
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" className={classes.staticText}>
                     Your complete invoice history will appear here
                   </Typography>
                 </Box>
@@ -341,10 +341,10 @@ const UserInvoices = () => {
               {withdrawals.length === 0 ? (
                 <Box textAlign="center" py={4}>
                   <AccountBalanceWallet style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
-                  <Typography variant="h6" color="textSecondary">
+                  <Typography variant="h6" className={classes.staticText}>
                     No withdrawals yet
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" className={classes.staticText}>
                     Your withdrawal history will appear here
                   </Typography>
                 </Box>
@@ -367,11 +367,11 @@ const UserInvoices = () => {
                           <Typography variant="h6">
                             {formatCurrency(withdrawal.amount)}
                           </Typography>
-                          <Typography variant="body2" color="textSecondary">
+                          <Typography variant="body2" className={classes.staticText}>
                             {new Date(withdrawal.created_at).toLocaleDateString()} at {new Date(withdrawal.created_at).toLocaleTimeString()}
                           </Typography>
                           {withdrawal.metadata?.address && (
-                            <Typography variant="body2" color="textSecondary">
+                            <Typography variant="body2" className={classes.staticText}>
                               To: {withdrawal.metadata.address.substring(0, 20)}...
                             </Typography>
                           )}
