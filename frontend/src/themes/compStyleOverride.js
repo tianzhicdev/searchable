@@ -84,10 +84,10 @@ export function componentStyleOverrides(theme) {
         MuiSvgIcon: {
           styleOverrides: {
             root: {
-              color: theme.colors.lightBlue
+              color: theme.colors.orangeMain
             },
             colorSecondary: {
-              color: theme.colors.yellow
+              color: theme.colors.orangeMain
             }
           }
         },
@@ -123,7 +123,7 @@ export function componentStyleOverrides(theme) {
         MuiCardHeader: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.textDark,
+                    color: theme.colors.orangeMain,
                     padding: '8px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
@@ -152,7 +152,7 @@ export function componentStyleOverrides(theme) {
         MuiListItemButton: {
             styleOverrides: {
                 root: {
-                    color: theme.darkTextPrimary,
+                    color: theme.colors.orangeMain,
                     paddingTop: '10px',
                     paddingBottom: '10px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
@@ -179,7 +179,7 @@ export function componentStyleOverrides(theme) {
         MuiListItemIcon: {
             styleOverrides: {
                 root: {
-                    color: theme.darkTextPrimary,
+                    color: theme.colors.orangeMain,
                     minWidth: '36px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
@@ -188,7 +188,7 @@ export function componentStyleOverrides(theme) {
         MuiListItemText: {
             styleOverrides: {
                 primary: {
-                    color: theme.textDark,
+                    color: theme.colors.orangeMain,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -196,7 +196,7 @@ export function componentStyleOverrides(theme) {
         MuiInputBase: {
             styleOverrides: {
                 input: {
-                    color: theme.textDark,
+                    color: theme.colors.orangeMain,
                     backgroundColor: theme.colors.primaryDark,
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     '&::placeholder': {
@@ -302,11 +302,11 @@ export function componentStyleOverrides(theme) {
         MuiTypography: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.lightOrange,
+                    color: theme.colors.orangeMain,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 caption: {
-                    color: theme.colors.lightBlue,
+                    color: theme.colors.orangeMain,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -322,11 +322,11 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.textDark
+                    color: theme.colors.orangeMain
                 },
                 head: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.lightBlue
+                    color: theme.colors.orangeMain
                 }
             }
         },
@@ -341,16 +341,16 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.textDark
+                    color: theme.colors.orangeMain
                 },
                 selectIcon: {
-                    color: theme.colors.lightBlue
+                    color: theme.colors.orangeMain
                 },
                 actions: {
-                    color: theme.colors.lightBlue
+                    color: theme.colors.orangeMain
                 },
                 select: {
-                    color: theme.textDark
+                    color: theme.colors.orangeMain
                 },
                 menuItem: {
                     fontFamily: '"FreePixel", "Courier New", monospace'
@@ -373,7 +373,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     '& .MuiTableCell-root': {
-                        borderColor: `${theme.colors.lightBlue} !important`
+                        borderColor: `${theme.colors.orangeMain} !important`
                     }
                 }
             }
@@ -381,7 +381,7 @@ export function componentStyleOverrides(theme) {
         MuiTableRow: {
             styleOverrides: {
                 root: {
-                    borderColor: theme.colors.lightBlue,
+                    borderColor: theme.colors.orangeMain,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -401,7 +401,7 @@ export function componentStyleOverrides(theme) {
                 root: {
                     fontSize: '1rem',
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.orangeMain,
+                    color: theme.colors.orangeMain,
                     '&:hover': {
                         backgroundColor: theme.menuSelectedBack,
                         color: theme.menuSelected
@@ -428,16 +428,16 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.textDark
+                    color: theme.colors.orangeMain
                 },
                 selectIcon: {
-                    color: theme.colors.lightBlue
+                    color: theme.colors.orangeMain
                 },
                 actions: {
-                    color: theme.colors.lightBlue
+                    color: theme.colors.orangeMain
                 },
                 select: {
-                    color: theme.textDark
+                    color: theme.colors.orangeMain
                 },
                 menuItem: {
                     fontFamily: '"FreePixel", "Courier New", monospace'
