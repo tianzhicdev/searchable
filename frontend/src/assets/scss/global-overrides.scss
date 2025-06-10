@@ -22,11 +22,11 @@
 }
 
 // GLOBAL BACKGROUND ENFORCEMENT - Pure black for components only
-body, html, #root,
-.MuiContainer-root,
-.MuiBox-root:not(.MuiSvgIcon-root) {
-  background: #000000 !important;
-}
+// body, html, #root,
+// .MuiContainer-root,
+// .MuiBox-root:not(.MuiSvgIcon-root) {
+//   background: #000000 !important;
+// }
 
 // // Ensure text is not black on black background
 // *:not(.MuiSvgIcon-root) {
