@@ -268,8 +268,8 @@ const Profile = () => {
       </Grid>
       
       {/* Personal Information Section */}
-      <Grid item xs={12} style={{ padding: '4px' }}>
-        <Paper elevation={3} style={{ padding: '8px', margin: '4px', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px' }}>
+      <Grid item xs={12}>
+        <Paper elevation={3}>
           <Box display="flex" justifyContent="space-between" alignItems="center" style={{ padding: 0, margin: 0 }}>
             <Typography variant="h6" className={classes.staticText}>
               Personal Information
@@ -282,7 +282,6 @@ const Profile = () => {
               <Avatar 
                 src={userProfile.profile_image_url} 
                 alt={userProfile.username}
-                style={{ width: 200, height: 200, marginBottom: 8 }}
               >
                 {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
               </Avatar>
