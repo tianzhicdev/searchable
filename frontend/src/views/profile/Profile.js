@@ -282,7 +282,7 @@ const Profile = () => {
               <Avatar 
                 src={userProfile.profile_image_url} 
                 alt={userProfile.username}
-                style={{ width: 80, height: 80, marginBottom: 8 }}
+                style={{ width: 200, height: 200, marginBottom: 8 }}
               >
                 {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
               </Avatar>

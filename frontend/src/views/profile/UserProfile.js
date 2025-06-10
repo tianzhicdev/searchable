@@ -116,10 +116,6 @@ const UserProfile = () => {
         >
           <ArrowBackIcon />
         </Button>
-        <Typography variant="h6">
-          User Profile
-        </Typography>
-        <div></div> {/* Spacer for centering */}
       </Grid>
 
       {/* Profile Information */}
