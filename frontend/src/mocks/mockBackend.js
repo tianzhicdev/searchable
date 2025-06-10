@@ -19,7 +19,26 @@ const mockHandlers = {
   // Searchable detail
   'v1/searchable/': (url) => {
     if (url.includes('v1/searchable/')) {
-      return createMockResponse(mockData.mockSearchableItem);
+      // Return mock data with image URLs - manually create copy to preserve imports
+      const originalItem = mockData.mockSearchableItem;
+      const mockItem = {
+        ...originalItem,
+        payloads: {
+          ...originalItem.payloads,
+          public: {
+            ...originalItem.payloads.public,
+            images: originalItem.payloads.public.imageUrls || originalItem.payloads.public.images || []
+          }
+        }
+      };
+      
+      // Remove imageUrls from the response
+      delete mockItem.payloads.public.imageUrls;
+      
+      console.log('[MOCK] Returning searchable item with images:', mockItem.payloads.public.images);
+      console.log('[MOCK] Images length:', mockItem.payloads.public.images.length);
+      console.log('[MOCK] First image:', mockItem.payloads.public.images[0]?.substring(0, 50));
+      return createMockResponse(mockItem);
     }
   },
   

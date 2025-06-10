@@ -4,12 +4,13 @@ import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
 import { getOrCreateVisitorId } from '../utilities/Visitor';
-import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Checkbox, FormControlLabel } from '@material-ui/core';
+import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import CloseIcon from '@material-ui/icons/Close';
 import GetAppIcon from '@material-ui/icons/GetApp';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
@@ -214,16 +215,6 @@ const DownloadableSearchableDetails = () => {
     }
   };
   
-  // Helper function to render text ratings instead of stars
-  const renderStarRating = (rating, count = null) => {
-    if (rating === null || rating === undefined) return null;
-    
-    return (
-      <Typography variant="body2" className={classes.systemText}>
-        {rating.toFixed(1)}/5({count})
-      </Typography>
-    );
-  };
   
   const handleFileSelection = (id, checked) => {
     setSelectedFiles(prev => ({ ...prev, [id]: checked }));
@@ -529,8 +520,8 @@ const DownloadableSearchableDetails = () => {
     
     return (
       <Box>
-        <Typography variant="h6" className={classes.staticText}>
-          Available Files:
+        <Typography variant="h4" className={classes.staticText}>
+          Files to Download:
         </Typography>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
           const isPaidByCurrentUser = userPaidFiles.has(file.fileId.toString());
@@ -538,10 +529,7 @@ const DownloadableSearchableDetails = () => {
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
-            <Paper 
-              key={file.fileId} 
-              // style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px', margin: '2px 0', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', width: '100%' }}
-            >
+            <Paper key={file.fileId} >
               <Box flex={1}>
                 <Box display="flex" alignItems="center">
                   {!isPaidByCurrentUser ? (
@@ -655,35 +643,49 @@ const DownloadableSearchableDetails = () => {
       
       {!loading && SearchableItem && (
         <Grid item xs={12}>
-          <div style={{ backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', padding: '4px', margin: '2px', fontFamily: '"FreePixel", "Courier New", monospace' }}>
-            {/* Title and Rating */}
+          <Paper>
+            {/* Title and Rating Summary */}
             <Typography variant="h3" className={classes.userText}>
               {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
             </Typography>
+            <Divider />
             
             {!loadingRatings && searchableRating && (
-              <div style={{ margin: '4px' }}>
-                <RatingDisplay
-                  averageRating={searchableRating.average_rating || 0}
-                  totalRatings={searchableRating.total_ratings || 0}
-                  individualRatings={searchableRating.individual_ratings || []}
-                  showIndividualRatings={true}
-                  maxIndividualRatings={3}
-                />
-              </div>
+              <Box>
+                <Typography variant="body1" className={classes.staticText}>
+                  Rating: {searchableRating.average_rating?.toFixed(1)}/5 ({searchableRating.total_ratings} reviews)
+                </Typography>
+              </Box>
+            )}
+            
+            {/* Description */}
+            {SearchableItem.payloads.public.description && (
+              <Box >
+                <Typography variant="body1" className={classes.userText}>
+                  {SearchableItem.payloads.public.description}
+                </Typography>
+              </Box>
             )}
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-              <div style={{ margin: '4px' }}>
-                {SearchableItem.payloads.public.images.map((image, index) => (
-                  <ZoomableImage 
-                    key={index}
-                    src={`data:image/jpeg;base64,${image}`} 
-                    alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
-                    style={{ maxWidth: '200px', height: 'auto', margin: '4px' }}
-                  />
-                ))}
+              <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {SearchableItem.payloads.public.images.map((image, index) => {
+                  // Check if it's a URL (mock mode) or base64
+                  const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
+                  const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
+                  
+                  // console.log(`[DEBUG] Image ${index}: isUrl=${isUrl}, src=${imageSrc?.substring(0, 50)}...`);
+                  
+                  return (
+                    <ZoomableImage 
+                      key={index}
+                      src={imageSrc} 
+                      alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
+                      style={{ maxWidth: '300px'}}
+                    />
+                  );
+                })}
               </div>
             )}
             
@@ -693,8 +695,7 @@ const DownloadableSearchableDetails = () => {
             {/* Payment Button */}
             <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
               <Button
-                variant="contained"
-                color="primary"
+                variant="outlined"
                 onClick={handleStripePayButtonClick}
                 disabled={creatingInvoice || totalPrice === 0}
               >
@@ -717,7 +718,34 @@ const DownloadableSearchableDetails = () => {
                 </Button>
               </div>
             )}
-          </div>
+          </Paper>
+          
+          {/* Collapsible Reviews Section */}
+          {!loadingRatings && searchableRating && searchableRating.individual_ratings && searchableRating.individual_ratings.length > 0 && (
+            
+            <Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon className={classes.iconColor} />}
+                aria-controls="reviews-content"
+                id="reviews-header"
+              >
+                <Typography className={classes.staticText}>
+                  Recent Reviews ({searchableRating.individual_ratings.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box width="100%">
+                  <RatingDisplay
+                    averageRating={searchableRating.average_rating || 0}
+                    totalRatings={searchableRating.total_ratings || 0}
+                    individualRatings={searchableRating.individual_ratings || []}
+                    showIndividualRatings={true}
+                    maxIndividualRatings={10}
+                  />
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          )}
           
           <InvoiceList 
             searchableId={id} 
