@@ -295,18 +295,18 @@ const Profile = () => {
           )}
 
           <Box >
-            <Typography variant="body2" component="span" className={classes.staticText}>
+            <Typography variant="body2"  className={classes.staticText}>
               Username:
             </Typography>
-            <Typography variant="body1" component="span" className={classes.userText}>
+            <Typography variant="body1"  className={classes.userText}>
               {account.user.username}
             </Typography>
           </Box>
           <Box>
-            <Typography variant="body2" component="span" className={classes.staticText}>
+            <Typography variant="body2"  className={classes.staticText}>
               Email:
             </Typography>
-            <Typography variant="body1" component="span" className={classes.userText}>
+            <Typography variant="body1"  className={classes.userText}>
               {account.user.email}
             </Typography>
           </Box>
@@ -316,18 +316,18 @@ const Profile = () => {
           ) : profileData && (
             <>
               <Box>
-                <Typography variant="body2" component="span" className={classes.staticText}>
+                <Typography variant="body2" className={classes.staticText}>
                   Address:
                 </Typography>
-                <Typography variant="body1" component="span" className={classes.userText}>
+                <Typography variant="body1"  className={classes.userText}>
                   {profileData.address || 'Not provided'}
                 </Typography>
               </Box>
               <Box>
-                <Typography variant="body2" component="span" className={classes.staticText}>
+                <Typography variant="body2"  className={classes.staticText}>
                   Telephone:
                 </Typography>
-                <Typography variant="body1" component="span" className={classes.userText}>
+                <Typography variant="body1"  className={classes.userText}>
                   {profileData.tel || 'Not provided'}
                 </Typography>
               </Box>
@@ -340,11 +340,11 @@ const Profile = () => {
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
               <Box>
-                <Typography variant="body2" component="span" className={classes.staticText}>
+                <Typography variant="body2"  className={classes.staticText}>
                   USD Balance:
                 </Typography>
                 
-                <Typography variant="body1" component="span" className={classes.userText}>
+                <Typography variant="body1"  className={classes.userText}>
                   ${balance.usd} USD
                 </Typography>
               </Box>
@@ -382,7 +382,7 @@ const Profile = () => {
             fullWidth
             margin="normal"
             InputProps={{
-              startAdornment: <Typography component="span" style={{ marginRight: 8 }}>$</Typography>,
+              startAdornment: <Typography  style={{ marginRight: 8 }}>$</Typography>,
             }}
           />
           {usdtWithdrawalError && (

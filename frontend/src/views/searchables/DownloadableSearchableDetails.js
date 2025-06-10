@@ -218,7 +218,7 @@ const DownloadableSearchableDetails = () => {
     if (rating === null || rating === undefined) return null;
     
     return (
-      <Typography variant="body2" component="span" className={classes.systemText}>
+      <Typography variant="body2" className={classes.systemText}>
         {rating.toFixed(1)}/5({count})
       </Typography>
     );

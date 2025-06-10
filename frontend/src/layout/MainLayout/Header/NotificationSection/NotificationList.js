@@ -227,9 +227,9 @@ const NotificationList = () => {
                 </ListItem>
                 <Grid container direction="column" className={classes.listContainer}>
                     <Grid item xs={12} className={classes.paddingBottom}>
-                        <Typography component="span" variant="subtitle2">
+                        <Typography  variant="subtitle2">
                             Uploaded two file on &nbsp;
-                            <Typography component="span" variant="h6">
+                            <Typography  variant="h6">
                                 21 Jan 2020
                             </Typography>
                         </Typography>
