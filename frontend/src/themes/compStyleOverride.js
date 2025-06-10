@@ -101,6 +101,7 @@ export function componentStyleOverrides(theme) {
                 }
             }
         },
+        
         MuiPaper: {
             defaultProps: {
                 elevation: 0
@@ -268,6 +269,9 @@ export function componentStyleOverrides(theme) {
         MuiAvatar: {
             styleOverrides: {
                 root: {
+                    width: 200,
+                    height: 200,
+                    margin: '8px',
                     color: theme.colors.primaryDark,
                     background: theme.colors.primary200,
                     fontFamily: '"FreePixel", "Courier New", monospace'
