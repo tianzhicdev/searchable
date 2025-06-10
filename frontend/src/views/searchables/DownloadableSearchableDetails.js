@@ -537,9 +537,9 @@ const DownloadableSearchableDetails = () => {
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
-            <Box 
+            <Paper 
               key={file.fileId} 
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px', margin: '2px 0', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', width: '100%' }}
+              // style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px', margin: '2px 0', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px', width: '100%' }}
             >
               <Box flex={1}>
                 <Box display="flex" alignItems="center">
@@ -584,7 +584,7 @@ const DownloadableSearchableDetails = () => {
                   {isDownloading ? 'Downloading...' : 'Download'}
                 </Button>
               )}
-            </Box>
+            </Paper>
           );
         })}
         
@@ -696,10 +696,9 @@ const DownloadableSearchableDetails = () => {
                 color="primary"
                 onClick={handleStripePayButtonClick}
                 disabled={creatingInvoice || totalPrice === 0}
-                fullWidth
               >
                 <Typography variant="body2" className={classes.staticText}>
-                Pay with Credit Card (3.5% fee)
+                Purchase (3.5% fee)
                 </Typography>
               </Button>
             </div>
