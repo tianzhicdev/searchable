@@ -16,7 +16,7 @@ export function componentStyleOverrides(theme) {
               
               input:-internal-autofill-selected {
                 appearance: menulist-button;
-                background-color: ${theme.colors.primaryDark} !important;
+                background-color: ${theme.colors.background} !important;
                 color: fieldtext !important;
               }
             `,
@@ -46,19 +46,19 @@ export function componentStyleOverrides(theme) {
           styleOverrides: {
             root: {
               '& .MuiIconButton-root': {
-                color: theme.darkTextPrimary,
-                border: `1px solid ${theme.colors.orangeMain}`,
+                color: theme.colors.primary,
+                border: `1px solid ${theme.colors.primary}`,
                 borderRadius: '0px'
               },
               '& .MuiSvgIcon-root': {
                 fontSize: '1.1rem'
               },
               '&.Mui-checked .MuiIconButton-root': {
-                color: theme.colors.orangeMain,
-                border: `1px solid ${theme.colors.primaryMain}`,
+                color: theme.colors.primary,
+                border: `1px solid ${theme.colors.primary}`,
               },
               '&.Mui-checked, &.MuiCheckbox-indeterminate': {
-                color: theme.colors.orangeMain,
+                color: theme.colors.primary,
               }
             }
           }
@@ -66,7 +66,7 @@ export function componentStyleOverrides(theme) {
         MuiCircularProgress: {
           styleOverrides: {
             root: {
-              color: theme.colors.lightBlue
+              color: theme.colors.secondary
             }
           }
         },
@@ -75,7 +75,7 @@ export function componentStyleOverrides(theme) {
             fullWidth: {
               margin: '8px 0',
               borderStyle: 'solid',
-              borderColor: theme.colors.lightBlue,
+              borderColor: theme.colors.secondary,
               opacity: 1
             }
           }
@@ -84,10 +84,10 @@ export function componentStyleOverrides(theme) {
         MuiSvgIcon: {
           styleOverrides: {
             root: {
-              color: theme.colors.lightBlue
+              color: theme.colors.secondary
             },
             colorSecondary: {
-              color: theme.colors.lightBlue
+              color: theme.colors.secondary
             }
           }
         },
@@ -96,8 +96,8 @@ export function componentStyleOverrides(theme) {
                 root: {
                     borderRadius: '0px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain,
-                    border: `1px solid ${theme.colors.orangeMain}`,
+                    color: theme.colors.primary,
+                    border: `1px solid ${theme.colors.primary}`,
                 }
             }
         },
@@ -108,9 +108,9 @@ export function componentStyleOverrides(theme) {
             },
             styleOverrides: {
                 root: {
-                    backgroundColor: theme.colors.primaryDark,
+                    backgroundColor: theme.colors.background,
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    border: `1px solid ${theme.colors.orangeMain}`,
+                    border: `1px solid ${theme.colors.primary}`,
                     borderRadius: '0px',
                     padding: '8px',
                     marginBottom: '12px'
@@ -123,7 +123,7 @@ export function componentStyleOverrides(theme) {
         MuiCardHeader: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     padding: '8px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
@@ -152,25 +152,25 @@ export function componentStyleOverrides(theme) {
         MuiListItemButton: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     paddingTop: '10px',
                     paddingBottom: '10px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     '&.Mui-selected': {
-                        color: theme.menuSelected,
-                        backgroundColor: theme.menuSelectedBack,
+                        color: theme.colors.highlight,
+                        backgroundColor: theme.colors.secondary,
                         '&:hover': {
-                            backgroundColor: theme.menuSelectedBack
+                            backgroundColor: theme.colors.secondary
                         },
                         '& .MuiListItemIcon-root': {
-                            color: theme.menuSelected
+                            color: theme.colors.highlight
                         }
                     },
                     '&:hover': {
-                        backgroundColor: theme.menuSelectedBack,
-                        color: theme.menuSelected,
+                        backgroundColor: theme.colors.secondary,
+                        color: theme.colors.highlight,
                         '& .MuiListItemIcon-root': {
-                            color: theme.menuSelected
+                            color: theme.colors.highlight
                         }
                     }
                 }
@@ -179,7 +179,7 @@ export function componentStyleOverrides(theme) {
         MuiListItemIcon: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     minWidth: '36px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
@@ -188,7 +188,7 @@ export function componentStyleOverrides(theme) {
         MuiListItemText: {
             styleOverrides: {
                 primary: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -196,11 +196,11 @@ export function componentStyleOverrides(theme) {
         MuiInputBase: {
             styleOverrides: {
                 input: {
-                    color: theme.colors.orangeMain,
-                    backgroundColor: theme.colors.primaryDark,
+                    color: theme.colors.primary,
+                    backgroundColor: theme.colors.background,
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     '&::placeholder': {
-                        color: theme.darkTextSecondary,
+                        color: theme.colors.secondary,
                         fontSize: '1rem',
                         fontFamily: '"FreePixel", "Courier New", monospace'
                     }
@@ -210,14 +210,14 @@ export function componentStyleOverrides(theme) {
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.orangeMain,
-                    background: theme.colors.primaryDark,
+                    color: theme.colors.primary,
+                    background: theme.colors.background,
                     borderRadius: '0px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    border: `1px solid ${theme.colors.orangeMain}`,
+                    border: `1px solid ${theme.colors.primary}`,
                 },
                 input: {
-                    background: theme.colors.primaryDark,
+                    background: theme.colors.background,
                     borderRadius: '0px',
                 },
             }
@@ -227,10 +227,10 @@ export function componentStyleOverrides(theme) {
                 root: {
                     '& .MuiFormControl-root': {
                         borderRadius: 0,
-                        border: `1px solid ${theme.colors.orangeMain}`
+                        border: `1px solid ${theme.colors.primary}`
                     },
                     '& .MuiOutlinedInput-input': {
-                        backgroundColor: theme.colors.orangeMain,
+                        backgroundColor: theme.colors.background,
                         borderRadius: 0,
                         fontFamily: '"FreePixel", "Courier New", monospace'
                     },
@@ -245,7 +245,7 @@ export function componentStyleOverrides(theme) {
                     },
                     '& .Mui-focused .MuiOutlinedInput-notchedOutline': {
                         borderRadius: 0,
-                        border: `1px solid ${theme.colors.orangeMain}`
+                        border: `1px solid ${theme.colors.primary}`
                     }
                 }
             }
@@ -255,15 +255,15 @@ export function componentStyleOverrides(theme) {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     '&.Mui-disabled': {
-                        color: theme.colors.grey300
+                        color: theme.colors.secondary
                     }
                 },
                 mark: {
-                    backgroundColor: theme.paper,
+                    backgroundColor: theme.colors.background,
                     width: '4px'
                 },
                 valueLabel: {
-                    color: theme.colors.primaryLight,
+                    color: theme.colors.secondary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -274,8 +274,8 @@ export function componentStyleOverrides(theme) {
                     width: 200,
                     height: 200,
                     margin: '8px',
-                    color: theme.colors.primaryDark,
-                    background: theme.colors.primary200,
+                    color: theme.colors.background,
+                    background: theme.colors.primary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -293,8 +293,8 @@ export function componentStyleOverrides(theme) {
         MuiTooltip: {
             styleOverrides: {
                 tooltip: {
-                    color: theme.paper,
-                    background: theme.colors.grey700,
+                    color: theme.colors.background,
+                    background: theme.colors.secondary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -302,11 +302,11 @@ export function componentStyleOverrides(theme) {
         MuiTypography: {
             styleOverrides: {
                 root: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 caption: {
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -314,7 +314,10 @@ export function componentStyleOverrides(theme) {
         MuiTable: {
             styleOverrides: {
                 root: {
-                    fontFamily: '"FreePixel", "Courier New", monospace'
+                    fontFamily: '"FreePixel", "Courier New", monospace',
+                    '& .MuiTableCell-root': {
+                        borderColor: `${theme.colors.primary} !important`
+                    }
                 }
             }
         },
@@ -322,11 +325,11 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 },
                 head: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 }
             }
         },
@@ -341,16 +344,16 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 },
                 selectIcon: {
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 },
                 actions: {
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 },
                 select: {
-                    color: theme.colors.orangeMain
+                    color: theme.colors.primary
                 },
                 menuItem: {
                     fontFamily: '"FreePixel", "Courier New", monospace'
@@ -369,19 +372,10 @@ export function componentStyleOverrides(theme) {
                 }
             }
         },
-        MuiTable: {
-            styleOverrides: {
-                root: {
-                    '& .MuiTableCell-root': {
-                        borderColor: `${theme.colors.orangeMain} !important`
-                    }
-                }
-            }
-        },
         MuiTableRow: {
             styleOverrides: {
                 root: {
-                    borderColor: theme.colors.orangeMain,
+                    borderColor: theme.colors.primary,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -389,9 +383,9 @@ export function componentStyleOverrides(theme) {
         MuiMenu: {
             styleOverrides: {
                 paper: {
-                    border: `1px solid ${theme.colors.orangeMain}`,
+                    border: `1px solid ${theme.colors.primary}`,
                     borderRadius: '0px',
-                    backgroundColor: theme.colors.primaryDark,
+                    backgroundColor: theme.colors.background,
                     marginTop: '4px'
                 }
             }
@@ -401,16 +395,16 @@ export function componentStyleOverrides(theme) {
                 root: {
                     fontSize: '1rem',
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain,
+                    color: theme.colors.primary,
                     '&:hover': {
-                        backgroundColor: theme.menuSelectedBack,
-                        color: theme.menuSelected
+                        backgroundColor: theme.colors.secondary,
+                        color: theme.colors.highlight
                     },
                     '&.Mui-selected': {
-                        backgroundColor: theme.menuSelectedBack,
-                        color: theme.menuSelected,
+                        backgroundColor: theme.colors.secondary,
+                        color: theme.colors.highlight,
                         '&:hover': {
-                            backgroundColor: theme.menuSelectedBack
+                            backgroundColor: theme.colors.secondary
                         }
                     }
                 }
@@ -424,44 +418,12 @@ export function componentStyleOverrides(theme) {
                 }
             }
         },
-        MuiTablePagination: {
-            styleOverrides: {
-                root: {
-                    fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.orangeMain
-                },
-                selectIcon: {
-                    color: theme.colors.orangeMain
-                },
-                actions: {
-                    color: theme.colors.orangeMain
-                },
-                select: {
-                    color: theme.colors.orangeMain
-                },
-                menuItem: {
-                    fontFamily: '"FreePixel", "Courier New", monospace'
-                },
-                displayedRows: {
-                    margin: 0,
-                    fontFamily: '"FreePixel", "Courier New", monospace'
-                },
-                selectLabel:{
-                    fontFamily: '"FreePixel", "Courier New", monospace'
-                },
-                toolbar: {
-                    '& > p:nth-of-type(1)': {
-                        fontSize: '0.875rem'
-                    }
-                }
-            }
-        },
         MuiAlert: {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     borderRadius: '0px',
-                    border: `1px solid ${theme.colors.orangeMain}`,
+                    border: `1px solid ${theme.colors.primary}`,
                     position: 'fixed',
                     top: '20px',
                     left: '50%',
@@ -473,31 +435,31 @@ export function componentStyleOverrides(theme) {
                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
                 },
                 standardSuccess: {
-                    backgroundColor: theme.colors.primaryDark,
-                    color: theme.colors.orangeMain,
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.highlight,
                     '& .MuiAlert-icon': {
-                        color: theme.colors.orangeMain
+                        color: theme.colors.highlight
                     }
                 },
                 standardError: {
-                    backgroundColor: theme.colors.primaryDark,
-                    color: theme.colors.orangeMain,
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.alerting,
                     '& .MuiAlert-icon': {
-                        color: theme.colors.orangeMain
+                        color: theme.colors.alerting
                     }
                 },
                 standardWarning: {
-                    backgroundColor: theme.colors.primaryDark,
-                    color: theme.colors.orangeMain,
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.warning,
                     '& .MuiAlert-icon': {
-                        color: theme.colors.orangeMain
+                        color: theme.colors.warning
                     }
                 },
                 standardInfo: {
-                    backgroundColor: theme.colors.primaryDark,
-                    color: theme.colors.orangeMain,
+                    backgroundColor: theme.colors.background,
+                    color: theme.colors.secondary,
                     '& .MuiAlert-icon': {
-                        color: theme.colors.orangeMain
+                        color: theme.colors.secondary
                     }
                 }
             }
@@ -512,27 +474,27 @@ export function componentStyleOverrides(theme) {
                         padding: 0,
                         margin: 2,
                         transitionDuration: '300ms',
-                        backgroundColor: theme.colors.orangeMain,
+                        backgroundColor: theme.colors.primary,
                         opacity: 1,
                         border: 0,
                         '&.Mui-checked': {
                             transform: 'translateX(16px)',
-                            color: theme.colors.primaryDark,
+                            color: theme.colors.background,
                             
                             '& + .MuiSwitch-track': {
-                                // backgroundColor: theme.colors.orangeMain,
+                                // backgroundColor: theme.colors.primary,
                                 opacity: 1,
                                 border: 0,
                             },
                             '&.Mui-disabled + .MuiSwitch-track': {
-                                // backgroundColor: theme.colors.orangeMain,
+                                // backgroundColor: theme.colors.primary,
                                 opacity: 1,
                                 border: 0,
                             },
                         },
                         '&.Mui-focusVisible .MuiSwitch-thumb': {
-                            color: theme.colors.orangeMain,
-                            border: `6px solid ${theme.colors.primaryDark}`,
+                            color: theme.colors.primary,
+                            border: `6px solid ${theme.colors.background}`,
                         },
                         // '&.Mui-disabled .MuiSwitch-thumb': {
                         //     color: theme.palette.grey[100],
@@ -545,7 +507,7 @@ export function componentStyleOverrides(theme) {
                         boxSizing: 'border-box',
                         width: 22,
                         height: 22,
-                        backgroundColor: theme.colors.orangeMain,
+                        backgroundColor: theme.colors.primary,
                         opacity: 1,
                         border: 0,
                     },
@@ -564,14 +526,14 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.lightBlue,
+                    color: theme.colors.secondary,
                     textDecoration: 'underline',
                     cursor: 'pointer',
                     padding: 0,
                     border: 'none',
                     background: 'none',
                     '&:hover': {
-                        color: theme.colors.orangeMain,
+                        color: theme.colors.primary,
                         textDecoration: 'underline'
                     },
                     '&.MuiLink-button': {

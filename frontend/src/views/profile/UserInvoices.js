@@ -10,6 +10,7 @@ import {
   Chip,
   Button
 } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import { 
   ShoppingCart, 
   Store, 
@@ -24,6 +25,7 @@ import useComponentStyles from '../../themes/componentStyles';
 
 const UserInvoices = () => {
   const classes = useComponentStyles();
+  const theme = useTheme();
   const [invoices, setInvoices] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [sales, setSales] = useState([]);
@@ -247,7 +249,7 @@ const UserInvoices = () => {
             <Box>
               {purchases.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <ShoppingCart style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
+                  <ShoppingCart style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No purchases yet
                   </Typography>
@@ -278,7 +280,7 @@ const UserInvoices = () => {
             <Box>
               {sales.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <Store style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
+                  <Store style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No sales yet
                   </Typography>
@@ -309,7 +311,7 @@ const UserInvoices = () => {
             <Box>
               {invoices.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <Receipt style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
+                  <Receipt style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No invoices yet
                   </Typography>
@@ -340,7 +342,7 @@ const UserInvoices = () => {
             <Box>
               {withdrawals.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <AccountBalanceWallet style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
+                  <AccountBalanceWallet style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No withdrawals yet
                   </Typography>
@@ -359,7 +361,7 @@ const UserInvoices = () => {
                       style={{ 
                         padding: 16, 
                         marginBottom: 16, 
-                        border: withdrawal.status === 'complete' ? '1px solid #4caf50' : '1px solid #ff9800' 
+                        border: withdrawal.status === 'complete' ? `1px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.warning.main}` 
                       }}
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="center">

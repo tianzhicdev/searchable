@@ -1,35 +1,35 @@
 import { makeStyles } from '@material-ui/styles';
 
 /**
- * SIMPLIFIED COMPONENT STYLES - Only 3 essential classes
- * COLORS: Only 3 colors allowed
+ * SIMPLIFIED COMPONENT STYLES - Using 5 color system
+ * COLORS: primary, secondary, alerting, warning, highlight
  * FONT: Only FreePixel font
  */
 const useComponentStyles = makeStyles((theme) => ({
     
-    // User provided content (descriptions, titles) - Light Orange
+    // User provided content (descriptions, titles) - Primary
     userText: {
-        color: theme.appColors?.userText || theme.colors?.lightOrange ,
+        color: theme.appColors?.userText || theme.colors?.primary,
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
-    // Static/system text - Dark Orange
+    // Static/system text - Secondary
     staticText: {
-        color: theme.appColors?.staticText || theme.colors?.darkOrange,
+        color: theme.appColors?.staticText || theme.colors?.secondary,
         fontFamily: '"FreePixel", "Courier New", monospace'
     },
     
-    // Icons - Light Blue
+    // Icons - Highlight
     iconColor: {
-        color: theme.appColors?.iconColor || theme.colors?.lightBlue
+        color: theme.appColors?.iconColor || theme.colors?.highlight
     },
 
     // Centralized component styling
     paper: {
         padding: 12,
         marginBottom: 8,
-        backgroundColor: '#000000',
-        border: `1px solid ${theme.colors?.orangeMain}`,
+        backgroundColor: theme.colors?.background,
+        border: `1px solid ${theme.colors?.primary}`,
         borderRadius: '0px'
     },
     

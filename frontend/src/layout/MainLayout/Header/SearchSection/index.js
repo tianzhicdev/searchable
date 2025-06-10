@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 // material-ui
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles, useTheme } from '@material-ui/styles';
 import { Avatar, Box, ButtonBase, Card, CardContent, Grid, InputAdornment, OutlinedInput, Popper } from '@material-ui/core';
 
 // third-party
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
         [theme.breakpoints.down('md')]: {
             width: '100%',
             marginLeft: '4px',
-            background: '#fff'
+            background: theme.palette.background.paper
         }
     },
     startAdornment: {
@@ -50,11 +50,11 @@ const useStyles = makeStyles((theme) => ({
     closeAvatar: {
         ...theme.typography.commonAvatar,
         ...theme.typography.mediumAvatar,
-        background: theme.palette.orange.light,
-        color: theme.palette.orange.dark,
+        background: theme.palette.warning.light,
+        color: theme.palette.warning.dark,
         '&:hover': {
-            background: theme.palette.orange.dark,
-            color: theme.palette.orange.light
+            background: theme.palette.warning.dark,
+            color: theme.palette.warning.light
         }
     },
     popperContainer: {
@@ -70,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
         padding: '12px !important'
     },
     card: {
-        background: '#fff',
+        background: theme.palette.background.paper,
         [theme.breakpoints.down('sm')]: {
             border: 0,
             boxShadow: 'none'
@@ -82,6 +82,7 @@ const useStyles = makeStyles((theme) => ({
 
 const SearchSection = () => {
     const classes = useStyles();
+    const theme = useTheme();
     const [value, setValue] = useState('');
 
     return (

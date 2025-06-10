@@ -1,117 +1,31 @@
-// CENTRALIZED COLOR SYSTEM - Only 3 colors allowed
-// Light Orange: for user provided data/text (descriptions, item titles)
-$lightOrange: #ff4d3a;
+// CENTRALIZED COLOR SYSTEM - Only 5 colors allowed
+// Primary: Main brand color for primary actions and emphasis
+$primary: #ff4d3a;
 
-// Dark Orange: for static/system texts  
-$darkOrange: #a92700;
+// Secondary: Supporting color for secondary actions and elements
+$secondary: #3899ef;
 
-// Light Blue: for icons
-$lightBlue: #3899ef;
+// Alerting: For error states, critical alerts, and danger actions
+$alerting: #d32f2f;
 
-// Background and paper (pure black theme)
-$paper: #000000;
+// Warning: For warning states and cautionary messages
+$warning: #ff9800;
+
+// Highlight: For success states, confirmations, and positive feedback
+$highlight: #4caf50;
+
+// Background: Pure black theme background
 $background: #000000;
-
-// Derived colors for Material-UI compatibility (using only the 3 main colors)
-// Orange variations
-$orangeLight: $lightOrange;  // #fbe9e7
-$orangeMain: $lightOrange;        // Medium orange (between light and dark)
-$orangeDark: $darkOrange;    // #d84315
-
-// Blue variations (for compatibility)
-$blueLight: $lightBlue;      // #3899ef
-$blueMain: $lightBlue;          // Slightly darker blue
-$blueDark: #0d47a1;          // Dark blue
-
-// Neutral colors (derived from pure black background)
-$grey50: #000000;
-$grey100: #000000;
-$grey200: #000000;
-$grey300: #000000;
-$grey500: #000000;
-$grey600: #000000;
-$grey700: #000000;
-$grey900: #000000;
-
-// Required Material-UI colors mapped to our system
-$primaryLight: $background;
-$primaryMain: $paper;
-$primaryDark: $background;
-$primary200: $grey200;
-$primary800: $paper;
-
-$secondaryLight: $lightOrange;
-$secondaryMain: $orangeMain;
-$secondaryDark: $darkOrange;
-$secondary200: $lightOrange;
-$secondary800: $darkOrange;
-
-$errorLight: $lightOrange;
-$errorMain: $orangeMain;
-$errorDark: $darkOrange;
-
-$successLight: $lightOrange;
-$successMain: $orangeMain;
-$successDark: $darkOrange;
-
-$warningLight: $lightOrange;
-$warningMain: $orangeMain;
-$warningDark: $darkOrange;
 
 //-----------------------|| JAVASCRIPT ||-----------------------//
 
 :export {
-    // CENTRALIZED COLORS - Only 3 main colors
-    lightOrange: $lightOrange;   // User provided data/text
-    darkOrange: $darkOrange;     // Static/system texts
-    lightBlue: $lightBlue;       // Icons
+    // CENTRALIZED COLORS - Only 5 main colors
+    primary: $primary;           // Main brand color
+    secondary: $secondary;       // Supporting color
+    alerting: $alerting;         // Error/danger states
+    warning: $warning;           // Warning states
+    highlight: $highlight;       // Success/positive states
+    background: $background;     // Pure black background
     
-    // Background and paper
-    paper: $paper;
-    background: $background;
-
-    // Orange variations
-    orangeLight: $orangeLight;
-    orangeMain: $orangeMain;
-    orangeDark: $orangeDark;
-
-    // Blue variations  
-    blueLight: $blueLight;
-    blueMain: $blueMain;
-    blueDark: $blueDark;
-
-    // Material-UI compatibility
-    primaryLight: $primaryLight;
-    primary200: $primary200;
-    primaryMain: $primaryMain;
-    primaryDark: $primaryDark;
-    primary800: $primary800;
-
-    secondaryLight: $secondaryLight;
-    secondary200: $secondary200;
-    secondaryMain: $secondaryMain;
-    secondaryDark: $secondaryDark;
-    secondary800: $secondary800;
-
-    errorLight: $errorLight;
-    errorMain: $errorMain;
-    errorDark: $errorDark;
-
-    successLight: $successLight;
-    successMain: $successMain;
-    successDark: $successDark;
-
-    warningLight: $warningLight;
-    warningMain: $warningMain;
-    warningDark: $warningDark;
-
-    // Neutral greys (derived from background)
-    grey50: $grey50;
-    grey100: $grey100;
-    grey200: $grey200;
-    grey300: $grey300;
-    grey500: $grey500;
-    grey600: $grey600;
-    grey700: $grey700;
-    grey900: $grey900;
 }

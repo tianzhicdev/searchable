@@ -6,60 +6,50 @@ export function themePalette(theme) {
     return {
         mode: theme.customization.navType,
         common: {
-            black: '#000000'
+            black: theme.colors.background
         },
         primary: {
-            light: theme.colors.primaryLight,
-            main: theme.colors.primaryMain,
-            dark: theme.colors.primaryDark,
-            200: theme.colors.primary200,
-            800: theme.colors.primary800
+            light: theme.colors.primary,
+            main: theme.colors.primary,
+            dark: theme.colors.primary
         },
         secondary: {
-            light: theme.colors.secondaryLight,
-            main: theme.colors.secondaryMain,
-            dark: theme.colors.secondaryDark,
-            200: theme.colors.secondary200,
-            800: theme.colors.secondary800
+            light: theme.colors.secondary,
+            main: theme.colors.secondary,
+            dark: theme.colors.secondary
         },
         error: {
-            light: theme.colors.errorLight,
-            main: theme.colors.errorMain,
-            dark: theme.colors.errorDark
-        },
-        orange: {
-            light: theme.colors.orangeLight,
-            main: theme.colors.orangeMain,
-            dark: theme.colors.orangeDark
+            light: theme.colors.alerting,
+            main: theme.colors.alerting,
+            dark: theme.colors.alerting
         },
         warning: {
-            light: theme.colors.warningLight,
-            main: theme.colors.warningMain,
-            dark: theme.colors.warningDark
+            light: theme.colors.warning,
+            main: theme.colors.warning,
+            dark: theme.colors.warning
         },
         success: {
-            light: theme.colors.successLight,
-            200: theme.colors.success200,
-            main: theme.colors.successMain,
-            dark: theme.colors.successDark
+            light: theme.colors.highlight,
+            main: theme.colors.highlight,
+            dark: theme.colors.highlight
         },
         grey: {
-            50: theme.colors.grey50,
-            100: theme.colors.grey100,
-            500: theme.darkTextSecondary,
-            600: theme.heading,
-            700: theme.darkTextPrimary,
-            900: theme.textDark
+            50: theme.colors.background,
+            100: theme.colors.background,
+            500: theme.colors.secondary,
+            600: theme.colors.primary,
+            700: theme.colors.primary,
+            900: theme.colors.primary
         },
         text: {
-            primary: theme.darkTextPrimary,
-            secondary: theme.darkTextSecondary,
-            dark: theme.textDark,
-            hint: theme.colors.grey100
+            primary: theme.colors.primary,
+            secondary: theme.colors.secondary,
+            dark: theme.colors.primary,
+            hint: theme.colors.secondary
         },
         background: {
-            paper: theme.paper,
-            default: theme.backgroundDefault
+            paper: theme.colors.background,
+            default: theme.colors.background
         }
     };
 }

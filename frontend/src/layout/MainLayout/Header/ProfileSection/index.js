@@ -111,7 +111,7 @@ const useStyles = makeStyles((theme) => ({
     },
     badgeWarning: {
         backgroundColor: theme.palette.warning.dark,
-        color: '#fff'
+        color: theme.palette.background.paper
     }
 }));
 
