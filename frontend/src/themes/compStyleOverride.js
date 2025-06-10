@@ -560,5 +560,28 @@ export function componentStyleOverrides(theme) {
                 },
             },
         },
+        MuiLink: {
+            styleOverrides: {
+                root: {
+                    fontFamily: '"FreePixel", "Courier New", monospace',
+                    color: theme.colors.lightBlue,
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    border: 'none',
+                    background: 'none',
+                    '&:hover': {
+                        color: theme.colors.orangeMain,
+                        textDecoration: 'underline'
+                    },
+                    '&.MuiLink-button': {
+                        padding: 0,
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer'
+                    }
+                }
+            }
+        },
     };
 }

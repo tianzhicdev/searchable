@@ -48,14 +48,6 @@ const SearchablesProfile = ({ item, onClick }) => {
                   component="button"
                   variant="body2"
                   onClick={handleUsernameClick}
-                  style={{ 
-                    textDecoration: 'underline',
-                    color: '#1976d2',
-                    cursor: 'pointer',
-                    padding: 0,
-                    border: 'none',
-                    background: 'none'
-                  }}
                 >
                   {truncateText(item.username, 30)}
                 </Link>
@@ -83,13 +75,13 @@ const SearchablesProfile = ({ item, onClick }) => {
         </Box>
         <Box id="item-profile-image" flex="0 0 auto" >
           {publicData.images && publicData.images.length > 0 && (
-            <Box display="flex" justifyContent="center" style={{border: `1px solid #ff3c00`, margin: '8px'}}>
+            <Paper display="flex" justifyContent="center">
               <img 
                 src={`data:image/jpeg;base64,${publicData.images[0]}`} 
                 alt={publicData.title || `Item #${item.searchable_id}`}
-                className={classes.itemProfileImage}
+                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }}
               />
-            </Box>
+            </Paper>
           )}
         </Box> 
       </Box>
