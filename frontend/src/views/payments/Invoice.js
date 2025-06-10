@@ -160,12 +160,9 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
     const getRoleChip = () => {
         return (
-            <Chip 
-                label={userRole === 'buyer' ? 'Purchased' : 'Sold'} 
-                color={userRole === 'buyer' ? 'secondary' : 'primary'}
-                size="small"
-                icon={userRole === 'buyer' ? <Person /> : <AccountCircle />}
-            />
+            <Typography variant="body2" className={classes.staticText}>
+                {userRole === 'buyer' ? 'Buyer' : 'Seller'}
+            </Typography>
         );
     };
 
