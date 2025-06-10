@@ -122,7 +122,7 @@ export function componentStyleOverrides(theme) {
             styleOverrides: {
                 root: {
                     color: theme.colors.textDark,
-                    padding: '24px',
+                    padding: '8px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 title: {
@@ -134,7 +134,7 @@ export function componentStyleOverrides(theme) {
         MuiCardContent: {
             styleOverrides: {
                 root: {
-                    padding: '24px',
+                    padding: '8px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
@@ -142,7 +142,7 @@ export function componentStyleOverrides(theme) {
         MuiCardActions: {
             styleOverrides: {
                 root: {
-                    padding: '24px',
+                    padding: '8px',
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 }
             }
