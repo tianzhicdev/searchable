@@ -1,3 +1,7 @@
+// Import mock images
+import mockImage1 from '../assets/mock/mock.png';
+import mockImage2 from '../assets/mock/mock1.png';
+
 // Mock data for development
 export const mockSearchableItem = {
   _id: "mock-item-1",
@@ -6,11 +10,9 @@ export const mockSearchableItem = {
   payloads: {
     public: {
       title: "Premium Digital Asset Bundle",
-      description: "A comprehensive collection of high-quality digital assets including templates, graphics, and source files for your creative projects.",
-      images: [
-        // Small placeholder image in base64
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-      ],
+      description: "A comprehensive collection of high-quality digital assets including templates, graphics, and source files for your creative projects. This bundle includes professional design templates, high-resolution stock photos, and clean documented source code examples. Perfect for designers, developers, and content creators looking to accelerate their workflow with ready-to-use assets.",
+      images: [mockImage1, mockImage2], // Use images directly
+      imageUrls: [mockImage1, mockImage2], // Store URLs for dynamic loading
       downloadableFiles: [
         {
           fileId: "file-1",

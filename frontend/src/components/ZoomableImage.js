@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, Button } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import useComponentStyles from '../themes/componentStyles';
+import { Box } from '@material-ui/core';
 
 const ZoomableImage = ({ src, alt, style, className }) => {
   const [open, setOpen] = useState(false);
@@ -16,34 +17,46 @@ const ZoomableImage = ({ src, alt, style, className }) => {
   };
 
   return (
-    <>
+    <Box>
       <img 
         src={src} 
         alt={alt} 
-        style={{ ...style, cursor: 'pointer' }}
-        className={className}
+        style={{ 
+          ...style, 
+          cursor: 'pointer',
+          padding: '4px',
+          border: '1px solid #d84315',
+          maxWidth: '200px',
+          maxHeight: '200px',
+          objectFit: 'contain'
+        }}
         onClick={handleOpen}
       />
       
       <Dialog 
         open={open} 
-        onClose={handleClose} 
+        onClose={handleClose}
         maxWidth="lg"
-        classes={{ paper: classes.zoomableImageDialog }}
+        fullWidth
       >
         <DialogContent 
-          className={classes.zoomableImageContent}
           onClick={handleClose}
+          style={{ padding: 0, textAlign: 'center' }}
         >
           <img 
             src={src} 
             alt={alt} 
-            className={classes.zoomableImageFull} 
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxWidth: '100%',
+              objectFit: 'contain'
+            }}
           />
         </DialogContent>
       </Dialog>
-    </>
-);
+    </Box>
+  );
 };
 
 export default ZoomableImage;

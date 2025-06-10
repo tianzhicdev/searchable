@@ -1,9 +1,9 @@
 // CENTRALIZED COLOR SYSTEM - Only 3 colors allowed
 // Light Orange: for user provided data/text (descriptions, item titles)
-$lightOrange: #f4402c;
+$lightOrange: #ff4d3a;
 
 // Dark Orange: for static/system texts  
-$darkOrange: #ac2f09;
+$darkOrange: #a92700;
 
 // Light Blue: for icons
 $lightBlue: #3899ef;
@@ -15,12 +15,12 @@ $background: #000000;
 // Derived colors for Material-UI compatibility (using only the 3 main colors)
 // Orange variations
 $orangeLight: $lightOrange;  // #fbe9e7
-$orangeMain: #ff3c00;        // Medium orange (between light and dark)
+$orangeMain: $lightOrange;        // Medium orange (between light and dark)
 $orangeDark: $darkOrange;    // #d84315
 
 // Blue variations (for compatibility)
 $blueLight: $lightBlue;      // #3899ef
-$blueMain: #1976d2;          // Slightly darker blue
+$blueMain: $lightBlue;          // Slightly darker blue
 $blueDark: #0d47a1;          // Dark blue
 
 // Neutral colors (derived from pure black background)
