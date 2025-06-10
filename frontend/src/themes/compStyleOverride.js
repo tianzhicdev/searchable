@@ -108,6 +108,7 @@ export function componentStyleOverrides(theme) {
             },
             styleOverrides: {
                 root: {
+                    backgroundColor: theme.colors.primaryDark,
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     border: `1px solid ${theme.colors.orangeMain}`,
                     borderRadius: '0px',
@@ -209,13 +210,14 @@ export function componentStyleOverrides(theme) {
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    background: theme.colors.orangeMain,
+                    color: theme.colors.orangeMain,
+                    background: theme.colors.primaryDark,
                     borderRadius: '0px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     border: `1px solid ${theme.colors.orangeMain}`,
                 },
                 input: {
-                    background: theme.colors.orangeMain,
+                    background: theme.colors.primaryDark,
                     borderRadius: '0px',
                 },
             }

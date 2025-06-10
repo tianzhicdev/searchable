@@ -698,7 +698,9 @@ const DownloadableSearchableDetails = () => {
                 disabled={creatingInvoice || totalPrice === 0}
                 fullWidth
               >
+                <Typography variant="body2" className={classes.staticText}>
                 Pay with Credit Card (3.5% fee)
+                </Typography>
               </Button>
             </div>
             
