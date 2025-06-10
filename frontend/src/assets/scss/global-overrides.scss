@@ -28,10 +28,10 @@ body, html, #root,
   background: #000000 !important;
 }
 
-// Ensure text is not black on black background
-*:not(.MuiSvgIcon-root) {
-  color: inherit !important;
-}
+// // Ensure text is not black on black background
+// *:not(.MuiSvgIcon-root) {
+//   color: inherit !important;
+// }
 
 // Force visible text colors
 input, textarea, span, div, p {
@@ -378,9 +378,9 @@ svg.MuiSvgIcon-root,
 }
 
 // Ensure text is never white or grey
-*:not(.MuiSvgIcon-root) {
-  color: inherit !important;
-}
+// *:not(.MuiSvgIcon-root) {
+//   color: inherit !important;
+// }
 
 // Force all text to be either light orange (user) or dark orange (system)
 h1, h2, h3, h4, h5, h6 {

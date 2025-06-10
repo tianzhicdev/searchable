@@ -296,6 +296,7 @@ export function componentStyleOverrides(theme) {
         MuiTypography: {
             styleOverrides: {
                 root: {
+                    color: theme.colors.lightOrange,
                     fontFamily: '"FreePixel", "Courier New", monospace'
                 },
                 caption: {
