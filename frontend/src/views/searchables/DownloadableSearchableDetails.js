@@ -690,7 +690,7 @@ const DownloadableSearchableDetails = () => {
             {renderDownloadableFiles()}
             
             {/* Payment Button */}
-            <div style={{ margin: '8px' }}>
+            <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -705,7 +705,7 @@ const DownloadableSearchableDetails = () => {
             
             {/* Remove Button for Owner */}
             {isOwner && (
-              <div style={{ margin: '4px' }}>
+              <div style={{ margin: '4px', display: 'flex', justifyContent: 'center' }}>
                 <Button
                   variant="contained"
                   onClick={handleRemoveItem}
