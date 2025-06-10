@@ -527,7 +527,7 @@ const DownloadableSearchableDetails = () => {
     }
     
     return (
-      <Box style={{ padding: '4px', margin: '0', width: '100%', backgroundColor: '#000000', border: '1px solid #d84315', borderRadius: '0px' }}>
+      <Paper className={classes.minimalSpacing}>
         <Typography variant="h6" className={classes.staticText}>
           Available Files:
         </Typography>
@@ -595,7 +595,7 @@ const DownloadableSearchableDetails = () => {
             </Typography>
           </Box>
         )}
-      </Box>
+      </Paper>
     );
   };
   
