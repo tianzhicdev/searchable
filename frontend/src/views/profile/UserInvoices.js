@@ -20,8 +20,10 @@ import {
 } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
+import useComponentStyles from '../../themes/componentStyles';
 
 const UserInvoices = () => {
+  const classes = useComponentStyles();
   const [invoices, setInvoices] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [sales, setSales] = useState([]);
@@ -151,7 +153,7 @@ const UserInvoices = () => {
               <Typography variant="h6" color="secondary">
                 {formatCurrency(stats.totalSpent)}
               </Typography>
-              <Typography variant="caption" color="textSecondary">
+              <Typography className={classes.staticText} >
                 Total Spent ({stats.purchasesCount} purchases)
               </Typography>
             </Box>
@@ -165,7 +167,7 @@ const UserInvoices = () => {
               <Typography variant="h6" color="primary">
                 {formatCurrency(stats.totalEarned)}
               </Typography>
-              <Typography variant="caption" color="textSecondary">
+              <Typography className={classes.staticText} >
                 Total Earned ({stats.salesCount} sales)
               </Typography>
             </Box>
@@ -179,7 +181,7 @@ const UserInvoices = () => {
               <Typography variant="h6" color="textPrimary">
                 {formatCurrency(stats.totalWithdrawn)}
               </Typography>
-              <Typography variant="caption" color="textSecondary">
+              <Typography className={classes.staticText} >
                 Total Withdrawn ({stats.withdrawalsCount} withdrawals)
               </Typography>
             </Box>

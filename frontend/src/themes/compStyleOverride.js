@@ -228,7 +228,7 @@ export function componentStyleOverrides(theme) {
                         border: `1px solid ${theme.colors.orangeMain}`
                     },
                     '& .MuiOutlinedInput-input': {
-                        backgroundColor: theme.colors.primaryDark,
+                        backgroundColor: theme.colors.orangeMain,
                         borderRadius: 0,
                         fontFamily: '"FreePixel", "Courier New", monospace'
                     },
