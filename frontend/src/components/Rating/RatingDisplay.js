@@ -59,12 +59,10 @@ const RatingDisplay = ({
           {displayedRatings.map((ratingItem, index) => (
             <Paper
               key={index}
-              variant="outlined"
-              style={{ 
-                padding: 12, 
-                marginBottom: 8,
-                backgroundColor: '#fafafa'
-              }}
+              // style={{ 
+              //   padding: 12, 
+              //   marginBottom: 8
+              // }}
             >
               <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                 <Box display="flex" alignItems="center" gap={1}>
