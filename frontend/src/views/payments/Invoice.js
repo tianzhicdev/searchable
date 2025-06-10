@@ -255,7 +255,9 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 size="small"
                                 className={`${classes.systemText} ${classes.marginXs}`}
                             >
-                                Notes ({noteCount})
+                                <Typography variant="body2" className={classes.systemText}>
+                                    Notes ({noteCount})
+                                </Typography>
                             </Button>
                             
                             {userRole === 'buyer' && !hasRated && !loadingRatingStatus && (
