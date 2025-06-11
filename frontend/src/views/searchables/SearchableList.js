@@ -44,7 +44,6 @@ const SearchableList = ({ criteria }) => {
   };
 
   // Update viewport height on resize
-  //todo: need to understand this 
   useEffect(() => {
     const handleResize = () => {
       setViewportHeight(window.innerHeight);
