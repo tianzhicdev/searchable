@@ -20,11 +20,7 @@ from ..common.data_helpers import (
     get_invoices,
     get_user_paid_files
 )
-from ..common.payment_helpers import (
-    create_stripe_checkout_session,
-    verify_stripe_payment,
-    calc_invoice
-)
+from ..common.payment_helpers import calc_invoice
 from ..common.models import PaymentStatus, PaymentType, Currency
 from ..common.logging_config import setup_logger
 
@@ -58,15 +54,6 @@ def validate_payment_request(data):
         'selections': data['selections']
     }
 
-def get_delivery_info(require_address, current_user):
-    """Get delivery information if required"""
-    if str(require_address).lower() == 'true':
-        if current_user:
-            return get_terminal(current_user.id)
-        else:
-            raise ValueError("User is not authenticated")
-    else:
-        return {}
 
 def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata):
     """Insert an invoice record and corresponding unpaid payment record into the database"""
@@ -200,46 +187,9 @@ class RefreshPaymentsBySearchable(Resource):
             logger.error(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/create-checkout-session', methods=['POST']) # TODO: this is not used. remove if that is the case
-class CreateCheckoutSession(Resource):
-    @track_metrics('create_checkout_session')
-    def post(self, request_origin='unknown'):
-        # Get the request data
-        data = request.get_json()
-  
-        # Extract name and amount from the request data
-        name = data.get('name', 'Product')
-        amount = data.get('amount', 2000)  # Default to 2000 cents ($20.00) if not provided
-        
-        # Ensure amount is an integer (Stripe requires amount in cents)
-        try:
-            amount = int(amount)
-        except (ValueError, TypeError):
-            return {"error": "Invalid amount format"}, 400
-        
-        session = stripe.checkout.Session.create(
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': name,
-                    },
-                    'unit_amount': amount,
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url='http://localhost:4242/success',
-            cancel_url='http://localhost:4242/cancel',
-        )
-        logger.info(f'Stripe session created: {session.id}')
-
-        return {
-            'url': session.url
-        }, 200
 
 
-@rest_api.route('/api/v1/create-invoice', methods=['POST']) # TODO: we should no longer check if address is required
+@rest_api.route('/api/v1/create-invoice', methods=['POST'])
 class CreateInvoiceV1(Resource):
     """
     Creates a payment invoice using Stripe
@@ -265,11 +215,15 @@ class CreateInvoiceV1(Resource):
             # Get the searchable data
             searchable_data = get_searchable(searchable_id)
 
-            require_address = searchable_data.get('payloads', {}).get('public', {}).get('require_address', False)
-            # Print require_address and searchable_data for debugging
-            logger.debug(f"require_address: {require_address}")
-            logger.debug(f"searchable_data: {searchable_data}")
-            delivery_info = get_delivery_info(require_address, current_user)
+            # No longer checking if address is required - always get delivery info for authenticated users
+            delivery_info = {}
+            if current_user:
+                terminal_info = get_terminal(current_user.id)
+                if terminal_info:
+                    delivery_info = {
+                        'address': terminal_info.get('address', ''),
+                        'tel': terminal_info.get('tel', '')
+                    }
             
             # Get seller_id from searchable data
             seller_id = searchable_data.get('terminal_id')

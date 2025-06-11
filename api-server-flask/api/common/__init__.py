@@ -4,11 +4,7 @@ from .database import get_db_connection, execute_sql, Json
 from .logging_config import setup_logger
 from .models import db, Users, JWTTokenBlocklist
 from .metrics import track_metrics, searchable_requests, searchable_latency, search_results_count, generate_latest, REGISTRY
-from .payment_helpers import (
-    calc_invoice,
-    create_stripe_checkout_session,
-    verify_stripe_payment
-)
+from .payment_helpers import calc_invoice
 from .data_helpers import (
     get_terminal,
     get_searchableIds_by_user, 
@@ -53,8 +49,6 @@ __all__ = [
     
     # Payment helpers
     'calc_invoice',
-    'create_stripe_checkout_session',
-    'verify_stripe_payment',
     
     # Data helpers
     'get_terminal',
