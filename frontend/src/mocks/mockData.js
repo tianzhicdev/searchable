@@ -150,14 +150,125 @@ export const mockInvoices = {
       searchable_id: "mock-item-1",
       amount: 29.99,
       status: "paid",
+      payment_type: "stripe",
+      currency: "usd",
       created_at: new Date(Date.now() - 3600000).toISOString(),
       metadata: {
+        address: "123 Main St, City, State 12345",
+        tel: "+1-555-0123",
+        description: "Premium Digital Asset Bundle",
         selections: [
           {
             id: "file-1",
             type: "downloadable",
             name: "Design_Templates_Pack.zip",
             price: 29.99
+          }
+        ]
+      }
+    },
+    {
+      _id: "invoice-2",
+      invoice_id: "invoice-2", 
+      buyer_id: "mock-user-2",
+      seller_id: "mock-terminal-1",
+      searchable_id: "mock-item-1",
+      amount: 79.97,
+      status: "paid",
+      payment_type: "stripe",
+      currency: "usd",
+      created_at: new Date(Date.now() - 7200000).toISOString(),
+      metadata: {
+        address: "456 Oak Ave, Another City, State 67890", 
+        tel: "+1-555-0456",
+        description: "Premium Digital Asset Bundle (x3 files)",
+        selections: [
+          {
+            id: "file-1",
+            type: "downloadable", 
+            name: "Design_Templates_Pack.zip",
+            price: 29.99
+          },
+          {
+            id: "file-2",
+            type: "downloadable",
+            name: "Stock_Photos_Collection.zip", 
+            price: 49.99
+          }
+        ]
+      }
+    },
+    {
+      _id: "invoice-3",
+      invoice_id: "invoice-3",
+      buyer_id: "mock-user-3", 
+      seller_id: "mock-terminal-2",
+      searchable_id: "mock-item-2",
+      amount: 15.50,
+      status: "pending",
+      payment_type: "stripe",
+      currency: "usd",
+      created_at: new Date(Date.now() - 1800000).toISOString(),
+      metadata: {
+        address: "",
+        tel: "",
+        description: "E-book Collection",
+        selections: [
+          {
+            id: "ebook-1",
+            type: "downloadable",
+            name: "JavaScript_Mastery.pdf",
+            price: 15.50
+          }
+        ]
+      }
+    },
+    {
+      _id: "invoice-4", 
+      invoice_id: "invoice-4",
+      buyer_id: "mock-user-1",
+      seller_id: "mock-terminal-3",
+      searchable_id: "mock-item-3",
+      amount: 199.99,
+      status: "paid",
+      payment_type: "stripe", 
+      currency: "usd",
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      metadata: {
+        address: "789 Pine St, Metro City, State 11111",
+        tel: "+1-555-0789",
+        description: "Complete Course Bundle",
+        selections: [
+          {
+            id: "course-1",
+            type: "downloadable",
+            name: "Full_Stack_Development_Course.zip",
+            price: 199.99
+          }
+        ]
+      }
+    },
+    {
+      _id: "invoice-5",
+      invoice_id: "invoice-5",
+      buyer_id: "mock-user-4",
+      seller_id: "mock-terminal-1", 
+      searchable_id: "mock-item-1",
+      amount: 19.99,
+      status: "failed",
+      payment_type: "stripe",
+      currency: "usd", 
+      created_at: new Date(Date.now() - 43200000).toISOString(),
+      metadata: {
+        address: "321 Elm St, Small Town, State 22222",
+        tel: "+1-555-0321",
+        description: "Source Code Examples",
+        selections: [
+          {
+            id: "file-3",
+            type: "downloadable",
+            name: "Source_Code_Examples.zip",
+            price: 19.99
           }
         ]
       }
