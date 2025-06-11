@@ -41,7 +41,7 @@ api-server-flask/api/
 #### Routes
 - **`routes/auth.py`** - Extracted authentication endpoints from `routes.py`
   - User registration, login, logout
-  - JWT token decorators (`token_required`, `token_optional`)
+  - JWT token decorator (`token_required`)
   - GitHub OAuth
   - User events tracking
 

@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 
 # Import from our structure
 from .. import rest_api
-from .auth import token_required, token_optional
+from .auth import token_required
 from ..common.metrics import track_metrics
 from ..common.data_helpers import (
     get_user_profile,
