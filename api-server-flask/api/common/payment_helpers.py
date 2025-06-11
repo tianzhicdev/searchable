@@ -2,7 +2,7 @@ import os
 import stripe
 from .logging_config import setup_logger
 from .models import PaymentStatus, PaymentType, Currency
-
+# TODO: the 2 functions in this file do not seem to be used. remove if that is the case 
 # Set up the logger
 logger = setup_logger(__name__, 'payment_helpers.log')
 
