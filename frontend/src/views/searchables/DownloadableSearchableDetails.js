@@ -3,7 +3,6 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
-import { getOrCreateVisitorId } from '../utilities/Visitor';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import CheckIcon from '@material-ui/icons/Check';
@@ -72,15 +71,9 @@ const DownloadableSearchableDetails = () => {
   const [userPaidFiles, setUserPaidFiles] = useState(new Set());
   
   useEffect(() => {
-    // Check if user is authenticated (skip in mock mode)
-    if (!isMockMode && !account?.isLoggedIn) {
-      setError('You must be logged in to view this item');
-      setLoading(false);
-      return;
-    }
-    
+    // User must be logged in to access this page (enforced by AuthGuard)
     fetchItemDetails();
-  }, [id, account]);
+  }, [id]);
   
   useEffect(() => {
     const checkOwnership = async () => {
@@ -236,7 +229,7 @@ const DownloadableSearchableDetails = () => {
     setPaymentStatus(null);
     try {
       // Get buyer ID - use account.user._id if available, otherwise use visitor ID
-      const buyerId = account?.user?._id || getOrCreateVisitorId();
+      const buyerId = account?.user?._id;
       
       // Prepare common payload properties
       const payload = {
