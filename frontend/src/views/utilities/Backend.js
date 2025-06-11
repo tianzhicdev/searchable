@@ -24,14 +24,23 @@ if (!isMockMode) {
   // Create a request interceptor that gets the token from localStorage or other sources
   backend.interceptors.request.use(
     (config) => {
-      // Get token from Redux store or localStorage
-      const localAccount = localStorage.getItem('ungovernable-account');
-      const account = JSON.parse(localAccount);
-      const isLoggedIn = account?.isLoggedIn === "true" || account?.isLoggedIn === true;
+      // Get token from Redux persist storage
+      const persistedData = localStorage.getItem('persist:ungovernable-account');
+      let token = null;
+      let isLoggedIn = false;
+      
+      if (persistedData) {
+        try {
+          const parsedData = JSON.parse(persistedData);
+          // Redux persist stores values as JSON strings
+          isLoggedIn = JSON.parse(parsedData.isLoggedIn || 'false');
+          token = JSON.parse(parsedData.token || '""').replace(/['"]/g, '');
+        } catch (e) {
+          console.error('Error parsing persisted auth data:', e);
+        }
+      }
 
-      if (isLoggedIn) {
-
-        const token = account?.token ? account.token.replace(/['"]/g, '') : '';
+      if (isLoggedIn && token) {
         console.log("using auth token", token);
         config.headers.Authorization = token;
         config.headers['use-jwt'] = "true";

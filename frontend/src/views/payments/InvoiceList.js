@@ -7,7 +7,7 @@ import {
   Alert,
 } from '@material-ui/core';
 import Invoice from './Invoice';
-import Backend from '../../mocks/mockBackend';
+import Backend from '../utilities/Backend';
 
 const InvoiceList = ({ searchableId, onRatingSubmitted }) => {
   const [invoices, setInvoices] = useState([]);
