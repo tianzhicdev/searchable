@@ -15,10 +15,19 @@ import { isMockMode } from '../../mocks/mockBackend';
  */
 const AuthGuard = ({ children }) => {
 
+
+
     const account = useSelector((state) => state.account);
     const dispatcher = useDispatch();
     const { isLoggedIn, token, isInitialized } = account;
-    
+    // In mock mode, always allow access
+    if (isMockMode) {
+        console.log('AuthGuard: Mock mode - allowing access', { 
+            path: window.location.pathname,
+            timestamp: new Date().toISOString()
+        });
+        return children;
+    }    
     console.log('[AUTH GUARD DEBUG] Account state:', account);
     console.log('[AUTH GUARD DEBUG] isLoggedIn:', isLoggedIn);
     console.log('[AUTH GUARD DEBUG] token exists:', !!token);
@@ -47,14 +56,7 @@ const AuthGuard = ({ children }) => {
 
     const tokenExpired = isTokenExpired(token);
 
-    // In mock mode, always allow access
-    if (isMockMode) {
-        console.log('AuthGuard: Mock mode - allowing access', { 
-            path: window.location.pathname,
-            timestamp: new Date().toISOString()
-        });
-        return children;
-    }
+
 
     // Log user authentication attempt
     console.log('AuthGuard: Authentication check', { 
