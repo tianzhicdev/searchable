@@ -27,7 +27,7 @@ const AuthGuard = ({ children }) => {
     // Wait for Redux persist to load
     if (!isInitialized) {
         console.log('[AUTH GUARD DEBUG] Waiting for Redux persist to initialize...');
-        return <div>Loading...</div>;
+        return <Redirect to="/login" />;
     }
 
     // Function to check if JWT is expired
