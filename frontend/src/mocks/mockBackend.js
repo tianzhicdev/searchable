@@ -239,6 +239,17 @@ const mockHandlers = {
   // Invoices endpoint for user invoices view
   'v1/invoices': () => createMockResponse(mockData.mockInvoices),
   
+  // Invoices by searchable item endpoint
+  'v1/invoices-by-searchable/': (url) => {
+    const searchableId = url.split('/').pop();
+    console.log(`[MOCK] Fetching invoices for searchable: ${searchableId}`);
+    return createMockResponse({
+      invoices: mockData.mockInvoices.invoices.filter(invoice => 
+        invoice.searchable_id === searchableId
+      )
+    });
+  },
+  
   // User invoices endpoint with purchases and sales
   'v1/user/invoices': () => {
     console.log('[MOCK] Fetching user invoices (purchases/sales)');
@@ -416,9 +427,13 @@ const mockBackend = {
     
     console.log(`[MOCK] GET ${url}`, config);
     
-    // Find matching handler
-    for (const [pattern, handler] of Object.entries(mockHandlers)) {
-      if (pattern !== 'default' && url.includes(pattern)) {
+    // Find matching handler - sort patterns by length descending for more specific matches first
+    const sortedPatterns = Object.entries(mockHandlers)
+      .filter(([pattern]) => pattern !== 'default')
+      .sort(([a], [b]) => b.length - a.length);
+      
+    for (const [pattern, handler] of sortedPatterns) {
+      if (url.includes(pattern)) {
         console.log(`[MOCK] Found handler for pattern: ${pattern}`);
         return handler(url, config);
       }
@@ -433,9 +448,14 @@ const mockBackend = {
     
     console.log(`[MOCK] POST ${url}`, data);
     
-    // Find matching handler
-    for (const [pattern, handler] of Object.entries(mockHandlers)) {
-      if (pattern !== 'default' && url.includes(pattern)) {
+    // Find matching handler - sort patterns by length descending for more specific matches first
+    const sortedPatterns = Object.entries(mockHandlers)
+      .filter(([pattern]) => pattern !== 'default')
+      .sort(([a], [b]) => b.length - a.length);
+      
+    for (const [pattern, handler] of sortedPatterns) {
+      if (url.includes(pattern)) {
+        console.log(`[MOCK] Found POST handler for pattern: ${pattern}`);
         return handler(url, { ...config, data: JSON.stringify(data) });
       }
     }
