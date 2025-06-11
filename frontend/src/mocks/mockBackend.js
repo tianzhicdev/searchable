@@ -411,16 +411,37 @@ const mockHandlers = {
   
   
   'v1/profile/': (url) => {
-    const userId = url.split('/').pop();
-    console.log('[MOCK] Fetching user profile by ID:', userId);
-    return createMockResponse({
-      profile: {
-        username: 'test_user',
+    const identifier = url.split('/').pop();
+    console.log('[MOCK] Fetching user profile by identifier:', identifier);
+    
+    // Create different profiles based on identifier
+    let profileData = {
+      username: 'test_user',
+      profile_image_url: null,
+      introduction: 'Welcome to my digital marketplace profile!',
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString()
+    };
+    
+    let downloadables = [
+      {
+        searchable_id: 'mock-item-1',
+        title: 'Premium Digital Asset Bundle',
+        description: 'A comprehensive collection of high-quality digital assets',
+        type: 'downloadable',
+        price: 29.99,
+        currency: 'USD'
+      }
+    ];
+    
+    // Handle specific seller profiles
+    if (identifier === 'designer_pro') {
+      profileData = {
+        username: 'designer_pro',
         profile_image_url: null,
-        introduction: 'Welcome to my digital marketplace profile!',
-        created_at: new Date(Date.now() - 86400000 * 30).toISOString()
-      },
-      downloadables: [
+        introduction: 'Professional designer with 5+ years of experience creating stunning digital assets and templates.',
+        created_at: new Date(Date.now() - 86400000 * 180).toISOString()
+      };
+      downloadables = [
         {
           searchable_id: 'mock-item-1',
           title: 'Premium Digital Asset Bundle',
@@ -428,8 +449,54 @@ const mockHandlers = {
           type: 'downloadable',
           price: 29.99,
           currency: 'USD'
+        },
+        {
+          searchable_id: 'mock-item-2',
+          title: 'Professional Design Templates',
+          description: 'High-end design templates for business and creative projects',
+          type: 'downloadable',
+          price: 49.99,
+          currency: 'USD'
         }
-      ]
+      ];
+    } else if (identifier === 'DigitalAssetStore') {
+      profileData = {
+        username: 'DigitalAssetStore',
+        profile_image_url: null,
+        introduction: 'Your trusted source for premium digital assets, templates, and creative resources.',
+        created_at: new Date(Date.now() - 86400000 * 365).toISOString()
+      };
+      downloadables = [
+        {
+          searchable_id: 'mock-item-1',
+          title: 'Premium Digital Asset Bundle',
+          description: 'A comprehensive collection of high-quality digital assets',
+          type: 'downloadable',
+          price: 29.99,
+          currency: 'USD'
+        },
+        {
+          searchable_id: 'mock-item-3',
+          title: 'Stock Photo Collection',
+          description: 'High-resolution stock photos for commercial use',
+          type: 'downloadable',
+          price: 79.99,
+          currency: 'USD'
+        },
+        {
+          searchable_id: 'mock-item-4',
+          title: 'Design Element Library',
+          description: 'Complete library of design elements and graphics',
+          type: 'downloadable',
+          price: 39.99,
+          currency: 'USD'
+        }
+      ];
+    }
+    
+    return createMockResponse({
+      profile: profileData,
+      downloadables: downloadables
     });
   },
   
