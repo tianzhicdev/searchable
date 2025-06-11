@@ -297,11 +297,6 @@ const mockHandlers = {
     });
   },
   
-  // Payments by terminal
-  'v1/payments-by-terminal': () => createMockResponse({ receipts: [] }),
-  
-  // Withdrawals by terminal
-  'v1/withdrawals-by-terminal': () => createMockResponse({ withdrawals: [] }),
   
   // User withdrawals endpoint
   'v1/withdrawals': () => {

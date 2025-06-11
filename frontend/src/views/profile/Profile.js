@@ -22,13 +22,11 @@ const Profile = () => {
   const [balance, setBalance] = useState({ usd: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [transactions, setTransactions] = useState([]);
   const [profileData, setProfileData] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
-  const [transformedWithdrawals, setTransformedWithdrawals] = useState([]);
   
   // Add USDT withdrawal states
   const [usdtWithdrawDialogOpen, setUsdtWithdrawDialogOpen] = useState(false);
@@ -56,25 +54,6 @@ const Profile = () => {
     setError(null);
     
     try {
-      // Fetch user payments using the payments-by-terminal endpoint
-      const paymentsResponse = await backend.get(`v1/payments-by-terminal`);
-
-      console.log("Payments response:", paymentsResponse.data);
-      
-      // Fetch user withdrawals using the withdrawals-by-terminal endpoint
-      const withdrawalsResponse = await backend.get(`v1/withdrawals-by-terminal`);
-      
-      console.log("Withdrawals response:", withdrawalsResponse.data);
-
-      const allTransactions = [
-        ...(paymentsResponse.data.receipts || []),
-        ...(withdrawalsResponse.data.withdrawals || []),
-      ];
-
-      console.log("allTransactions", allTransactions);
-
-      setTransactions(allTransactions);
-      
       // Fetch balance directly from the balance endpoint
       const balanceResponse = await backend.get('balance');
       console.log("Balance response:", balanceResponse.data);
