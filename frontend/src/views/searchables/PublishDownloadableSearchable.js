@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
   CircularProgress, Divider, IconButton, MenuItem, Switch
@@ -344,22 +345,23 @@ const PublishDownloadableSearchable = () => {
                 <Typography variant="subtitle1" className={classes.formLabel}>
                   Preview Images (Optional)
                 </Typography>
-                <Typography variant="caption" className={classes.formHelp}>
-                  Add images to showcase your downloadable content
-                </Typography>
-                <input
-                  type="file"
-                  id="images"
-                  name="images"
-                  onChange={handleImageUpload}
-                  accept="image/*"
-                  multiple
-                  ref={fileInputRef}
-                  className={classes.fileInput}
-                />
-                <label htmlFor="images" className={classes.fileInputLabel}>
+                <Button
+                  variant="contained"
+                  startIcon={<CloudUploadIcon />}
+                  className={classes.fileInputLabel}
+                >
                   Choose Images
-                </label>
+                  <input
+                    type="file"
+                    id="images"
+                    name="images"
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    multiple
+                    ref={fileInputRef}
+                    hidden
+                  />
+                </Button>
 
                 <Box className={classes.imagePreviewContainer}>
                   {previewImages.map((src, index) => (
@@ -397,17 +399,19 @@ const PublishDownloadableSearchable = () => {
                   />
                   
                   <Box display="flex" alignItems="center" mb={1}>
-                    <input
-                      type="file"
-                      id="downloadableFile"
-                      onChange={handleFileUpload}
-                      ref={downloadableFileInputRef}
-                      className={classes.fileInput}
-                    />
-                    <label htmlFor="downloadableFile" className={classes.fileInputLabel}>
-                      <AttachFileIcon fontSize="small" style={{ marginRight: 4 }} />
+                    <Button
+                      variant="contained"
+                      startIcon={<AttachFileIcon />}
+                    >
                       Choose File
-                    </label>
+                      <input
+                        type="file"
+                        id="downloadableFile"
+                        onChange={handleFileUpload}
+                        ref={downloadableFileInputRef}
+                        hidden
+                      />
+                    </Button>
                     {newFile.file && (
                       <Typography variant="caption" style={{ marginLeft: 16 }}>
                         {newFile.file.name} ({formatFileSize(newFile.file.size)})
@@ -427,7 +431,6 @@ const PublishDownloadableSearchable = () => {
                     />
                     <Button 
                       variant="contained" 
-                      color="primary"
                       onClick={addDownloadableFile}
                       disabled={!newFile.name.trim() || !newFile.price || !newFile.file || loading}
                     >
@@ -480,15 +483,13 @@ const PublishDownloadableSearchable = () => {
               <Grid item xs={12}>
                 <Box className={classes.formActions}>
                   <Button 
-                    type="button" 
-                    variant="outlined"
+                    variant="contained"
                     className={classes.button} 
                     onClick={() => history.push('/searchables')}
                   >
                     Cancel
                   </Button>
                   <Button 
-                    type="submit" 
                     variant="contained" 
                     className={classes.button}
                     disabled={loading || downloadableFiles.length === 0}

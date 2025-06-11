@@ -131,6 +131,7 @@ export const mockUserProfile = {
 };
 
 export const mockTerminal = {
+  terminal_id: "mock-terminal-1",
   address: "123 Mock Street, Test City",
   tel: "+1234567890"
 };
@@ -163,4 +164,54 @@ export const mockInvoices = {
     }
   ],
   user_role: "buyer"
+};
+
+// Mock user's own searchables for publish-searchables page
+export const mockUserSearchables = {
+  searchables: [
+    {
+      _id: "user-item-1",
+      searchable_id: "user-item-1", 
+      terminal_id: "mock-terminal-1",
+      payloads: {
+        public: {
+          title: "My First Digital Product",
+          description: "A collection of my best design work",
+          type: "downloadable",
+          currency: "usd",
+          downloadableFiles: [
+            { fileId: "my-file-1", name: "Premium_Designs.zip", price: 39.99 },
+            { fileId: "my-file-2", name: "Vector_Graphics.zip", price: 24.99 }
+          ]
+        }
+      },
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      username: "test_user"
+    },
+    {
+      _id: "user-item-2",
+      searchable_id: "user-item-2",
+      terminal_id: "mock-terminal-1", 
+      payloads: {
+        public: {
+          title: "Advanced Code Tutorials",
+          description: "Step-by-step programming tutorials with source code",
+          type: "downloadable",
+          currency: "usd",
+          downloadableFiles: [
+            { fileId: "my-file-3", name: "React_Tutorial.zip", price: 49.99 },
+            { fileId: "my-file-4", name: "Node_Examples.zip", price: 34.99 }
+          ]
+        }
+      },
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      username: "test_user"
+    }
+  ],
+  pagination: {
+    page: 1,
+    pageSize: 10,
+    totalCount: 2,
+    totalPages: 1
+  }
 };

@@ -94,10 +94,16 @@ export function componentStyleOverrides(theme) {
         MuiButton: {
             styleOverrides: {
                 root: {
+                    margin: '4px',
                     borderRadius: '0px',
                     fontFamily: '"FreePixel", "Courier New", monospace',
-                    color: theme.colors.primary,
+                    color: theme.colors.secondary,
                     border: `1px solid ${theme.colors.primary}`,
+                    backgroundColor: theme.colors.background,
+                    '&.Mui-disabled': {
+                        color: theme.colors.secondary,
+                        opacity: 0.5
+                    }
                 }
             }
         },
@@ -200,7 +206,7 @@ export function componentStyleOverrides(theme) {
                     backgroundColor: theme.colors.background,
                     fontFamily: '"FreePixel", "Courier New", monospace',
                     '&::placeholder': {
-                        color: theme.colors.secondary,
+                        color: theme.colors.primary,
                         fontSize: '1rem',
                         fontFamily: '"FreePixel", "Courier New", monospace'
                     }

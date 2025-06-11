@@ -13,7 +13,8 @@ import { LOGOUT } from './../../store/actions';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import SearchableList from './SearchableList';
-import backend from '../utilities/Backend'; 
+import backend from '../utilities/Backend';
+import { isMockMode } from '../../mocks/mockBackend'; 
 const Searchables = () => {
   
   // State variables
@@ -106,7 +107,7 @@ const Searchables = () => {
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box >
-            {account.isLoggedIn ? (
+            {account.isLoggedIn || isMockMode ? (
               <>
                 <Button 
                   variant="contained" 

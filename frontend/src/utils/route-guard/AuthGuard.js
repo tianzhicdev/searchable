@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { LOGOUT } from '../../store/actions';
+import { isMockMode } from '../../mocks/mockBackend';
 
 
 //-----------------------|| AUTH GUARD ||-----------------------//
@@ -28,6 +29,15 @@ const AuthGuard = ({ children }) => {
     };
 
     const tokenExpired = isTokenExpired(token);
+
+    // In mock mode, always allow access
+    if (isMockMode) {
+        console.log('AuthGuard: Mock mode - allowing access', { 
+            path: window.location.pathname,
+            timestamp: new Date().toISOString()
+        });
+        return children;
+    }
 
     // Log user authentication attempt
     console.log('AuthGuard: Authentication check', { 
