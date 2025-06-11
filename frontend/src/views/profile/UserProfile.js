@@ -31,12 +31,7 @@ const UserProfile = () => {
     try {
       let response;
       
-      // Only support user ID (numeric identifier)
-      if (isNaN(identifier)) {
-        throw new Error('Invalid user identifier. Only numeric user IDs are supported.');
-      }
-      
-      // Fetch by user ID
+      // Support both usernames and numeric user IDs
       response = await backend.get(`v1/profile/${identifier}`);
       
       const { profile, downloadables } = response.data;
