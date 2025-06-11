@@ -1,5 +1,7 @@
 // Mock authentication setup for development
 import { isMockMode } from './mockBackend';
+import { store } from '../store';
+import { ACCOUNT_INITIALIZE } from '../store/actions';
 
 export const mockAccount = {
   isLoggedIn: true,
@@ -13,30 +15,23 @@ export const mockAccount = {
   }
 };
 
-// Function to inject mock auth into localStorage
+// Function to inject mock auth into Redux store
 export const setupMockAuth = () => {
   if (isMockMode) {
     console.log('[MOCK] Setting up mock authentication...');
     
-    // Redux persist uses a specific key format
-    const persistKey = 'persist:ungovernable-account';
+    // Dispatch ACCOUNT_INITIALIZE action to set up the mock user in Redux
+    store.dispatch({
+      type: ACCOUNT_INITIALIZE,
+      payload: {
+        isLoggedIn: mockAccount.isLoggedIn,
+        token: mockAccount.token,
+        user: mockAccount.user
+      }
+    });
     
-    // Always set mock auth state for consistent behavior
-    const mockAuthState = {
-      token: JSON.stringify(mockAccount.token),
-      isLoggedIn: JSON.stringify(mockAccount.isLoggedIn),
-      isInitialized: JSON.stringify(true),
-      user: JSON.stringify(mockAccount.user),
-      _persist: JSON.stringify({ version: -1, rehydrated: true })
-    };
-    
-    localStorage.setItem(persistKey, JSON.stringify(mockAuthState));
-    console.log('[MOCK] Auth state injected into Redux persist');
-    
-    // Also set the old format for backward compatibility
-    localStorage.setItem('ungovernable-account', JSON.stringify(mockAccount));
-    
-    console.log('[MOCK] Mock authentication setup complete');
+    console.log('[MOCK] Mock authentication dispatched to Redux store');
+    console.log('[MOCK] Current Redux state:', store.getState().account);
   }
 };
 
@@ -57,5 +52,7 @@ export const useMockAuth = () => {
 
 // Auto-setup mock auth when module loads
 if (typeof window !== 'undefined') {
-  setupMockAuth();
+  setTimeout(() => {
+    setupMockAuth();
+  }, 100); // Small delay to ensure Redux store is ready
 }
