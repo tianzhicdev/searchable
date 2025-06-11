@@ -17,7 +17,6 @@ from ..common.data_helpers import (
     get_searchable,
     get_searchableIds_by_user,
     get_terminal,
-    get_receipts,
     get_ratings,
     get_balance_by_currency,
     get_withdrawals,
@@ -461,42 +460,6 @@ class UserTerminal(Resource):
             logger.error(f"Error updating terminal for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/payments-by-terminal', methods=['GET'])
-class PaymentsByTerminal(Resource):
-    """
-    Retrieves payments (receipts) for the current user's terminal
-    """
-    @token_required
-    @track_metrics('payments_by_terminal')
-    def get(self, current_user, request_origin='unknown'):
-        try:
-            receipts = get_receipts(user_id=current_user.id)
-            return {"receipts": receipts}, 200
-            
-        except Exception as e:
-            logger.error(f"Error retrieving payments for terminal {current_user.id}: {str(e)}")
-            return {"error": str(e)}, 500
-
-@rest_api.route('/api/v1/withdrawals-by-terminal', methods=['GET'])
-class WithdrawalsByTerminal(Resource):
-    """
-    Retrieves withdrawals for the current user's terminal
-    """
-    @token_required
-    @track_metrics('withdrawals_by_terminal')
-    def get(self, current_user, request_origin='unknown'):
-        try:
-            # Get actual withdrawals from database
-            withdrawals = get_withdrawals(user_id=current_user.id)
-            
-            # Return withdrawal information
-            return {
-                "withdrawals": withdrawals
-            }, 200
-            
-        except Exception as e:
-            logger.error(f"Error retrieving withdrawals for terminal {current_user.id}: {str(e)}")
-            return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/invoices-by-searchable/<string:searchable_id>', methods=['GET'])
 class InvoicesBySearchable(Resource):
