@@ -246,7 +246,7 @@ class CreateInvoiceV1(Resource):
     
     Supports both authenticated users and visitors
     """
-    @token_optional
+    @token_required
     @track_metrics('create_invoice_v1')
     def post(self, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
@@ -346,7 +346,7 @@ class UserPaidFiles(Resource):
     """
     Get the files that the current user has paid for in a searchable item
     """
-    @token_optional
+    @token_required
     @track_metrics('user_paid_files')
     def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
