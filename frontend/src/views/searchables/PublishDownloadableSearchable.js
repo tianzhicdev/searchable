@@ -347,6 +347,7 @@ const PublishDownloadableSearchable = () => {
                 </Typography>
                 <Button
                   variant="contained"
+                  component="label"
                   startIcon={<CloudUploadIcon />}
                   className={classes.fileInputLabel}
                 >
@@ -401,6 +402,7 @@ const PublishDownloadableSearchable = () => {
                   <Box display="flex" alignItems="center" mb={1}>
                     <Button
                       variant="contained"
+                      component="label"
                       startIcon={<AttachFileIcon />}
                     >
                       Choose File
