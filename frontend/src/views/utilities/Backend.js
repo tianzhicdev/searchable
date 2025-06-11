@@ -44,13 +44,8 @@ if (!isMockMode) {
         console.log("using auth token", token);
         // Backend expects lowercase 'authorization' header
         config.headers.authorization = token;
-        config.headers['use-jwt'] = "true";
-      } else {
-        const visitorId = localStorage.getItem('visitorId');
-        console.log("using visitorId", visitorId);
-        config.headers['X-Visitor-ID'] = visitorId;
-        config.headers['use-jwt'] = "false";
       }
+      // No else case - if not logged in, no auth headers are sent
 
       return config;
     },
@@ -63,8 +58,6 @@ export const updateBackendAuth = (account) => {
   if (account && account.token) {
     // Backend expects lowercase 'authorization' header
     backend.defaults.headers.common['authorization'] = account.token;
-  } else if (account && account.visitorId) {
-    backend.defaults.headers.common['X-Visitor-ID'] = account.visitorId;
   }
 };
 

@@ -86,10 +86,6 @@ const Searchables = () => {
     history.push('/profile');
   };
 
-  // Handle navigation to login page
-  const handleLoginClick = () => {
-    history.push('/login');
-  };
 
   // Handle search button click
   const handleSearchButtonClick = () => {
@@ -107,39 +103,30 @@ const Searchables = () => {
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box >
-            {account.isLoggedIn || isMockMode ? (
-              <>
-                <Button 
-                  variant="contained" 
-                  onClick={handleProfileClick}
-                >
-                  <PersonIcon />
-                </Button>
-                
-                <Button 
-                  variant="contained" 
-                  onClick={handleLogout}
-                >
-                  <ExitToAppIcon />
-                </Button>
-                
-                <Button 
-                  variant="contained" 
-                  onClick={handleAddNew}
-                  style={{ float: 'right' }}
-                >
-                  <AddIcon />
-                </Button>
-              </>
-            ) : (
+            {/* Users must be logged in to access this page, so always show logged-in UI */}
+            <>
               <Button 
                 variant="contained" 
-                onClick={handleLoginClick}
-                color="primary"
+                onClick={handleProfileClick}
               >
-                Login
+                <PersonIcon />
               </Button>
-            )}
+              
+              <Button 
+                variant="contained" 
+                onClick={handleLogout}
+              >
+                <ExitToAppIcon />
+              </Button>
+              
+              <Button 
+                variant="contained" 
+                onClick={handleAddNew}
+                style={{ float: 'right' }}
+              >
+                <AddIcon />
+              </Button>
+            </>
         </Box>
       </Grid>
       
