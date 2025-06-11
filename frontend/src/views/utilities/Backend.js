@@ -26,26 +26,48 @@ if (!isMockMode) {
     (config) => {
       // Get token from Redux persist storage
       const persistedData = localStorage.getItem('persist:ungovernable-account');
+      console.log('[AUTH DEBUG] Persisted data exists:', !!persistedData);
+      
       let token = null;
       let isLoggedIn = false;
       
       if (persistedData) {
         try {
           const parsedData = JSON.parse(persistedData);
+          console.log('[AUTH DEBUG] Parsed data:', parsedData);
+          
           // Redux persist stores values as JSON strings
           isLoggedIn = JSON.parse(parsedData.isLoggedIn || 'false');
-          token = JSON.parse(parsedData.token || '""').replace(/['"]/g, '');
+          
+          // Parse token - it might be double-encoded
+          const tokenString = parsedData.token || '""';
+          try {
+            token = JSON.parse(tokenString);
+            // If token is still wrapped in quotes, remove them
+            if (typeof token === 'string') {
+              token = token.replace(/^["']|["']$/g, '');
+            }
+          } catch (e) {
+            // If parsing fails, just use the string as-is
+            token = tokenString.replace(/^["']|["']$/g, '');
+          }
+          
+          console.log('[AUTH DEBUG] isLoggedIn:', isLoggedIn);
+          console.log('[AUTH DEBUG] token exists:', !!token);
+          console.log('[AUTH DEBUG] token length:', token?.length);
         } catch (e) {
           console.error('Error parsing persisted auth data:', e);
         }
       }
 
       if (isLoggedIn && token) {
-        console.log("using auth token", token);
+        console.log("[AUTH DEBUG] Setting auth token in headers");
         // Backend expects lowercase 'authorization' header
         config.headers.authorization = token;
+        console.log('[AUTH DEBUG] Final headers:', config.headers);
+      } else {
+        console.log('[AUTH DEBUG] Not setting auth - isLoggedIn:', isLoggedIn, 'token:', !!token);
       }
-      // No else case - if not logged in, no auth headers are sent
 
       return config;
     },
