@@ -487,96 +487,36 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
         logger.error(f"Error creating withdrawal: {str(e)}")
         return None
 
-def check_payment(session_id): # TODO: this should just return the payment info, do not manipulate the data
+def check_payment(session_id):
     """
-    Checks the status of a Stripe payment session and updates the database if paid.
-    First checks the database to avoid unnecessary Stripe API calls if already complete.
+    Checks the status of a payment session in the database.
+    Read-only operation that only checks local database status.
     """
     try:
-        # First, check the database for existing payment status
+        # Check the database for existing payment status
         invoice_records = get_invoices(external_id=session_id)
         
         if invoice_records:
             invoice_record = invoice_records[0]
             
-            # Check if payment already exists and is complete
+            # Check if payment exists and is complete
             existing_payments = get_payments(invoice_id=invoice_record['id'])
             
             if existing_payments:
                 payment_record = existing_payments[0]
                 if payment_record['status'] == PaymentStatus.COMPLETE.value:
-                    # Payment is already complete, return early without calling Stripe
+                    # Payment is complete, return the stored information
                     return {
-                        'status': 'complete',  # Return 'complete' to match test expectations
-                        'amount_total': int(invoice_record['amount'] * 100),  # Convert to cents for consistency
+                        'status': 'complete',
+                        'amount_total': int(invoice_record['amount'] * 100),
                         'currency': Currency.USD.value,
                         'session_id': session_id
                     }
         
-        # If we reach here, either no payment exists or it's not complete yet
-        # Proceed with Stripe API call
-        checkout_session = stripe.checkout.Session.retrieve(session_id)
-        
-        # Get payment status
-        payment_status = checkout_session.payment_status
-        
-        # If payment is successful, update the payment status in our database
-        if payment_status in ('paid', 'complete'):
-            
-            # Get the invoice record from our database using external_id (if not already retrieved)
-            if not invoice_records:
-                invoice_records = get_invoices(external_id=session_id)
-            
-            if invoice_records:
-                invoice_record = invoice_records[0]
-                
-                # Check if payment already exists (re-check in case of race condition)
-                existing_payments = get_payments(invoice_id=invoice_record['id'])
-                
-                if existing_payments:
-                    # Update existing payment record
-                    payment_record = existing_payments[0]
-                    payment_metadata = {
-                        **payment_record['metadata'],  # Preserve existing metadata
-                        "stripe_status": payment_status,
-                        "timestamp": int(time.time()),
-                        "address": invoice_record['metadata'].get('address', ''),
-                        "tel": invoice_record['metadata'].get('tel', ''),
-                        "description": invoice_record['metadata'].get('description', ''),
-                        "stripe_session_id": session_id,
-                        "amount_total": checkout_session.amount_total,
-                    }
-                    
-                    update_payment_status(
-                        payment_id=payment_record['id'],
-                        status=PaymentStatus.COMPLETE.value,
-                        metadata=payment_metadata
-                    )
-                else:
-                    # Fallback: Create payment record if none exists (shouldn't happen with new flow)
-                    payment_metadata = {
-                        "stripe_status": payment_status,
-                        "timestamp": int(time.time()),
-                        "address": invoice_record['metadata'].get('address', ''),
-                        "tel": invoice_record['metadata'].get('tel', ''),
-                        "description": invoice_record['metadata'].get('description', ''),
-                        "stripe_session_id": session_id,
-                        "amount_total": checkout_session.amount_total,
-                    }
-                    
-                    create_payment(
-                        invoice_id=invoice_record['id'],
-                        amount=invoice_record['amount'],
-                        currency=Currency.USD.value,
-                        payment_type=PaymentType.STRIPE.value,
-                        external_id=session_id,
-                        metadata=payment_metadata
-                    )
-        
-        # Return the payment status
+        # If we reach here, either no payment exists or it's not complete
         return {
-            'status': payment_status,
-            'amount_total': checkout_session.amount_total,
+            'status': 'incomplete',
+            'amount_total': 0,
             'currency': Currency.USD.value,
             'session_id': session_id
         }
