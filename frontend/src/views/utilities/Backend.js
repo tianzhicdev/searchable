@@ -1,6 +1,6 @@
 import axios from 'axios';
 import configData from '../../config';
-import { useSelector } from 'react-redux';
+import { store } from '../../store';
 
 // Check if we're in mock mode (only use environment variable)
 const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true';
@@ -21,52 +21,29 @@ if (isMockMode) {
 
 // Only add interceptors for real backend, not mock backend
 if (!isMockMode) {
-  // Create a request interceptor that gets the token from localStorage or other sources
+  // Create a request interceptor that gets the token from Redux store
   backend.interceptors.request.use(
     (config) => {
-      // Get token from Redux persist storage
+      // Get current state from Redux store
+      const state = store.getState();
+      const account = state.account;
+      
+      console.log('[AUTH DEBUG] Redux state account:', account);
+      console.log('[AUTH DEBUG] isLoggedIn:', account?.isLoggedIn);
+      console.log('[AUTH DEBUG] token exists:', !!account?.token);
+      console.log('[AUTH DEBUG] token length:', account?.token?.length);
+      
+      // Also check localStorage for debugging
       const persistedData = localStorage.getItem('persist:ungovernable-account');
       console.log('[AUTH DEBUG] Persisted data exists:', !!persistedData);
-      
-      let token = null;
-      let isLoggedIn = false;
-      
-      if (persistedData) {
-        try {
-          const parsedData = JSON.parse(persistedData);
-          console.log('[AUTH DEBUG] Parsed data:', parsedData);
-          
-          // Redux persist stores values as JSON strings
-          isLoggedIn = JSON.parse(parsedData.isLoggedIn || 'false');
-          
-          // Parse token - it might be double-encoded
-          const tokenString = parsedData.token || '""';
-          try {
-            token = JSON.parse(tokenString);
-            // If token is still wrapped in quotes, remove them
-            if (typeof token === 'string') {
-              token = token.replace(/^["']|["']$/g, '');
-            }
-          } catch (e) {
-            // If parsing fails, just use the string as-is
-            token = tokenString.replace(/^["']|["']$/g, '');
-          }
-          
-          console.log('[AUTH DEBUG] isLoggedIn:', isLoggedIn);
-          console.log('[AUTH DEBUG] token exists:', !!token);
-          console.log('[AUTH DEBUG] token length:', token?.length);
-        } catch (e) {
-          console.error('Error parsing persisted auth data:', e);
-        }
-      }
 
-      if (isLoggedIn && token) {
-        console.log("[AUTH DEBUG] Setting auth token in headers");
+      if (account?.isLoggedIn && account?.token) {
+        console.log("[AUTH DEBUG] Setting auth token in headers from Redux state");
         // Backend expects lowercase 'authorization' header
-        config.headers.authorization = token;
+        config.headers.authorization = account.token;
         console.log('[AUTH DEBUG] Final headers:', config.headers);
       } else {
-        console.log('[AUTH DEBUG] Not setting auth - isLoggedIn:', isLoggedIn, 'token:', !!token);
+        console.log('[AUTH DEBUG] Not setting auth - isLoggedIn:', account?.isLoggedIn, 'token:', !!account?.token);
       }
 
       return config;
@@ -77,7 +54,7 @@ if (!isMockMode) {
 
 // Export a function to update headers with current account state
 export const updateBackendAuth = (account) => {
-  if (account && account.token) {
+  if (!isMockMode && account && account.token) {
     // Backend expects lowercase 'authorization' header
     backend.defaults.headers.common['authorization'] = account.token;
   }
