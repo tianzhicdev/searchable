@@ -91,7 +91,7 @@ def token_required(f):
     return decorator
 
 
-def token_optional(f):
+def token_optional(f): # TODO: this is not used. remove if that is the case
     @wraps(f)
     def decorator(self, *args, **kwargs):
         token = None

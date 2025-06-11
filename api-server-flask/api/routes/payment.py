@@ -200,7 +200,7 @@ class RefreshPaymentsBySearchable(Resource):
             logger.error(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/create-checkout-session', methods=['POST'])
+@rest_api.route('/api/v1/create-checkout-session', methods=['POST']) # TODO: this is not used. remove if that is the case
 class CreateCheckoutSession(Resource):
     @track_metrics('create_checkout_session')
     def post(self, request_origin='unknown'):
@@ -239,7 +239,7 @@ class CreateCheckoutSession(Resource):
         }, 200
 
 
-@rest_api.route('/api/v1/create-invoice', methods=['POST'])
+@rest_api.route('/api/v1/create-invoice', methods=['POST']) # TODO: we should no longer check if address is required
 class CreateInvoiceV1(Resource):
     """
     Creates a payment invoice using Stripe
@@ -370,7 +370,7 @@ class UserPaidFiles(Resource):
             return {"error": str(e)}, 500
 
 
-@rest_api.route('/api/v1/test/complete-payment', methods=['POST'])
+@rest_api.route('/api/v1/test/complete-payment', methods=['POST']) 
 class TestCompletePayment(Resource):
     """
     Test endpoint to directly mark a payment as complete (for integration testing)
