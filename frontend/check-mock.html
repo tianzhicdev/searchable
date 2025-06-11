@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock Mode Test</title>
+</head>
+<body>
+    <h1>Testing Mock Mode</h1>
+    <div id="result"></div>
+    <script>
+        console.log('REACT_APP_MOCK_MODE:', process.env.REACT_APP_MOCK_MODE);
+        console.log('URL search params:', window.location.search);
+        
+        const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true' || 
+                           window.location.search.includes('mock=true');
+        
+        document.getElementById('result').innerHTML = 'Mock Mode: ' + isMockMode;
+        console.log('Mock mode active:', isMockMode);
+    </script>
+</body>
+</html>

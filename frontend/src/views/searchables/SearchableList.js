@@ -84,12 +84,19 @@ const SearchableList = ({ criteria }) => {
         }
       });
 
-      setSearchResults(response.data.results);
+      console.log('[SEARCHABLE LIST] Response received:', response.data);
+      
+      // Ensure results is always an array
+      const results = response.data.results || [];
+      setSearchResults(results);
+      
+      // Ensure pagination exists
+      const pagination = response.data.pagination || {};
       setPagination({
-        page: response.data.pagination.current_page,
-        pageSize: response.data.pagination.page_size,
-        totalCount: response.data.pagination.total_count,
-        totalPages: response.data.pagination.total_pages
+        page: pagination.current_page || 1,
+        pageSize: pagination.page_size || 10,
+        totalCount: pagination.total_count || 0,
+        totalPages: pagination.total_pages || 1
       });
       setInitialItemsLoaded(true);
       
@@ -177,10 +184,10 @@ const SearchableList = ({ criteria }) => {
         </Grid>
       )}
 
-      {searchResults.length > 0 && (
+      {searchResults && searchResults.length > 0 && (
         <>
           <Grid item xs={12} >
-            {searchResults.map((item) => (
+            {searchResults && searchResults.map((item) => (
               <SearchablesProfile 
                 key={item.searchable_id}
                 item={item}
@@ -197,7 +204,7 @@ const SearchableList = ({ criteria }) => {
         </>
       )}
 
-      {!loading && searchResults.length === 0 && !initialItemsLoaded && (
+      {!loading && searchResults && searchResults.length === 0 && !initialItemsLoaded && (
         <Grid item xs={12}>
           <Paper elevation={2}>
             <Typography variant="body1">
