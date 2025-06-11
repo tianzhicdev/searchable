@@ -7,7 +7,7 @@ import time
 
 # Import from our new structure
 from .. import rest_api
-from .auth import token_required, token_optional
+from .auth import token_required
 from ..common.metrics import track_metrics
 from ..common.data_helpers import (
     check_payment, 
