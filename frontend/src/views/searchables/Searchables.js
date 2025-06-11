@@ -136,7 +136,7 @@ const Searchables = () => {
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1, marginRight: '16px' }}
+            style={{ flex: 1 }}
             InputProps={{
               endAdornment: (
                 <Button 
