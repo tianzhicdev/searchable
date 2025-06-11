@@ -148,14 +148,25 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
     const getStatusChip = () => {
         let label = invoice.payment_status || 'Unknown';
-        let color = 'default';
+        let color = 'primary';
         
         if (invoice.payment_status === 'complete') {
-            color = 'primary';
             label = 'Paid';
         }
         
-        return <Chip label={label} color={color} size="small" />;
+        return (
+            <Typography 
+                variant="body2" 
+                className={classes.systemText}
+                style={{ 
+                    color: invoice.payment_status === 'complete' ? '#1976d2' : 'inherit',
+                    fontWeight: 'bold',
+                    marginRight: '12px'
+                }}
+            >
+                {label}
+            </Typography>
+        );
     };
 
     const getRoleChip = () => {
@@ -182,10 +193,15 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                 <CardContent className={classes.paddingSm}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
                         <Box display="flex" alignItems="center" className={classes.marginXs}>
-                            <Typography variant="h6" className={classes.invoiceTitle}>
+                            {getStatusChip()}
+                            <Typography 
+                                variant="h6" 
+                                className={classes.invoiceTitle}
+                                style={{ marginRight: '12px' }}
+                            >
                                 Invoice #{invoice.id}
                             </Typography>
-                            {getStatusChip()}
+                            
                             {getRoleChip()}
                         </Box>
                         
