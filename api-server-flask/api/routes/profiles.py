@@ -14,7 +14,6 @@ from ..common.data_helpers import (
     get_user_profile,
     create_user_profile,
     update_user_profile,
-    get_user_profile_by_username,
     get_searchableIds_by_user,
     get_searchable
 )
@@ -123,47 +122,6 @@ class GetUserProfile(Resource):
             logger.error(f"Error getting user profile {user_id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/profile/by-username/<string:username>', methods=['GET'])
-class GetUserProfileByUsername(Resource):
-    """
-    Get user profile by username
-    """
-    @track_metrics('get_user_profile_by_username')
-    def get(self, username, request_origin='unknown'):
-        try:
-            # Get the user profile
-            profile = get_user_profile_by_username(username)
-            
-            if not profile:
-                return {"error": "Profile not found"}, 404
-            
-            # Get user's searchables/downloadables
-            user_id = profile['user_id']
-            searchable_ids = get_searchableIds_by_user(user_id)
-            downloadables = []
-            
-            for searchable_id in searchable_ids:
-                searchable = get_searchable(searchable_id)
-                if searchable:
-                    public_data = searchable.get('payloads', {}).get('public', {})
-                    downloadables.append({
-                        'searchable_id': searchable_id,
-                        'title': public_data.get('title', 'Untitled'),
-                        'description': public_data.get('description', ''),
-                        'type': public_data.get('type', 'unknown'),
-                        'price': public_data.get('price', 0),
-                        'currency': public_data.get('currency', 'USD')
-                    })
-            
-            # Return profile with downloadables
-            return {
-                "profile": profile,
-                "downloadables": downloadables
-            }, 200
-            
-        except Exception as e:
-            logger.error(f"Error getting user profile by username {username}: {str(e)}")
-            return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/profile', methods=['GET'])
 class GetMyProfile(Resource):

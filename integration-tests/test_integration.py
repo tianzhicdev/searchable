@@ -516,33 +516,6 @@ class TestSearchableIntegration:
         except Exception as e:
             print(f"⚠ Profile update failed: {e}")
     
-    def test_15_get_profile_by_username(self):
-        """Test retrieving user profile by username"""
-        print("Testing profile retrieval by username...")
-        
-        # No authentication required for public profile viewing
-        
-        try:
-            response = self.client.get_user_profile_by_username(self.username)
-            
-            # Verify profile response
-            assert 'profile' in response, f"No profile in response: {response}"
-            assert 'downloadables' in response, f"No downloadables in response: {response}"
-            
-            profile = response['profile']
-            downloadables = response['downloadables']
-            
-            assert profile['username'] == self.username
-            assert 'introduction' in profile
-            assert 'profile_image_url' in profile
-            
-            print(f"✓ Profile retrieval by username successful")
-            print(f"  Username: {profile['username']}")
-            print(f"  User ID: {profile.get('user_id')}")
-            print(f"  Public downloadables count: {len(downloadables)}")
-            
-        except Exception as e:
-            print(f"⚠ Profile retrieval by username failed: {e}")
 
 
 if __name__ == "__main__":

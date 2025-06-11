@@ -117,13 +117,6 @@ class SearchableAPIClient:
         response.raise_for_status()
         return response.json()
     
-    def get_user_profile_by_username(self, username: str) -> Dict[str, Any]:
-        """Get user profile by username (public)"""
-        url = f"{self.base_url}/v1/profile/by-username/{username}"
-        
-        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
-        response.raise_for_status()
-        return response.json()
     
     def get_user_profile_by_id(self, user_id: int) -> Dict[str, Any]:
         """Get user profile by user ID (public)"""

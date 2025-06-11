@@ -333,37 +333,6 @@ const mockHandlers = {
     });
   },
   
-  // User profile endpoints for visitor route
-  'v1/profile/by-username/': (url) => {
-    const username = url.split('/').pop();
-    console.log('[MOCK] Fetching user profile by username:', username);
-    return createMockResponse({
-      profile: {
-        username: username,
-        profile_image_url: null,
-        introduction: 'Welcome to my digital marketplace profile!',
-        created_at: new Date(Date.now() - 86400000 * 30).toISOString()
-      },
-      downloadables: [
-        {
-          searchable_id: 'mock-item-1',
-          title: 'Premium Digital Asset Bundle',
-          description: 'A comprehensive collection of high-quality digital assets',
-          type: 'downloadable',
-          price: 29.99,
-          currency: 'USD'
-        },
-        {
-          searchable_id: 'mock-item-2',
-          title: 'Professional Design Kit',
-          description: 'High-quality design templates and resources',
-          type: 'downloadable',
-          price: 49.99,
-          currency: 'USD'
-        }
-      ]
-    });
-  },
   
   'v1/profile/': (url) => {
     const userId = url.split('/').pop();

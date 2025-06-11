@@ -487,7 +487,7 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
         logger.error(f"Error creating withdrawal: {str(e)}")
         return None
 
-def check_payment(session_id):
+def check_payment(session_id): # TODO: this should just return the payment info, do not manipulate the data
     """
     Checks the status of a Stripe payment session and updates the database if paid.
     First checks the database to avoid unnecessary Stripe API calls if already complete.
@@ -1437,48 +1437,6 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
         logger.error(f"Error updating user profile: {str(e)}")
         return None
 
-def get_user_profile_by_username(username):
-    """
-    Retrieve a user profile by username
-    
-    Args:
-        username: The username to search for
-        
-    Returns:
-        dict: The user profile data or None if not found
-    """
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        execute_sql(cur, """
-            SELECT id, user_id, username, profile_image_url, introduction, 
-                   metadata, created_at, updated_at
-            FROM user_profile
-            WHERE username = %s
-        """, params=(username,))
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
-        
-        if not result:
-            return None
-            
-        return {
-            'id': result[0],
-            'user_id': result[1],
-            'username': result[2],
-            'profile_image_url': result[3],
-            'introduction': result[4],
-            'metadata': result[5],
-            'created_at': result[6].isoformat() if result[6] else None,
-            'updated_at': result[7].isoformat() if result[7] else None
-        }
-    except Exception as e:
-        logger.error(f"Error retrieving user profile by username {username}: {str(e)}")
-        return None
 
 __all__ = [
     'get_terminal',
@@ -1505,6 +1463,5 @@ __all__ = [
     'get_user_all_invoices',
     'get_user_profile',
     'create_user_profile',
-    'update_user_profile',
-    'get_user_profile_by_username'
+    'update_user_profile'
 ] 
