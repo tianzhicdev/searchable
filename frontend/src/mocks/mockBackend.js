@@ -257,50 +257,120 @@ const mockHandlers = {
       invoices: mockData.mockInvoices.invoices,
       purchases: [
         {
-          _id: "purchase-1",
-          invoice_id: "invoice-1",
-          searchable_id: "mock-item-1",
+          id: "purchase-1",
           amount: 29.99,
+          payment_status: "complete",
+          type: "stripe",
           currency: "usd",
-          status: "paid",
+          other_party_username: "DigitalAssetStore",
+          payment_date: new Date(Date.now() - 3000000).toISOString(),
           created_at: new Date(Date.now() - 3600000).toISOString(),
-          item_title: "Premium Digital Asset Bundle",
-          seller_username: "designer_pro"
+          fee: 1.05,
+          buyer_id: "mock-user-1",
+          seller_id: "mock-terminal-1",
+          searchable_id: "mock-item-1",
+          metadata: {
+            address: "123 Main St, City, State 12345",
+            tel: "+1-555-0123",
+            description: "Premium Digital Asset Bundle",
+            selections: [
+              {
+                id: "file-1",
+                type: "downloadable",
+                name: "Design_Templates_Pack.zip",
+                price: 29.99
+              }
+            ]
+          }
         },
         {
-          _id: "purchase-2",
-          invoice_id: "invoice-2",
-          searchable_id: "mock-item-3",
-          amount: 19.99,
+          id: "purchase-2",
+          amount: 79.97,
+          payment_status: "complete",
+          type: "stripe",
           currency: "usd",
-          status: "paid",
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          item_title: "Professional Design Kit",
-          seller_username: "creator_master"
+          other_party_username: "DigitalAssetStore",
+          payment_date: new Date(Date.now() - 6600000).toISOString(),
+          created_at: new Date(Date.now() - 7200000).toISOString(),
+          fee: 2.80,
+          buyer_id: "mock-user-1",
+          seller_id: "mock-terminal-1",
+          searchable_id: "mock-item-1",
+          metadata: {
+            address: "123 Main St, City, State 12345",
+            tel: "+1-555-0123",
+            description: "Premium Digital Asset Bundle (x2 files)",
+            selections: [
+              {
+                id: "file-1",
+                type: "downloadable",
+                name: "Design_Templates_Pack.zip",
+                price: 29.99
+              },
+              {
+                id: "file-2",
+                type: "downloadable",
+                name: "Stock_Photos_Collection.zip",
+                price: 49.99
+              }
+            ]
+          }
         }
       ],
       sales: [
         {
-          _id: "sale-1",
-          invoice_id: "invoice-3",
-          searchable_id: "user-item-1",
-          amount: 39.99,
+          id: "sale-1",
+          amount: 15.50,
+          payment_status: "complete",
+          type: "stripe",
           currency: "usd",
-          status: "paid",
+          other_party_username: "BuyerUser123",
+          payment_date: new Date(Date.now() - 6900000).toISOString(),
           created_at: new Date(Date.now() - 7200000).toISOString(),
-          item_title: "My First Digital Product",
-          buyer_username: "happy_buyer"
+          fee: 0.54,
+          buyer_id: "mock-user-3",
+          seller_id: "mock-user-1",
+          searchable_id: "user-item-1",
+          metadata: {
+            address: "456 Buyer St, Customer City, State 67890",
+            tel: "+1-555-0456",
+            description: "My Digital Product",
+            selections: [
+              {
+                id: "my-file-1",
+                type: "downloadable",
+                name: "My_Product_Files.zip",
+                price: 15.50
+              }
+            ]
+          }
         },
         {
-          _id: "sale-2",
-          invoice_id: "invoice-4",
-          searchable_id: "user-item-2",
-          amount: 49.99,
+          id: "sale-2",
+          amount: 99.99,
+          payment_status: "complete",
+          type: "stripe",
           currency: "usd",
-          status: "paid",
+          other_party_username: "CustomerPro",
+          payment_date: new Date(Date.now() - 172200000).toISOString(),
           created_at: new Date(Date.now() - 172800000).toISOString(),
-          item_title: "Advanced Code Tutorials",
-          buyer_username: "code_learner"
+          fee: 3.50,
+          buyer_id: "mock-user-4",
+          seller_id: "mock-user-1",
+          searchable_id: "user-item-2",
+          metadata: {
+            address: "789 Customer Ave, Buyer Town, State 11111",
+            tel: "+1-555-0789",
+            description: "Advanced Course Bundle",
+            selections: [
+              {
+                id: "course-bundle-1",
+                type: "downloadable",
+                name: "Advanced_Course_Complete.zip",
+                price: 99.99
+              }
+            ]
+          }
         }
       ],
       purchases_count: 2,
