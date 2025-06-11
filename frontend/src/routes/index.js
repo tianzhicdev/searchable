@@ -13,7 +13,7 @@ import config from './../config';
 const Routes = () => {
     return (
         <Switch>
-            <Redirect exact from="/" to={config.loginPath} />
+            <Redirect exact from="/" to={config.defaultPath} />
             <React.Fragment>
                 <LoginRoutes />
                 <SearchableRoutes />

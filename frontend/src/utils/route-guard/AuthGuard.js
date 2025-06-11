@@ -17,15 +17,32 @@ const AuthGuard = ({ children }) => {
 
     const account = useSelector((state) => state.account);
     const dispatcher = useDispatch();
-    const { isLoggedIn, token } = account;
+    const { isLoggedIn, token, isInitialized } = account;
+    
+    console.log('[AUTH GUARD DEBUG] Account state:', account);
+    console.log('[AUTH GUARD DEBUG] isLoggedIn:', isLoggedIn);
+    console.log('[AUTH GUARD DEBUG] token exists:', !!token);
+    console.log('[AUTH GUARD DEBUG] isInitialized:', isInitialized);
+    
+    // Wait for Redux persist to load
+    if (!isInitialized) {
+        console.log('[AUTH GUARD DEBUG] Waiting for Redux persist to initialize...');
+        return <div>Loading...</div>;
+    }
 
     // Function to check if JWT is expired
     const isTokenExpired = (token) => {
         if (!token) return true;
-        const [, payload] = token.split('.');
-        const decodedPayload = JSON.parse(atob(payload));
-        const expiryTime = decodedPayload.exp * 1000; // Convert to milliseconds
-        return Date.now() > expiryTime;
+        try {
+            const [, payload] = token.split('.');
+            if (!payload) return true;
+            const decodedPayload = JSON.parse(atob(payload));
+            const expiryTime = decodedPayload.exp * 1000; // Convert to milliseconds
+            return Date.now() > expiryTime;
+        } catch (e) {
+            console.log('[AUTH GUARD DEBUG] Token parsing error:', e);
+            return true; // If token is malformed, consider it expired
+        }
     };
 
     const tokenExpired = isTokenExpired(token);
