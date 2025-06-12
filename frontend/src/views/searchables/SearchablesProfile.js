@@ -21,8 +21,8 @@ const SearchablesProfile = ({ item, onClick }) => {
   // Handle username click to navigate to user profile
   const handleUsernameClick = (e) => {
     e.stopPropagation(); // Prevent triggering the item click
-    if (item.username) {
-      history.push(`/profile/${item.username}`);
+    if (item.terminal_id) {
+      history.push(`/profile/${item.terminal_id}`);
     }
   };
 
@@ -42,7 +42,7 @@ const SearchablesProfile = ({ item, onClick }) => {
           <Divider />
           
           <Box>
-            {item.username && (
+            {item.username && item.terminal_id && (
               <Typography variant="body2">
                 Posted by: <Link 
                   component="button"
