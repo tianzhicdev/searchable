@@ -200,15 +200,6 @@ const RestLogin = (props, { ...others }) => {
             )}
 
             <Box display="flex" justifyContent="space-between">
-                <Button
-                    disabled={isSubmitting}
-                    fullWidth
-                    onClick={() => {
-                        history.push('/searchables');
-                    }}
-                >
-                    Guest
-                </Button>
                 <Box></Box>
                 <Button
                     disabled={isSubmitting}
