@@ -2,6 +2,9 @@
 import mockImage1 from '../assets/mock/mock.png';
 import mockImage2 from '../assets/mock/mock1.png';
 
+// Export mock images
+export { mockImage1, mockImage2 };
+
 // Mock data for development
 export const mockSearchableItem = {
   _id: "mock-item-1",
@@ -126,7 +129,16 @@ export const mockUserProfile = {
   profile: {
     username: "test_user",
     profile_image_url: null,
-    introduction: "Welcome to my digital store!"
+    introduction: "Welcome to my digital store! I specialize in creating high-quality digital assets and templates for creative professionals.",
+    metadata: {
+      additional_images: [
+        mockImage1,
+        mockImage2,
+        mockImage1, // Reusing for demo purposes
+        mockImage2
+      ]
+    },
+    created_at: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago
   }
 };
 

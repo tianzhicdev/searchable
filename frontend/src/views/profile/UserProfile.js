@@ -8,6 +8,7 @@ import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PersonIcon from '@material-ui/icons/Person';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
+import ZoomableImage from '../../components/ZoomableImage';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -156,6 +157,32 @@ const UserProfile = () => {
           </Box>
         </Paper>
       </Grid>
+
+      {/* Additional Images Section */}
+      {profileData.metadata?.additional_images && profileData.metadata.additional_images.length > 0 && (
+        <Grid item xs={12} className={classes.gridItem}>
+          <Paper elevation={3} className={classes.paper}>
+            <Typography variant="h6" gutterBottom>
+              Gallery
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={2}>
+              {profileData.metadata.additional_images.map((image, index) => (
+                <ZoomableImage 
+                  key={index}
+                  src={image} 
+                  alt={`Gallery ${index + 1}`}
+                  style={{ 
+                    width: 200, 
+                    height: 200, 
+                    objectFit: 'cover',
+                    borderRadius: 4
+                  }}
+                />
+              ))}
+            </Box>
+          </Paper>
+        </Grid>
+      )}
 
       {/* Downloadables Section */}
       <Grid item xs={12} className={classes.gridItem}>

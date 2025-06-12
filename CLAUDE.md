@@ -125,7 +125,7 @@ Set via `.env` files in `api-server-flask/`:
 
 ## Mock Mode Development
 
-For UI development without backend dependencies:
+For UI development without backend dependencies for testing:
 
 ```bash
 REACT_APP_MOCK_MODE=true npm run dev
@@ -162,3 +162,5 @@ Mock mode features:
 3. Use “say” command to announce when the task is done so I know.
 
 4. use `./remote_redeploy.sh` to deploy the backend
+
+5. for any ui feature added, mock data needs to be added too for local testing. you must verify your ui changes with mock data locally using `REACT_APP_MOCK_MODE=true npm run`

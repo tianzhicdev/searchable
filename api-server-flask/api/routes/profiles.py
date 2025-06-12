@@ -193,6 +193,7 @@ class UpdateMyProfile(Resource):
             username = data.get('username')
             introduction = data.get('introduction')
             profile_image_data = data.get('profile_image')
+            metadata = data.get('metadata', {})
             
             # Handle profile image upload
             profile_image_url = None
@@ -200,6 +201,21 @@ class UpdateMyProfile(Resource):
                 profile_image_url = validate_and_process_profile_image(profile_image_data)
                 if not profile_image_url:
                     return {"error": "Invalid profile image or file too large"}, 400
+            
+            # Validate additional images in metadata if present
+            if 'additional_images' in metadata:
+                additional_images = metadata.get('additional_images', [])
+                if len(additional_images) > 10:
+                    return {"error": "Maximum 10 additional images allowed"}, 400
+                
+                # Validate each additional image
+                validated_images = []
+                for img in additional_images:
+                    if img:  # Skip empty strings
+                        validated_img = validate_and_process_profile_image(img)
+                        if validated_img:
+                            validated_images.append(validated_img)
+                metadata['additional_images'] = validated_images
             
             # Check if profile exists
             existing_profile = get_user_profile(user_id)
@@ -210,7 +226,8 @@ class UpdateMyProfile(Resource):
                     user_id=user_id,
                     username=username,
                     profile_image_url=profile_image_url,
-                    introduction=introduction
+                    introduction=introduction,
+                    metadata=metadata
                 )
             else:
                 # Create new profile
@@ -218,7 +235,8 @@ class UpdateMyProfile(Resource):
                     user_id=user_id,
                     username=username or current_user.username,
                     profile_image_url=profile_image_url,
-                    introduction=introduction
+                    introduction=introduction,
+                    metadata=metadata
                 )
             
             if not profile:
