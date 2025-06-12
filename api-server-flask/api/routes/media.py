@@ -186,7 +186,7 @@ class MediaRetrieve(Resource):
                 content_type = server_content_type
             
             # Return the file content as a response
-            return Response(
+            response = Response(
                 file_response.content,
                 mimetype=content_type,
                 headers={
@@ -195,6 +195,7 @@ class MediaRetrieve(Resource):
                     'Content-Length': str(len(file_response.content))
                 }
             )
+            return response, 200
             
         except Exception as e:
             logger.error(f"Error retrieving media {media_id}: {str(e)}")
