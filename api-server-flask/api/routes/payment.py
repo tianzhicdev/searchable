@@ -252,7 +252,7 @@ class CreateInvoiceV1(Resource):
                             'product_data': {
                                 'name': item_name, 
                             },
-                            'unit_amount': amount_usd_cents_with_fee,
+                            'unit_amount': amount_usd_cents_with_fee * 100, # stripe use cents
                         },
                         'quantity': 1,
                     }],
