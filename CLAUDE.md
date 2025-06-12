@@ -28,11 +28,6 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
 - Backend Deployment: `remote_redeploy.sh` 
 - Integration: `./integration-tests/run_tests.sh`
 
-### Full Stack
-```bash
-docker-compose up               # All services
-```
-
 ## Project Overview
 
 Searchable is a declarative framework for building information deposit and retrieval systems. Multi-service architecture with React frontend, Flask API, PostgreSQL database, and Docker Compose orchestration.
