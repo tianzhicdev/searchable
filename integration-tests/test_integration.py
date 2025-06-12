@@ -516,6 +516,106 @@ class TestSearchableIntegration:
         except Exception as e:
             print(f"⚠ Profile update failed: {e}")
     
+    def test_15_media_upload_endpoint(self):
+        """Test the new v1/media/upload endpoint"""
+        print("Testing media upload endpoint...")
+        
+        assert self.client.token, "No authentication token available"
+        
+        # Create test image data (1x1 transparent PNG)
+        test_image_data = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==")
+        
+        try:
+            response = self.client.upload_media(test_image_data, filename='test_media.png')
+            
+            # Verify media upload response
+            assert 'success' in response, f"No success in response: {response}"
+            assert response['success'], f"Upload failed: {response}"
+            assert 'media_id' in response, f"No media_id in response: {response}"
+            assert 'media_uri' in response, f"No media_uri in response: {response}"
+            assert 'file_id' in response, f"No file_id in response: {response}"
+            
+            # Store media info for retrieval test
+            self.__class__.uploaded_media = response
+            
+            print(f"✓ Media upload successful")
+            print(f"  Media ID: {response['media_id']}")
+            print(f"  Media URI: {response['media_uri']}")
+            print(f"  File ID: {response['file_id']}")
+            print(f"  Filename: {response.get('filename', 'N/A')}")
+            
+        except Exception as e:
+            print(f"⚠ Media upload failed: {e}")
+            raise AssertionError(f"Media upload endpoint failed: {e}")
+    
+    def test_16_media_retrieval_endpoint(self):
+        """Test the new v1/media/<media_id> retrieval endpoint"""
+        print("Testing media retrieval endpoint...")
+        
+        assert hasattr(self.__class__, 'uploaded_media'), "No uploaded media available"
+        
+        media_id = self.uploaded_media['media_id']
+        
+        try:
+            response = self.client.retrieve_media(media_id)
+            
+            # Verify media retrieval response
+            assert response.status_code == 200, f"Media retrieval failed with status: {response.status_code}"
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '')
+            assert 'image' in content_type.lower(), f"Expected image content type, got: {content_type}"
+            
+            # Check that we got some content
+            content_length = len(response.content)
+            assert content_length > 0, "No content in media response"
+            
+            print(f"✓ Media retrieval successful")
+            print(f"  Media ID: {media_id}")
+            print(f"  Content-Type: {content_type}")
+            print(f"  Content-Length: {content_length} bytes")
+            
+        except Exception as e:
+            print(f"⚠ Media retrieval failed: {e}")
+            raise AssertionError(f"Media retrieval endpoint failed: {e}")
+    
+    def test_17_media_profile_update_with_uri(self):
+        """Test updating profile with media URI instead of base64"""
+        print("Testing profile update with media URI...")
+        
+        assert self.client.token, "No authentication token available"
+        assert hasattr(self.__class__, 'uploaded_media'), "No uploaded media available"
+        
+        media_uri = self.uploaded_media['media_uri']
+        
+        # Updated profile data using media URI
+        updated_data = {
+            "introduction": f"Profile updated with media URI at {time.time()}",
+            "profile_image_uri": media_uri  # Use URI instead of base64
+        }
+        
+        try:
+            response = self.client.update_user_profile(updated_data)
+            
+            # Verify profile update response
+            assert 'profile' in response, f"No profile in response: {response}"
+            
+            profile = response['profile']
+            assert profile['username'] == self.username
+            assert profile['introduction'] == updated_data['introduction']
+            
+            # Check that profile image URL is set (should be the media URI)
+            assert 'profile_image_url' in profile, "No profile_image_url in response"
+            assert profile['profile_image_url'] == media_uri, f"Expected media URI {media_uri}, got {profile['profile_image_url']}"
+            
+            print(f"✓ Profile update with media URI successful")
+            print(f"  Media URI: {media_uri}")
+            print(f"  Profile Image URL: {profile['profile_image_url']}")
+            
+        except Exception as e:
+            print(f"⚠ Profile update with media URI failed: {e}")
+            raise AssertionError(f"Profile update with media URI failed: {e}")
+    
 
 
 if __name__ == "__main__":

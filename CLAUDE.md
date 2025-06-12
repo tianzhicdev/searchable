@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **No confirmation needed** - Execute code changes, deployments, and testing immediately
 2. **Always verify changes** - Restart services after changes to catch compile/runtime errors 
 3. **Use `say` command** - Announce completion so developer knows task is done
-4. **Deploy with `./remote_redeploy.sh`** - For backend deployments
+4. **Deploy with `./remote_redeploy.sh`** - For backend deployments. Never deploy backend locally.
 5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run`
 6. **Always use timestamps** - Include timestamps in logs and communications for tracking
 
@@ -22,20 +22,11 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
 ## Quick Start Commands
 
 ### Frontend Development
-```bash
-cd frontend
-npm run start                    # Local development
-REACT_APP_MOCK_MODE=true npm run start  # Mock mode testing
-npm run build                   # Production build
-```
+ `REACT_APP_MOCK_MODE=true npm run`
 
 ### Backend Development  
-```bash
-cd api-server-flask
-python run.py                   # API server (port 3006)
-python run_file_server.py       # File server (port 5006)
-./remote_redeploy.sh            # Deploy to remote
-```
+- Backend Deployment: `remote_redeploy.sh` 
+- Integration: `./integration-tests/run_tests.sh`
 
 ### Full Stack
 ```bash
@@ -83,19 +74,14 @@ Normalized tables: invoice, payment, withdrawal, rating, invoice_note
 - `REACT_APP_ENV=local` (debug info)
 - `REACT_APP_MOCK_MODE=true` (mock backend)
 
-### Backend  
-- `.env` files in `api-server-flask/`
-- Database, JWT, OAuth, Stripe configuration
 
 ## Payment System
-Multi-currency: Lightning (sats), Stripe (USD), USDT (Ethereum)
 Flow: Invoice creation → Payment processing → Verification → Balance updates
 
 ## Testing
-- Frontend: `npm run test`
-- Backend: `python tests.py` 
+- Backend: `remote_redeploy.sh` 
 - Integration: `./integration-tests/run_tests.sh`
-- Mock: `REACT_APP_MOCK_MODE=true npm run dev`
+- React UI Mock: `REACT_APP_MOCK_MODE=true npm run`
 
 ---
 
@@ -136,15 +122,10 @@ Flow: Invoice creation → Payment processing → Verification → Balance updat
   - `withdrawals.py`: USDT and Lightning withdrawals
 
 ### Payment System Details
-**Multi-currency support:**
-- Lightning Network (sats)
-- Stripe (USD)
-- USDT (Ethereum)
-- Automatic conversion using BTC price API
 
 **Payment Flow:**
 1. Invoice creation with currency/amount
-2. Payment processing (Lightning/Stripe/USDT)
+2. Payment processing 
 3. Payment verification and completion
 4. Balance updates and withdrawal processing
 
@@ -163,4 +144,3 @@ Mock mode features:
 - Visual indicator (orange "🔧 MOCK MODE" badge)
 - Production-safe (only active with env var)
 
-</details>
