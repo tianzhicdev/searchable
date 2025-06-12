@@ -84,6 +84,7 @@ services:
     restart: always
     env_file:
       - .env
+      - ./api-server-flask/.secrets.env
     ports:
       - "5433:5432"
     volumes:
@@ -91,8 +92,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - web_network
-    env_file:
-      - ./api-server-flask/.secrets.env
     
   
   usdt-api:
