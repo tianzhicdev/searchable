@@ -22,7 +22,7 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
 ## Quick Start Commands
 
 ### Frontend Development
- `REACT_APP_MOCK_MODE=true npm run`
+ `REACT_APP_MOCK_MODE=true npm run start`
 
 ### Backend Development  
 - Backend Deployment: `remote_redeploy.sh` 
