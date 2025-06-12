@@ -133,7 +133,7 @@ const ProfileEditor = () => {
     }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file size (5MB limit)
@@ -150,14 +150,27 @@ const ProfileEditor = () => {
       }
 
       setError(null);
-      setProfileImage(file);
+      setLoading(true);
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setProfileImagePreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Upload image immediately to media endpoint
+        const uploadResult = await uploadImageToMedia(file);
+        
+        // Store the media URI instead of the file
+        setProfileImage(uploadResult.media_uri);
+
+        // Create preview URL for immediate display
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setProfileImagePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        setError('Failed to upload image. Please try again.');
+        console.error('Profile image upload error:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -171,10 +184,38 @@ const ProfileEditor = () => {
     }
   };
 
+  // Function to upload image to media endpoint immediately
+  const uploadImageToMedia = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await Backend.post('v1/media/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          media_uri: response.data.media_uri,
+          media_id: response.data.media_id
+        };
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image to media:', error);
+      throw error;
+    }
+  };
+
   const handleAdditionalImagesChange = async (e) => {
     const files = Array.from(e.target.files);
-    const newImages = [];
+    const newImageUris = [];
     const newPreviews = [];
+    
+    setLoading(true);
     
     for (const file of files) {
       // Validate file size (5MB limit)
@@ -190,23 +231,32 @@ const ProfileEditor = () => {
         continue;
       }
 
-      newImages.push(file);
+      try {
+        // Upload image immediately to media endpoint
+        const uploadResult = await uploadImageToMedia(file);
+        newImageUris.push(uploadResult.media_uri);
 
-      // Create preview
-      const reader = new FileReader();
-      const preview = await new Promise((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      newPreviews.push(preview);
+        // Create preview for immediate display
+        const reader = new FileReader();
+        const preview = await new Promise((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        newPreviews.push(preview);
+      } catch (error) {
+        setError('Failed to upload one or more images. Please try again.');
+        console.error('Additional image upload error:', error);
+      }
     }
 
-    if (newImages.length > 0) {
+    if (newImageUris.length > 0) {
       setError(null);
-      setAdditionalImages([...additionalImages, ...newImages]);
+      setAdditionalImages([...additionalImages, ...newImageUris]);
       setAdditionalImagePreviews([...additionalImagePreviews, ...newPreviews]);
     }
+    
+    setLoading(false);
   };
 
   const removeAdditionalImage = (index) => {
@@ -230,39 +280,13 @@ const ProfileEditor = () => {
         metadata: {}
       };
 
-      // Convert image to base64 if a new image was selected
+      // Include profile image URI if selected
       if (profileImage) {
-        const reader = new FileReader();
-        const imageBase64 = await new Promise((resolve, reject) => {
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(profileImage);
-        });
-        updateData.profile_image = imageBase64;
+        updateData.profile_image_uri = profileImage;
       }
 
-      // Process additional images
-      const processedAdditionalImages = [];
-      
-      // Add all current previews (existing images that weren't removed)
-      for (let i = 0; i < additionalImagePreviews.length; i++) {
-        const preview = additionalImagePreviews[i];
-        if (additionalImages[i] && additionalImages[i] instanceof File) {
-          // This is a new image - convert to base64
-          const reader = new FileReader();
-          const imageBase64 = await new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(additionalImages[i]);
-          });
-          processedAdditionalImages.push(imageBase64);
-        } else {
-          // This is an existing image - keep as is
-          processedAdditionalImages.push(preview);
-        }
-      }
-      
-      updateData.metadata.additional_images = processedAdditionalImages;
+      // Include additional image URIs
+      updateData.metadata.additional_images = additionalImages;
 
       // Update the profile using the new API
       const response = await Backend.put('v1/profile', updateData);

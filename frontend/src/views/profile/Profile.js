@@ -18,6 +18,7 @@ import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
 import ZoomableImage from '../../components/ZoomableImage';
+import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState({ usd: null });
@@ -260,7 +261,7 @@ const Profile = () => {
           {userProfile && (
             <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
               <Avatar 
-                src={userProfile.profile_image_url} 
+                src={getMediaUrl(userProfile.profile_image_url)} 
                 alt={userProfile.username}
               >
                 {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
@@ -337,10 +338,10 @@ const Profile = () => {
                 Gallery
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={2}>
-                {userProfile.metadata.additional_images.map((image, index) => (
+                {processMediaUrls(userProfile.metadata.additional_images).map((imageUrl, index) => (
                   <ZoomableImage 
                     key={index}
-                    src={image} 
+                    src={imageUrl} 
                     alt={`Gallery ${index + 1}`}
                     style={{ 
                       width: 150, 

@@ -128,14 +128,14 @@ export const mockBalance = {
 export const mockUserProfile = {
   profile: {
     username: "test_user",
-    profile_image_url: null,
+    profile_image_url: "/api/v1/media/profile-mock-1",
     introduction: "Welcome to my digital store! I specialize in creating high-quality digital assets and templates for creative professionals.",
     metadata: {
       additional_images: [
-        mockImage1,
-        mockImage2,
-        mockImage1, // Reusing for demo purposes
-        mockImage2
+        "/api/v1/media/gallery-mock-1",
+        "/api/v1/media/gallery-mock-2",
+        "/api/v1/media/gallery-mock-3",
+        "/api/v1/media/gallery-mock-4"
       ]
     },
     created_at: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago

@@ -9,6 +9,7 @@ import PersonIcon from '@material-ui/icons/Person';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
+import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -123,7 +124,7 @@ const UserProfile = () => {
             <Box mb={2}>
               {profileData.profile_image_url ? (
                 <Avatar 
-                  src={profileData.profile_image_url} 
+                  src={getMediaUrl(profileData.profile_image_url)} 
                   alt={profileData.username}
                   style={{ width: 100, height: 100 }}
                 />
@@ -166,10 +167,10 @@ const UserProfile = () => {
               Gallery
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={2}>
-              {profileData.metadata.additional_images.map((image, index) => (
+              {processMediaUrls(profileData.metadata.additional_images).map((imageUrl, index) => (
                 <ZoomableImage 
                   key={index}
-                  src={image} 
+                  src={imageUrl} 
                   alt={`Gallery ${index + 1}`}
                   style={{ 
                     width: 200, 
