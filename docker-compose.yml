@@ -91,6 +91,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - web_network
+    env_file:
+      - ./api-server-flask/.secrets.env
+    
   
   usdt-api:
     build: 
