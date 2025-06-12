@@ -128,7 +128,7 @@ Set via `.env` files in `api-server-flask/`:
 For UI development without backend dependencies:
 
 ```bash
-npm run start:mock
+REACT_APP_MOCK_MODE=true npm run dev
 ```
 
 Navigate to: `http://localhost:3000/searchable-item/mock-item-1`
