@@ -2,13 +2,109 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 CRITICAL DEVELOPER INSTRUCTIONS - Added 2025-01-06
+
+### Workflow Requirements
+1. **No confirmation needed** - Execute code changes, deployments, and testing immediately
+2. **Always verify changes** - Restart services after changes to catch compile/runtime errors 
+3. **Use `say` command** - Announce completion so developer knows task is done
+4. **Deploy with `./remote_redeploy.sh`** - For backend deployments
+5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run`
+6. **Always use timestamps** - Include timestamps in logs and communications for tracking
+
+### Development Flow Pattern
+```
+Make Changes → Restart Services → Verify Working → Fix Errors → say "Task completed at [timestamp]"
+```
+
+---
+
+## Quick Start Commands
+
+### Frontend Development
+```bash
+cd frontend
+npm run start                    # Local development
+REACT_APP_MOCK_MODE=true npm run start  # Mock mode testing
+npm run build                   # Production build
+```
+
+### Backend Development  
+```bash
+cd api-server-flask
+python run.py                   # API server (port 3006)
+python run_file_server.py       # File server (port 5006)
+./remote_redeploy.sh            # Deploy to remote
+```
+
+### Full Stack
+```bash
+docker-compose up               # All services
+```
+
 ## Project Overview
 
-Searchable is a declarative framework for building information deposit and retrieval systems. The goal is to enable websites to transform (from Twitter to Uber, Amazon to Tinder) with only configuration changes.
+Searchable is a declarative framework for building information deposit and retrieval systems. Multi-service architecture with React frontend, Flask API, PostgreSQL database, and Docker Compose orchestration.
 
-### Core Architecture
+**Key Concepts:**
+- **Terminals**: Information consumers (users/services) 
+- **Searchables**: Information items (public/private)
+- **Visibility Checks**: Access control functions
 
-**Multi-service architecture with Docker Compose:**
+## Core Development Rules
+
+1. **Use history not navigate** - React Router navigation
+2. **String interpolation and execute_sql** - Database operations  
+3. **No restructuring unless instructed** - Modify, don't rebuild
+4. **Mock mode for UI testing** - Always verify UI changes with mock data
+5. **Restart services after changes** - Verify functionality before declaring success
+
+## Architecture Overview
+
+### Frontend (`frontend/src/`)
+- `config.js`: Environment/branding configuration
+- `mocks/`: Mock backend for UI development
+- `routes/`: React Router configuration  
+- `views/`: Main application pages
+- `components/`: Reusable UI components
+- `store/`: Redux state management
+
+### Backend (`api-server-flask/api/`)
+- `common/`: Shared utilities (config, models, data helpers)
+- `routes/`: API endpoints (auth, payment, searchable, files, withdrawals)
+
+### Database
+Normalized tables: invoice, payment, withdrawal, rating, invoice_note
+
+## Environment Configuration
+
+### Frontend
+- `REACT_APP_BRANDING=silkroadonlightning` or `eccentricprotocol`
+- `REACT_APP_ENV=local` (debug info)
+- `REACT_APP_MOCK_MODE=true` (mock backend)
+
+### Backend  
+- `.env` files in `api-server-flask/`
+- Database, JWT, OAuth, Stripe configuration
+
+## Payment System
+Multi-currency: Lightning (sats), Stripe (USD), USDT (Ethereum)
+Flow: Invoice creation → Payment processing → Verification → Balance updates
+
+## Testing
+- Frontend: `npm run test`
+- Backend: `python tests.py` 
+- Integration: `./integration-tests/run_tests.sh`
+- Mock: `REACT_APP_MOCK_MODE=true npm run dev`
+
+---
+
+## Additional Context (For Reference Only)
+
+<details>
+<summary>Detailed Architecture Information</summary>
+
+### Multi-service architecture with Docker Compose:
 - **Frontend**: React/Material-UI app with authentication and payment flows
 - **Flask API**: Python backend with JWT auth, payment processing, and database operations  
 - **File Server**: Separate service for file storage/retrieval
@@ -17,48 +113,7 @@ Searchable is a declarative framework for building information deposit and retri
 - **Background Service**: Background task processing
 - **USDT API**: Ethereum-based USDT transactions
 
-**Key Concepts:**
-- **Terminals**: Entities that consume information (users/services)
-- **Searchables**: Information items produced by terminals (public/private)
-- **Visibility Checks**: User-defined functions controlling access to private searchables
-
-## Development Commands
-
-### Frontend Development
-```bash
-cd frontend
-npm install
-npm run start                    # Local development
-npm run start:mock              # Development with mock backend
-npm run build                   # Production build
-npm run test                    # Run tests
-```
-
-### Backend Development
-```bash
-cd api-server-flask
-pip install -r requirements.txt
-python run.py                   # Start API server (port 3006)
-python run_file_server.py       # Start file server (port 5006)
-python background.py             # Start background service
-python tests.py                 # Run backend tests
-```
-
-### Full Stack Development
-```bash
-docker-compose up               # Start all services
-docker-compose down             # Stop all services
-```
-
-### Integration Testing
-```bash
-cd integration-tests
-./run_tests.sh                 # Run integration tests with HTML report
-```
-
-## Code Architecture
-
-### Frontend Structure (`frontend/src/`)
+### Frontend Structure Details (`frontend/src/`)
 - **`config.js`**: Environment-specific configuration and branding
 - **`mocks/`**: Mock backend system for UI development without backend
 - **`routes/`**: React Router configuration for different user types
@@ -67,7 +122,7 @@ cd integration-tests
 - **`store/`**: Redux state management
 - **`utils/`**: Authentication guards and utilities
 
-### Backend Structure (`api-server-flask/api/`)
+### Backend Structure Details (`api-server-flask/api/`)
 - **`common/`**: Shared utilities and configuration
   - `config.py`: Database and app configuration
   - `models.py`: SQLAlchemy database models
@@ -80,37 +135,7 @@ cd integration-tests
   - `files.py`: File upload/download operations
   - `withdrawals.py`: USDT and Lightning withdrawals
 
-### Database Design
-Recently refactored from generic `kv` table to proper normalized tables:
-- **invoice**: Invoice records with foreign keys
-- **payment**: Payment records linked to invoices
-- **withdrawal**: Enhanced withdrawal tracking  
-- **rating**: Buyer/seller rating system
-- **invoice_note**: Communication between parties
-
-## Important Development Rules
-
-1. **Use history not navigate** - For React Router navigation
-2. **String interpolation and execute_sql** - For all database operations
-3. **No restructuring unless instructed** - Make modifications, not wholesale changes
-
-## Environment Configuration
-
-### Frontend Branding
-Configure via environment variables:
-- `REACT_APP_BRANDING=silkroadonlightning` or `eccentricprotocol`
-- `REACT_APP_ENV=local` (enables debug info)
-- `REACT_APP_MOCK_MODE=true` (enables mock backend)
-
-### Backend Configuration
-Set via `.env` files in `api-server-flask/`:
-- Database connection (PostgreSQL preferred, SQLite fallback)
-- JWT secrets and GitHub OAuth
-- Stripe payment configuration
-- External service integrations
-
-## Payment System
-
+### Payment System Details
 **Multi-currency support:**
 - Lightning Network (sats)
 - Stripe (USD)
@@ -123,8 +148,7 @@ Set via `.env` files in `api-server-flask/`:
 3. Payment verification and completion
 4. Balance updates and withdrawal processing
 
-## Mock Mode Development
-
+### Mock Mode Development
 For UI development without backend dependencies for testing:
 
 ```bash
@@ -139,28 +163,4 @@ Mock mode features:
 - Visual indicator (orange "🔧 MOCK MODE" badge)
 - Production-safe (only active with env var)
 
-## Testing Strategy
-
-1. **Frontend Tests**: `npm run test` (React Testing Library)
-2. **Backend Tests**: `python tests.py` (pytest)
-3. **Integration Tests**: `./integration-tests/run_tests.sh` (API endpoint testing)
-4. **Mock Testing**: Use mock mode for UI development and testing
-
-## Common Development Tasks
-
-- **Run lint/typecheck**: Check `package.json` scripts for specific commands
-- **Database migrations**: Apply schema changes via SQL scripts
-- **Payment testing**: Use mock mode or test payment providers
-- **File operations**: Test upload/download flows with file server
-- **Currency conversion**: Verify BTC price API integration
-
-## Developer Instructions:
-1. Do not ask me for confirmation when editing code, doing local UI deployment or remote server deployment. Just do it.
-
-2. After making changes, you must restart the server or ui service to verify that the changes requested are actually working. At the same time you can catch compile time and run time errors. Fix it before you declare victory.
-
-3. Use “say” command to announce when the task is done so I know.
-
-4. use `./remote_redeploy.sh` to deploy the backend
-
-5. for any ui feature added, mock data needs to be added too for local testing. you must verify your ui changes with mock data locally using `REACT_APP_MOCK_MODE=true npm run`
+</details>
