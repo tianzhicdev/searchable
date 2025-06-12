@@ -161,9 +161,9 @@ class MediaTester:
             upload_result = self.test_media_upload()
             print()
             
-            # Step 3: Test media retrieval (skip for now - minor issue to fix later)
-            print("⚠ Media retrieval test skipped (minor server config issue)")
-            print("Core upload and URI storage functionality is working perfectly")
+            # Step 3: Test media retrieval
+            media_id = upload_result['media_id']
+            self.test_media_retrieval(media_id)
             print()
             
             # Step 4: Test profile update with media URI
