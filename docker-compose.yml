@@ -5,7 +5,7 @@ services:
       args:
         - REACT_APP_BRANDING=${REACT_APP_BRANDING}
     env_file:
-      - .env
+      - ./api-server-flask/.secrets.env
     volumes:
       - frontend_build:/app/build
 
@@ -83,7 +83,6 @@ services:
     image: postgres
     restart: always
     env_file:
-      - .env
       - ./api-server-flask/.secrets.env
     ports:
       - "5433:5432"
