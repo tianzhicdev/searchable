@@ -160,3 +160,5 @@ Mock mode features:
 2. After making changes, you must restart the server or ui service to verify that the changes requested are actually working. At the same time you can catch compile time and run time errors. Fix it before you declare victory.
 
 3. Use “say” command to announce when the task is done so I know.
+
+4. use `./remote_redeploy.sh` to deploy the backend
