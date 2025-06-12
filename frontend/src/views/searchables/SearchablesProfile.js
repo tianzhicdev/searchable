@@ -77,7 +77,7 @@ const SearchablesProfile = ({ item, onClick }) => {
           {publicData.images && publicData.images.length > 0 && (
             <Paper display="flex" justifyContent="center">
               <img 
-                src={`data:image/jpeg;base64,${publicData.images[0]}`} 
+                src={publicData.images[0]} 
                 alt={publicData.title || `Item #${item.searchable_id}`}
                 style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }}
               />
