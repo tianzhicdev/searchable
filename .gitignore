@@ -1,3 +1,4 @@
+api-server-flask/.secrets.env
 .env
 .files/*
 files/*
