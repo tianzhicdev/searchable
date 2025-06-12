@@ -5,10 +5,11 @@ import {
   TextField, Button, CircularProgress, Typography, Snackbar, Alert,
   Box, Avatar, IconButton
 } from '@material-ui/core';
-import { PhotoCamera, Person } from '@material-ui/icons';
+import { PhotoCamera, Person, Delete as DeleteIcon, AddPhotoAlternate as AddPhotoAlternateIcon } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import { SET_USER } from '../../store/actions';
 import useComponentStyles from '../../themes/componentStyles';
+import ZoomableImage from '../../components/ZoomableImage';
 
 // Singleton pattern to manage dialog state across components
 const profileEditorState = {
@@ -27,10 +28,13 @@ const ProfileEditor = () => {
     introduction: '',
     profile_image_url: '',
     address: account.user?.address || '',
-    tel: account.user?.tel || ''
+    tel: account.user?.tel || '',
+    additional_images: []
   });
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,12 +71,18 @@ const ProfileEditor = () => {
           introduction: profile.introduction || '',
           profile_image_url: profile.profile_image_url || '',
           address: account.user.address || '',
-          tel: account.user.tel || ''
+          tel: account.user.tel || '',
+          additional_images: profile.metadata?.additional_images || []
         });
         
         // Set profile image preview if exists
         if (profile.profile_image_url) {
           setProfileImagePreview(profile.profile_image_url);
+        }
+        
+        // Set additional image previews if exist
+        if (profile.metadata?.additional_images) {
+          setAdditionalImagePreviews(profile.metadata.additional_images);
         }
         
       } catch (profileErr) {
@@ -88,7 +98,8 @@ const ProfileEditor = () => {
               introduction: '',
               profile_image_url: '',
               address: terminalResponse.data.address || '',
-              tel: terminalResponse.data.tel || ''
+              tel: terminalResponse.data.tel || '',
+              additional_images: []
             });
           } catch (terminalErr) {
             console.log('Terminal data not found, using defaults');
@@ -97,7 +108,8 @@ const ProfileEditor = () => {
               introduction: '',
               profile_image_url: '',
               address: '',
-              tel: ''
+              tel: '',
+              additional_images: []
             });
           }
         } else {
@@ -158,6 +170,53 @@ const ProfileEditor = () => {
       fileInput.value = '';
     }
   };
+
+  const handleAdditionalImagesChange = async (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = [];
+    const newPreviews = [];
+    
+    for (const file of files) {
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file size must be less than 5MB');
+        continue;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please select valid image files (PNG, JPG, JPEG, GIF, or WEBP)');
+        continue;
+      }
+
+      newImages.push(file);
+
+      // Create preview
+      const reader = new FileReader();
+      const preview = await new Promise((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      newPreviews.push(preview);
+    }
+
+    if (newImages.length > 0) {
+      setError(null);
+      setAdditionalImages([...additionalImages, ...newImages]);
+      setAdditionalImagePreviews([...additionalImagePreviews, ...newPreviews]);
+    }
+  };
+
+  const removeAdditionalImage = (index) => {
+    const newImages = [...additionalImages];
+    const newPreviews = [...additionalImagePreviews];
+    newImages.splice(index, 1);
+    newPreviews.splice(index, 1);
+    setAdditionalImages(newImages);
+    setAdditionalImagePreviews(newPreviews);
+  };
   
   const handleSubmit = async () => {
     setLoading(true);
@@ -167,7 +226,8 @@ const ProfileEditor = () => {
       // Prepare the profile update data
       const updateData = {
         username: profileData.username,
-        introduction: profileData.introduction
+        introduction: profileData.introduction,
+        metadata: {}
       };
 
       // Convert image to base64 if a new image was selected
@@ -180,6 +240,29 @@ const ProfileEditor = () => {
         });
         updateData.profile_image = imageBase64;
       }
+
+      // Process additional images
+      const processedAdditionalImages = [];
+      
+      // Add all current previews (existing images that weren't removed)
+      for (let i = 0; i < additionalImagePreviews.length; i++) {
+        const preview = additionalImagePreviews[i];
+        if (additionalImages[i] && additionalImages[i] instanceof File) {
+          // This is a new image - convert to base64
+          const reader = new FileReader();
+          const imageBase64 = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(additionalImages[i]);
+          });
+          processedAdditionalImages.push(imageBase64);
+        } else {
+          // This is an existing image - keep as is
+          processedAdditionalImages.push(preview);
+        }
+      }
+      
+      updateData.metadata.additional_images = processedAdditionalImages;
 
       // Update the profile using the new API
       const response = await Backend.put('v1/profile', updateData);
@@ -254,12 +337,17 @@ const ProfileEditor = () => {
                   Profile Picture
                 </Typography>
                 <Box position="relative">
-                  <Avatar 
-                    src={profileImagePreview || profileData.profile_image_url} 
-                    style={{ width: 100, height: 100, marginBottom: 8 }}
-                  >
-                    {!profileImagePreview && !profileData.profile_image_url && <Person />}
-                  </Avatar>
+                  {profileImagePreview || profileData.profile_image_url ? (
+                    <ZoomableImage 
+                      src={profileImagePreview || profileData.profile_image_url} 
+                      alt="Profile"
+                      style={{ width: 100, height: 100, marginBottom: 8, borderRadius: '50%' }}
+                    />
+                  ) : (
+                    <Avatar style={{ width: 100, height: 100, marginBottom: 8 }}>
+                      <Person />
+                    </Avatar>
+                  )}
                   <input
                     accept="image/*"
                     style={{ display: 'none' }}
@@ -291,19 +379,6 @@ const ProfileEditor = () => {
                 )}
               </Box>
 
-              {/* Username */}
-              <TextField
-                name="username"
-                label="Username"
-                type="text"
-                value={profileData.username}
-                onChange={handleFormChange}
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                disabled // Username changes might require additional validation
-              />
-
               {/* Introduction */}
               <TextField
                 name="introduction"
@@ -319,31 +394,71 @@ const ProfileEditor = () => {
                 placeholder="Tell others about yourself..."
               />
 
-              {/* Address */}
-              <TextField
-                name="address"
-                label="Address"
-                type="text"
-                value={profileData.address}
-                onChange={handleFormChange}
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                placeholder="Your address (for deliveries)"
-              />
-
-              {/* Telephone */}
-              <TextField
-                name="tel"
-                label="Telephone"
-                type="text"
-                value={profileData.tel}
-                onChange={handleFormChange}
-                variant="outlined"
-                fullWidth
-                margin="normal"
-                placeholder="Your phone number"
-              />
+              {/* Additional Images Section */}
+              <Box mt={3}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Additional Images
+                </Typography>
+                <Typography variant="caption" color="textSecondary" gutterBottom>
+                  Add up to 10 additional images to showcase in your profile
+                </Typography>
+                
+                <Box display="flex" flexWrap="wrap" gap={2} mt={2}>
+                  {additionalImagePreviews.map((preview, index) => (
+                    <Box key={index} position="relative">
+                      <ZoomableImage 
+                        src={preview} 
+                        alt={`Additional ${index + 1}`}
+                        style={{ width: 100, height: 100, objectFit: 'cover' }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => removeAdditionalImage(index)}
+                        style={{
+                          position: 'absolute',
+                          top: -8,
+                          right: -8,
+                          backgroundColor: 'white',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                  
+                  {additionalImagePreviews.length < 10 && (
+                    <Box>
+                      <input
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="additional-images-input"
+                        type="file"
+                        multiple
+                        onChange={handleAdditionalImagesChange}
+                      />
+                      <label htmlFor="additional-images-input">
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          style={{
+                            width: 100,
+                            height: 100,
+                            border: '2px dashed #ccc',
+                            borderRadius: 4,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <IconButton component="span">
+                            <AddPhotoAlternateIcon />
+                          </IconButton>
+                        </Box>
+                      </label>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
 
               {error && (
                 <Typography color="error" variant="body2" style={{ marginTop: 8 }}>

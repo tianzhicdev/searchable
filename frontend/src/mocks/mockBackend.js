@@ -419,7 +419,14 @@ const mockHandlers = {
       username: 'test_user',
       profile_image_url: null,
       introduction: 'Welcome to my digital marketplace profile!',
-      created_at: new Date(Date.now() - 86400000 * 30).toISOString()
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      metadata: {
+        additional_images: [
+          mockData.mockImage1,
+          mockData.mockImage2,
+          mockData.mockImage1
+        ]
+      }
     };
     
     let downloadables = [
@@ -439,7 +446,15 @@ const mockHandlers = {
         username: 'designer_pro',
         profile_image_url: null,
         introduction: 'Professional designer with 5+ years of experience creating stunning digital assets and templates.',
-        created_at: new Date(Date.now() - 86400000 * 180).toISOString()
+        created_at: new Date(Date.now() - 86400000 * 180).toISOString(),
+        metadata: {
+          additional_images: [
+            mockData.mockImage2,
+            mockData.mockImage1,
+            mockData.mockImage2,
+            mockData.mockImage1
+          ]
+        }
       };
       downloadables = [
         {
@@ -464,7 +479,13 @@ const mockHandlers = {
         username: 'DigitalAssetStore',
         profile_image_url: null,
         introduction: 'Your trusted source for premium digital assets, templates, and creative resources.',
-        created_at: new Date(Date.now() - 86400000 * 365).toISOString()
+        created_at: new Date(Date.now() - 86400000 * 365).toISOString(),
+        metadata: {
+          additional_images: [
+            mockData.mockImage1,
+            mockData.mockImage2
+          ]
+        }
       };
       downloadables = [
         {

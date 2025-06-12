@@ -17,6 +17,7 @@ import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
+import ZoomableImage from '../../components/ZoomableImage';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState({ usd: null });
@@ -328,6 +329,30 @@ const Profile = () => {
               </Box>
             )}
           </Box>
+
+          {/* Additional Images Section */}
+          {userProfile?.metadata?.additional_images && userProfile.metadata.additional_images.length > 0 && (
+            <Box mt={3}>
+              <Typography variant="h6" gutterBottom>
+                Gallery
+              </Typography>
+              <Box display="flex" flexWrap="wrap" gap={2}>
+                {userProfile.metadata.additional_images.map((image, index) => (
+                  <ZoomableImage 
+                    key={index}
+                    src={image} 
+                    alt={`Gallery ${index + 1}`}
+                    style={{ 
+                      width: 150, 
+                      height: 150, 
+                      objectFit: 'cover',
+                      borderRadius: 4
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </Paper>
       </Grid>
       
