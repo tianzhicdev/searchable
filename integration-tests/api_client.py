@@ -193,6 +193,23 @@ class SearchableAPIClient:
         response.raise_for_status()
         return response.json()
 
+    def upload_media(self, image_data: bytes, filename: str = "test_image.png") -> Dict[str, Any]:
+        """Upload media data and get media info"""
+        url = f"{self.base_url}/v1/media/upload"
+        
+        # Upload as multipart form data
+        files = {'file': (filename, image_data, 'image/png')}
+        response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def retrieve_media(self, media_id: str) -> requests.Response:
+        """Retrieve media by media ID"""
+        url = f"{self.base_url}/v1/media/{media_id}"
+        
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        return response
+
     def logout(self):
         """Clear authentication token"""
         if self.token:

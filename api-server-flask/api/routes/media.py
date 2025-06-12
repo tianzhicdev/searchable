@@ -10,7 +10,6 @@ from werkzeug.utils import secure_filename
 # Import from our structure
 from .. import rest_api
 from .auth import token_required
-from ..common.metrics import track_metrics
 from ..common.logging_config import setup_logger
 
 # Set up the logger
@@ -82,7 +81,6 @@ class MediaUpload(Resource):
     Upload media files to file server
     """
     @token_required
-    @track_metrics('media_upload')
     def post(self, current_user, request_origin='unknown'):
         try:
             # Check if request has file part or JSON data
@@ -155,7 +153,6 @@ class MediaRetrieve(Resource):
     """
     Retrieve media files from file server (pass-through)
     """
-    @track_metrics('media_retrieve')
     def get(self, media_id, request_origin='unknown'):
         try:
             # Validate media_id format (should be UUID)
@@ -206,7 +203,6 @@ class MediaInfo(Resource):
     """
     Get media file information (simplified - just checks if media exists)
     """
-    @track_metrics('media_info')
     def get(self, media_id, request_origin='unknown'):
         try:
             # Validate media_id format
