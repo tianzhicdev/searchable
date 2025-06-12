@@ -15,6 +15,7 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
 import { compressImage, fileToDataURL } from '../../utils/imageCompression';
 import backend from '../utilities/Backend';
+import ZoomableImage from '../../components/ZoomableImage';
 
 const PublishDownloadableSearchable = () => {
   console.log("PublishDownloadableSearchable component is being rendered");
@@ -367,7 +368,7 @@ const PublishDownloadableSearchable = () => {
                 <Box className={classes.imagePreviewContainer}>
                   {previewImages.map((src, index) => (
                     <Box key={index} className={classes.imagePreview}>
-                      <img src={src} alt={`Preview ${index}`} className={classes.previewImage} />
+                      <ZoomableImage src={src} alt={`Preview ${index}`} className={classes.previewImage} />
                       <IconButton 
                         size="small"
                         className={classes.removeImageButton} 
@@ -492,6 +493,7 @@ const PublishDownloadableSearchable = () => {
                     Cancel
                   </Button>
                   <Button 
+                    type="submit"
                     variant="contained" 
                     className={classes.button}
                     disabled={loading || downloadableFiles.length === 0}
