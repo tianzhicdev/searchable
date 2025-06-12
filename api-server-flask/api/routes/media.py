@@ -88,7 +88,7 @@ class MediaUpload(Resource):
             if not upload_result.get('success'):
                 return {"error": "File server upload unsuccessful"}, 500
 
-            media_uri = f"/api/v1/media/{media_id}"
+            media_uri = f'{FILE_SERVER_URL}/api/v1/media/{media_id}'
 
             return {
                 "success": True,
