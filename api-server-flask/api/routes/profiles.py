@@ -192,29 +192,36 @@ class UpdateMyProfile(Resource):
             # Extract update fields
             username = data.get('username')
             introduction = data.get('introduction')
-            profile_image_data = data.get('profile_image')
+            profile_image_data = data.get('profile_image')  # Legacy base64 support
+            profile_image_uri = data.get('profile_image_uri')  # New URI support
             metadata = data.get('metadata', {})
             
-            # Handle profile image upload
+            # Handle profile image
             profile_image_url = None
-            if profile_image_data:
+            if profile_image_uri:
+                # New URI-based approach - store the URI directly
+                profile_image_url = profile_image_uri
+            elif profile_image_data:
+                # Legacy base64 support
                 profile_image_url = validate_and_process_profile_image(profile_image_data)
                 if not profile_image_url:
                     return {"error": "Invalid profile image or file too large"}, 400
             
-            # Validate additional images in metadata if present
+            # Handle additional images in metadata - now expecting URIs
             if 'additional_images' in metadata:
                 additional_images = metadata.get('additional_images', [])
                 if len(additional_images) > 10:
                     return {"error": "Maximum 10 additional images allowed"}, 400
                 
-                # Validate each additional image
+                # For URI-based images, just validate format
                 validated_images = []
-                for img in additional_images:
-                    if img:  # Skip empty strings
-                        validated_img = validate_and_process_profile_image(img)
-                        if validated_img:
-                            validated_images.append(validated_img)
+                for img_uri in additional_images:
+                    if img_uri and isinstance(img_uri, str):
+                        if img_uri.startswith('/api/v1/media/') or img_uri.startswith('data:'):
+                            validated_images.append(img_uri)
+                        else:
+                            logger.warning(f"Invalid image URI format: {img_uri}")
+                
                 metadata['additional_images'] = validated_images
             
             # Check if profile exists

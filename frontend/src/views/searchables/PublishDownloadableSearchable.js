@@ -55,13 +55,40 @@ const PublishDownloadableSearchable = () => {
       [name]: value
     });
   };
+
+  // Function to upload image to media endpoint immediately
+  const uploadImageToMedia = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await backend.post('v1/media/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.data.success) {
+        return {
+          media_uri: response.data.media_uri,
+          media_id: response.data.media_id
+        };
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading image to media:', error);
+      throw error;
+    }
+  };
   
   // Handle preview image uploads (optional)
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    const validFiles = [];
+    const validImageUris = [];
     const validPreviews = [];
     setError(null);
+    setLoading(true);
     
     try {
       for (const file of files) {
@@ -70,19 +97,26 @@ const PublishDownloadableSearchable = () => {
           continue;
         }
         
+        // Process and compress the image
         const processedFile = await compressImage(file, 200);
-        validFiles.push(processedFile);
         
+        // Upload to media endpoint immediately
+        const uploadResult = await uploadImageToMedia(processedFile);
+        validImageUris.push(uploadResult.media_uri);
+        
+        // Create preview for immediate display
         const dataUrl = await fileToDataURL(processedFile);
         validPreviews.push(dataUrl);
       }
       
-      setImages([...images, ...validFiles]);
+      setImages([...images, ...validImageUris]);
       setPreviewImages([...previewImages, ...validPreviews]);
       
     } catch (error) {
       console.error("Error processing images:", error);
       setError("An error occurred while processing images. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -204,9 +238,7 @@ const PublishDownloadableSearchable = () => {
             "description": formData.description,
             "currency": formData.currency,
             "type": "downloadable", // Mark this as downloadable type
-            "images": previewImages.map(base64String => {
-              return base64String.split(',')[1];
-            }),
+            "images": images, // Store image URIs instead of base64
             "downloadableFiles": downloadableFiles.map(file => ({
               name: file.name,
               price: file.price,

@@ -204,6 +204,57 @@ const mockHandlers = {
   
   // Profile endpoints
   'v1/profile': () => createMockResponse(mockData.mockUserProfile),
+  
+  // Media upload endpoint
+  'v1/media/upload': () => {
+    console.log('[MOCK] Media upload');
+    const mockMediaId = `mock-media-${Date.now()}`;
+    return createMockResponse({
+      success: true,
+      media_id: mockMediaId,
+      media_uri: `/api/v1/media/${mockMediaId}`,
+      file_id: `file-${mockMediaId}`,
+      filename: `${mockMediaId}.png`,
+      size: 1024
+    });
+  },
+  
+  // Media retrieval endpoint - handle any media ID
+  'v1/media/': (url) => {
+    const mediaId = url.split('/').pop();
+    console.log('[MOCK] Media retrieval for:', mediaId);
+    
+    // Map mock media IDs to actual image files
+    const mediaMap = {
+      'profile-mock-1': mockData.mockImage1,
+      'profile-designer-pro': mockData.mockImage2,
+      'profile-digital-store': mockData.mockImage1,
+      'gallery-mock-1': mockData.mockImage1,
+      'gallery-mock-2': mockData.mockImage2,
+      'gallery-mock-3': mockData.mockImage1,
+      'gallery-mock-4': mockData.mockImage2,
+      'designer-gallery-1': mockData.mockImage2,
+      'designer-gallery-2': mockData.mockImage1,
+      'designer-gallery-3': mockData.mockImage2,
+      'designer-gallery-4': mockData.mockImage1,
+      'store-gallery-1': mockData.mockImage1,
+      'store-gallery-2': mockData.mockImage2
+    };
+    
+    // Return the corresponding image or default
+    const imageUrl = mediaMap[mediaId] || mockData.mockImage1;
+    
+    // For mock mode, we'll redirect to the actual image
+    // In real implementation, this would return the binary image data
+    return Promise.resolve({
+      status: 200,
+      data: imageUrl, // This will be handled by the browser as an image URL
+      headers: {
+        'content-type': 'image/png'
+      }
+    });
+  },
+  
   'v1/terminal': () => createMockResponse(mockData.mockTerminal),
   'balance': () => createMockResponse(mockData.mockBalance),
   
@@ -417,14 +468,14 @@ const mockHandlers = {
     // Create different profiles based on identifier
     let profileData = {
       username: 'test_user',
-      profile_image_url: null,
+      profile_image_url: '/api/v1/media/profile-mock-1',
       introduction: 'Welcome to my digital marketplace profile!',
       created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
       metadata: {
         additional_images: [
-          mockData.mockImage1,
-          mockData.mockImage2,
-          mockData.mockImage1
+          '/api/v1/media/gallery-mock-1',
+          '/api/v1/media/gallery-mock-2',
+          '/api/v1/media/gallery-mock-3'
         ]
       }
     };
@@ -444,15 +495,15 @@ const mockHandlers = {
     if (identifier === 'designer_pro') {
       profileData = {
         username: 'designer_pro',
-        profile_image_url: null,
+        profile_image_url: '/api/v1/media/profile-designer-pro',
         introduction: 'Professional designer with 5+ years of experience creating stunning digital assets and templates.',
         created_at: new Date(Date.now() - 86400000 * 180).toISOString(),
         metadata: {
           additional_images: [
-            mockData.mockImage2,
-            mockData.mockImage1,
-            mockData.mockImage2,
-            mockData.mockImage1
+            '/api/v1/media/designer-gallery-1',
+            '/api/v1/media/designer-gallery-2',
+            '/api/v1/media/designer-gallery-3',
+            '/api/v1/media/designer-gallery-4'
           ]
         }
       };
@@ -477,13 +528,13 @@ const mockHandlers = {
     } else if (identifier === 'DigitalAssetStore') {
       profileData = {
         username: 'DigitalAssetStore',
-        profile_image_url: null,
+        profile_image_url: '/api/v1/media/profile-digital-store',
         introduction: 'Your trusted source for premium digital assets, templates, and creative resources.',
         created_at: new Date(Date.now() - 86400000 * 365).toISOString(),
         metadata: {
           additional_images: [
-            mockData.mockImage1,
-            mockData.mockImage2
+            '/api/v1/media/store-gallery-1',
+            '/api/v1/media/store-gallery-2'
           ]
         }
       };
