@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TextField } from '@material-ui/core';
@@ -15,8 +15,6 @@ import {
 } from '@material-ui/core';
 
 // third party
-import * as Yup from 'yup';
-import { Formik } from 'formik';
 import axios from 'axios';
 
 // project imports
@@ -34,9 +32,17 @@ const RestLogin = (props, { ...others }) => {
     const history = useHistory();
 
     const scriptedRef = useScriptRef();
-    const [checked, setChecked] = React.useState(true);
+    const [checked, setChecked] = useState(true);
+    const [formValues, setFormValues] = useState({
+        email: '',
+        password: ''
+    });
+    const [formErrors, setFormErrors] = useState({});
+    const [touched, setTouched] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
 
-    const [showPassword, setShowPassword] = React.useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
     };
@@ -45,143 +51,174 @@ const RestLogin = (props, { ...others }) => {
         event.preventDefault();
     };
 
+    const validateField = (name, value) => {
+        let error = '';
+        switch (name) {
+            case 'email':
+                if (!value) {
+                    error = 'Email is required';
+                } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
+                    error = 'Must be a valid email';
+                }
+                break;
+            case 'password':
+                if (!value) {
+                    error = 'Password is required';
+                }
+                break;
+            default:
+                break;
+        }
+        return error;
+    };
+
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setFormValues(prev => ({ ...prev, [name]: value }));
+        
+        // Clear error when user starts typing
+        if (formErrors[name]) {
+            setFormErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const handleBlur = (event) => {
+        const { name, value } = event.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+        const error = validateField(name, value);
+        setFormErrors(prev => ({ ...prev, [name]: error }));
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setIsSubmitting(true);
+        setSubmitError('');
+        
+        // Validate all fields
+        const errors = {};
+        Object.keys(formValues).forEach(key => {
+            const error = validateField(key, formValues[key]);
+            if (error) errors[key] = error;
+        });
+        
+        setFormErrors(errors);
+        setTouched({ email: true, password: true });
+        
+        if (Object.keys(errors).length > 0) {
+            setIsSubmitting(false);
+            return;
+        }
+        
+        try {
+            const response = await axios.post(configData.API_SERVER + 'users/login', {
+                password: formValues.password,
+                email: formValues.email
+            });
+            
+            if (response.data.success) {
+                console.log("Login successful", response.data);
+                dispatcher({
+                    type: ACCOUNT_INITIALIZE,
+                    payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }
+                });
+                if (scriptedRef.current) {
+                    setIsSubmitting(false);
+                }
+            } else {
+                setSubmitError(response.data.msg);
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            setSubmitError(error.response?.data?.msg || error.message);
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <React.Fragment>
-            <Formik
-                initialValues={{
-                    email: '',
-                    password: '',
-                    submit: null
-                }}
-                validationSchema={Yup.object().shape({
-                    email: Yup.string().email('Must be a valid email').max(255).required('Email is required'),
-                    password: Yup.string().max(255).required('Password is required')
-                })}
-                onSubmit={(values, { setErrors, setStatus, setSubmitting }) => {
-                    try {
-                        axios
-                            .post( configData.API_SERVER + 'users/login', {
-                                password: values.password,
-                                email: values.email
-                            })
-                            .then(function (response) {
-                                if (response.data.success) {
-                                    console.log("Login successful", response.data);
-                                    dispatcher({
-                                        type: ACCOUNT_INITIALIZE,
-                                        payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }
-                                    });
-                                    if (scriptedRef.current) {
-                                        setStatus({ success: true });
-                                        setSubmitting(false);
-                                    }
-                                } else {
-                                    setStatus({ success: false });
-                                    setErrors({ submit: response.data.msg });
-                                    setSubmitting(false);
-                                }
-                            })
-                            .catch(function (error) {
-                                setStatus({ success: false });
-                                setErrors({ submit: error.response.data.msg });
-                                setSubmitting(false);
-                            });
-                    } catch (err) {
-                        console.error(err);
-                        if (scriptedRef.current) {
-                            setStatus({ success: false });
-                            setErrors({ submit: err.message });
-                            setSubmitting(false);
-                        }
-                    }
-                }}
+        <form noValidate onSubmit={handleSubmit} {...others}>
+            <FormControl 
+                fullWidth 
+                error={Boolean(touched.email && formErrors.email)}
+                sx={{ mb: 2 }}
             >
-                {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-                    <form noValidate onSubmit={handleSubmit} {...others}>
-                        <FormControl 
-                            fullWidth 
-                            error={Boolean(touched.email && errors.email)}
-                            sx={{ mb: 2 }}
-                        >
-                            <TextField
-                                id="outlined-adornment-email-login"
-                                type="email"
-                                value={values.email}
-                                name="email"
-                                onBlur={handleBlur}
-                                onChange={handleChange}
-                                placeholder="Enter your email"
-                            />
-                            {touched.email && errors.email && (
-                                <FormHelperText error id="standard-weight-helper-text-email-login">
-                                    {errors.email}
-                                </FormHelperText>
-                            )}
-                        </FormControl>
-
-                        <FormControl 
-                            fullWidth 
-                            error={Boolean(touched.password && errors.password)}
-                            sx={{ mb: 2 }}
-                        >
-                            <TextField
-                                id="outlined-adornment-password-login"
-                                type={showPassword ? 'text' : 'password'}
-                                value={values.password}
-                                name="password"
-                                onBlur={handleBlur}
-                                onChange={handleChange}
-                                placeholder="Enter your password"
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={handleClickShowPassword}
-                                                onMouseDown={handleMouseDownPassword}
-                                                edge="end"
-                                            >
-                                                {showPassword ? <Visibility /> : <VisibilityOff />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    )
-                                }}
-                            />
-                            {touched.password && errors.password && (
-                                <FormHelperText error id="standard-weight-helper-text-password-login">
-                                    {errors.password}
-                                </FormHelperText>
-                            )}
-                        </FormControl>
-                        {errors.submit && (
-                            <Box>
-                                <FormHelperText error>{errors.submit}</FormHelperText>
-                            </Box>
-                        )}
-
-                        <Box display="flex" justifyContent="space-between">
-                            <Button
-                                disabled={isSubmitting}
-                                fullWidth
-                                onClick={() => {
-                                    history.push('/searchables');
-                                }}
-                            >
-                                Guest
-                            </Button>
-                            <Box></Box>
-                            <Button
-                                disabled={isSubmitting}
-                                fullWidth
-                                type="submit"
-                            >
-                                Sign In
-                            </Button>
-                        </Box>
-                    </form>
+                <TextField
+                    id="outlined-adornment-email-login"
+                    type="email"
+                    value={formValues.email}
+                    name="email"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
+                    error={touched.email && Boolean(formErrors.email)}
+                />
+                {touched.email && formErrors.email && (
+                    <FormHelperText error id="standard-weight-helper-text-email-login">
+                        {formErrors.email}
+                    </FormHelperText>
                 )}
-            </Formik>
-        </React.Fragment>
+            </FormControl>
+
+            <FormControl 
+                fullWidth 
+                error={Boolean(touched.password && formErrors.password)}
+                sx={{ mb: 2 }}
+            >
+                <TextField
+                    id="outlined-adornment-password-login"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formValues.password}
+                    name="password"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    error={touched.password && Boolean(formErrors.password)}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <IconButton
+                                    aria-label="toggle password visibility"
+                                    onClick={handleClickShowPassword}
+                                    onMouseDown={handleMouseDownPassword}
+                                    edge="end"
+                                >
+                                    {showPassword ? <Visibility /> : <VisibilityOff />}
+                                </IconButton>
+                            </InputAdornment>
+                        )
+                    }}
+                />
+                {touched.password && formErrors.password && (
+                    <FormHelperText error id="standard-weight-helper-text-password-login">
+                        {formErrors.password}
+                    </FormHelperText>
+                )}
+            </FormControl>
+            {submitError && (
+                <Box>
+                    <FormHelperText error>{submitError}</FormHelperText>
+                </Box>
+            )}
+
+            <Box display="flex" justifyContent="space-between">
+                <Button
+                    disabled={isSubmitting}
+                    fullWidth
+                    onClick={() => {
+                        history.push('/searchables');
+                    }}
+                >
+                    Guest
+                </Button>
+                <Box></Box>
+                <Button
+                    disabled={isSubmitting}
+                    fullWidth
+                    type="submit"
+                >
+                    Sign In
+                </Button>
+            </Box>
+        </form>
     );
 };
 
