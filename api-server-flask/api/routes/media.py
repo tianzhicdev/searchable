@@ -114,19 +114,13 @@ class MediaUpload(Resource):
             media_id = str(uuid.uuid4())
             filename = f"{media_id}.{file_extension}"
             
-            # Upload to file server
+            # Upload to file server using the correct API
             files = {'file': (filename, file_data, f'image/{file_extension}')}
-            metadata = {
-                'description': f'Media upload by user {current_user.id}',
-                'type': 'media',
-                'user_id': str(current_user.id),
-                'media_id': media_id
-            }
-            
-            upload_data = {'metadata': str(metadata)}
+            # Use media_id as file_id for the file server
+            upload_data = {'file_id': media_id}
             
             response = requests.post(
-                f'{FILE_SERVER_URL}/upload',
+                f'{FILE_SERVER_URL}/api/file/upload',
                 files=files,
                 data=upload_data,
                 timeout=30
@@ -147,7 +141,7 @@ class MediaUpload(Resource):
                 "success": True,
                 "media_id": media_id,
                 "media_uri": media_uri,
-                "file_id": upload_result.get('file_id'),
+                "file_id": media_id,  # file_id is the same as media_id
                 "filename": filename,
                 "size": len(file_data)
             }, 200
@@ -170,70 +164,33 @@ class MediaRetrieve(Resource):
             except ValueError:
                 return {"error": "Invalid media ID format"}, 400
             
-            # Find file in file server by media_id
-            # First, try to get file info by searching metadata
-            search_response = requests.get(
-                f'{FILE_SERVER_URL}/files',
-                timeout=10
-            )
-            
-            if search_response.status_code != 200:
-                logger.error(f"File server search failed: {search_response.text}")
-                return {"error": "File server unavailable"}, 503
-            
-            files_list = search_response.json().get('files', [])
-            target_file = None
-            
-            # Look for file with matching media_id in metadata
-            for file_info in files_list:
-                metadata = file_info.get('metadata', {})
-                if isinstance(metadata, str):
-                    try:
-                        import ast
-                        metadata = ast.literal_eval(metadata)
-                    except:
-                        continue
-                
-                if metadata.get('media_id') == media_id:
-                    target_file = file_info
-                    break
-            
-            if not target_file:
-                return {"error": "Media not found"}, 404
-            
-            file_id = target_file.get('file_id')
-            if not file_id:
-                return {"error": "Invalid file reference"}, 500
-            
-            # Proxy the file from file server
+            # Since we use media_id as file_id, download directly from file server
             file_response = requests.get(
-                f'{FILE_SERVER_URL}/download/{file_id}',
+                f'{FILE_SERVER_URL}/api/file/download',
+                params={'file_id': media_id},
                 timeout=30
             )
             
-            if file_response.status_code != 200:
+            if file_response.status_code == 404:
+                return {"error": "Media not found"}, 404
+            elif file_response.status_code != 200:
                 logger.error(f"File server download failed: {file_response.text}")
                 return {"error": "Failed to retrieve from file server"}, 500
             
-            # Determine content type from filename
-            filename = target_file.get('filename', f'{media_id}.png')
-            if filename.lower().endswith('.png'):
-                content_type = 'image/png'
-            elif filename.lower().endswith(('.jpg', '.jpeg')):
-                content_type = 'image/jpeg'
-            elif filename.lower().endswith('.gif'):
-                content_type = 'image/gif'
-            elif filename.lower().endswith('.webp'):
-                content_type = 'image/webp'
-            else:
-                content_type = 'application/octet-stream'
+            # Determine content type from media_id (we stored extension info, but default to PNG)
+            content_type = 'image/png'  # Default to PNG since most uploads will be PNG
+            
+            # Try to determine content type from response headers or content
+            server_content_type = file_response.headers.get('content-type')
+            if server_content_type and 'image' in server_content_type:
+                content_type = server_content_type
             
             # Return the file content as a response
             return Response(
                 file_response.content,
                 mimetype=content_type,
                 headers={
-                    'Content-Disposition': f'inline; filename="{filename}"',
+                    'Content-Disposition': f'inline; filename="{media_id}.png"',
                     'Cache-Control': 'public, max-age=31536000',  # Cache for 1 year
                     'Content-Length': str(len(file_response.content))
                 }
@@ -246,7 +203,7 @@ class MediaRetrieve(Resource):
 @rest_api.route('/api/v1/media/<media_id>/info', methods=['GET'])
 class MediaInfo(Resource):
     """
-    Get media file information
+    Get media file information (simplified - just checks if media exists)
     """
     @track_metrics('media_info')
     def get(self, media_id, request_origin='unknown'):
@@ -257,41 +214,24 @@ class MediaInfo(Resource):
             except ValueError:
                 return {"error": "Invalid media ID format"}, 400
             
-            # Get file info from file server
-            search_response = requests.get(
-                f'{FILE_SERVER_URL}/files',
+            # Check if file exists by attempting to access it
+            file_response = requests.get(
+                f'{FILE_SERVER_URL}/api/file/download',
+                params={'file_id': media_id},
                 timeout=10
             )
             
-            if search_response.status_code != 200:
+            if file_response.status_code == 404:
+                return {"error": "Media not found"}, 404
+            elif file_response.status_code != 200:
                 return {"error": "File server unavailable"}, 503
             
-            files_list = search_response.json().get('files', [])
-            target_file = None
-            
-            # Look for file with matching media_id
-            for file_info in files_list:
-                metadata = file_info.get('metadata', {})
-                if isinstance(metadata, str):
-                    try:
-                        import ast
-                        metadata = ast.literal_eval(metadata)
-                    except:
-                        continue
-                
-                if metadata.get('media_id') == media_id:
-                    target_file = file_info
-                    break
-            
-            if not target_file:
-                return {"error": "Media not found"}, 404
-            
+            # Return basic info
             return {
                 "media_id": media_id,
-                "filename": target_file.get('filename'),
-                "size": target_file.get('size'),
-                "upload_date": target_file.get('upload_date'),
-                "metadata": target_file.get('metadata')
+                "filename": f"{media_id}.png",
+                "size": len(file_response.content),
+                "exists": True
             }, 200
             
         except Exception as e:
