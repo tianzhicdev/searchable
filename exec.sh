@@ -1,0 +1,357 @@
+#!/bin/bash
+
+# Searchable Project Execution Script
+# Unified interface for local and remote operations
+# Usage: ./exec.sh <environment> <action> [container_name]
+
+set -e
+
+# Get the directory of the script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
+# Configuration
+REMOTE_HOST="cherry-interest.metalseed.net"
+REMOTE_USER="searchable"
+REMOTE_PATH="/home/searchable/searchable"
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to display usage
+show_usage() {
+    echo -e "${BLUE}Searchable Execution Script${NC}"
+    echo -e "${YELLOW}Usage:${NC}"
+    echo "  ./exec.sh remote deploy <container_name>    - Deploy specific container remotely"
+    echo "  ./exec.sh remote deploy-all                 - Deploy all containers remotely"
+    echo "  ./exec.sh remote logs <container_name>      - Show logs for remote container"
+    echo "  ./exec.sh remote status                     - Show status of remote containers"
+    echo ""
+    echo "  ./exec.sh local react                       - Start React development server locally"
+    echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
+    echo "  ./exec.sh local deploy-all                  - Deploy all containers locally"
+    echo "  ./exec.sh local logs <container_name>       - Show logs for local container"
+    echo "  ./exec.sh local status                      - Show status of local containers"
+    echo ""
+    echo -e "${YELLOW}Available containers:${NC}"
+    echo "  - frontend"
+    echo "  - flask_api"
+    echo "  - file_server"
+    echo "  - background"
+    echo "  - db"
+    echo "  - nginx"
+    echo "  - usdt-api"
+    echo ""
+    echo -e "${YELLOW}Examples:${NC}"
+    echo "  ./exec.sh remote deploy flask_api"
+    echo "  ./exec.sh remote logs flask_api"
+    echo "  ./exec.sh local react"
+    echo "  ./exec.sh local deploy-all"
+    echo "  ./exec.sh local status"
+}
+
+# Function to check if container name is valid
+validate_container() {
+    local container=$1
+    local valid_containers=("frontend" "flask_api" "file_server" "background" "db" "nginx" "usdt-api")
+    
+    for valid in "${valid_containers[@]}"; do
+        if [ "$container" = "$valid" ]; then
+            return 0
+        fi
+    done
+    
+    echo -e "${RED}Error: Invalid container name '$container'${NC}"
+    echo "Valid containers are: ${valid_containers[*]}"
+    exit 1
+}
+
+# Function to determine Docker Compose command
+get_docker_compose_cmd() {
+    if command -v docker &> /dev/null && docker compose version &> /dev/null; then
+        echo "docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        echo "docker-compose"
+    else
+        echo -e "${RED}Error: Neither 'docker compose' nor 'docker-compose' found${NC}"
+        exit 1
+    fi
+}
+
+# Remote deploy single container
+remote_deploy_container() {
+    local container=$1
+    validate_container "$container"
+    
+    echo -e "${BLUE}🚀 Deploying $container to remote server...${NC}"
+    echo "Remote: $REMOTE_USER@$REMOTE_HOST"
+    
+    ssh $REMOTE_USER@$REMOTE_HOST << EOF
+        cd $REMOTE_PATH
+        echo "📦 Building and deploying $container..."
+        
+        # Get current branch
+        BRANCH=\$(git branch --show-current)
+        echo "Branch: \$BRANCH"
+        
+        # Pull latest changes
+        git pull origin \$BRANCH
+        
+        # Determine Docker Compose command
+        if command -v docker &> /dev/null && docker compose version &> /dev/null; then
+            DOCKER_COMPOSE="docker compose"
+        else
+            DOCKER_COMPOSE="docker-compose"
+        fi
+        
+        # Build and restart specific container
+        \$DOCKER_COMPOSE build $container
+        \$DOCKER_COMPOSE up -d $container
+        
+        echo "✅ Container $container deployed successfully!"
+EOF
+    
+    echo -e "${GREEN}✅ Remote deployment of $container completed!${NC}"
+}
+
+# Remote deploy all containers
+remote_deploy_all() {
+    echo -e "${BLUE}🚀 Deploying all containers to remote server...${NC}"
+    echo "Remote: $REMOTE_USER@$REMOTE_HOST"
+    
+    ssh $REMOTE_USER@$REMOTE_HOST << EOF
+        cd $REMOTE_PATH
+        echo "📦 Running full deployment..."
+        
+        # Run the existing redeploy script
+        ./redeploy.sh
+EOF
+    
+    echo -e "${GREEN}✅ Remote deployment completed!${NC}"
+}
+
+# Remote container logs
+remote_logs() {
+    local container=$1
+    validate_container "$container"
+    
+    echo -e "${BLUE}📋 Fetching logs for $container from remote server...${NC}"
+    echo "Remote: $REMOTE_USER@$REMOTE_HOST"
+    
+    ssh $REMOTE_USER@$REMOTE_HOST << EOF
+        cd $REMOTE_PATH
+        
+        # Map service names to container names
+        case "$container" in
+            "flask_api"|"file_server")
+                CONTAINER_NAME="$container"
+                ;;
+            *)
+                CONTAINER_NAME="searchable-$container-1"
+                ;;
+        esac
+        
+        echo "Container: \$CONTAINER_NAME"
+        echo "================================"
+        docker logs --tail 100 -f \$CONTAINER_NAME
+EOF
+}
+
+# Remote container status
+remote_status() {
+    echo -e "${BLUE}📊 Checking status of remote containers...${NC}"
+    echo "Remote: $REMOTE_USER@$REMOTE_HOST"
+    
+    ssh $REMOTE_USER@$REMOTE_HOST << EOF
+        cd $REMOTE_PATH
+        echo ""
+        echo "🐳 Docker containers status:"
+        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(searchable|flask_api|file_server)" || true
+        echo ""
+        echo "💾 Docker images:"
+        docker images | grep searchable || true
+EOF
+}
+
+# Local React development server
+local_react() {
+    echo -e "${BLUE}🚀 Starting React development server...${NC}"
+    
+    cd frontend
+    
+    # Check if node_modules exists
+    if [ ! -d "node_modules" ]; then
+        echo "📦 Installing dependencies..."
+        npm install --legacy-peer-deps
+    fi
+    
+    echo -e "${YELLOW}Starting React app in development mode...${NC}"
+    echo "Access the app at: http://localhost:3000"
+    echo ""
+    
+    # Start React development server
+    REACT_APP_ENV=local \
+    REACT_APP_BRANDING=silkroadonlightning \
+    REACT_APP_LOGO=camel_logo.jpg \
+    REACT_APP_DESCRIPTION='Silk Road on Lightning' \
+    NODE_OPTIONS=--openssl-legacy-provider \
+    npm start
+}
+
+# Local deploy single container
+local_deploy_container() {
+    local container=$1
+    validate_container "$container"
+    
+    echo -e "${BLUE}🚀 Deploying $container locally...${NC}"
+    
+    DOCKER_COMPOSE=$(get_docker_compose_cmd)
+    
+    # Build and restart specific container
+    echo "📦 Building $container..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml build $container
+    
+    echo "🔄 Restarting $container..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml up -d $container
+    
+    echo -e "${GREEN}✅ Local deployment of $container completed!${NC}"
+    echo "Container logs: $DOCKER_COMPOSE -f docker-compose.local.yml logs -f $container"
+}
+
+# Local deploy all containers
+local_deploy_all() {
+    echo -e "${BLUE}🚀 Deploying all containers locally...${NC}"
+    
+    # Use the existing local_redeploy.sh script
+    ./local_redeploy.sh
+    
+    echo -e "${GREEN}✅ Local deployment completed!${NC}"
+}
+
+# Local container logs
+local_logs() {
+    local container=$1
+    validate_container "$container"
+    
+    echo -e "${BLUE}📋 Fetching logs for $container locally...${NC}"
+    
+    DOCKER_COMPOSE=$(get_docker_compose_cmd)
+    
+    # Map service names to container names
+    case "$container" in
+        "flask_api"|"file_server")
+            CONTAINER_NAME="$container"
+            ;;
+        *)
+            CONTAINER_NAME="searchable-$container-1"
+            ;;
+    esac
+    
+    echo "Container: $CONTAINER_NAME"
+    echo "================================"
+    $DOCKER_COMPOSE -f docker-compose.local.yml logs --tail 100 -f $container
+}
+
+# Local container status
+local_status() {
+    echo -e "${BLUE}📊 Checking status of local containers...${NC}"
+    
+    DOCKER_COMPOSE=$(get_docker_compose_cmd)
+    
+    echo ""
+    echo "🐳 Docker containers status:"
+    $DOCKER_COMPOSE -f docker-compose.local.yml ps
+    
+    echo ""
+    echo "💾 Docker images:"
+    docker images | grep searchable || true
+}
+
+# Main script logic
+if [ $# -lt 2 ]; then
+    show_usage
+    exit 1
+fi
+
+ENVIRONMENT=$1
+ACTION=$2
+CONTAINER=$3
+
+case "$ENVIRONMENT" in
+    "remote")
+        case "$ACTION" in
+            "deploy")
+                if [ -z "$CONTAINER" ]; then
+                    echo -e "${RED}Error: Container name required for deploy action${NC}"
+                    show_usage
+                    exit 1
+                fi
+                remote_deploy_container "$CONTAINER"
+                ;;
+            "deploy-all")
+                remote_deploy_all
+                ;;
+            "logs")
+                if [ -z "$CONTAINER" ]; then
+                    echo -e "${RED}Error: Container name required for logs action${NC}"
+                    show_usage
+                    exit 1
+                fi
+                remote_logs "$CONTAINER"
+                ;;
+            "status")
+                remote_status
+                ;;
+            *)
+                echo -e "${RED}Error: Invalid action '$ACTION' for remote environment${NC}"
+                show_usage
+                exit 1
+                ;;
+        esac
+        ;;
+    
+    "local")
+        case "$ACTION" in
+            "react")
+                local_react
+                ;;
+            "deploy")
+                if [ -z "$CONTAINER" ]; then
+                    echo -e "${RED}Error: Container name required for deploy action${NC}"
+                    show_usage
+                    exit 1
+                fi
+                local_deploy_container "$CONTAINER"
+                ;;
+            "deploy-all")
+                local_deploy_all
+                ;;
+            "logs")
+                if [ -z "$CONTAINER" ]; then
+                    echo -e "${RED}Error: Container name required for logs action${NC}"
+                    show_usage
+                    exit 1
+                fi
+                local_logs "$CONTAINER"
+                ;;
+            "status")
+                local_status
+                ;;
+            *)
+                echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"
+                show_usage
+                exit 1
+                ;;
+        esac
+        ;;
+    
+    *)
+        echo -e "${RED}Error: Invalid environment '$ENVIRONMENT'${NC}"
+        show_usage
+        exit 1
+        ;;
+esac
