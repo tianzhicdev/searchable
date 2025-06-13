@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 4. **Deploy with `./remote_redeploy.sh`** - For backend deployments. Never deploy backend locally.
 5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
 6. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them - leave them running so developer can manually verify
+7. **Show pending invoices** - On searchable detail pages, buyers should see their pending invoices from the past 24 hours alongside completed purchases
 
 ### Development Flow Pattern
 ```
@@ -29,7 +30,7 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
 - Integration Tests: `./integration-tests/run_tests.sh`
   - For local testing: Update `integration-tests/.env` to set `BASE_URL=http://localhost:5005`
   - Tests verify: auth, file operations, searchables, payments, profiles, media
-  - Expected: 16/17 tests pass (media content-type test may fail due to octet-stream response)
+  - Expected: 18/18 tests pass (all integration tests should succeed)
 
 ### Local Docker Development
 - **Full Stack Local**: `docker-compose -f docker-compose.local.yml up --build`
