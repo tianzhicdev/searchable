@@ -1,12 +1,11 @@
 import React from 'react';
 import { 
-  Typography, Paper, Box, Divider, Link
+  Typography, Paper, Box, Divider
 } from '@material-ui/core';
-import { useHistory } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles';
+import PostedBy from '../../components/PostedBy';
 const SearchablesProfile = ({ item, onClick }) => {
   const classes = useComponentStyles();
-  const history = useHistory();
 
   // Extract data from the new structure
   const publicData = item.payloads?.public || {};
@@ -16,14 +15,6 @@ const SearchablesProfile = ({ item, onClick }) => {
   const truncateText = (text, maxLength) => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
-
-  // Handle username click to navigate to user profile
-  const handleUsernameClick = (e) => {
-    e.stopPropagation(); // Prevent triggering the item click
-    if (item.terminal_id) {
-      history.push(`/profile/${item.terminal_id}`);
-    }
   };
 
   return (
@@ -42,17 +33,11 @@ const SearchablesProfile = ({ item, onClick }) => {
           <Divider />
           
           <Box>
-            {item.username && item.terminal_id && (
-              <Typography variant="body2">
-                Posted by: <Link 
-                  component="button"
-                  variant="body2"
-                  onClick={handleUsernameClick}
-                >
-                  {truncateText(item.username, 30)}
-                </Link>
-              </Typography>
-            )}
+            <PostedBy 
+              username={item.username} 
+              terminalId={item.terminal_id} 
+              maxLength={30}
+            />
             
             {/* Only show price if it's in public payload */}
             {publicData.price && (
