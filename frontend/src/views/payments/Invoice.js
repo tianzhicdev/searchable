@@ -152,6 +152,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
         
         if (invoice.payment_status === 'complete') {
             label = 'Paid';
+        } else if (invoice.payment_status === 'pending') {
+            label = 'Pending Payment';
         }
         
         return (
@@ -159,7 +161,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                 variant="body2" 
                 className={classes.systemText}
                 style={{ 
-                    color: invoice.payment_status === 'complete' ? '#1976d2' : 'inherit',
+                    color: invoice.payment_status === 'complete' ? '#1976d2' : 
+                           invoice.payment_status === 'pending' ? '#ff9800' : 'inherit',
                     fontWeight: 'bold',
                     marginRight: '12px'
                 }}
