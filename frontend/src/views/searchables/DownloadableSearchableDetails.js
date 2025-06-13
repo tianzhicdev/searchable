@@ -20,6 +20,7 @@ import backend from '../utilities/Backend';
 import { isMockMode } from '../../mocks/mockBackend';
 import ZoomableImage from '../../components/ZoomableImage';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
+import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
 import { mockAccount } from '../../mocks/mockAuth';
 
@@ -643,6 +644,13 @@ const DownloadableSearchableDetails = () => {
               {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
             </Typography>
             <Divider />
+            
+            {/* Posted by section */}
+            <PostedBy 
+              username={SearchableItem.username} 
+              terminalId={SearchableItem.terminal_id} 
+              maxLength={30}
+            />
             
             {!loadingRatings && searchableRating && (
               <Box>
