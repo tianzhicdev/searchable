@@ -244,7 +244,17 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 </Typography>
                                 {invoice.fee > 0 && (
                                     <Typography variant="body2" className={classes.userText}>
-                                        Fee: {formatCurrency(invoice.fee, invoice.currency)}
+                                        Platform Fee (0.1%): {formatCurrency(invoice.fee, invoice.currency)}
+                                    </Typography>
+                                )}
+                                {invoice.metadata?.stripe_fee > 0 && (
+                                    <Typography variant="body2" className={classes.userText}>
+                                        Stripe Fee (3.5%): {formatCurrency(invoice.metadata.stripe_fee, invoice.currency)}
+                                    </Typography>
+                                )}
+                                {userRole === 'seller' && (
+                                    <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                        Your Earnings: {formatCurrency(invoice.amount - invoice.fee, invoice.currency)}
                                     </Typography>
                                 )}
                             </Grid>

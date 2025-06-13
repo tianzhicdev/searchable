@@ -621,6 +621,28 @@ const DownloadableSearchableDetails = () => {
             {/* Files Section */}
             {renderDownloadableFiles()}
             
+            {/* Payment Summary and Button */}
+            {totalPrice > 0 && (
+              <Box mt={2} p={2} bgcolor="background.paper">
+                <Typography variant="subtitle2" className={classes.staticText}>
+                  Payment Summary:
+                </Typography>
+                <Typography variant="body2" className={classes.userText}>
+                  Subtotal: {formatCurrency(totalPrice)}
+                </Typography>
+                <Typography variant="body2" className={classes.userText}>
+                  Stripe Fee (3.5%): {formatCurrency(totalPrice * 0.035)}
+                </Typography>
+                <Divider style={{ margin: '8px 0' }} />
+                <Typography variant="body1" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                  Total to Pay: {formatCurrency(totalPrice * 1.035)}
+                </Typography>
+                <Typography variant="caption" className={classes.systemText}>
+                  Note: Platform fee (0.1%) will be deducted from seller's earnings
+                </Typography>
+              </Box>
+            )}
+            
             {/* Payment Button */}
             <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
               <Button
@@ -629,7 +651,7 @@ const DownloadableSearchableDetails = () => {
                 disabled={creatingInvoice || totalPrice === 0}
               >
                 <Typography variant="body2" className={classes.staticText}>
-                Purchase (3.5% fee)
+                  Pay {formatCurrency(totalPrice * 1.035)}
                 </Typography>
               </Button>
             </div>

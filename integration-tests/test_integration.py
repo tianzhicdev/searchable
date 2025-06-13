@@ -255,9 +255,17 @@ class TestSearchableIntegration:
         if public_data.get('type') == 'downloadable' and 'selectables' in public_data:
             # Use the actual selectables from the searchable (full object, not just ID)
             selections = [public_data['selectables'][0]]  # Select first downloadable object
+            expected_amount = public_data['selectables'][0]['price']
         else:
             # For service type, create a basic selection object
             selections = [{"id": 1, "type": "service", "name": "Basic Service", "price": 1.99}]
+            expected_amount = 1.99
+        
+        # Store expected fees for verification
+        self.__class__.expected_invoice_amount = expected_amount
+        self.__class__.expected_platform_fee = expected_amount * 0.001  # 0.1%
+        self.__class__.expected_stripe_fee = expected_amount * 0.035   # 3.5%
+        self.__class__.expected_payment_amount = expected_amount + self.expected_stripe_fee
         
         try:
             response = self.client.create_invoice(
@@ -268,6 +276,24 @@ class TestSearchableIntegration:
             
             # Verify invoice creation response
             assert 'session_id' in response or 'url' in response, f"No session_id or url in response: {response}"
+            
+            # Verify that invoice data is returned in response
+            if 'invoice' in response:
+                invoice_data = response['invoice']
+                # Verify invoice amount (before fees)
+                assert abs(invoice_data['amount'] - expected_amount) < 0.01, f"Expected amount {expected_amount}, got {invoice_data['amount']}"
+                # Verify platform fee 
+                assert abs(invoice_data['fee'] - self.expected_platform_fee) < 0.01, f"Expected platform fee {self.expected_platform_fee}, got {invoice_data['fee']}"
+                print(f"  ✓ Invoice amount verified: ${invoice_data['amount']:.2f}")
+                print(f"  ✓ Platform fee verified: ${invoice_data['fee']:.2f}")
+            
+            # Verify payment amount (what user pays)
+            if 'payment' in response:
+                payment_data = response['payment']
+                assert abs(payment_data['amount'] - self.expected_payment_amount) < 0.01, f"Expected payment amount {self.expected_payment_amount}, got {payment_data['amount']}"
+                assert abs(payment_data['fee'] - self.expected_stripe_fee) < 0.01, f"Expected Stripe fee {self.expected_stripe_fee}, got {payment_data['fee']}"
+                print(f"  ✓ Payment amount verified: ${payment_data['amount']:.2f}")
+                print(f"  ✓ Stripe fee verified: ${payment_data['fee']:.2f}")
             
             # Store invoice info for payment testing
             self.__class__.created_invoice = response
@@ -642,12 +668,26 @@ class TestSearchableIntegration:
             assert 'token' in buyer_login_response, f"Buyer login failed: {buyer_login_response}"
             
             # Create invoice for the searchable item as buyer (will be pending by default)
-            selections = [{"file_id": 1, "price": 5.00}]  # Minimal selection for testing
+            selections = [{"id": 1, "type": "service", "name": "Basic Service", "price": 5.00}]  # Minimal selection for testing
             invoice_response = self.client.create_invoice(
                 searchable_id=self.created_searchable_id,
                 selections=selections,
                 invoice_type="stripe"
             )
+            
+            # Verify the new fee structure in the response if available
+            if 'invoice' in invoice_response:
+                invoice_data = invoice_response['invoice']
+                expected_platform_fee = 5.00 * 0.001  # 0.1%
+                print(f"  Created invoice amount: ${invoice_data['amount']:.2f}")
+                print(f"  Platform fee: ${invoice_data['fee']:.2f} (expected: ${expected_platform_fee:.2f})")
+            
+            if 'payment' in invoice_response:
+                payment_data = invoice_response['payment']
+                expected_stripe_fee = 5.00 * 0.035  # 3.5%
+                expected_payment_amount = 5.00 + expected_stripe_fee
+                print(f"  Payment amount: ${payment_data['amount']:.2f} (expected: ${expected_payment_amount:.2f})")
+                print(f"  Stripe fee: ${payment_data['fee']:.2f} (expected: ${expected_stripe_fee:.2f})")
             
             # The response should contain invoice data
             assert 'session_id' in invoice_response or 'url' in invoice_response, f"No session_id or url in response: {invoice_response}"
