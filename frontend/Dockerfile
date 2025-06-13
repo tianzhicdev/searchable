@@ -14,6 +14,9 @@ ARG REACT_APP_BRANDING
 RUN if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
     echo "Building for eccentricprotocol..." && \
     npm run build-eccentricprotocol; \
+  elif [ "$REACT_APP_BRANDING" = "local" ]; then \
+    echo "Building for local development..." && \
+    npm run build-local; \
   else \
     echo "Building default version..." && \
     npm run build; \

@@ -15,8 +15,14 @@ from ..common.logging_config import setup_logger
 # Set up the logger
 logger = setup_logger(__name__, 'files.log')
 
-# File server configuration
-FILE_SERVER_URL = os.environ.get('FILE_SERVER_URL')
+# File server configuration - use local file server for local branding
+BRANDING = os.getenv('REACT_APP_BRANDING', 'silkroadonlightning')
+if BRANDING == 'local':
+    FILE_SERVER_URL = 'http://file_server:5006'
+    FILE_SERVER_URL_RETRIEVAL = 'http://localhost:5006'
+else:
+    FILE_SERVER_URL = os.environ.get('FILE_SERVER_URL')
+    FILE_SERVER_URL_RETRIEVAL = FILE_SERVER_URL
 
 @rest_api.route('/api/v1/files/upload', methods=['POST'])
 class UploadFile(Resource):
@@ -75,7 +81,7 @@ class UploadFile(Resource):
             cur = conn.cursor()
             
             # Construct URI to the file
-            file_uri = f"{FILE_SERVER_URL}/api/file/download?file_id={file_id}"
+            file_uri = f"{FILE_SERVER_URL_RETRIEVAL}/api/file/download?file_id={file_id}"
             
             # Insert into files table
             sql = f"""

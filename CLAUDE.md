@@ -9,8 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **Always verify changes** - Restart services after changes to catch compile/runtime errors 
 3. **Use `say` command** - Announce completion so developer knows task is done
 4. **Deploy with `./remote_redeploy.sh`** - For backend deployments. Never deploy backend locally.
-5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run`
-6. **Always use timestamps** - Include timestamps in logs and communications for tracking
+5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
+6. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them - leave them running so developer can manually verify
 
 ### Development Flow Pattern
 ```
@@ -26,7 +26,24 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
 
 ### Backend Development  
 - Backend Deployment: `remote_redeploy.sh` 
-- Integration: `./integration-tests/run_tests.sh`
+- Integration Tests: `./integration-tests/run_tests.sh`
+  - For local testing: Update `integration-tests/.env` to set `BASE_URL=http://localhost:5005`
+  - Tests verify: auth, file operations, searchables, payments, profiles, media
+  - Expected: 16/17 tests pass (media content-type test may fail due to octet-stream response)
+
+### Local Docker Development
+- **Full Stack Local**: `docker-compose -f docker-compose.local.yml up --build`
+- **Access**: `http://localhost` or `http://localhost:443` (no SSL)
+- **With SSL**: `./generate-local-ssl.sh` then `docker-compose up --build`
+
+### Local Configuration (`REACT_APP_BRANDING=local`)
+When `.secrets.env` contains `REACT_APP_BRANDING=local`:
+- **Frontend**: Uses `http://localhost:5005/api/` (Flask API)
+- **Backend API**: Available at `http://localhost:5005` (Swagger UI available)
+- **File Server**: Uses local container `http://file_server:5006`
+- **Database**: Local PostgreSQL container (`db:5432`)
+- **All traffic stays local** - No external service calls
+- **File Storage**: Local `./files` directory
 
 ## Project Overview
 
@@ -139,3 +156,95 @@ Mock mode features:
 - Visual indicator (orange "🔧 MOCK MODE" badge)
 - Production-safe (only active with env var)
 
+
+---
+
+## Frontend Component Patterns (Updated 2025-01-06)
+
+### Authentication System - Post-Formik Architecture
+- **Pattern**: Manual state management with Material-UI components (no Formik dependency)
+- **Form State**: `useState` hooks for `formValues`, `formErrors`, `touched`, `isSubmitting`
+- **Validation**: Custom `validateField` functions with real-time feedback
+- **Files**: `RestLogin.js`, `RestRegister.js`
+- **Benefits**: Cleaner code, better Material-UI integration, easier maintenance
+
+```javascript
+// New pattern for form handling
+const [formValues, setFormValues] = useState({ email: '', password: '' });
+const [formErrors, setFormErrors] = useState({});
+const validateField = (name, value) => { /* custom validation */ };
+```
+
+### Profile System - User ID Based Routing
+- **API Pattern**: `/api/v1/profile/<int:user_id>` for public profiles
+- **Authentication**: Token-based `/api/v1/profile` for current user operations
+- **Database**: `user_profile` table using `user_id` (terminal_id) as primary key
+- **Navigation**: Profile links use `terminal_id` instead of username/email
+
+### Media Management System
+- **Pattern**: URI-based media system (`/api/v1/media/{uuid}`)
+- **Utils**: `mediaUtils.js` for URL processing and mock mode support
+- **Component**: `ZoomableImage` for interactive image viewing
+- **Storage**: File server integration with proper URI mapping
+
+```javascript
+// Media URI processing
+import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
+const imageUrl = getMediaUrl(profile.profile_image_url);
+```
+
+### Component Styling Standards
+- **Theme**: 5-color system (primary, secondary, alerting, warning, highlight)
+- **Font**: FreePixel standardized across components
+- **Import Pattern**: `useComponentStyles` for consistent styling
+- **File**: `/frontend/src/themes/componentStyles.js`
+
+## Backend API Patterns (Updated 2025-01-06)
+
+### Profile Endpoints
+- `GET /api/v1/profile/<int:user_id>` - Public profile access by user ID
+- `GET /api/v1/profile` - Current user profile (token-required)
+- `PUT /api/v1/profile` - Update current user profile (token-required)
+- `POST /api/v1/profile` - Create user profile (token-required)
+
+### Media Endpoints
+- `POST /api/v1/media` - Upload media files
+- `GET /api/v1/media/<uuid>` - Retrieve media by UUID
+- **File**: `/api-server-flask/api/routes/media.py`
+
+### Authentication Flow
+1. **Login**: Email/password → JWT token with user object
+2. **Profile Access**: Token-based for current user, ID-based for public profiles
+3. **Navigation**: Use `terminal_id` for profile routing
+
+## Development Practices (Updated 2025-01-06)
+
+### Form Development
+- **Use Material-UI directly** - No Formik dependency
+- **Manual state management** - useState hooks with validation functions
+- **Error handling** - Real-time validation with touched state tracking
+
+### Media in Mock Mode
+```bash
+REACT_APP_MOCK_MODE=true npm run start
+# Automatically maps media URIs to mock images
+# Supports both data URLs and file server URLs
+```
+
+### Profile Development
+- **Always use user_id** - Never use email for profile API calls
+- **Terminal ID mapping** - Profile navigation uses terminal_id from searchable items
+- **Token authentication** - Current user operations require valid JWT
+
+---
+
+## Recent Material Changes Log
+
+### 2025-01-06: Authentication & Profile System Overhaul
+1. **Authentication Components**: Converted from Formik to native Material-UI with manual state management
+2. **Profile API**: Migrated from email-based to user_id-based routing
+3. **Media System**: Implemented URI-based media management with file server integration
+4. **Component Architecture**: Enhanced with ZoomableImage and improved styling patterns
+
+addtional: 
+1. this file should be updated frequently, everytime there is a material change we should update this file. 

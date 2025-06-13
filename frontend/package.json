@@ -51,6 +51,7 @@
     "start-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.jpg REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts start",
     "build": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts build",
     "build-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.jpg REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts build",
+    "build-local": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=local REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Local Development' react-scripts build",
     "test": "react-scripts test --passWithNoTests",
     "eject": "react-scripts eject"
   },

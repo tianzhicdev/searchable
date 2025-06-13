@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Local API</title>
+</head>
+<body>
+    <h1>Testing Local API Configuration</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Test if the app is using local API
+        fetch('http://localhost/api/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('results').innerHTML += '<p>✅ Local API Health Check: ' + JSON.stringify(data) + '</p>';
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML += '<p>❌ Local API Error: ' + error + '</p>';
+            });
+            
+        // Load the main app and check config
+        fetch('http://localhost/')
+            .then(response => response.text())
+            .then(html => {
+                // Extract the main JS file
+                const match = html.match(/static\/js\/main\.[a-f0-9]+\.js/);
+                if (match) {
+                    return fetch('http://localhost/' + match[0]);
+                }
+                throw new Error('Could not find main.js');
+            })
+            .then(response => response.text())
+            .then(js => {
+                // Check for API configuration
+                if (js.includes('localhost:5005')) {
+                    document.getElementById('results').innerHTML += '<p>✅ Frontend configured for localhost:5005</p>';
+                } else if (js.includes('silkroadonlightning.com')) {
+                    document.getElementById('results').innerHTML += '<p>❌ Frontend still using silkroadonlightning.com</p>';
+                } else {
+                    document.getElementById('results').innerHTML += '<p>⚠️  Could not determine API configuration</p>';
+                }
+                
+                // Check for branding
+                if (js.includes('APP_BRANDING:"local"') || js.includes("APP_BRANDING:'local'")) {
+                    document.getElementById('results').innerHTML += '<p>✅ Branding set to local</p>';
+                } else {
+                    document.getElementById('results').innerHTML += '<p>❌ Branding not set to local</p>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('results').innerHTML += '<p>❌ Error checking frontend: ' + error + '</p>';
+            });
+    </script>
+</body>
+</html>
