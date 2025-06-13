@@ -1076,6 +1076,9 @@ class DownloadSearchableFile(Resource):
                     # Fallback to searchable fileName if metadata is unavailable
                     original_filename = target_file.get("fileName", "download")
                 
+                # Sanitize filename for HTTP header (escape quotes and remove problematic characters)
+                original_filename = original_filename.replace('"', '\\"').replace('\n', '').replace('\r', '')
+                
                 def generate():
                     for chunk in download_response.iter_content(chunk_size=8192):
                         if chunk:

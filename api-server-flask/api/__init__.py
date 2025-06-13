@@ -17,6 +17,9 @@ logger = setup_logger(__name__, 'api_init.log')
 app = Flask(__name__)
 app.config.from_object('api.common.config.BaseConfig')
 
+# Set maximum upload size to 500MB to match nginx configuration
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB in bytes
+
 # Initialize API here
 rest_api = Api(app, version="1.0", title="Users API")
 

@@ -480,12 +480,22 @@ const DownloadableSearchableDetails = () => {
         responseType: 'blob'
       });
       
+      // Extract filename from Content-Disposition header if available
+      let downloadFileName = fileName; // fallback to user description
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          downloadFileName = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
       // Create blob URL and trigger download
       const blob = new Blob([response.data]);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', fileName);
+      link.setAttribute('download', downloadFileName);
       document.body.appendChild(link);
       link.click();
       link.remove();

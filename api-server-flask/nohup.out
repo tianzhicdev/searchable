@@ -1,0 +1,15 @@
+time="2025-03-24T11:58:55-07:00" level=warning msg="/Users/tianzhichen/projects/searchable/api-server-flask/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+Compose now can delegate build to bake for better performances
+Just set COMPOSE_BAKE=true
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [flask_api internal] load build definition from Dockerfile
+#1 transferring dockerfile: 330B done
+#1 DONE 0.0s
+
+#2 [flask_api internal] load metadata for docker.io/library/python:3.9
+#2 ERROR: error getting credentials - err: exit status 1, out: `error getting credentials - err: exit status 1, out: `keychain cannot be accessed because the current session does not allow user interaction. The keychain may be locked; unlock it by running "security -v unlock-keychain ~/Library/Keychains/login.keychain-db" and try again``
+------
+ > [flask_api internal] load metadata for docker.io/library/python:3.9:
+------
+failed to solve: python:3.9: failed to resolve source metadata for docker.io/library/python:3.9: error getting credentials - err: exit status 1, out: `error getting credentials - err: exit status 1, out: `keychain cannot be accessed because the current session does not allow user interaction. The keychain may be locked; unlock it by running "security -v unlock-keychain ~/Library/Keychains/login.keychain-db" and try again``
