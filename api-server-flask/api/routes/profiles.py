@@ -207,23 +207,6 @@ class UpdateMyProfile(Resource):
                 if not profile_image_url:
                     return {"error": "Invalid profile image or file too large"}, 400
             
-            # Handle additional images in metadata - now expecting URIs
-            if 'additional_images' in metadata:
-                additional_images = metadata.get('additional_images', [])
-                if len(additional_images) > 10:
-                    return {"error": "Maximum 10 additional images allowed"}, 400
-                
-                # For URI-based images, just validate format
-                validated_images = []
-                for img_uri in additional_images:
-                    if img_uri and isinstance(img_uri, str):
-                        if img_uri.startswith('/api/v1/media/') or img_uri.startswith('data:'):
-                            validated_images.append(img_uri)
-                        else:
-                            logger.warning(f"Invalid image URI format: {img_uri}")
-                
-                metadata['additional_images'] = validated_images
-            
             # Check if profile exists
             existing_profile = get_user_profile(user_id)
             
