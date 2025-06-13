@@ -19,7 +19,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
   };
 
   return (
-    <Box>
+    <Box border={1} borderColor={theme.colors?.primary}>
       <img 
         src={src} 
         alt={alt} 

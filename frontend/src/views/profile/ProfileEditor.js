@@ -5,11 +5,12 @@ import {
   TextField, Button, CircularProgress, Typography, Snackbar, Alert,
   Box, Avatar, IconButton
 } from '@material-ui/core';
-import { PhotoCamera, Person, Delete as DeleteIcon, AddPhotoAlternate as AddPhotoAlternateIcon } from '@material-ui/icons';
+import { PhotoCamera, Person } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import { SET_USER } from '../../store/actions';
 import useComponentStyles from '../../themes/componentStyles';
 import ZoomableImage from '../../components/ZoomableImage';
+import ImageUploader from '../../components/ImageUploader';
 
 // Singleton pattern to manage dialog state across components
 const profileEditorState = {
@@ -34,7 +35,6 @@ const ProfileEditor = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
-  const [additionalImagePreviews, setAdditionalImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -80,9 +80,13 @@ const ProfileEditor = () => {
           setProfileImagePreview(profile.profile_image_url);
         }
         
-        // Set additional image previews if exist
+        // Set additional images if exist
         if (profile.metadata?.additional_images) {
-          setAdditionalImagePreviews(profile.metadata.additional_images);
+          const imageData = profile.metadata.additional_images.map(uri => ({
+            uri: uri,
+            preview: uri
+          }));
+          setAdditionalImages(imageData);
         }
         
       } catch (profileErr) {
@@ -210,62 +214,8 @@ const ProfileEditor = () => {
     }
   };
 
-  const handleAdditionalImagesChange = async (e) => {
-    const files = Array.from(e.target.files);
-    const newImageUris = [];
-    const newPreviews = [];
-    
-    setLoading(true);
-    
-    for (const file of files) {
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image file size must be less than 5MB');
-        continue;
-      }
-
-      // Validate file type
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        setError('Please select valid image files (PNG, JPG, JPEG, GIF, or WEBP)');
-        continue;
-      }
-
-      try {
-        // Upload image immediately to media endpoint
-        const uploadResult = await uploadImageToMedia(file);
-        newImageUris.push(uploadResult.media_uri);
-
-        // Create preview for immediate display
-        const reader = new FileReader();
-        const preview = await new Promise((resolve, reject) => {
-          reader.onload = (e) => resolve(e.target.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        newPreviews.push(preview);
-      } catch (error) {
-        setError('Failed to upload one or more images. Please try again.');
-        console.error('Additional image upload error:', error);
-      }
-    }
-
-    if (newImageUris.length > 0) {
-      setError(null);
-      setAdditionalImages([...additionalImages, ...newImageUris]);
-      setAdditionalImagePreviews([...additionalImagePreviews, ...newPreviews]);
-    }
-    
-    setLoading(false);
-  };
-
-  const removeAdditionalImage = (index) => {
-    const newImages = [...additionalImages];
-    const newPreviews = [...additionalImagePreviews];
-    newImages.splice(index, 1);
-    newPreviews.splice(index, 1);
+  const handleAdditionalImagesChange = (newImages) => {
     setAdditionalImages(newImages);
-    setAdditionalImagePreviews(newPreviews);
   };
   
   const handleSubmit = async () => {
@@ -286,7 +236,7 @@ const ProfileEditor = () => {
       }
 
       // Include additional image URIs
-      updateData.metadata.additional_images = additionalImages;
+      updateData.metadata.additional_images = additionalImages.map(img => img.uri);
 
       // Update the profile using the new API
       const response = await Backend.put('v1/profile', updateData);
@@ -419,70 +369,15 @@ const ProfileEditor = () => {
               />
 
               {/* Additional Images Section */}
-              <Box mt={3}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Additional Images
-                </Typography>
-                <Typography variant="caption" color="textSecondary" gutterBottom>
-                  Add up to 10 additional images to showcase in your profile
-                </Typography>
-                
-                <Box display="flex" flexWrap="wrap" gap={2} mt={2}>
-                  {additionalImagePreviews.map((preview, index) => (
-                    <Box key={index} position="relative">
-                      <ZoomableImage 
-                        src={preview} 
-                        alt={`Additional ${index + 1}`}
-                        style={{ width: 100, height: 100, objectFit: 'cover' }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => removeAdditionalImage(index)}
-                        style={{
-                          position: 'absolute',
-                          top: -8,
-                          right: -8,
-                          backgroundColor: 'white',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  ))}
-                  
-                  {additionalImagePreviews.length < 10 && (
-                    <Box>
-                      <input
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        id="additional-images-input"
-                        type="file"
-                        multiple
-                        onChange={handleAdditionalImagesChange}
-                      />
-                      <label htmlFor="additional-images-input">
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          style={{
-                            width: 100,
-                            height: 100,
-                            border: '2px dashed #ccc',
-                            borderRadius: 4,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <IconButton component="span">
-                            <AddPhotoAlternateIcon />
-                          </IconButton>
-                        </Box>
-                      </label>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
+              <ImageUploader
+                images={additionalImages}
+                onImagesChange={handleAdditionalImagesChange}
+                maxImages={10}
+                title="Additional Images"
+                description="Add up to 10 additional images to showcase in your profile"
+                imageSize={100}
+                onError={setError}
+              />
 
               {error && (
                 <Typography color="error" variant="body2" style={{ marginTop: 8 }}>

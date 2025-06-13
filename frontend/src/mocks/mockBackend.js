@@ -309,14 +309,14 @@ const mockHandlers = {
       purchases: [
         {
           id: "purchase-1",
-          amount: 29.99,
+          amount: 29.99,  // Invoice amount (total price)
           payment_status: "complete",
           type: "stripe",
           currency: "usd",
           other_party_username: "DigitalAssetStore",
           payment_date: new Date(Date.now() - 3000000).toISOString(),
           created_at: new Date(Date.now() - 3600000).toISOString(),
-          fee: 1.05,
+          fee: 0.03,  // Platform fee (0.1% of 29.99)
           buyer_id: "mock-user-1",
           seller_id: "mock-terminal-1",
           searchable_id: "mock-item-1",
@@ -324,6 +324,7 @@ const mockHandlers = {
             address: "123 Main St, City, State 12345",
             tel: "+1-555-0123",
             description: "Premium Digital Asset Bundle",
+            stripe_fee: 1.05,  // Stripe fee (3.5% of 29.99)
             selections: [
               {
                 id: "file-1",
@@ -336,14 +337,14 @@ const mockHandlers = {
         },
         {
           id: "purchase-2",
-          amount: 79.97,
+          amount: 79.98,  // Invoice amount (29.99 + 49.99)
           payment_status: "complete",
           type: "stripe",
           currency: "usd",
           other_party_username: "DigitalAssetStore",
           payment_date: new Date(Date.now() - 6600000).toISOString(),
           created_at: new Date(Date.now() - 7200000).toISOString(),
-          fee: 2.80,
+          fee: 0.08,  // Platform fee (0.1% of 79.98)
           buyer_id: "mock-user-1",
           seller_id: "mock-terminal-1",
           searchable_id: "mock-item-1",
@@ -351,6 +352,7 @@ const mockHandlers = {
             address: "123 Main St, City, State 12345",
             tel: "+1-555-0123",
             description: "Premium Digital Asset Bundle (x2 files)",
+            stripe_fee: 2.80,  // Stripe fee (3.5% of 79.98)
             selections: [
               {
                 id: "file-1",
@@ -371,14 +373,14 @@ const mockHandlers = {
       sales: [
         {
           id: "sale-1",
-          amount: 15.50,
+          amount: 15.50,  // Invoice amount (total price)
           payment_status: "complete",
           type: "stripe",
           currency: "usd",
           other_party_username: "BuyerUser123",
           payment_date: new Date(Date.now() - 6900000).toISOString(),
           created_at: new Date(Date.now() - 7200000).toISOString(),
-          fee: 0.54,
+          fee: 0.02,  // Platform fee (0.1% of 15.50)
           buyer_id: "mock-user-3",
           seller_id: "mock-user-1",
           searchable_id: "user-item-1",
@@ -386,6 +388,7 @@ const mockHandlers = {
             address: "456 Buyer St, Customer City, State 67890",
             tel: "+1-555-0456",
             description: "My Digital Product",
+            stripe_fee: 0.54,  // Stripe fee (3.5% of 15.50)
             selections: [
               {
                 id: "my-file-1",
@@ -398,14 +401,14 @@ const mockHandlers = {
         },
         {
           id: "sale-2",
-          amount: 99.99,
+          amount: 99.99,  // Invoice amount (total price)
           payment_status: "complete",
           type: "stripe",
           currency: "usd",
           other_party_username: "CustomerPro",
           payment_date: new Date(Date.now() - 172200000).toISOString(),
           created_at: new Date(Date.now() - 172800000).toISOString(),
-          fee: 3.50,
+          fee: 0.10,  // Platform fee (0.1% of 99.99)
           buyer_id: "mock-user-4",
           seller_id: "mock-user-1",
           searchable_id: "user-item-2",
@@ -413,6 +416,7 @@ const mockHandlers = {
             address: "789 Customer Ave, Buyer Town, State 11111",
             tel: "+1-555-0789",
             description: "Advanced Course Bundle",
+            stripe_fee: 3.50,  // Stripe fee (3.5% of 99.99)
             selections: [
               {
                 id: "course-bundle-1",
@@ -433,31 +437,7 @@ const mockHandlers = {
   // User withdrawals endpoint
   'v1/withdrawals': () => {
     console.log('[MOCK] Fetching user withdrawals');
-    return createMockResponse({
-      withdrawals: [
-        {
-          _id: "withdrawal-1",
-          withdrawal_id: "withdrawal-1",
-          amount: 50.00,
-          currency: "usd",
-          status: "complete",
-          type: "usdt",
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          completed_at: new Date(Date.now() - 172800000).toISOString(),
-          wallet_address: "0x1234...5678"
-        },
-        {
-          _id: "withdrawal-2", 
-          withdrawal_id: "withdrawal-2",
-          amount: 100.00,
-          currency: "usd",
-          status: "pending",
-          type: "lightning",
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          lightning_invoice: "lnbc100..."
-        }
-      ]
-    });
+    return createMockResponse(mockData.mockWithdrawals);
   },
   
   

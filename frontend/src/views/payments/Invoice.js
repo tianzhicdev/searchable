@@ -232,45 +232,100 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                         
                         {/* Invoice Details */}
                         <Grid container spacing={1} className={classes.paddingSm}>
-                            <Grid item xs={12} sm={6} className={classes.paddingXs}>
+                            <Grid item xs={12} className={classes.paddingXs}>
                                 <Typography variant="subtitle2" className={classes.systemText}>
-                                    Payment Details
+                                    Purchase Breakdown
                                 </Typography>
-                                <Typography variant="body2" className={classes.userText}>
-                                    Type: {invoice.type?.toUpperCase() || 'N/A'}
-                                </Typography>
-                                <Typography variant="body2" className={classes.userText}>
-                                    Created: {formatDate(invoice.created_at)}
-                                </Typography>
-                                {invoice.fee > 0 && (
-                                    <Typography variant="body2" className={classes.userText}>
-                                        Platform Fee (0.1%): {formatCurrency(invoice.fee, invoice.currency)}
-                                    </Typography>
+                                
+                                {/* Items with individual prices */}
+                                {selections.length > 0 && (
+                                    <Box mb={1}>
+                                        {/* List each item and its price */}
+                                        {selections.map((selection, index) => (
+                                            <Box key={index} display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="body2" className={classes.userText}>
+                                                    {selection.name || `Item ${selection.id}`}
+                                                </Typography>
+                                                <Typography variant="body2" className={classes.userText}>
+                                                    {formatCurrency(selection.price || 0, invoice.currency)}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+
+                                        {/* Payment Fee (Stripe) */}
+                                        {invoice.metadata?.stripe_fee > 0 && (
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="body2" className={classes.systemText}>
+                                                    Payment Fee (Stripe)
+                                                </Typography>
+                                                <Typography variant="body2" className={classes.systemText}>
+                                                    {formatCurrency(invoice.metadata.stripe_fee, invoice.currency)}
+                                                </Typography>
+                                            </Box>
+                                        )}
+
+                                        {/* Buyer Paid */}
+                                        {invoice.metadata?.stripe_fee > 0 && (
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                                    Buyer Paid:
+                                                </Typography>
+                                                <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                                    {formatCurrency(invoice.amount + (invoice.metadata?.stripe_fee || 0), invoice.currency)}
+                                                </Typography>
+                                            </Box>
+                                        )}
+
+                                        <Divider style={{ margin: '8px 0' }} />
+
+                                        {/* Total Price */}
+                                        <Box display="flex" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                                Total Price
+                                            </Typography>
+                                            <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                                {formatCurrency(invoice.amount, invoice.currency)}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Platform Fee */}
+                                        {invoice.fee > 0 && (
+                                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                                                <Typography variant="body2" className={classes.systemText}>
+                                                    Platform Fee
+                                                </Typography>
+                                                <Typography variant="body2" className={classes.systemText}>
+                                                    {formatCurrency(invoice.fee, invoice.currency)}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
                                 )}
-                                {invoice.metadata?.stripe_fee > 0 && (
-                                    <Typography variant="body2" className={classes.userText}>
-                                        Stripe Fee (3.5%): {formatCurrency(invoice.metadata.stripe_fee, invoice.currency)}
-                                    </Typography>
-                                )}
-                                {userRole === 'seller' && (
-                                    <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
-                                        Your Earnings: {formatCurrency(invoice.amount - invoice.fee, invoice.currency)}
-                                    </Typography>
-                                )}
-                            </Grid>
-                            
-                            {selections.length > 0 && (
-                                <Grid item xs={12} sm={6} className={classes.paddingXs}>
-                                    <Typography variant="subtitle2" className={classes.systemText}>
-                                        Items Purchased
-                                    </Typography>
-                                    {selections.map((selection, index) => (
-                                        <Typography key={index} variant="body2" className={classes.userText}>
-                                            {selection.name || `Item ${selection.id}`}
+
+                                {/* Complete Fee breakdown - always show all fees */}
+                                <Box mb={1}>
+                                    
+                                    {/* Seller Receive */}
+                                    <Box display="flex" justifyContent="space-between" alignItems="center" style={{ borderTop: '1px solid #eee', paddingTop: '4px', marginTop: '4px' }}>
+                                        <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                            Seller Receive:
                                         </Typography>
-                                    ))}
-                                </Grid>
-                            )}
+                                        <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                            {formatCurrency(invoice.amount - (invoice.fee || 0), invoice.currency)}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Payment details */}
+                                <Box mt={2}>
+                                    <Typography variant="body2" className={classes.systemText}>
+                                        Type: {invoice.type?.toUpperCase() || 'N/A'}
+                                    </Typography>
+                                    <Typography variant="body2" className={classes.systemText}>
+                                        Created: {formatDate(invoice.created_at)}
+                                    </Typography>
+                                </Box>
+                            </Grid>
                         </Grid>
 
                         {/* Action Buttons */}
