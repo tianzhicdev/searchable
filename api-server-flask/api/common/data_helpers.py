@@ -1077,7 +1077,7 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 ORDER BY i.created_at DESC
             """
         else:
-            # Buyers see only their own paid invoices
+            # Buyers see their own paid invoices and pending invoices from past 24 hours
             query = f"""
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                        i.fee, i.currency, i.type, i.external_id, i.created_at, 
@@ -1088,7 +1088,7 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 LEFT JOIN users u ON i.seller_id = u.id
                 WHERE i.searchable_id = {searchable_id}
                 AND i.buyer_id = '{user_id}'
-                AND p.status = 'complete'
+                AND (p.status = 'complete' OR (p.status = 'pending' AND i.created_at >= NOW() - INTERVAL '24 hours'))
                 ORDER BY i.created_at DESC
             """
         

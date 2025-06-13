@@ -79,20 +79,51 @@ const InvoiceList = ({ searchableId, onRatingSubmitted }) => {
     );
   }
 
+  // Separate pending and completed invoices for better display
+  const pendingInvoices = invoices.filter(invoice => invoice.payment_status === 'pending');
+  const completedInvoices = invoices.filter(invoice => invoice.payment_status === 'complete');
+
   return (
     <Box mt={2}>
       <Typography variant="h6" gutterBottom>
         {userRole === 'seller' ? 'Sales' : 'Your Purchases'} ({invoices.length})
       </Typography>
       
-      {invoices.map((invoice) => (
-        <Invoice 
-          key={invoice.id}
-          invoice={invoice}
-          userRole={userRole}
-          onRatingSubmitted={handleRatingSubmitted}
-        />
-      ))}
+      {/* Show pending invoices first for buyers */}
+      {userRole === 'buyer' && pendingInvoices.length > 0 && (
+        <Box mb={2}>
+          <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+            Pending Payments (24 hours)
+          </Typography>
+          {pendingInvoices.map((invoice) => (
+            <Invoice 
+              key={invoice.id}
+              invoice={invoice}
+              userRole={userRole}
+              onRatingSubmitted={handleRatingSubmitted}
+            />
+          ))}
+        </Box>
+      )}
+      
+      {/* Show completed invoices */}
+      {completedInvoices.length > 0 && (
+        <Box>
+          {userRole === 'buyer' && pendingInvoices.length > 0 && (
+            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+              Completed Purchases
+            </Typography>
+          )}
+          {completedInvoices.map((invoice) => (
+            <Invoice 
+              key={invoice.id}
+              invoice={invoice}
+              userRole={userRole}
+              onRatingSubmitted={handleRatingSubmitted}
+            />
+          ))}
+        </Box>
+      )}
     </Box>
   );
 };

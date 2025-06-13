@@ -210,6 +210,13 @@ class SearchableAPIClient:
         response = self.session.get(url, timeout=REQUEST_TIMEOUT)
         return response
 
+    def get_invoices_by_searchable(self, searchable_id: int) -> requests.Response:
+        """Get invoices for a specific searchable item"""
+        url = f"{self.base_url}/v1/invoices-by-searchable/{searchable_id}"
+        headers = {'use-jwt': 'true'}
+        response = self.session.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+        return response
+
     def logout(self):
         """Clear authentication token"""
         if self.token:
