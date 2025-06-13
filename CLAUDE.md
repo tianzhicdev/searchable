@@ -25,11 +25,14 @@ Make Changes → Restart Services → Verify Working → Fix Errors → say "Tas
  `REACT_APP_MOCK_MODE=true npm run start`
 
 ### Backend Development  
-- Backend Deployment: `remote_redeploy.sh` 
-- Integration Tests: `./integration-tests/run_tests.sh`
+- Backend Deployment: `./remote_redeploy.sh` 
+- Local Deployment: `./local_redeploy.sh` (use this instead of docker-compose commands)
+- Integration Tests: `cd integration-tests && ./run_tests.sh`
   - For local testing: Update `integration-tests/.env` to set `BASE_URL=http://localhost:5005`
   - Tests verify: auth, file operations, searchables, payments, profiles, media
-  - Expected: 16/17 tests pass (media content-type test may fail due to octet-stream response)
+  - **Expected: All 17/17 tests pass** (as of 2025-01-06)
+  - Test suite covers: user registration/login, file upload/download, searchable creation/retrieval, payments, profiles, media management
+  - HTML report generated at `integration-tests/test_report.html`
 
 ### Local Docker Development
 - **Full Stack Local**: `docker-compose -f docker-compose.local.yml up --build`
@@ -245,6 +248,12 @@ REACT_APP_MOCK_MODE=true npm run start
 2. **Profile API**: Migrated from email-based to user_id-based routing
 3. **Media System**: Implemented URI-based media management with file server integration
 4. **Component Architecture**: Enhanced with ZoomableImage and improved styling patterns
+
+### 2025-01-06: Integration Testing Update
+1. **Test Suite Status**: All 17/17 integration tests now pass successfully
+2. **Test Coverage**: Complete end-to-end testing of auth, file operations, searchables, payments, profiles, and media
+3. **Command Update**: Use `cd integration-tests && ./run_tests.sh` for proper execution
+4. **Test Reporting**: HTML reports generated for detailed test analysis
 
 addtional: 
 1. this file should be updated frequently, everytime there is a material change we should update this file. 
