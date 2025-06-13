@@ -1110,6 +1110,7 @@ class DownloadSearchableFile(Resource):
                     for chunk in download_response.iter_content(chunk_size=8192):
                         if chunk:
                             yield chunk
+                logger.info(f"Serving file: {original_filename}")
                 
                 response = Response(
                     generate(),
