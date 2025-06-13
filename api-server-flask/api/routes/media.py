@@ -15,8 +15,14 @@ from ..common.logging_config import setup_logger
 # Set up the logger
 logger = setup_logger(__name__, 'media.log')
 
-# Configuration
-FILE_SERVER_URL = os.getenv('FILE_SERVER_URL', 'http://file_server:5006')
+# Configuration - use local file server for local branding
+BRANDING = os.getenv('REACT_APP_BRANDING', 'silkroadonlightning')
+if BRANDING == 'local':
+    FILE_SERVER_URL = 'http://file_server:5006'
+    FILE_SERVER_URL_RETRIEVAL = 'http://localhost'
+else:
+    FILE_SERVER_URL = os.environ.get('FILE_SERVER_URL')
+    FILE_SERVER_URL_RETRIEVAL = FILE_SERVER_URL
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 def validate_file_data(file_data):
@@ -88,7 +94,7 @@ class MediaUpload(Resource):
             if not upload_result.get('success'):
                 return {"error": "File server upload unsuccessful"}, 500
 
-            media_uri = f'{FILE_SERVER_URL}/api/v1/media/{media_id}'
+            media_uri = f'{FILE_SERVER_URL_RETRIEVAL}/api/v1/media/{media_id}'
 
             return {
                 "success": True,

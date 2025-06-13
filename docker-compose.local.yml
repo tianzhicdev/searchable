@@ -1,0 +1,107 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BRANDING: local
+    env_file:
+      - ./api-server-flask/.secrets.env
+    volumes:
+      - frontend_build:/app/build
+
+  background:
+    build:
+      context: ./api-server-flask
+      dockerfile: Dockerfile.background
+    env_file: 
+      - ./api-server-flask/.env
+      - ./api-server-flask/.secrets.env
+    volumes:
+      - ./logs:/logs
+    networks:
+      - db_network
+      - web_network
+
+  flask_api:
+    container_name: flask_api
+    restart: always
+    env_file: 
+      - ./api-server-flask/.env
+      - ./api-server-flask/.secrets.env
+    build:
+      context: ./api-server-flask
+      dockerfile: Dockerfile.api
+    volumes:
+      - ./logs:/logs
+    ports:
+      - "5005:5005"
+    networks:
+      - db_network
+      - web_network
+
+  file_server:
+    container_name: file_server
+    restart: always
+    env_file: 
+      - ./api-server-flask/.env
+    build:
+      context: ./api-server-flask
+      dockerfile: Dockerfile.file_server
+    volumes:
+      - ./logs:/logs
+      - ./files:/app/storage
+    ports:
+      - "5006:5006"
+    networks:
+      - web_network
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d/default.local.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - frontend_build:/usr/share/nginx/html  # Frontend build
+      # Remove SSL volume mount for local development
+    ports:
+      - "80:80"   # HTTP
+      - "443:443" # HTTP on 443 (no SSL)
+    depends_on:
+      - frontend
+      - flask_api
+      - file_server
+    networks:
+      - web_network
+  
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - ./api-server-flask/.secrets.env
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - web_network
+    
+  
+  usdt-api:
+    build: 
+      context: ./tether_on_eth
+    ports:
+      - "3100:3100"
+    env_file:
+      - ./api-server-flask/.secrets.env
+    networks:
+      - web_network
+
+volumes:
+  frontend_build:  # Shared volume between frontend and nginx
+  postgres_data:
+  
+networks:
+  db_network:
+    driver: bridge
+  web_network:
+    driver: bridge
