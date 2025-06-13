@@ -274,7 +274,7 @@ class CreateInvoiceV1(Resource):
                     buyer_id=buyer_id,
                     seller_id=seller_id,
                     searchable_id=searchable_id,
-                    amount=amount_usd_cents_with_fee,
+                    amount=total_amount_usd_with_fee,
                     currency=Currency.USD.value,
                     invoice_type=PaymentType.STRIPE.value,
                     external_id=session.id,
