@@ -10,6 +10,7 @@ export const mockSearchableItem = {
   _id: "mock-item-1",
   searchable_id: "mock-item-1",
   terminal_id: "mock-terminal-1",
+  username: "DigitalAssetStore",
   payloads: {
     public: {
       title: "Premium Digital Asset Bundle",

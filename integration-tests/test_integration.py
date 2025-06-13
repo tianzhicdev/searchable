@@ -616,7 +616,84 @@ class TestSearchableIntegration:
         except Exception as e:
             print(f"⚠ Profile update with media URI failed: {e}")
             raise AssertionError(f"Profile update with media URI failed: {e}")
-    
+
+    def test_18_pending_invoices_24h_display(self):
+        """Test that pending invoices from past 24 hours are displayed to buyers"""
+        print("Testing pending invoices 24h display...")
+        
+        assert self.client.token, "No authentication token available"
+        assert self.created_searchable_id, "No searchable ID available"
+        
+        try:
+            # Create a second user to act as buyer (current user is seller/owner)
+            buyer_test_id = str(uuid.uuid4())[:8]
+            buyer_username = f"{TEST_USER_PREFIX}buyer_{buyer_test_id}"
+            buyer_email = f"{buyer_username}@{TEST_EMAIL_DOMAIN}"
+            
+            # Store original client token
+            original_token = self.client.token
+            
+            # Register buyer user
+            buyer_response = self.client.register_user(buyer_username, buyer_email, DEFAULT_PASSWORD)
+            assert buyer_response.get('success'), f"Buyer registration failed: {buyer_response}"
+            
+            # Login as buyer
+            buyer_login_response = self.client.login_user(buyer_email, DEFAULT_PASSWORD)
+            assert 'token' in buyer_login_response, f"Buyer login failed: {buyer_login_response}"
+            
+            # Create invoice for the searchable item as buyer (will be pending by default)
+            selections = [{"file_id": 1, "price": 5.00}]  # Minimal selection for testing
+            invoice_response = self.client.create_invoice(
+                searchable_id=self.created_searchable_id,
+                selections=selections,
+                invoice_type="stripe"
+            )
+            
+            # The response should contain invoice data
+            assert 'session_id' in invoice_response or 'url' in invoice_response, f"No session_id or url in response: {invoice_response}"
+            
+            session_id = invoice_response.get('session_id')
+            print(f"  Created pending invoice with session ID: {session_id}")
+            
+            # Give the system a moment to create the invoice record
+            time.sleep(1)
+            
+            # Fetch invoices for this searchable as buyer (should include the pending one)
+            invoices_response = self.client.get_invoices_by_searchable(self.created_searchable_id)
+            assert invoices_response.status_code == 200, f"Failed to fetch invoices: {invoices_response.text}"
+            
+            invoices_data = invoices_response.json()
+            invoices = invoices_data.get('invoices', [])
+            user_role = invoices_data.get('user_role', '')
+            
+            # Verify we have invoices and user role is buyer
+            assert user_role == 'buyer', f"Expected buyer role, got: {user_role}"
+            
+            # Check that pending invoices are included (there should be at least one from this test)
+            pending_invoices = [inv for inv in invoices if inv['payment_status'] == 'pending']
+            
+            print(f"  Total invoices found: {len(invoices)}")
+            print(f"  Pending invoices: {len(pending_invoices)}")
+            print(f"  Completed invoices: {len([inv for inv in invoices if inv['payment_status'] == 'complete'])}")
+            
+            # The key test is that the API now supports returning pending invoices from the past 24 hours
+            # We should have at least one pending invoice from this test
+            assert len(pending_invoices) > 0, "No pending invoices found, but we just created one"
+            
+            # Restore original token
+            self.client.set_auth_token(original_token)
+            
+            print(f"✓ Pending invoice display test successful")
+            print(f"  Found {len(pending_invoices)} pending invoice(s)")
+            print(f"  Found {len([inv for inv in invoices if inv['payment_status'] == 'complete'])} completed invoice(s)")
+            print(f"  User role: {user_role}")
+            
+        except Exception as e:
+            # Restore original token on error
+            if 'original_token' in locals():
+                self.client.set_auth_token(original_token)
+            print(f"⚠ Pending invoices 24h display test failed: {e}")
+            raise AssertionError(f"Pending invoices 24h display test failed: {e}")
 
 
 if __name__ == "__main__":

@@ -46,11 +46,41 @@ class GetSearchableItem(Resource):
             if not searchable_data:
                 return {"error": "Searchable item not found"}, 404
             
+            # Enrich with username
+            self._enrich_searchable_with_username(searchable_data)
+            
             return searchable_data, 200
             
         except Exception as e:
             logger.error(f"Error retrieving searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
+
+    def _enrich_searchable_with_username(self, searchable_data):
+        """Add username information to a single searchable item"""
+        try:
+            terminal_id = searchable_data.get('terminal_id')
+            if not terminal_id:
+                return
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Query username for this terminal_id
+            execute_sql(cur, f"""
+                SELECT username FROM users WHERE id = '{terminal_id}'
+            """)
+            
+            result = cur.fetchone()
+            if result:
+                username = result[0]
+                searchable_data['username'] = username
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            logger.error(f"Error enriching searchable with username: {str(e)}")
+            # Continue without username rather than failing
 
 @rest_api.route('/api/v1/searchable/create', methods=['POST'])
 class CreateSearchable(Resource):
