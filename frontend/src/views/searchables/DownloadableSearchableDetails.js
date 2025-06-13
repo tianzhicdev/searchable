@@ -17,12 +17,10 @@ import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
-import { isMockMode } from '../../mocks/mockBackend';
 import ZoomableImage from '../../components/ZoomableImage';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
-import { mockAccount } from '../../mocks/mockAuth';
 
 const DownloadableSearchableDetails = () => {
   const classes = useComponentStyles();
@@ -38,8 +36,6 @@ const DownloadableSearchableDetails = () => {
   const [error, setError] = useState(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState(null);
-  const [checkingPayment, setCheckingPayment] = useState(false);
   
   
   // Rating states
@@ -108,7 +104,6 @@ const DownloadableSearchableDetails = () => {
   
   useEffect(() => {
     if (SearchableItem) {
-      fetchRatings();
       fetchUserPaidFiles();
     }
   }, [SearchableItem]);
@@ -228,7 +223,6 @@ const DownloadableSearchableDetails = () => {
     }
     
     setCreatingInvoice(true);
-    setPaymentStatus(null);
     try {
       // Get buyer ID - use account.user._id if available, otherwise use visitor ID
       const buyerId = account?.user?._id;
@@ -275,12 +269,6 @@ const DownloadableSearchableDetails = () => {
       
       if (invoiceType === 'stripe' && response.data.url) {
         window.location.href = response.data.url;
-        
-        // If we have a session_id, set up polling for Stripe payment status
-        if (response.data.session_id) {
-          // Start checking Stripe payment status
-          checkStripePaymentStatus(response.data.session_id);
-        }
       }
     } catch (err) {
       console.error(`Error creating ${invoiceType} invoice:`, err);
@@ -290,15 +278,7 @@ const DownloadableSearchableDetails = () => {
     }
   };
   
-  
-  const formatUSD = (price) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(price);
-  };
+
   
   const handleRemoveItem = async () => {
     if (!window.confirm("Are you sure you want to remove this item?")) {
@@ -367,14 +347,6 @@ const DownloadableSearchableDetails = () => {
         showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
         return;
       }
-
-      
-      // Check if address and telephone are required and provided
-      if (SearchableItem.payloads.public.require_address && 
-          (!account.user.address || !account.user.tel)) {
-        showAlert("Please update your profile with address and telephone before making a payment", "warning");
-        return;
-      }
     }
     
     // Create Stripe checkout session
@@ -395,63 +367,17 @@ const DownloadableSearchableDetails = () => {
   const refreshPaymentsBySearchable = async () => {
     try {
       await backend.get(`v1/refresh-payments-by-searchable/${id}`);
-      // After refreshing, fetch the updated payments
-      fetchPayments();
+      
     } catch (err) {
       console.error("Error refreshing payments for searchable:", err);
       // Don't show an alert as this is a background operation
     }
   };
   
-  // Add new function to check Stripe payment status
-  const checkStripePaymentStatus = async (sessionId) => {
-    if (!sessionId || !isMountedRef.current) return;
-    
-    console.log("Starting Stripe payment status check for session:", sessionId);
-    
-    if (!paymentCheckRef.current) {
-      setCheckingPayment(true);
-    }
-    
-    try {
-      const response = await backend.post('v1/refresh-payment', {
-        invoice_type: 'stripe',
-        session_id: sessionId
-      });
-      
-      if (isMountedRef.current) {
-        const paymentStatus = response.data.status;
-        console.log("Received Stripe payment status:", paymentStatus);
-        
-        if (paymentStatus === 'complete' || paymentStatus === 'paid') {
-          console.log("Stripe payment completed successfully");
-          showAlert("Credit card payment successful! You can now download your files.");
-          // Refresh payments list after successful payment
-          fetchPayments();
-          fetchUserPaidFiles();
-        } else if (paymentStatus === 'open' || paymentStatus === 'processing') {
-          console.log("Stripe payment still in progress, scheduling next check in 3 seconds");
-          paymentCheckRef.current = setTimeout(() => checkStripePaymentStatus(sessionId), 3000);
-        } else {
-          console.log("Stripe payment in final state (not successful)");
-        }
-      }
-    } catch (err) {
-      console.error("Error checking Stripe payment status:", err);
-    } finally {
-      if (!paymentCheckRef.current) {
-        setCheckingPayment(false);
-      }
-    }
-  };
   
   // Helper function to format currency
   const formatCurrency = (amount) => {
-    if (currency === 'usdt') {
-      return `${amount.toFixed(2)} USDT`;
-    } else {
       return `$${amount.toFixed(2)}`;
-    }
   };
   
   // Add new function to fetch user-specific paid files
