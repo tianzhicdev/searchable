@@ -226,9 +226,9 @@ const Profile = () => {
           >
             <MenuItem onClick={() => {
               handleMenuClose();
-              history.push('/searchables?filters=' + encodeURIComponent(JSON.stringify({ terminal_id: account.user._id })));
+              history.push(`/profile/${account.user._id}`);
             }}>
-              View Your Items
+              Profile Page
             </MenuItem>
             {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {

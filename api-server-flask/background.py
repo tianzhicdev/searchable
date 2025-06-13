@@ -32,6 +32,15 @@ PROCESS_WITHDRAWAL_INTERVAL = 5  # Process withdrawals every 5 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 
+INFURA_DOMAIN = os.getenv("INFURA_DOMAIN", "")
+
+if INFURA_DOMAIN == "mainnet.infura.io":
+    USDT_DECIMALS = 18
+elif INFURA_DOMAIN == "sepolia.infura.io":
+    USDT_DECIMALS = 6  # Default to Sepolia/testnet
+else:
+    raise ValueError("Invalid INFURA_DOMAIN configuration")
+
 def check_invoice_payments():
     """
     Checks for pending invoices and updates their status if paid
@@ -117,8 +126,6 @@ def process_pending_withdrawals():
                     address = metadata.get('address')
                     if not address:
                         raise Exception("USDT withdrawal missing address")
-                    
-                    USDT_DECIMALS = 6 # todo: real and sepolia can be diff here 
                     
                     response = requests.post('http://usdt-api:3100/send', json={
                         'to': address,

@@ -309,6 +309,46 @@ export const mockInvoices = {
 };
 
 // Mock user's own searchables for publish-searchables page
+// Mock withdrawal data  
+export const mockWithdrawals = {
+  withdrawals: [
+    {
+      id: "withdrawal-1",
+      amount: 100.00,
+      fee: 0.10,  // Platform fee (0.1% of 100)
+      status: "complete",
+      type: "usdt_eth",
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      metadata: {
+        address: "0x742E96Ac4fF1234A3b8DcE9B7B5678901234567F",
+        transaction_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+      }
+    },
+    {
+      id: "withdrawal-2", 
+      amount: 250.00,
+      fee: 0.25,  // Platform fee (0.1% of 250)
+      status: "complete",
+      type: "lightning",
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      metadata: {
+        address: "lnbc2500000p1pvjluezsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3"
+      }
+    },
+    {
+      id: "withdrawal-3",
+      amount: 50.00, 
+      fee: 0.05,  // Platform fee (0.1% of 50)
+      status: "pending",
+      type: "usdt_eth",
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      metadata: {
+        address: "0x123ABC456DEF789GHI012JKL345MNO678PQR901S"
+      }
+    }
+  ]
+};
+
 export const mockUserSearchables = {
   searchables: [
     {
@@ -321,6 +361,7 @@ export const mockUserSearchables = {
           description: "A collection of my best design work",
           type: "downloadable",
           currency: "usd",
+          images: ["/api/v1/media/user-item-1-preview-1", "/api/v1/media/user-item-1-preview-2"],
           downloadableFiles: [
             { fileId: "my-file-1", name: "Premium_Designs.zip", price: 39.99 },
             { fileId: "my-file-2", name: "Vector_Graphics.zip", price: 24.99 }
@@ -340,6 +381,7 @@ export const mockUserSearchables = {
           description: "Step-by-step programming tutorials with source code",
           type: "downloadable",
           currency: "usd",
+          images: ["/api/v1/media/user-item-2-preview-1"],
           downloadableFiles: [
             { fileId: "my-file-3", name: "React_Tutorial.zip", price: 49.99 },
             { fileId: "my-file-4", name: "Node_Examples.zip", price: 34.99 }

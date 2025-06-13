@@ -4,7 +4,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
   CircularProgress, Divider, IconButton, MenuItem, Switch
@@ -13,9 +12,8 @@ import { useTheme } from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
-import { compressImage, fileToDataURL } from '../../utils/imageCompression';
 import backend from '../utilities/Backend';
-import ZoomableImage from '../../components/ZoomableImage';
+import ImageUploader from '../../components/ImageUploader';
 
 const PublishDownloadableSearchable = () => {
   console.log("PublishDownloadableSearchable component is being rendered");
@@ -31,11 +29,10 @@ const PublishDownloadableSearchable = () => {
   
   // State for downloadable files
   const [downloadableFiles, setDownloadableFiles] = useState([]);
-  const [newFile, setNewFile] = useState({ name: '', description: '', price: '', file: null });
+  const [newFile, setNewFile] = useState({ name: '', price: '', file: null });
   
   // State for preview images (optional for the downloadable)
   const [images, setImages] = useState([]);
-  const [previewImages, setPreviewImages] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -44,7 +41,6 @@ const PublishDownloadableSearchable = () => {
   
   const account = useSelector((state) => state.account);
   const history = useHistory();
-  const fileInputRef = useRef(null);
   const downloadableFileInputRef = useRef(null);
   
   // Handle form input changes
@@ -56,78 +52,11 @@ const PublishDownloadableSearchable = () => {
     });
   };
 
-  // Function to upload image to media endpoint immediately
-  const uploadImageToMedia = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await backend.post('v1/media/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (response.data.success) {
-        return {
-          media_uri: response.data.media_uri,
-          media_id: response.data.media_id
-        };
-      } else {
-        throw new Error('Upload failed');
-      }
-    } catch (error) {
-      console.error('Error uploading image to media:', error);
-      throw error;
-    }
-  };
-  
-  // Handle preview image uploads (optional)
-  const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    const validImageUris = [];
-    const validPreviews = [];
-    setError(null);
-    setLoading(true);
-    
-    try {
-      for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-          setError(`File "${file.name}" is not an image.`);
-          continue;
-        }
-        
-        // Process and compress the image
-        const processedFile = await compressImage(file, 200);
-        
-        // Upload to media endpoint immediately
-        const uploadResult = await uploadImageToMedia(processedFile);
-        validImageUris.push(uploadResult.media_uri);
-        
-        // Create preview for immediate display
-        const dataUrl = await fileToDataURL(processedFile);
-        validPreviews.push(dataUrl);
-      }
-      
-      setImages([...images, ...validImageUris]);
-      setPreviewImages([...previewImages, ...validPreviews]);
-      
-    } catch (error) {
-      console.error("Error processing images:", error);
-      setError("An error occurred while processing images. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Remove a preview image
-  const removeImage = (index) => {
-    const newImages = [...images];
-    const newPreviews = [...previewImages];
-    newImages.splice(index, 1);
-    newPreviews.splice(index, 1);
-    setImages(newImages);
-    setPreviewImages(newPreviews);
+  // Handle preview image changes from ImageUploader component
+  const handleImagesChange = (newImages) => {
+    // Extract URIs from the image data objects
+    const imageUris = newImages.map(img => img.uri);
+    setImages(imageUris);
   };
   
   // Handle downloadable file selection
@@ -137,7 +66,7 @@ const PublishDownloadableSearchable = () => {
       setNewFile({
         ...newFile,
         file: file,
-        name: file.name // Always use the actual file name
+        name: newFile.name || file.name // Use filename as default name if not set
       });
     }
   };
@@ -153,7 +82,7 @@ const PublishDownloadableSearchable = () => {
   
   // Add downloadable file to the list
   const addDownloadableFile = async () => {
-    if (newFile.file && newFile.price) {
+    if (newFile.name.trim() && newFile.price && newFile.file) {
       try {
         setLoading(true);
         setError(null);
@@ -162,9 +91,9 @@ const PublishDownloadableSearchable = () => {
         const formData = new FormData();
         formData.append('file', newFile.file);
         
-        // Add metadata with description
+        // Add metadata
         const metadata = {
-          description: newFile.description,
+          description: newFile.name,
           type: 'downloadable_content'
         };
         formData.append('metadata', JSON.stringify(metadata));
@@ -177,24 +106,23 @@ const PublishDownloadableSearchable = () => {
         });
         
         if (uploadResponse.data.success) {
-          // Add file info with file_id to the list, include description
+          // Add file info with file_id to the list
           setDownloadableFiles([
             ...downloadableFiles,
             { 
               id: Date.now(),
               name: newFile.name,
-              description: newFile.description,
               price: parseInt(newFile.price),
               fileName: newFile.file.name,
               fileType: newFile.file.type,
               fileSize: newFile.file.size,
-              fileId: uploadResponse.data.file_id,
-              uuid: uploadResponse.data.uuid
+              fileId: uploadResponse.data.file_id, // Store the file_id from upload response
+              uuid: uploadResponse.data.uuid // Store the UUID as well
             }
           ]);
           
           // Reset the input fields
-          setNewFile({ name: '', description: '', price: '', file: null });
+          setNewFile({ name: '', price: '', file: null });
           if (downloadableFileInputRef.current) {
             downloadableFileInputRef.current.value = '';
           }
@@ -242,7 +170,6 @@ const PublishDownloadableSearchable = () => {
             "images": images, // Store image URIs instead of base64
             "downloadableFiles": downloadableFiles.map(file => ({
               name: file.name,
-              description: file.description,
               price: file.price,
               fileName: file.fileName,
               fileType: file.fileType,
@@ -271,7 +198,6 @@ const PublishDownloadableSearchable = () => {
         currency: 'usd'
       });
       setImages([]);
-      setPreviewImages([]);
       setDownloadableFiles([]);
       
       // Redirect to searchables page after a delay
@@ -377,42 +303,15 @@ const PublishDownloadableSearchable = () => {
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Preview Images (Optional)
-                </Typography>
-                <Button
-                  variant="contained"
-                  component="label"
-                  startIcon={<CloudUploadIcon />}
-                  className={classes.fileInputLabel}
-                >
-                  Choose Images
-                  <input
-                    type="file"
-                    id="images"
-                    name="images"
-                    onChange={handleImageUpload}
-                    accept="image/*"
-                    multiple
-                    ref={fileInputRef}
-                    hidden
-                  />
-                </Button>
-
-                <Box className={classes.imagePreviewContainer}>
-                  {previewImages.map((src, index) => (
-                    <Box key={index} className={classes.imagePreview}>
-                      <ZoomableImage src={src} alt={`Preview ${index}`} className={classes.previewImage} />
-                      <IconButton 
-                        size="small"
-                        className={classes.removeImageButton} 
-                        onClick={() => removeImage(index)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Box>
+                <ImageUploader
+                  images={images.map(uri => ({ uri, preview: uri }))}
+                  onImagesChange={handleImagesChange}
+                  maxImages={10}
+                  title="Preview Images (Optional)"
+                  description="Add up to 10 images to showcase your downloadable content"
+                  imageSize={100}
+                  onError={setError}
+                />
               </Grid>
               
               <Grid item xs={12} className={classes.formGroup}>
@@ -424,7 +323,7 @@ const PublishDownloadableSearchable = () => {
                 </Typography>
                 
                 <Box mt={2}>
-                  <Box display="flex" alignItems="center" mb={1}>
+                                    <Box display="flex" alignItems="center" mb={1}>
                     <Button
                       variant="contained"
                       component="label"
@@ -448,12 +347,15 @@ const PublishDownloadableSearchable = () => {
                   <TextField
                     placeholder="File Description"
                     size="small"
-                    name="description"
-                    value={newFile.description}
+                    name="name"
+                    value={newFile.name}
                     onChange={handleFileDataChange}
                     fullWidth
                     style={{ marginBottom: 8 }}
                   />
+                  
+
+                  
                   <Box display="flex" alignItems="center">
                     <TextField
                       placeholder="Price (USD)"
@@ -467,7 +369,7 @@ const PublishDownloadableSearchable = () => {
                     <Button 
                       variant="contained" 
                       onClick={addDownloadableFile}
-                      disabled={!newFile.file || !newFile.price || loading}
+                      disabled={!newFile.name.trim() || !newFile.price || !newFile.file || loading}
                     >
                       {loading ? <CircularProgress size={20} /> : 'Add File'}
                     </Button>
@@ -489,11 +391,6 @@ const PublishDownloadableSearchable = () => {
                           <Typography variant="body2" style={{ fontWeight: 'bold' }}>
                             {item.name}
                           </Typography>
-                          {item.description && (
-                            <Typography variant="caption" color="textSecondary">
-                              {item.description}
-                            </Typography>
-                          )}
                           <Typography variant="caption" color="textSecondary">
                             {item.fileName} ({formatFileSize(item.fileSize)})
                           </Typography>

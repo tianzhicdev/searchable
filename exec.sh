@@ -194,6 +194,7 @@ local_react() {
     echo ""
     
     # Start React development server
+    REACT_APP_MOCK_MODE=true \
     REACT_APP_ENV=local \
     REACT_APP_BRANDING=silkroadonlightning \
     REACT_APP_LOGO=camel_logo.jpg \

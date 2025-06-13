@@ -12,9 +12,6 @@ import {
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { 
-  ShoppingCart, 
-  Store, 
-  Receipt,
   TrendingUp,
   TrendingDown,
   AccountBalanceWallet
@@ -148,119 +145,82 @@ const UserInvoices = () => {
   return (
       <Paper>
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        <Paper style={{ padding: 16, flex: 1, minWidth: 200 }}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <TrendingDown color="secondary" />
-            <Box>
+        <Button
+          style={{ 
+            flex: 1, 
+          }}
+          onClick={() => setActiveTab(0)}
+        >
+          <Box display="flex" alignItems="center" gap={1} width="100%">
+            <TrendingDown/>
+            <Box textAlign="left" flex={1}>
               <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalSpent)}
               </Typography>
-              <Typography className={classes.staticText} >
-                Total Spent ({stats.purchasesCount} purchases)
+              <Typography className={classes.staticText}>
+                Total Spent ({stats.purchasesCount})
               </Typography>
             </Box>
           </Box>
-        </Paper>
+        </Button>
         
-        <Paper style={{ padding: 16, flex: 1, minWidth: 200 }}>
-          <Box display="flex" alignItems="center" gap={1}>
+        <Button
+          style={{ 
+            flex: 1, 
+          }}
+          onClick={() => setActiveTab(1)}
+        >
+          <Box display="flex" alignItems="center" gap={1} width="100%">
             <TrendingUp color="primary" />
-            <Box>
+            <Box textAlign="left" flex={1}>
               <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalEarned)}
               </Typography>
-              <Typography className={classes.staticText} >
-                Total Earned ({stats.salesCount} sales)
+              <Typography className={classes.staticText}>
+                Total Earned ({stats.salesCount})
               </Typography>
             </Box>
           </Box>
-        </Paper>
+        </Button>
         
-        <Paper style={{ padding: 16, flex: 1, minWidth: 200 }}>
-          <Box display="flex" alignItems="center" gap={1}>
+        <Button
+          style={{ 
+            flex: 1, 
+          }}
+          onClick={() => setActiveTab(2)}
+        >
+          <Box display="flex" alignItems="center" gap={1} width="100%">
             <AccountBalanceWallet color="action" />
-            <Box>
+            <Box textAlign="left" flex={1}>
               <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalWithdrawn)}
               </Typography>
-              <Typography className={classes.staticText} >
-                Total Withdrawn ({stats.withdrawalsCount} withdrawals)
+              <Typography className={classes.staticText}>
+                Total Withdrawn ({stats.withdrawalsCount})
               </Typography>
             </Box>
           </Box>
-        </Paper>
+        </Button>
       </Box>
 
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          <Tab 
-            label={
-              <Box display="flex" alignItems="center" gap={1}>
-                <ShoppingCart />
-                <Typography variant="h6" className={classes.staticText}>
-                  My Purchases
-                </Typography>
-                <Chip label={stats.purchasesCount} size="small" />
-              </Box>
-            }
-          />
-          <Tab 
-            label={
-              <Box display="flex" alignItems="center" gap={1}>
-                <Store />
-                <Typography variant="h6" className={classes.staticText}>
-                  My Sales
-                </Typography>
-                <Chip label={stats.salesCount} size="small" />
-              </Box>
-            }
-          />
-          <Tab 
-            label={
-              <Box display="flex" alignItems="center" gap={1}>
-                <Receipt />
-                <Typography variant="h6" className={classes.staticText}>
-                  All Invoices
-                </Typography>
-                <Chip label={invoices.length} size="small" />
-              </Box>
-            }
-          />
-          <Tab 
-            label={
-              <Box display="flex" alignItems="center" gap={1}>
-                <AccountBalanceWallet />
-                <Typography variant="h6" className={classes.staticText}>
-                  Withdrawals
-                </Typography>
-                <Chip label={stats.withdrawalsCount} size="small" />
-              </Box>
-            }
-          />
-        </Tabs>
-
         <Box p={2}>
-          {/* Purchases Tab */}
+          {/* Total Spent Tab */}
           {activeTab === 0 && (
             <Box>
               {purchases.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <ShoppingCart style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                  <TrendingDown style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No purchases yet
                   </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    Your purchase history will appear here
+                    Your spending history will appear here
                   </Typography>
                 </Box>
               ) : (
                 <>
                   <Typography variant="h6" gutterBottom>
-                    Purchase History ({purchases.length})
+                    Total Spent History ({purchases.length})
                   </Typography>
                   {purchases.map((invoice) => (
                     <Invoice
@@ -275,23 +235,23 @@ const UserInvoices = () => {
             </Box>
           )}
 
-          {/* Sales Tab */}
+          {/* Total Earned Tab */}
           {activeTab === 1 && (
             <Box>
               {sales.length === 0 ? (
                 <Box textAlign="center" py={4}>
-                  <Store style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                  <TrendingUp style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No sales yet
                   </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    Your sales history will appear here
+                    Your earnings history will appear here
                   </Typography>
                 </Box>
               ) : (
                 <>
                   <Typography variant="h6" gutterBottom>
-                    Sales History ({sales.length})
+                    Total Earned History ({sales.length})
                   </Typography>
                   {sales.map((invoice) => (
                     <Invoice
@@ -306,39 +266,8 @@ const UserInvoices = () => {
             </Box>
           )}
 
-          {/* All Invoices Tab */}
+          {/* Total Withdrawn Tab */}
           {activeTab === 2 && (
-            <Box>
-              {invoices.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <Receipt style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
-                  <Typography variant="h6" className={classes.staticText}>
-                    No invoices yet
-                  </Typography>
-                  <Typography variant="body2" className={classes.staticText}>
-                    Your complete invoice history will appear here
-                  </Typography>
-                </Box>
-              ) : (
-                <>
-                  <Typography variant="h6" gutterBottom>
-                    All Invoices ({invoices.length})
-                  </Typography>
-                  {invoices.map((invoice) => (
-                    <Invoice
-                      key={invoice.id}
-                      invoice={invoice}
-                      userRole={invoice.user_role}
-                      onRatingSubmitted={handleRatingSubmitted}
-                    />
-                  ))}
-                </>
-              )}
-            </Box>
-          )}
-
-          {/* Withdrawals Tab */}
-          {activeTab === 3 && (
             <Box>
               {withdrawals.length === 0 ? (
                 <Box textAlign="center" py={4}>
@@ -353,32 +282,60 @@ const UserInvoices = () => {
               ) : (
                 <>
                   <Typography variant="h6" gutterBottom>
-                    Withdrawal History ({withdrawals.length})
+                    Total Withdrawn History ({withdrawals.length})
                   </Typography>
                   {withdrawals.map((withdrawal) => (
                     <Paper 
                       key={withdrawal.id} 
-                      style={{ 
-                        padding: 16, 
-                        marginBottom: 16, 
-                        border: withdrawal.status === 'complete' ? `1px solid ${theme.palette.success.main}` : `1px solid ${theme.palette.warning.main}` 
-                      }}
                     >
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Box>
-                          <Typography variant="h6">
-                            {formatCurrency(withdrawal.amount)}
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                        <Box flex={1}>
+                          <Typography variant="h6" className={classes.staticText}>
+                            Withdrawal #{withdrawal.id}
                           </Typography>
-                          <Typography variant="body2" className={classes.staticText}>
+                          <Typography variant="body2" className={classes.systemText}>
                             {new Date(withdrawal.created_at).toLocaleDateString()} at {new Date(withdrawal.created_at).toLocaleTimeString()}
                           </Typography>
                           {withdrawal.metadata?.address && (
-                            <Typography variant="body2" className={classes.staticText}>
+                            <Typography variant="body2" className={classes.systemText}>
                               To: {withdrawal.metadata.address.substring(0, 20)}...
                             </Typography>
                           )}
+                          
+                          {/* Withdrawal Breakdown */}
+                          <Box mt={2} p={2} >
+                            <Typography variant="subtitle2" className={classes.systemText}>
+                              Withdrawal Breakdown:
+                            </Typography>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                              <Typography variant="body2" className={classes.userText}>
+                                Amount:
+                              </Typography>
+                              <Typography variant="body2" className={classes.userText}>
+                                {formatCurrency(withdrawal.amount)}
+                              </Typography>
+                            </Box>
+                            {withdrawal.fee > 0 && (
+                              <Box display="flex" justifyContent="space-between" alignItems="center">
+                                <Typography variant="body2" className={classes.systemText}>
+                                  Platform Fee (0.1%):
+                                </Typography>
+                                <Typography variant="body2" className={classes.systemText}>
+                                  -{formatCurrency(withdrawal.fee)}
+                                </Typography>
+                              </Box>
+                            )}
+                            <Box display="flex" justifyContent="space-between" alignItems="center" style={{ borderTop: '1px solid #ccc', paddingTop: '8px', marginTop: '8px' }}>
+                              <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                Received Amount:
+                              </Typography>
+                              <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                                {formatCurrency(withdrawal.amount - (withdrawal.fee || 0))}
+                              </Typography>
+                            </Box>
+                          </Box>
                         </Box>
-                        <Box textAlign="right">
+                        <Box textAlign="right" ml={2}>
                           <Chip 
                             label={withdrawal.status.toUpperCase()}
                             color={withdrawal.status === 'complete' ? 'primary' : 'default'}
