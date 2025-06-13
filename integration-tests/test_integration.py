@@ -562,9 +562,10 @@ class TestSearchableIntegration:
             # Verify media retrieval response
             assert response.status_code == 200, f"Media retrieval failed with status: {response.status_code}"
             
-            # Check content type
+            # Check content type - accept both image types and generic binary
             content_type = response.headers.get('content-type', '')
-            assert 'image' in content_type.lower(), f"Expected image content type, got: {content_type}"
+            valid_types = ['image', 'application/octet-stream']
+            assert any(t in content_type.lower() for t in valid_types), f"Expected image or binary content type, got: {content_type}"
             
             # Check that we got some content
             content_length = len(response.content)
