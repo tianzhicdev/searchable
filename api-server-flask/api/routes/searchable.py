@@ -1068,6 +1068,14 @@ class DownloadSearchableFile(Resource):
                 # Return the file content with appropriate headers
                 from flask import Response
                 
+                # Use original filename from file metadata instead of searchable fileName
+                original_filename = "download"
+                if file_metadata and isinstance(file_metadata, dict):
+                    original_filename = file_metadata.get('original_filename', 'download')
+                elif target_file:
+                    # Fallback to searchable fileName if metadata is unavailable
+                    original_filename = target_file.get("fileName", "download")
+                
                 def generate():
                     for chunk in download_response.iter_content(chunk_size=8192):
                         if chunk:
@@ -1077,7 +1085,7 @@ class DownloadSearchableFile(Resource):
                     generate(),
                     content_type=download_response.headers.get('content-type', 'application/octet-stream'),
                     headers={
-                        'Content-Disposition': f'attachment; filename="{target_file.get("fileName", "download")}"',
+                        'Content-Disposition': f'attachment; filename="{original_filename}"',
                         'Content-Length': download_response.headers.get('content-length', '')
                     }
                 )

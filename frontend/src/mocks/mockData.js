@@ -19,19 +19,22 @@ export const mockSearchableItem = {
       downloadableFiles: [
         {
           fileId: "file-1",
-          name: "Design_Templates_Pack.zip",
+          name: "Professional Design Templates",
+          fileName: "design_templates_v1.2.zip",
           description: "Professional design templates for various projects",
           price: 29.99
         },
         {
           fileId: "file-2", 
-          name: "Stock_Photos_Collection.zip",
+          name: "Stock Photos Collection",
+          fileName: "stock_photos_hd_collection.zip",
           description: "High-resolution stock photos for commercial use",
           price: 49.99
         },
         {
           fileId: "file-3",
-          name: "Source_Code_Examples.zip",
+          name: "Source Code Examples",
+          fileName: "clean_source_code_samples.zip", 
           description: "Clean, documented source code examples",
           price: 19.99
         }
