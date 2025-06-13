@@ -160,14 +160,14 @@ export const mockInvoices = {
   invoices: [
     {
       id: "invoice-1",
-      amount: 29.99,
+      amount: 29.99,  // Original amount without fees
       payment_status: "complete",
       type: "stripe",
       currency: "usd",
       other_party_username: "DigitalAssetStore",
       payment_date: new Date(Date.now() - 3000000).toISOString(),
       created_at: new Date(Date.now() - 3600000).toISOString(),
-      fee: 1.05,
+      fee: 0.03,  // Platform fee (0.1% of 29.99)
       buyer_id: "mock-user-1",
       seller_id: "mock-terminal-1",
       searchable_id: "mock-item-1",
@@ -175,6 +175,7 @@ export const mockInvoices = {
         address: "123 Main St, City, State 12345",
         tel: "+1-555-0123",
         description: "Premium Digital Asset Bundle",
+        stripe_fee: 1.05,  // Stripe fee (3.5% of 29.99)
         selections: [
           {
             id: "file-1",
@@ -187,14 +188,14 @@ export const mockInvoices = {
     },
     {
       id: "invoice-2",
-      amount: 79.97,
+      amount: 79.98,  // 29.99 + 49.99
       payment_status: "complete",
       type: "stripe",
       currency: "usd",
       other_party_username: "DigitalAssetStore",
       payment_date: new Date(Date.now() - 6600000).toISOString(),
       created_at: new Date(Date.now() - 7200000).toISOString(),
-      fee: 2.80,
+      fee: 0.08,  // Platform fee (0.1% of 79.98)
       buyer_id: "mock-user-2",
       seller_id: "mock-terminal-1",
       searchable_id: "mock-item-1",
@@ -202,6 +203,7 @@ export const mockInvoices = {
         address: "456 Oak Ave, Another City, State 67890", 
         tel: "+1-555-0456",
         description: "Premium Digital Asset Bundle (x2 files)",
+        stripe_fee: 2.80,  // Stripe fee (3.5% of 79.98)
         selections: [
           {
             id: "file-1",
@@ -227,7 +229,7 @@ export const mockInvoices = {
       other_party_username: "EbookPublisher",
       payment_date: null,
       created_at: new Date(Date.now() - 1800000).toISOString(),
-      fee: 0,
+      fee: 0.02,  // Platform fee (0.1% of 15.50)
       buyer_id: "mock-user-3",
       seller_id: "mock-terminal-2",
       searchable_id: "mock-item-2",
@@ -235,6 +237,7 @@ export const mockInvoices = {
         address: "",
         tel: "",
         description: "E-book Collection",
+        stripe_fee: 0.54,  // Stripe fee (3.5% of 15.50)
         selections: [
           {
             id: "ebook-1",
@@ -254,7 +257,7 @@ export const mockInvoices = {
       other_party_username: "TechAcademy",
       payment_date: new Date(Date.now() - 85800000).toISOString(),
       created_at: new Date(Date.now() - 86400000).toISOString(),
-      fee: 7.00,
+      fee: 0.20,  // Platform fee (0.1% of 199.99)
       buyer_id: "mock-user-1",
       seller_id: "mock-terminal-3",
       searchable_id: "mock-item-3",
@@ -262,6 +265,7 @@ export const mockInvoices = {
         address: "789 Pine St, Metro City, State 11111",
         tel: "+1-555-0789",
         description: "Complete Course Bundle",
+        stripe_fee: 7.00,  // Stripe fee (3.5% of 199.99)
         selections: [
           {
             id: "course-1",
@@ -281,7 +285,7 @@ export const mockInvoices = {
       other_party_username: "DigitalAssetStore",
       payment_date: null,
       created_at: new Date(Date.now() - 43200000).toISOString(),
-      fee: 0,
+      fee: 0.02,  // Platform fee (0.1% of 19.99)
       buyer_id: "mock-user-4",
       seller_id: "mock-terminal-1",
       searchable_id: "mock-item-1",
@@ -289,6 +293,7 @@ export const mockInvoices = {
         address: "321 Elm St, Small Town, State 22222",
         tel: "+1-555-0321",
         description: "Source Code Examples",
+        stripe_fee: 0.70,  // Stripe fee (3.5% of 19.99)
         selections: [
           {
             id: "file-3",

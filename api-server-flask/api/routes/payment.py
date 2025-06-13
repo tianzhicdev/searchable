@@ -55,25 +55,33 @@ def validate_payment_request(data):
     }
 
 
-def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata):
+def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, platform_fee, stripe_fee, currency, invoice_type, external_id, metadata):
     """Insert an invoice record and corresponding unpaid payment record into the database"""
     try:
-        # Create the invoice record
+        # Add fees to metadata for reference
+        invoice_metadata = metadata.copy()
+        invoice_metadata['stripe_fee'] = stripe_fee
+        
+        # Create the invoice record with platform fee
         invoice = create_invoice(
             buyer_id=buyer_id,
             seller_id=seller_id,
             searchable_id=searchable_id,
             amount=amount,
+            fee=platform_fee,  # Platform fee (0.1%)
             currency=currency,
             invoice_type=invoice_type,
             external_id=external_id,
-            metadata=metadata
+            metadata=invoice_metadata
         )
         
         if invoice:
-            logger.info(f"Invoice created with ID: {invoice['id']}")
+            logger.info(f"Invoice created with ID: {invoice['id']}, amount: {amount}, platform_fee: {platform_fee}")
             
             # Create corresponding unpaid payment record
+            # Payment amount includes the Stripe fee that user pays
+            payment_amount = amount + stripe_fee
+            
             payment_metadata = {
                 "address": metadata.get('address', ''),
                 "tel": metadata.get('tel', ''),
@@ -84,7 +92,8 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, currency, 
             
             payment = create_payment(
                 invoice_id=invoice['id'],
-                amount=amount,
+                amount=payment_amount,  # Total amount user pays (including Stripe fee)
+                fee=stripe_fee,         # Stripe fee
                 currency=currency,
                 payment_type=invoice_type,
                 external_id=external_id,
@@ -243,8 +252,18 @@ class CreateInvoiceV1(Resource):
                 cancel_url = data.get('cancel_url')
                 # Get item name
                 item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
+                
+                # Calculate fees
+                # Platform fee: 0.1% of the total amount
+                platform_fee = total_amount_usd * 0.001  # 0.1%
+                
+                # Stripe fee: 3.5% of total amount (which user pays on top)
+                stripe_fee = total_amount_usd * 0.035  # 3.5%
+                
+                # Amount user pays = total + stripe fee
+                amount_to_charge = total_amount_usd + stripe_fee
+                
                 # Create Stripe checkout session
-                total_amount_usd_with_fee = int(total_amount_usd * 1.035)
                 session = stripe.checkout.Session.create(
                     line_items=[{
                         'price_data': {
@@ -252,7 +271,7 @@ class CreateInvoiceV1(Resource):
                             'product_data': {
                                 'name': item_name, 
                             },
-                            'unit_amount': total_amount_usd_with_fee * 100, # stripe use cents
+                            'unit_amount': int(amount_to_charge * 100), # stripe uses cents
                         },
                         'quantity': 1,
                     }],
@@ -270,11 +289,14 @@ class CreateInvoiceV1(Resource):
                 }
                 
                 # Use the helper function to insert the record
+                # Invoice.amount = total price, Invoice.fee = platform fee (0.1%)
                 invoice_record = insert_invoice_record(
                     buyer_id=buyer_id,
                     seller_id=seller_id,
                     searchable_id=searchable_id,
-                    amount=total_amount_usd_with_fee,
+                    amount=total_amount_usd,  # Original amount without any fees
+                    platform_fee=platform_fee,  # 0.1% platform fee
+                    stripe_fee=stripe_fee,      # 3.5% Stripe fee (for reference)
                     currency=Currency.USD.value,
                     invoice_type=PaymentType.STRIPE.value,
                     external_id=session.id,
@@ -286,7 +308,12 @@ class CreateInvoiceV1(Resource):
                 
                 return {
                     'url': session.url,
-                    'session_id': session.id
+                    'session_id': session.id,
+                    'invoice_id': invoice_record['id'],
+                    'amount': total_amount_usd,
+                    'platform_fee': platform_fee,
+                    'stripe_fee': stripe_fee,
+                    'total_charged': amount_to_charge
                 }, 200
             else:
                 return {"error": "Invalid invoice type. Must be 'stripe'"}, 400

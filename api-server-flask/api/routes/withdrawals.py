@@ -48,6 +48,9 @@ class WithdrawFundsUSD(Resource):
                     "withdrawal_amount": amount
                 }, 400
             
+            # Calculate withdrawal fee (0.1%)
+            withdrawal_fee = amount * 0.001  # 0.1%
+            
             # Generate a unique transaction ID for this withdrawal
             tx_id = f"usd-{current_user.id}-{int(time.time())}"
             
@@ -55,13 +58,16 @@ class WithdrawFundsUSD(Resource):
             withdrawal_metadata = {
                 'address': address,
                 'timestamp': int(time.time()),
-                'original_amount': amount
+                'original_amount': amount,
+                'fee_percentage': 0.1,
+                'amount_after_fee': amount - withdrawal_fee
             }
             
-            # Create withdrawal record
+            # Create withdrawal record with fee
             withdrawal = create_withdrawal(
                 user_id=current_user.id,
                 amount=amount,
+                fee=withdrawal_fee,
                 currency=Currency.USD.value,
                 withdrawal_type='bank_transfer',
                 external_id=tx_id,
@@ -69,11 +75,14 @@ class WithdrawFundsUSD(Resource):
             )
             
             if withdrawal:
-                logger.info(f"USD withdrawal created with ID: {withdrawal['id']}")
+                logger.info(f"USD withdrawal created with ID: {withdrawal['id']}, amount: {amount}, fee: {withdrawal_fee}")
                 return {
                     "success": True, 
                     "msg": "Withdrawal request submitted successfully", 
-                    "withdrawal_id": withdrawal['id']
+                    "withdrawal_id": withdrawal['id'],
+                    "amount": amount,
+                    "fee": withdrawal_fee,
+                    "amount_after_fee": amount - withdrawal_fee
                 }, 200
             else:
                 return {"error": "Failed to create withdrawal record"}, 500

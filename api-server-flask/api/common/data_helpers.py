@@ -318,7 +318,7 @@ def get_withdrawals(user_id=None, status=None, currency=None):
         logger.error(f"Error retrieving withdrawals: {str(e)}")
         return []
 
-def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice_type, external_id, metadata=None):
+def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, metadata=None):
     """
     Creates a new invoice record
     Note: Status is now determined by related payment records, not stored in invoice
@@ -330,8 +330,8 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
         metadata = metadata or {}
         
         execute_sql(cur, f"""
-            INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, currency, type, external_id, metadata)
-            VALUES ({buyer_id}, {seller_id}, {searchable_id}, {amount}, '{currency}', '{invoice_type}', '{external_id}', {Json(metadata)})
+            INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata)
+            VALUES ({buyer_id}, {seller_id}, {searchable_id}, {amount}, {fee}, '{currency}', '{invoice_type}', '{external_id}', {Json(metadata)})
             RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
         """, commit=True, connection=conn)
         
@@ -360,7 +360,7 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, currency, invoice
         logger.error(f"Error creating invoice: {str(e)}")
         return None
 
-def create_payment(invoice_id, amount, currency, payment_type, external_id=None, metadata=None):
+def create_payment(invoice_id, amount, fee, currency, payment_type, external_id=None, metadata=None):
     """
     Creates a new payment record
     """
@@ -371,8 +371,8 @@ def create_payment(invoice_id, amount, currency, payment_type, external_id=None,
         metadata = metadata or {}
         
         execute_sql(cur, f"""
-            INSERT INTO payment (invoice_id, amount, currency, type, external_id, metadata)
-            VALUES ({invoice_id}, {amount}, '{currency}', '{payment_type}', '{external_id}', {Json(metadata)})
+            INSERT INTO payment (invoice_id, amount, fee, currency, type, external_id, metadata)
+            VALUES ({invoice_id}, {amount}, {fee}, '{currency}', '{payment_type}', '{external_id}', {Json(metadata)})
             RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
         """, commit=True, connection=conn)
         
@@ -448,7 +448,7 @@ def update_payment_status(payment_id, status, metadata=None):
         logger.error(f"Error updating payment status: {str(e)}")
         return None
 
-def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=None, metadata=None):
+def create_withdrawal(user_id, amount, fee, currency, withdrawal_type, external_id=None, metadata=None):
     """
     Creates a new withdrawal record
     """
@@ -459,8 +459,8 @@ def create_withdrawal(user_id, amount, currency, withdrawal_type, external_id=No
         metadata = metadata or {}
         
         execute_sql(cur, f"""
-            INSERT INTO withdrawal (user_id, amount, currency, type, external_id, metadata)
-            VALUES ({user_id}, {amount}, '{currency}', '{withdrawal_type}', '{external_id}', {Json(metadata)})
+            INSERT INTO withdrawal (user_id, amount, fee, currency, type, external_id, metadata)
+            VALUES ({user_id}, {amount}, {fee}, '{currency}', '{withdrawal_type}', '{external_id}', {Json(metadata)})
             RETURNING id, user_id, amount, fee, currency, type, external_id, status, created_at, metadata
         """, commit=True, connection=conn)
         
