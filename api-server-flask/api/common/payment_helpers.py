@@ -16,13 +16,17 @@ def calc_invoice(searchable_data, selections):
         dict: Invoice calculation results with amount_usd and description
     """
     try:
+        logger.info("Calculating invoice with searchable_data and selections")
+        logger.info(f"searchable_data: {searchable_data}")
+        logger.info(f"selections: {selections}")
+
         # Extract pricing information from searchable data
         payloads = searchable_data.get('payloads', {})
         public_data = payloads.get('public', {})
         private_data = payloads.get('private', {})
         
         # Get base price (default to $1.00 if not specified)
-        base_price_usd = float(public_data.get('price', 1.0))
+        base_price_usd = float(public_data.get('price'))
         
         # Calculate total based on selections
         total_items = len(selections) if selections else 1
