@@ -233,7 +233,7 @@ class CreateInvoiceV1(Resource):
             # Calculate invoice details
             invoice_details = calc_invoice(searchable_data, selections)
             
-            amount_usd_cents = invoice_details["amount_usd_cents"]
+            total_amount_usd = invoice_details["total_amount_usd"]
             description = invoice_details["description"]
 
             # Process Stripe checkout (USD only)
@@ -244,7 +244,7 @@ class CreateInvoiceV1(Resource):
                 # Get item name
                 item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
                 # Create Stripe checkout session
-                amount_usd_cents_with_fee = int(amount_usd_cents * 1.035)
+                total_amount_usd_with_fee = int(total_amount_usd * 1.035)
                 session = stripe.checkout.Session.create(
                     line_items=[{
                         'price_data': {
@@ -252,7 +252,7 @@ class CreateInvoiceV1(Resource):
                             'product_data': {
                                 'name': item_name, 
                             },
-                            'unit_amount': amount_usd_cents_with_fee * 100, # stripe use cents
+                            'unit_amount': total_amount_usd_with_fee * 100, # stripe use cents
                         },
                         'quantity': 1,
                     }],
