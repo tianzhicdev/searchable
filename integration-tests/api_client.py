@@ -230,3 +230,160 @@ class SearchableAPIClient:
         self.token = None
         if 'authorization' in self.session.headers:
             del self.session.headers['authorization']
+    
+    # Withdrawal Methods
+    def create_usdt_withdrawal(self, withdrawal_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a USD withdrawal as USDT"""
+        url = f"{self.base_url}/v1/withdrawal-usd"
+        response = self.session.post(url, json=withdrawal_data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_withdrawal_history(self) -> Dict[str, Any]:
+        """Get withdrawal history for current user"""
+        url = f"{self.base_url}/v1/withdrawals"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_withdrawal_status(self, withdrawal_id: int) -> Dict[str, Any]:
+        """Get status of specific withdrawal"""
+        url = f"{self.base_url}/v1/withdrawal-status/{withdrawal_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Rating Methods
+    def check_rating_eligibility(self, invoice_id: str) -> Dict[str, Any]:
+        """Check if user can rate a specific invoice"""
+        url = f"{self.base_url}/v1/rating/can-rate/{invoice_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_user_purchases(self) -> Dict[str, Any]:
+        """Get user's purchases that can be rated"""
+        url = f"{self.base_url}/v1/user/purchases"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def submit_rating(self, rating_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Submit a rating for a purchased item"""
+        url = f"{self.base_url}/v1/rating/submit"
+        response = self.session.post(url, json=rating_data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_searchable_ratings(self, searchable_id: int) -> Dict[str, Any]:
+        """Get ratings for a specific searchable item"""
+        url = f"{self.base_url}/v1/rating/searchable/{searchable_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_terminal_ratings(self, terminal_id: int) -> Dict[str, Any]:
+        """Get overall ratings for a terminal/user"""
+        url = f"{self.base_url}/v1/rating/terminal/{terminal_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # File Management Methods
+    def get_file_metadata(self, file_id: int) -> Dict[str, Any]:
+        """Get metadata for a specific file"""
+        url = f"{self.base_url}/v1/files/{file_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def list_user_files(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        """List user's files with pagination"""
+        url = f"{self.base_url}/v1/files"
+        params = {'page': page, 'pageSize': page_size}
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def delete_file(self, file_id: int) -> Dict[str, Any]:
+        """Delete a specific file"""
+        url = f"{self.base_url}/v1/files/{file_id}"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def update_file_metadata(self, file_id: int, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Update file metadata (if supported)"""
+        url = f"{self.base_url}/v1/files/{file_id}/metadata"
+        response = self.session.put(url, json=metadata, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Profile Methods
+    def get_current_profile(self) -> Dict[str, Any]:
+        """Get current user's profile"""
+        url = f"{self.base_url}/v1/profile"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_profile_by_id(self, user_id: int) -> Dict[str, Any]:
+        """Get user profile by ID"""
+        url = f"{self.base_url}/v1/profile/{user_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def update_profile(self, profile_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update current user's profile"""
+        url = f"{self.base_url}/v1/profile"
+        response = self.session.put(url, json=profile_data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Invoice Methods
+    def get_user_invoices(self) -> Dict[str, Any]:
+        """Get all user invoices (purchases, sales, etc.)"""
+        url = f"{self.base_url}/v1/user/invoices"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Balance Methods  
+    def get_balance(self) -> Dict[str, Any]:
+        """Get user's current balance"""
+        url = f"{self.base_url}/balance"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Invoice Notes Methods
+    def get_invoice_notes(self, invoice_id: str) -> Dict[str, Any]:
+        """Get notes for a specific invoice"""
+        url = f"{self.base_url}/v1/invoice/{invoice_id}/notes"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def create_invoice_note(self, invoice_id: str, note_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a note for a specific invoice"""
+        url = f"{self.base_url}/v1/invoice/{invoice_id}/notes"
+        response = self.session.post(url, json=note_data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    # Payment Refresh Methods
+    def refresh_payment_status(self, invoice_id: str) -> Dict[str, Any]:
+        """Refresh status of a specific payment"""
+        url = f"{self.base_url}/v1/refresh-payment"
+        data = {'invoice_id': invoice_id}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def refresh_payments_by_searchable(self, searchable_id: int) -> Dict[str, Any]:
+        """Refresh all payments for a specific searchable"""
+        url = f"{self.base_url}/v1/refresh-payments-by-searchable/{searchable_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
