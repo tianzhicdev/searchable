@@ -668,7 +668,9 @@ class TestSearchableIntegration:
             assert 'token' in buyer_login_response, f"Buyer login failed: {buyer_login_response}"
             
             # Create invoice for the searchable item as buyer (will be pending by default)
-            selections = [{"id": 1, "type": "service", "name": "Basic Service", "price": 5.00}]  # Minimal selection for testing
+            # Use the actual file ID from our created searchable
+            file_id = self.uploaded_file.get('file_id') or self.uploaded_file.get('fileId', 999999)
+            selections = [{"id": file_id, "type": "downloadable", "name": "Download sample.txt", "price": 1.99}]
             invoice_response = self.client.create_invoice(
                 searchable_id=self.created_searchable_id,
                 selections=selections,
@@ -678,14 +680,14 @@ class TestSearchableIntegration:
             # Verify the new fee structure in the response if available
             if 'invoice' in invoice_response:
                 invoice_data = invoice_response['invoice']
-                expected_platform_fee = 5.00 * 0.001  # 0.1%
+                expected_platform_fee = 1.99 * 0.001  # 0.1%
                 print(f"  Created invoice amount: ${invoice_data['amount']:.2f}")
                 print(f"  Platform fee: ${invoice_data['fee']:.2f} (expected: ${expected_platform_fee:.2f})")
             
             if 'payment' in invoice_response:
                 payment_data = invoice_response['payment']
-                expected_stripe_fee = 5.00 * 0.035  # 3.5%
-                expected_payment_amount = 5.00 + expected_stripe_fee
+                expected_stripe_fee = 1.99 * 0.035  # 3.5%
+                expected_payment_amount = 1.99 + expected_stripe_fee
                 print(f"  Payment amount: ${payment_data['amount']:.2f} (expected: ${expected_payment_amount:.2f})")
                 print(f"  Stripe fee: ${payment_data['fee']:.2f} (expected: ${expected_stripe_fee:.2f})")
             
