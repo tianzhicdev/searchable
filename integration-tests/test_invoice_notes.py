@@ -15,12 +15,12 @@ class TestInvoiceNotes:
         cls.test_id = str(uuid.uuid4())[:8]
         
         # Seller
-        cls.seller_username = f"{TEST_USER_PREFIX}seller_notes_{cls.test_id}"
+        cls.seller_username = f"{TEST_USER_PREFIX}sn_{cls.test_id}"
         cls.seller_email = f"{cls.seller_username}@{TEST_EMAIL_DOMAIN}"
         cls.seller_client = SearchableAPIClient()
         
         # Buyer
-        cls.buyer_username = f"{TEST_USER_PREFIX}buyer_notes_{cls.test_id}"
+        cls.buyer_username = f"{TEST_USER_PREFIX}bn_{cls.test_id}"
         cls.buyer_email = f"{cls.buyer_username}@{TEST_EMAIL_DOMAIN}"
         cls.buyer_client = SearchableAPIClient()
         

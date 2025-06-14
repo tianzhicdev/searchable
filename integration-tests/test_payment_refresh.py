@@ -15,17 +15,17 @@ class TestPaymentRefresh:
         cls.test_id = str(uuid.uuid4())[:8]
         
         # Seller
-        cls.seller_username = f"{TEST_USER_PREFIX}seller_refresh_{cls.test_id}"
+        cls.seller_username = f"{TEST_USER_PREFIX}s_{cls.test_id}"
         cls.seller_email = f"{cls.seller_username}@{TEST_EMAIL_DOMAIN}"
         cls.seller_client = SearchableAPIClient()
         
         # Buyer 1
-        cls.buyer1_username = f"{TEST_USER_PREFIX}buyer1_refresh_{cls.test_id}"
+        cls.buyer1_username = f"{TEST_USER_PREFIX}b1_{cls.test_id}"
         cls.buyer1_email = f"{cls.buyer1_username}@{TEST_EMAIL_DOMAIN}"
         cls.buyer1_client = SearchableAPIClient()
         
         # Buyer 2  
-        cls.buyer2_username = f"{TEST_USER_PREFIX}buyer2_refresh_{cls.test_id}"
+        cls.buyer2_username = f"{TEST_USER_PREFIX}b2_{cls.test_id}"
         cls.buyer2_email = f"{cls.buyer2_username}@{TEST_EMAIL_DOMAIN}"
         cls.buyer2_client = SearchableAPIClient()
         
@@ -103,7 +103,7 @@ class TestPaymentRefresh:
         
         searchable_response = self.seller_client.create_searchable(searchable_data)
         assert 'searchable_id' in searchable_response
-        self.searchable_id = searchable_response['searchable_id']
+        self.__class__.searchable_id = searchable_response['searchable_id']
         
         print(f"✓ Searchable created: {self.searchable_id}")
     
@@ -111,22 +111,23 @@ class TestPaymentRefresh:
         """Create multiple invoices with different statuses for refresh testing"""
         print("Creating multiple invoices for refresh testing")
         
-        # Buyer 1 creates and completes payment
-        invoice_data_1 = {
-            'searchable_id': self.searchable_id,
-            'currency': 'usd',
-            'selections': [
-                {
-                    'id': 'refresh-test-file-1',
-                    'type': 'downloadable',
-                    'name': 'Refresh Test File 1',
-                    'price': 19.99
-                }
-            ]
-        }
+        # Get the searchable to use proper selectables
+        searchable_info = self.seller_client.get_searchable(self.searchable_id)
+        public_data = searchable_info['payloads']['public']
         
-        invoice_response_1 = self.buyer1_client.create_invoice(invoice_data_1)
-        assert 'invoice_id' in invoice_response_1
+        # Buyer 1 creates and completes payment - use actual selectable format
+        if 'selectables' in public_data and public_data['selectables']:
+            selections_1 = [public_data['selectables'][0]]  # First downloadable
+        else:
+            # Fallback to downloadableFiles format
+            selections_1 = [public_data['downloadableFiles'][0]]
+        
+        invoice_response_1 = self.buyer1_client.create_invoice(
+            self.searchable_id,
+            selections_1,
+            "stripe"
+        )
+        assert 'session_id' in invoice_response_1 or 'url' in invoice_response_1
         
         # Complete payment for first invoice
         session_id_1 = invoice_response_1.get('session_id')
@@ -136,31 +137,31 @@ class TestPaymentRefresh:
             payment_response_1 = {'success': False, 'message': 'No session_id found'}
         assert payment_response_1['success']
         
+        amount_1 = selections_1[0].get('price', 19.99)
         self.created_invoices.append({
-            'invoice_id': invoice_response_1['invoice_id'],
+            'session_id': session_id_1,
             'buyer': 'buyer1',
             'status': 'complete',
-            'amount': 19.99
+            'amount': amount_1
         })
         
-        print(f"✓ Invoice 1 created and completed: {invoice_response_1['invoice_id']}")
+        print(f"✓ Invoice 1 created and completed: {session_id_1}")
         
         # Buyer 2 creates and completes payment  
-        invoice_data_2 = {
-            'searchable_id': self.searchable_id,
-            'currency': 'usd',
-            'selections': [
-                {
-                    'id': 'refresh-test-file-2',
-                    'type': 'downloadable',
-                    'name': 'Refresh Test File 2',
-                    'price': 29.99
-                }
-            ]
-        }
+        if len(public_data.get('selectables', [])) > 1:
+            selections_2 = [public_data['selectables'][1]]  # Second downloadable
+        elif len(public_data.get('downloadableFiles', [])) > 1:
+            selections_2 = [public_data['downloadableFiles'][1]]  # Second downloadable
+        else:
+            # Use first one if only one available
+            selections_2 = selections_1
         
-        invoice_response_2 = self.buyer2_client.create_invoice(invoice_data_2)
-        assert 'invoice_id' in invoice_response_2
+        invoice_response_2 = self.buyer2_client.create_invoice(
+            self.searchable_id,
+            selections_2,
+            "stripe"
+        )
+        assert 'session_id' in invoice_response_2 or 'url' in invoice_response_2
         
         # Complete payment for second invoice
         session_id_2 = invoice_response_2.get('session_id')
@@ -170,47 +171,42 @@ class TestPaymentRefresh:
             payment_response_2 = {'success': False, 'message': 'No session_id found'}
         assert payment_response_2['success']
         
+        amount_2 = selections_2[0].get('price', 29.99)
         self.created_invoices.append({
-            'invoice_id': invoice_response_2['invoice_id'],
+            'session_id': session_id_2,
             'buyer': 'buyer2',
             'status': 'complete',
-            'amount': 29.99
+            'amount': amount_2
         })
         
-        print(f"✓ Invoice 2 created and completed: {invoice_response_2['invoice_id']}")
+        print(f"✓ Invoice 2 created and completed: {session_id_2}")
         
         # Buyer 1 creates another invoice but doesn't complete payment (pending)
-        invoice_data_3 = {
-            'searchable_id': self.searchable_id,
-            'currency': 'usd',
-            'selections': [
-                {
-                    'id': 'refresh-test-file-1',
-                    'type': 'downloadable',
-                    'name': 'Refresh Test File 1',
-                    'price': 19.99
-                },
-                {
-                    'id': 'refresh-test-file-2',
-                    'type': 'downloadable',
-                    'name': 'Refresh Test File 2',
-                    'price': 29.99
-                }
-            ]
-        }
+        # Use available selectables for this invoice
+        selections_3 = []
+        if 'selectables' in public_data:
+            selections_3 = public_data['selectables'][:2]  # Take first two if available
+        else:
+            selections_3 = public_data['downloadableFiles'][:2]  # Take first two if available
         
-        invoice_response_3 = self.buyer1_client.create_invoice(invoice_data_3)
-        assert 'invoice_id' in invoice_response_3
+        invoice_response_3 = self.buyer1_client.create_invoice(
+            self.searchable_id,
+            selections_3,
+            "stripe"
+        )
+        assert 'session_id' in invoice_response_3 or 'url' in invoice_response_3
         
         # Don't complete payment - leave pending
+        session_id_3 = invoice_response_3.get('session_id')
+        amount_3 = sum(selection.get('price', 0) for selection in selections_3)
         self.created_invoices.append({
-            'invoice_id': invoice_response_3['invoice_id'],
+            'session_id': session_id_3,
             'buyer': 'buyer1',
             'status': 'pending',
-            'amount': 49.98
+            'amount': amount_3
         })
         
-        print(f"✓ Invoice 3 created (pending): {invoice_response_3['invoice_id']}")
+        print(f"✓ Invoice 3 created (pending): {session_id_3}")
         
         assert len(self.created_invoices) == 3
     
@@ -219,7 +215,7 @@ class TestPaymentRefresh:
         print("Testing individual payment refresh")
         
         for invoice_info in self.created_invoices:
-            invoice_id = invoice_info['invoice_id']
+            invoice_id = invoice_info['session_id']
             expected_status = invoice_info['status']
             
             try:
@@ -262,12 +258,12 @@ class TestPaymentRefresh:
                 
                 # Verify all payment statuses are still correct
                 for invoice_info in self.created_invoices:
-                    status_response = self.seller_client.check_payment_status(invoice_info['invoice_id'])
+                    status_response = self.seller_client.check_payment_status(invoice_info['session_id'])
                     current_status = status_response.get('status')
                     expected_status = invoice_info['status']
                     
                     assert current_status == expected_status
-                    print(f"  Invoice {invoice_info['invoice_id']}: {current_status}")
+                    print(f"  Invoice {invoice_info['session_id']}: {current_status}")
                     
             else:
                 print(f"! Bulk payment refresh failed: {bulk_refresh_response}")
@@ -280,7 +276,7 @@ class TestPaymentRefresh:
         print("Testing payment status consistency")
         
         for invoice_info in self.created_invoices:
-            invoice_id = invoice_info['invoice_id']
+            invoice_id = invoice_info['session_id']
             expected_status = invoice_info['status']
             
             # Check status multiple times to ensure consistency
@@ -311,7 +307,7 @@ class TestPaymentRefresh:
                 start_time = time.time()
                 
                 try:
-                    refresh_response = self.seller_client.refresh_payment_status(invoice_info['invoice_id'])
+                    refresh_response = self.seller_client.refresh_payment_status(invoice_info['session_id'])
                     end_time = time.time()
                     
                     refresh_time = end_time - start_time
