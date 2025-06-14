@@ -298,7 +298,7 @@ const UserInvoices = () => {
                           </Typography>
                           {withdrawal.metadata?.address && (
                             <Typography variant="body2" className={classes.systemText}>
-                              To: {withdrawal.metadata.address.substring(0, 20)}...
+                              To: {withdrawal.metadata.address}
                             </Typography>
                           )}
                           
