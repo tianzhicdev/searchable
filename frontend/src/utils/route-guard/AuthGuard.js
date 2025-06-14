@@ -1,10 +1,13 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { LOGOUT } from '../../store/actions';
+import { LOGOUT, ACCOUNT_INITIALIZE } from '../../store/actions';
 import { isMockMode } from '../../mocks/mockBackend';
+import { generateGuestCredentials } from '../guestUtils';
+import configData from '../../config';
+import axios from 'axios';
 
 
 //-----------------------|| AUTH GUARD ||-----------------------//
@@ -14,8 +17,7 @@ import { isMockMode } from '../../mocks/mockBackend';
  * @param {PropTypes.node} children children element/node
  */
 const AuthGuard = ({ children }) => {
-
-
+    const [isCreatingGuest, setIsCreatingGuest] = useState(false);
 
     const account = useSelector((state) => state.account);
     const dispatcher = useDispatch();
@@ -66,14 +68,90 @@ const AuthGuard = ({ children }) => {
         path: window.location.pathname
     });
 
+    /**
+     * Creates a guest account automatically for unauthenticated users
+     */
+    const createGuestAccount = async () => {
+        if (isCreatingGuest) return; // Prevent multiple simultaneous calls
+        
+        setIsCreatingGuest(true);
+        console.log('AuthGuard: Creating guest account automatically');
+        
+        try {
+            const guestCredentials = generateGuestCredentials();
+            
+            // First try to register the guest user
+            const registerResponse = await axios.post(configData.API_SERVER + 'users/register', {
+                username: guestCredentials.username,
+                email: guestCredentials.email,
+                password: guestCredentials.password
+            });
+            
+            if (registerResponse.data.success) {
+                // Now login the guest user
+                const loginResponse = await axios.post(configData.API_SERVER + 'users/login', {
+                    email: guestCredentials.email,
+                    password: guestCredentials.password
+                });
+                
+                if (loginResponse.data.success) {
+                    console.log('AuthGuard: Guest account created and logged in successfully', {
+                        username: guestCredentials.username,
+                        email: guestCredentials.email
+                    });
+                    
+                    // Clear the logout flag since user is now logged in
+                    sessionStorage.removeItem('userLoggedOut');
+                    
+                    dispatcher({
+                        type: ACCOUNT_INITIALIZE,
+                        payload: { 
+                            isLoggedIn: true, 
+                            user: loginResponse.data.user, 
+                            token: loginResponse.data.token 
+                        }
+                    });
+                } else {
+                    console.error('AuthGuard: Failed to login guest user', loginResponse.data);
+                    setIsCreatingGuest(false);
+                }
+            } else {
+                console.error('AuthGuard: Failed to register guest user', registerResponse.data);
+                setIsCreatingGuest(false);
+            }
+        } catch (error) {
+            console.error('AuthGuard: Error creating guest account', error);
+            setIsCreatingGuest(false);
+        }
+    };
+
     if (!isLoggedIn || tokenExpired) { 
-        // dispatcher({ type: LOGOUT });
-        // hard lesson: dispatcher can trigger a re-render, which can cause a loop
-        console.log('AuthGuard: Redirecting to login due to', {
+        console.log('AuthGuard: User not authenticated', {
             reason: !isLoggedIn ? 'user not logged in' : 'token expired',
             timestamp: new Date().toISOString(),
             path: window.location.pathname
         });
+        
+        // Check if user explicitly logged out
+        const userLoggedOut = sessionStorage.getItem('userLoggedOut');
+        
+        if (userLoggedOut === 'true') {
+            console.log('AuthGuard: User explicitly logged out, redirecting to login');
+            // Clear the flag for future visits
+            sessionStorage.removeItem('userLoggedOut');
+            return <Redirect to="/login" />;
+        }
+        
+        // Create guest account only if user didn't explicitly log out
+        console.log('AuthGuard: Creating guest account automatically');
+        createGuestAccount();
+        
+        // Show loading state while creating guest account
+        if (isCreatingGuest) {
+            return <div>Creating guest session...</div>;
+        }
+        
+        // Fallback to login redirect if guest creation fails
         return <Redirect to="/login" />;
     }
 

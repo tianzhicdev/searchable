@@ -117,6 +117,8 @@ const RestLogin = (props, { ...others }) => {
             
             if (response.data.success) {
                 console.log("Login successful", response.data);
+                // Clear the logout flag since user is now logged in
+                sessionStorage.removeItem('userLoggedOut');
                 dispatcher({
                     type: ACCOUNT_INITIALIZE,
                     payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }

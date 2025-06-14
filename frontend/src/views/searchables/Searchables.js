@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
   Grid, Button, Box, TextField, MenuItem, Select
@@ -9,8 +9,7 @@ import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
-import { LOGOUT } from './../../store/actions';
-import configData from '../../config';
+import { useLogout } from '../../components/LogoutHandler';
 import useComponentStyles from '../../themes/componentStyles';
 import SearchableList from './SearchableList';
 import backend from '../utilities/Backend';
@@ -49,32 +48,13 @@ const Searchables = () => {
 
   // Get location from Redux store instead of local state
   const account = useSelector((state) => state.account);
-  const dispatch = useDispatch();
   const history = useHistory();
+  const handleLogout = useLogout();
 
   const classes = useComponentStyles();
 
 
 
-  // Function to handle logout
-  const handleLogout = () => {
-    console.log(account.token);
-    
-    backend.post('users/logout', {token: `${account.token}`})
-        .then(function (response) {
-            // Clear search state on logout
-            localStorage.removeItem('searchablesPage');
-            localStorage.removeItem('searchTerm');
-            dispatch({ type: LOGOUT });
-        })
-        .catch(function (error) {
-            console.log('error - ', error);
-            // Clear search state on logout
-            localStorage.removeItem('searchablesPage');
-            localStorage.removeItem('searchTerm');
-            dispatch({ type: LOGOUT }); // log out anyway
-        });
-  };
 
   // Handle navigation to publish page
   const handleAddNew = () => {

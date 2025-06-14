@@ -138,6 +138,8 @@ const RestRegister = ({ ...others }) => {
             });
             
             if (response.data.success) {
+                // Clear the logout flag in case it was set
+                sessionStorage.removeItem('userLoggedOut');
                 history.push('/login');
             } else {
                 setSubmitError(response.data.msg);
