@@ -116,7 +116,11 @@ class TestInvoiceNotes:
         self.invoice_id = invoice_response['invoice_id']
         
         # Complete payment
-        payment_response = self.buyer_client.complete_test_payment(self.invoice_id)
+        session_id = invoice_response.get('session_id')
+        if session_id:
+            payment_response = self.buyer_client.complete_payment_directly(session_id)
+        else:
+            payment_response = {'success': False, 'message': 'No session_id found'}
         assert payment_response['success']
         
         print(f"✓ Transaction complete. Invoice ID: {self.invoice_id}")

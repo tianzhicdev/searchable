@@ -37,7 +37,11 @@ run_test_file() {
     print_color $BLUE "Running: $test_name"
     print_color $BLUE "=========================================="
     
-    if python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"; then
+    # Run pytest and capture the exit code properly
+    python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
+    local exit_code=${PIPESTATUS[0]}
+    
+    if [ $exit_code -eq 0 ]; then
         print_color $GREEN "✓ PASSED: $test_name"
         return 0
     else

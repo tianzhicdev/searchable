@@ -50,16 +50,6 @@ class SearchableAPIClient:
         
         return result
     
-    def upload_file(self, file_path: str) -> Dict[str, Any]:
-        """Upload a file and get file info"""
-        url = f"{self.base_url}/v1/files/upload"
-        
-        with open(file_path, 'rb') as file:
-            files = {'file': (os.path.basename(file_path), file)}
-            response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
-        
-        response.raise_for_status()
-        return response.json()
     
     def create_searchable(self, searchable_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new searchable item"""
@@ -126,16 +116,29 @@ class SearchableAPIClient:
         response.raise_for_status()
         return response.json()
     
-    def create_invoice(self, searchable_id: int, selections: list, invoice_type: str = "stripe") -> Dict[str, Any]:
+    def create_invoice(self, searchable_id_or_data, selections=None, invoice_type: str = "stripe") -> Dict[str, Any]:
         """Create an invoice for purchasing a searchable item"""
         url = f"{self.base_url}/v1/create-invoice"
-        data = {
-            "searchable_id": searchable_id,
-            "selections": selections,
-            "invoice_type": invoice_type,
-            "success_url": "https://example.com/success",
-            "cancel_url": "https://example.com/cancel"
-        }
+        
+        # Handle both dictionary and individual parameter formats
+        if isinstance(searchable_id_or_data, dict):
+            # Dictionary format from comprehensive tests
+            data = searchable_id_or_data.copy()
+            if 'invoice_type' not in data:
+                data['invoice_type'] = invoice_type
+            if 'success_url' not in data:
+                data['success_url'] = "https://example.com/success"
+            if 'cancel_url' not in data:
+                data['cancel_url'] = "https://example.com/cancel"
+        else:
+            # Individual parameters format
+            data = {
+                "searchable_id": searchable_id_or_data,
+                "selections": selections,
+                "invoice_type": invoice_type,
+                "success_url": "https://example.com/success",
+                "cancel_url": "https://example.com/cancel"
+            }
         
         # Add required headers for optional auth
         headers = {'use-jwt': 'true'}
@@ -193,15 +196,6 @@ class SearchableAPIClient:
         response.raise_for_status()
         return response.json()
 
-    def upload_media(self, image_data: bytes, filename: str = "test_image.png") -> Dict[str, Any]:
-        """Upload media data and get media info"""
-        url = f"{self.base_url}/v1/media/upload"
-        
-        # Upload as multipart form data
-        files = {'file': (filename, image_data, 'image/png')}
-        response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
-        response.raise_for_status()
-        return response.json()
     
     def retrieve_media(self, media_id: str) -> requests.Response:
         """Retrieve media by media ID"""
@@ -385,5 +379,46 @@ class SearchableAPIClient:
         """Refresh all payments for a specific searchable"""
         url = f"{self.base_url}/v1/refresh-payments-by-searchable/{searchable_id}"
         response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    # Additional methods needed by comprehensive tests
+    def upload_file(self, file_path: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Upload a file with optional metadata"""
+        url = f"{self.base_url}/v1/files/upload"
+        
+        with open(file_path, 'rb') as file:
+            files = {'file': (os.path.basename(file_path), file)}
+            data = {}
+            if metadata:
+                data.update(metadata)
+            
+            response = self.session.post(url, files=files, data=data, timeout=UPLOAD_TIMEOUT)
+        
+        response.raise_for_status()
+        return response.json()
+
+    def upload_media(self, file_path_or_data, filename: str = None) -> Dict[str, Any]:
+        """Upload media data and get media info"""
+        url = f"{self.base_url}/v1/media/upload"
+        
+        if isinstance(file_path_or_data, str):
+            # File path
+            with open(file_path_or_data, 'rb') as file:
+                files = {'file': (os.path.basename(file_path_or_data), file)}
+                response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
+        else:
+            # Bytes data
+            files = {'file': (filename or "test_image.png", file_path_or_data, 'image/png')}
+            response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
+        
+        response.raise_for_status()
+        return response.json()
+
+    def complete_test_payment(self, invoice_id: str) -> Dict[str, Any]:
+        """Complete a test payment (test helper)"""
+        url = f"{self.base_url}/v1/test/complete-payment"
+        data = {"invoice_id": invoice_id}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
