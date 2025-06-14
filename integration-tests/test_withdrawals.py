@@ -119,7 +119,11 @@ class TestWithdrawalOperations:
         assert 'invoice_id' in invoice_response
         
         # Complete payment
-        payment_response = buyer_client.complete_test_payment(invoice_response['invoice_id'])
+        session_id = invoice_response.get('session_id')
+        if session_id:
+            payment_response = buyer_client.complete_payment_directly(session_id)
+        else:
+            payment_response = {'success': False, 'message': 'No session_id found'}
         assert payment_response['success']
         
         # Check seller's balance after sale

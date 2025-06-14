@@ -129,7 +129,11 @@ class TestPaymentRefresh:
         assert 'invoice_id' in invoice_response_1
         
         # Complete payment for first invoice
-        payment_response_1 = self.buyer1_client.complete_test_payment(invoice_response_1['invoice_id'])
+        session_id_1 = invoice_response_1.get('session_id')
+        if session_id_1:
+            payment_response_1 = self.buyer1_client.complete_payment_directly(session_id_1)
+        else:
+            payment_response_1 = {'success': False, 'message': 'No session_id found'}
         assert payment_response_1['success']
         
         self.created_invoices.append({
@@ -159,7 +163,11 @@ class TestPaymentRefresh:
         assert 'invoice_id' in invoice_response_2
         
         # Complete payment for second invoice
-        payment_response_2 = self.buyer2_client.complete_test_payment(invoice_response_2['invoice_id'])
+        session_id_2 = invoice_response_2.get('session_id')
+        if session_id_2:
+            payment_response_2 = self.buyer2_client.complete_payment_directly(session_id_2)
+        else:
+            payment_response_2 = {'success': False, 'message': 'No session_id found'}
         assert payment_response_2['success']
         
         self.created_invoices.append({

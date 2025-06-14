@@ -269,9 +269,9 @@ class TestSearchableIntegration:
         
         try:
             response = self.client.create_invoice(
-                searchable_id=self.created_searchable_id,
-                selections=selections,
-                invoice_type="stripe"
+                self.created_searchable_id,
+                selections,
+                "stripe"
             )
             
             # Verify invoice creation response
@@ -672,9 +672,9 @@ class TestSearchableIntegration:
             file_id = self.uploaded_file.get('file_id') or self.uploaded_file.get('fileId', 999999)
             selections = [{"id": file_id, "type": "downloadable", "name": "Download sample.txt", "price": 1.99}]
             invoice_response = self.client.create_invoice(
-                searchable_id=self.created_searchable_id,
-                selections=selections,
-                invoice_type="stripe"
+                self.created_searchable_id,
+                selections,
+                "stripe"
             )
             
             # Verify the new fee structure in the response if available
