@@ -29,7 +29,7 @@ const PublishDownloadableSearchable = () => {
   
   // State for downloadable files
   const [downloadableFiles, setDownloadableFiles] = useState([]);
-  const [newFile, setNewFile] = useState({ name: '', price: '', file: null });
+  const [newFile, setNewFile] = useState({ name: '', description: '', price: '', file: null });
   
   // State for preview images (optional for the downloadable)
   const [images, setImages] = useState([]);
@@ -66,7 +66,7 @@ const PublishDownloadableSearchable = () => {
       setNewFile({
         ...newFile,
         file: file,
-        name: newFile.name || file.name // Use filename as default name if not set
+        name: file.name // Always use the actual file name
       });
     }
   };
@@ -82,54 +82,55 @@ const PublishDownloadableSearchable = () => {
   
   // Add downloadable file to the list
   const addDownloadableFile = async () => {
-    if (newFile.name.trim() && newFile.price && newFile.file) {
+    if (newFile.file && newFile.price) {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('file', newFile.file);
-        
-        // Add metadata
+
+        // Add metadata with description
         const metadata = {
-          description: newFile.name,
+          description: newFile.description,
           type: 'downloadable_content'
         };
         formData.append('metadata', JSON.stringify(metadata));
-        
+
         // Upload file using the upload API
         const uploadResponse = await backend.post('v1/files/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
-        
+
         if (uploadResponse.data.success) {
-          // Add file info with file_id to the list
+          // Add file info with file_id to the list, include description
           setDownloadableFiles([
             ...downloadableFiles,
             { 
               id: Date.now(),
               name: newFile.name,
+              description: newFile.description,
               price: parseInt(newFile.price),
               fileName: newFile.file.name,
               fileType: newFile.file.type,
               fileSize: newFile.file.size,
-              fileId: uploadResponse.data.file_id, // Store the file_id from upload response
-              uuid: uploadResponse.data.uuid // Store the UUID as well
+              fileId: uploadResponse.data.file_id,
+              uuid: uploadResponse.data.uuid
             }
           ]);
-          
+
           // Reset the input fields
-          setNewFile({ name: '', price: '', file: null });
+          setNewFile({ name: '', description: '', price: '', file: null });
           if (downloadableFileInputRef.current) {
             downloadableFileInputRef.current.value = '';
           }
         } else {
           setError("Failed to upload file. Please try again.");
         }
-        
+
       } catch (error) {
         console.error("Error uploading file:", error);
         setError(error.response?.data?.error || "Failed to upload file. Please try again.");
@@ -170,6 +171,7 @@ const PublishDownloadableSearchable = () => {
             "images": images, // Store image URIs instead of base64
             "downloadableFiles": downloadableFiles.map(file => ({
               name: file.name,
+              description: file.description,
               price: file.price,
               fileName: file.fileName,
               fileType: file.fileType,
@@ -347,8 +349,8 @@ const PublishDownloadableSearchable = () => {
                   <TextField
                     placeholder="File Description"
                     size="small"
-                    name="name"
-                    value={newFile.name}
+                    name="description"
+                    value={newFile.description}
                     onChange={handleFileDataChange}
                     fullWidth
                     style={{ marginBottom: 8 }}
@@ -369,7 +371,7 @@ const PublishDownloadableSearchable = () => {
                     <Button 
                       variant="contained" 
                       onClick={addDownloadableFile}
-                      disabled={!newFile.name.trim() || !newFile.price || !newFile.file || loading}
+                      disabled={!newFile.file || !newFile.price || loading}
                     >
                       {loading ? <CircularProgress size={20} /> : 'Add File'}
                     </Button>
@@ -391,6 +393,11 @@ const PublishDownloadableSearchable = () => {
                           <Typography variant="body2" style={{ fontWeight: 'bold' }}>
                             {item.name}
                           </Typography>
+                          {item.description && (
+    <Typography variant="caption" color="textSecondary">
+      {item.description}
+    </Typography>
+  )}
                           <Typography variant="caption" color="textSecondary">
                             {item.fileName} ({formatFileSize(item.fileSize)})
                           </Typography>
