@@ -20,6 +20,18 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 # Create logs directory
 mkdir -p "$LOG_DIR"
 
+# Function to handle cleanup
+cleanup() {
+    print_color $YELLOW "Cleaning up..."
+    # Deactivate virtual environment if active
+    if [[ "$VIRTUAL_ENV" != "" ]]; then
+        deactivate 2>/dev/null || true
+    fi
+}
+
+# Set trap for cleanup on exit
+trap cleanup EXIT
+
 # Function to print colored output
 print_color() {
     local color=$1
@@ -37,7 +49,11 @@ run_test_file() {
     print_color $BLUE "Running: $test_name"
     print_color $BLUE "=========================================="
     
-    if python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"; then
+    # Run pytest and capture the exit code properly
+    python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
+    local exit_code=${PIPESTATUS[0]}
+    
+    if [ $exit_code -eq 0 ]; then
         print_color $GREEN "✓ PASSED: $test_name"
         return 0
     else
@@ -56,6 +72,46 @@ print_color $BLUE "================================================"
 print_color $YELLOW "Timestamp: $TIMESTAMP"
 print_color $YELLOW "Test Directory: $TEST_DIR"
 print_color $YELLOW "Log Directory: $LOG_DIR"
+
+# Check if Python is available
+if ! command -v python3 &> /dev/null; then
+    print_color $RED "❌ Python3 is not installed or not in PATH"
+    exit 1
+fi
+
+# Check if virtual environment exists, create if not
+if [ ! -d "venv" ]; then
+    print_color $YELLOW "Creating virtual environment..."
+    python3 -m venv venv
+    if [ $? -ne 0 ]; then
+        print_color $RED "❌ Failed to create virtual environment"
+        exit 1
+    fi
+    print_color $GREEN "✓ Virtual environment created successfully"
+fi
+
+# Activate virtual environment
+print_color $YELLOW "Activating virtual environment..."
+source venv/bin/activate
+if [ $? -ne 0 ]; then
+    print_color $RED "❌ Failed to activate virtual environment"
+    exit 1
+fi
+print_color $GREEN "✓ Virtual environment activated"
+
+# Upgrade pip in virtual environment
+print_color $YELLOW "Upgrading pip..."
+pip install --upgrade pip --quiet
+
+# Install dependencies
+print_color $YELLOW "Installing dependencies..."
+pip install -r requirements.txt --quiet
+if [ $? -ne 0 ]; then
+    print_color $RED "❌ Failed to install dependencies"
+    exit 1
+fi
+print_color $GREEN "✓ Dependencies installed successfully"
+
 print_color $BLUE "================================================"
 
 # Initialize counters
