@@ -93,6 +93,20 @@ class TestPaymentRefresh:
                             'fileSize': 2048
                         }
                     ],
+                    'selectables': [
+                        {
+                            'id': 'refresh-test-file-1',
+                            'type': 'downloadable',
+                            'name': 'Refresh Test File 1',
+                            'price': 19.99
+                        },
+                        {
+                            'id': 'refresh-test-file-2',
+                            'type': 'downloadable',
+                            'name': 'Refresh Test File 2',
+                            'price': 29.99
+                        }
+                    ],
                     'visibility': {
                         'udf': 'always_true',
                         'data': {}
