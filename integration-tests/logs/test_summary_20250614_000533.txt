@@ -1,31 +1,26 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Fri Jun 13 21:56:53 EDT 2025
-Duration: 6s
+Timestamp: Sat Jun 14 00:05:48 EDT 2025
+Duration: 14s
 Total Tests: 7
-Passed: 0
-Failed: 7
-Success Rate: 0%
+Passed: 5
+Failed: 2
+Success Rate: 71%
 
 Test Results:
 ============
-❌ test_integration - FAILED
+✅ test_integration - PASSED
 ❌ test_comprehensive_scenarios - FAILED
-❌ test_withdrawals - FAILED
-❌ test_ratings - FAILED
-❌ test_file_management - FAILED
-❌ test_invoice_notes - FAILED
+✅ test_withdrawals - PASSED
+✅ test_ratings - PASSED
+✅ test_file_management - PASSED
+✅ test_invoice_notes - PASSED
 ❌ test_payment_refresh - FAILED
 
 Failed Test Details:
 ===================
-- test_integration: See test_integration_20250613_215647.log for details
-- test_comprehensive_scenarios: See test_comprehensive_scenarios_20250613_215647.log for details
-- test_withdrawals: See test_withdrawals_20250613_215647.log for details
-- test_ratings: See test_ratings_20250613_215647.log for details
-- test_file_management: See test_file_management_20250613_215647.log for details
-- test_invoice_notes: See test_invoice_notes_20250613_215647.log for details
-- test_payment_refresh: See test_payment_refresh_20250613_215647.log for details
+- test_comprehensive_scenarios: See test_comprehensive_scenarios_20250614_000533.log for details
+- test_payment_refresh: See test_payment_refresh_20250614_000533.log for details
 
 API Endpoint Coverage Analysis:
 ==============================

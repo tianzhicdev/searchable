@@ -211,6 +211,15 @@ class TestComprehensiveScenarios:
                             }
                             for file_info in config['files']
                         ],
+                        'selectables': [
+                            {
+                                'id': file_info['file_id'],
+                                'type': 'downloadable',
+                                'name': file_info['name'],
+                                'price': file_info['price']
+                            }
+                            for file_info in config['files']
+                        ],
                         'visibility': {
                             'udf': 'always_true',
                             'data': {}
