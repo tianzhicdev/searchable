@@ -35,7 +35,7 @@ MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 INFURA_DOMAIN = os.getenv("INFURA_DOMAIN", "")
 
 if INFURA_DOMAIN == "mainnet.infura.io":
-    USDT_DECIMALS = 18
+    USDT_DECIMALS = 6
 elif INFURA_DOMAIN == "sepolia.infura.io":
     USDT_DECIMALS = 6  # Default to Sepolia/testnet
 else:

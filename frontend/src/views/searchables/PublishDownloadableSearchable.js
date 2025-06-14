@@ -113,7 +113,7 @@ const PublishDownloadableSearchable = () => {
               id: Date.now(),
               name: newFile.name,
               description: newFile.description,
-              price: parseInt(newFile.price),
+              price: Number(parseFloat(newFile.price).toFixed(2)),
               fileName: newFile.file.name,
               fileType: newFile.file.type,
               fileSize: newFile.file.size,
