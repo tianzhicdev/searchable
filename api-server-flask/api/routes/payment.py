@@ -7,7 +7,7 @@ import time
 
 # Import from our new structure
 from .. import rest_api
-from .auth import token_required
+from .auth import token_required, visitor_or_token_required
 from ..common.metrics import track_metrics
 from ..common.data_helpers import (
     check_payment, 
@@ -205,7 +205,7 @@ class CreateInvoiceV1(Resource):
     
     Supports both authenticated users and visitors
     """
-    @token_required
+    @visitor_or_token_required
     @track_metrics('create_invoice_v1')
     def post(self, current_user=None, visitor_id=None, request_origin='unknown'):
         try:
@@ -327,7 +327,7 @@ class UserPaidFiles(Resource):
     """
     Get the files that the current user has paid for in a searchable item
     """
-    @token_required
+    @visitor_or_token_required
     @track_metrics('user_paid_files')
     def get(self, searchable_id, current_user=None, visitor_id=None, request_origin='unknown'):
         try:

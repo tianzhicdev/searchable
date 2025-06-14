@@ -1,4 +1,5 @@
 import os
+import uuid
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,3 +19,7 @@ UPLOAD_TIMEOUT = 60
 
 # File paths for test data
 TEST_FILES_DIR = os.path.join(os.path.dirname(__file__), 'test_files')
+
+def get_unique_test_id():
+    """Generate a unique test ID for this test run"""
+    return str(uuid.uuid4())[:8]

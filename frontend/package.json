@@ -28,6 +28,7 @@
     "dotenv": "^16.4.7",
     "formik": "^2.2.6",
     "framer-motion": "^4.1.13",
+    "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "material-ui-popup-state": "^1.8.0",
     "react": "^17.0.2",
@@ -43,6 +44,7 @@
     "redux": "^4.0.5",
     "redux-persist": "^6.0.0",
     "tailwindcss": "^4.0.12",
+    "uuid": "^11.1.0",
     "yup": "^0.32.9"
   },
   "scripts": {

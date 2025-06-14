@@ -8,7 +8,7 @@ from flask_restx import Resource
 
 # Import from our new structure
 from .. import rest_api
-from .auth import token_required
+from .auth import token_required, visitor_or_token_required
 from ..common.metrics import track_metrics
 from ..common.data_helpers import (
     get_db_connection,
@@ -37,9 +37,9 @@ class GetSearchableItem(Resource):
     """
     Retrieves a specific searchable item by its ID
     """
-    @token_required
+    @visitor_or_token_required
     @track_metrics('get_searchable_item_v2')
-    def get(self, current_user, searchable_id, request_origin='unknown'):
+    def get(self, current_user, visitor_id, searchable_id, request_origin='unknown'):
         try:
             searchable_data = get_searchable(searchable_id)
             
@@ -139,9 +139,9 @@ class SearchSearchables(Resource):
     """
     Search for searchable items based on query terms
     """
-    @token_required
+    @visitor_or_token_required
     @track_metrics('search_searchables_v2')
-    def get(self, current_user, request_origin='unknown'):
+    def get(self, current_user, visitor_id, request_origin='unknown'):
         try:
             # Parse and validate request parameters
             params = self._parse_request_params()
@@ -496,18 +496,21 @@ class InvoicesBySearchable(Resource):
     """
     Retrieves invoices for a specific searchable item with proper user filtering
     """
-    @token_required
+    @visitor_or_token_required
     @track_metrics('invoices_by_searchable')
-    def get(self, current_user, searchable_id, request_origin='unknown'):
+    def get(self, current_user, visitor_id, searchable_id, request_origin='unknown'):
         try:
+            # Get user ID - authenticated user or visitor
+            user_id = current_user.id if current_user else visitor_id
+            
             # Determine if user is seller or buyer for this searchable
             searchable = get_searchable(searchable_id)
             if not searchable:
                 return {"error": "Searchable item not found"}, 404
             
-            user_role = 'seller' if str(searchable.get('terminal_id')) == str(current_user.id) else 'buyer'
+            user_role = 'seller' if str(searchable.get('terminal_id')) == str(user_id) else 'buyer'
             
-            invoices = get_invoices_for_searchable(searchable_id, current_user.id, user_role)
+            invoices = get_invoices_for_searchable(searchable_id, user_id, user_role)
             return {"invoices": invoices, "user_role": user_role}, 200
             
         except Exception as e:

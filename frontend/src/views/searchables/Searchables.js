@@ -103,30 +103,39 @@ const Searchables = () => {
     <Grid container spacing={2}>
       <Grid item xs={12}>
         <Box >
-            {/* Users must be logged in to access this page, so always show logged-in UI */}
-            <>
+            {/* Show different UI based on authentication status */}
+            {account?.isLoggedIn ? (
+              <>
+                <Button 
+                  variant="contained" 
+                  onClick={handleProfileClick}
+                >
+                  <PersonIcon />
+                </Button>
+                
+                <Button 
+                  variant="contained" 
+                  onClick={handleLogout}
+                >
+                  <ExitToAppIcon />
+                </Button>
+                
+                <Button 
+                  variant="contained" 
+                  onClick={handleAddNew}
+                  style={{ float: 'right' }}
+                >
+                  <AddIcon />
+                </Button>
+              </>
+            ) : (
               <Button 
                 variant="contained" 
-                onClick={handleProfileClick}
+                onClick={() => history.push('/login')}
               >
-                <PersonIcon />
+                Login
               </Button>
-              
-              <Button 
-                variant="contained" 
-                onClick={handleLogout}
-              >
-                <ExitToAppIcon />
-              </Button>
-              
-              <Button 
-                variant="contained" 
-                onClick={handleAddNew}
-                style={{ float: 'right' }}
-              >
-                <AddIcon />
-              </Button>
-            </>
+            )}
         </Box>
       </Grid>
       

@@ -67,12 +67,25 @@ fi
 
 # Run tests with pytest for better output and reporting
 echo "Running integration tests..."
+echo "1. Core integration tests..."
 pytest test_integration.py -v --tb=short
-TEST_EXIT_CODE=$?
+CORE_TEST_EXIT_CODE=$?
+
+echo "2. Guest access tests..."
+pytest test_guest_access.py -v --tb=short
+GUEST_TEST_EXIT_CODE=$?
+
+# Calculate overall exit code
+if [ $CORE_TEST_EXIT_CODE -eq 0 ] && [ $GUEST_TEST_EXIT_CODE -eq 0 ]; then
+    TEST_EXIT_CODE=0
+else
+    TEST_EXIT_CODE=1
+fi
 
 # Generate HTML report regardless of test results
-echo "Generating HTML test report..."
-pytest test_integration.py --html=test_report.html --self-contained-html --quiet || true
+echo "Generating HTML test reports..."
+pytest test_integration.py --html=test_report_core.html --self-contained-html --quiet || true
+pytest test_guest_access.py --html=test_report_guest.html --self-contained-html --quiet || true
 
 echo "================================================"
 if [ $TEST_EXIT_CODE -eq 0 ]; then
@@ -80,7 +93,7 @@ if [ $TEST_EXIT_CODE -eq 0 ]; then
 else
     echo "⚠ Some integration tests failed (exit code: $TEST_EXIT_CODE)"
 fi
-echo "HTML report available: test_report.html"
+echo "HTML reports available: test_report_core.html, test_report_guest.html"
 echo "Virtual environment location: $(pwd)/venv"
 echo "Python version: $(python --version)"
 echo "================================================"

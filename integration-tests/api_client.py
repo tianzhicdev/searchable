@@ -2,6 +2,7 @@ import requests
 import json
 import base64
 import os
+import uuid
 from typing import Optional, Dict, Any
 from config import API_BASE_URL, REQUEST_TIMEOUT, UPLOAD_TIMEOUT
 
@@ -13,11 +14,25 @@ class SearchableAPIClient:
         self.base_url = API_BASE_URL
         self.session = requests.Session()
         self.token = None
+        # Generate a visitor ID for guest requests
+        self.visitor_id = f"visitor_{uuid.uuid4()}"
+        self._update_headers()
         
+    def _update_headers(self):
+        """Update session headers based on authentication status"""
+        if self.token:
+            # Authenticated user - include token, remove visitor ID
+            self.session.headers.update({'authorization': self.token})
+            self.session.headers.pop('x-visitor-id', None)
+        else:
+            # Guest user - include visitor ID, remove token
+            self.session.headers.update({'x-visitor-id': self.visitor_id})
+            self.session.headers.pop('authorization', None)
+    
     def set_auth_token(self, token: str):
         """Set the authentication token for API requests"""
         self.token = token
-        self.session.headers.update({'authorization': token})
+        self._update_headers()
     
     def register_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
         """Register a new user, handle existing user gracefully"""
@@ -435,3 +450,8 @@ class SearchableAPIClient:
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
+    
+    # Aliases for guest access tests
+    def get_searchable_details(self, searchable_id: int) -> Dict[str, Any]:
+        """Alias for get_searchable"""
+        return self.get_searchable(searchable_id)

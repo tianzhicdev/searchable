@@ -1,6 +1,7 @@
 import axios from 'axios';
 import configData from '../../config';
 import { store } from '../../store';
+import { getVisitorId } from '../../utils/visitorUtils';
 
 // Check if we're in mock mode (only use environment variable)
 const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true';
@@ -43,7 +44,10 @@ if (!isMockMode) {
         config.headers.authorization = account.token;
         console.log('[AUTH DEBUG] Final headers:', config.headers);
       } else {
-        console.log('[AUTH DEBUG] Not setting auth - isLoggedIn:', account?.isLoggedIn, 'token:', !!account?.token);
+        // For guest users, include visitor ID
+        const visitorId = getVisitorId();
+        console.log('[AUTH DEBUG] Guest user - setting visitor ID:', visitorId);
+        config.headers['x-visitor-id'] = visitorId;
       }
 
       return config;

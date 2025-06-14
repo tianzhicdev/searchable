@@ -91,6 +91,88 @@ def token_required(f):
     return decorator
 
 
+def visitor_or_token_required(f):
+    """
+    Decorator that allows both authenticated users and visitors.
+    For authenticated users: extracts user from JWT token
+    For visitors: extracts visitor_id from x-visitor-id header
+    """
+    @wraps(f)
+    def decorator(self, *args, **kwargs):
+        token = None
+        visitor_id = None
+        
+        # Check for JWT token
+        if "authorization" in request.headers:
+            token = request.headers["authorization"]
+            logger.debug(f"Token: {token}")
+        
+        # Check for visitor ID
+        if "x-visitor-id" in request.headers:
+            visitor_id = request.headers["x-visitor-id"]
+            logger.debug(f"Visitor ID: {visitor_id}")
+        
+        # If we have a token, try to authenticate as a user
+        if token:
+            # Handle dev token
+            if token == DEV_TOKEN:
+                logger.info("Using test admin account for development")
+                admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")
+                return f(self, *args, current_user=admin_user, visitor_id=None, **kwargs)
+            
+            try:
+                data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+                logger.debug(f"Decoded JWT data: {data}")
+                
+                current_user = Users.get_by_email(data["email"])
+                logger.info(f"User {current_user.username} with email {current_user.email} is making a request.")
+                
+                if not current_user:
+                    # Invalid token, fall back to visitor
+                    if visitor_id:
+                        logger.info(f"Invalid token, using visitor ID: {visitor_id}")
+                        return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+                    return {"success": False, "msg": "Authentication required"}, 401
+                
+                # Check if token is blacklisted
+                token_expired = db.session.query(JWTTokenBlocklist.id).filter_by(jwt_token=token).scalar()
+                if token_expired is not None:
+                    # Token revoked, fall back to visitor
+                    if visitor_id:
+                        logger.info(f"Token revoked, using visitor ID: {visitor_id}")
+                        return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+                    return {"success": False, "msg": "Token revoked"}, 401
+                
+                if not current_user.check_jwt_auth_active():
+                    # Token expired, fall back to visitor
+                    if visitor_id:
+                        logger.info(f"Token expired, using visitor ID: {visitor_id}")
+                        return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+                    return {"success": False, "msg": "Token expired"}, 401
+                
+                # Valid user authentication
+                return f(self, *args, current_user=current_user, visitor_id=None, **kwargs)
+                
+            except Exception as e:
+                logger.error(f"Exception occurred while decoding token: {e}")
+                # Invalid token, fall back to visitor
+                if visitor_id:
+                    logger.info(f"Token invalid, using visitor ID: {visitor_id}")
+                    return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+                return {"success": False, "msg": "Invalid authentication"}, 401
+        
+        # No token, check if we have a visitor ID
+        elif visitor_id:
+            logger.info(f"Visitor {visitor_id} is making a request.")
+            return f(self, *args, current_user=None, visitor_id=visitor_id, **kwargs)
+        
+        # No authentication provided
+        else:
+            return {"success": False, "msg": "Authentication required"}, 401
+    
+    return decorator
+
+
 
 
 """

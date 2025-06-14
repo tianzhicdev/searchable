@@ -68,7 +68,7 @@ const DownloadableSearchableDetails = () => {
   const [userPaidFiles, setUserPaidFiles] = useState(new Set());
   
   useEffect(() => {
-    // User must be logged in to access this page (enforced by AuthGuard)
+    // This page is accessible to both authenticated users and guests
     fetchItemDetails();
     refreshPaymentsBySearchable();
   }, [id]);
@@ -78,7 +78,7 @@ const DownloadableSearchableDetails = () => {
       try {
         console.log("User:", account.user);
         console.log("Item:", SearchableItem);
-        if (account && account.user && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
+        if (account?.isLoggedIn && account?.user && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
           setIsOwner(true);
         } 
       } catch (error) {

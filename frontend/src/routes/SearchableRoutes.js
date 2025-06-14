@@ -2,6 +2,7 @@ import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
 import NavMotion from '../layout/NavMotion';
 import AuthGuard from './../utils/route-guard/AuthGuard';
+import OptionalAuthGuard from './../utils/route-guard/OptionalAuthGuard';
 import PublishDownloadableSearchable from '../views/searchables/PublishDownloadableSearchable';
 import Profile from '../views/profile/Profile';
 import PurchaseRatings from '../views/ratings/PurchaseRatings';
@@ -17,11 +18,15 @@ const SearchableRoutes = () => {
     return (
         <Route path={['/searchables', '/searchable-item/:id', '/profile/:identifier', '/publish-searchables', '/profile', '/my-purchases']}>
             <Switch location={location} key={location.pathname}>
-                {/* Protected routes that require authentication */}
-                <AuthGuard>
+                {/* Routes accessible to both guests and authenticated users */}
+                <OptionalAuthGuard>
                     <Route exact path="/searchables" component={Searchables} />
                     <Route exact path="/searchable-item/:id" component={DownloadableSearchableDetails} />
                     <Route path="/profile/:identifier" component={UserProfile} />
+                </OptionalAuthGuard>
+                
+                {/* Protected routes that require authentication */}
+                <AuthGuard>
                     <Route exact path="/publish-searchables" component={PublishDownloadableSearchable} />
                     <Route exact path="/profile" component={Profile} />
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
