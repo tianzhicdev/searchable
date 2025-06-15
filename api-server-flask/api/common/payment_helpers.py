@@ -24,16 +24,17 @@ def calc_invoice(searchable_data, selections):
         public_data = payloads.get('public', {})
         downloadable_files = public_data.get('downloadableFiles', [])
 
-        # Build a mapping from file id to price
-        id_to_price = {file.get('fileId'): int(file.get('price')) for file in downloadable_files}
+        # Build a mapping from file id to price (as float)
+        id_to_price = {file.get('fileId'): float(file.get('price')) for file in downloadable_files}
 
-        # Calculate total amount in cents using ids from selections
-        total_amount_usd = 0
+        # Calculate total amount in USD using ids from selections
+        total_amount_usd = 0.0
         for item in selections:
             file_id = item.get('id')
             price = id_to_price.get(file_id)
             total_amount_usd += price
 
+        total_amount_usd = round(total_amount_usd, 2)
         total_items = len(selections)
 
         # Generate description
