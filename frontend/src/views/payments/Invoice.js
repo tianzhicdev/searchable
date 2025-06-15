@@ -245,9 +245,14 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                             <Box key={index} display="flex" justifyContent="space-between" alignItems="center">
                                                 <Typography variant="body2" className={classes.userText}>
                                                     {selection.name || `Item ${selection.id}`}
+                                                    {selection.count && selection.count > 1 && (
+                                                        <span style={{ fontWeight: 'bold', marginLeft: '4px' }}>
+                                                            x{selection.count}
+                                                        </span>
+                                                    )}
                                                 </Typography>
                                                 <Typography variant="body2" className={classes.userText}>
-                                                    {formatCurrency(selection.price || 0, invoice.currency)}
+                                                    {formatCurrency((selection.price || 0) * (selection.count || 1), invoice.currency)}
                                                 </Typography>
                                             </Box>
                                         ))}
@@ -439,7 +444,10 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                     purchase={{
                         invoice_id: invoice.id,
                         item_title: `Invoice #${invoice.id}`,
-                        item_description: selections.map(s => s.name).join(', '),
+                        item_description: selections.map(s => {
+                            const name = s.name || `Item ${s.id}`;
+                            return s.count && s.count > 1 ? `${name} x${s.count}` : name;
+                        }).join(', '),
                         amount: invoice.amount,
                         currency: invoice.currency,
                         payment_completed: invoice.payment_date
