@@ -273,14 +273,13 @@ release() {
     fi
     
     # Get current version
-    CURRENT_VERSION=$(grep '"version"' package.json | sed 's/.*"version": "\(.*\)".*/\1/')
+    CURRENT_VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
     echo "Current version: $CURRENT_VERSION"
     
     # Bump patch version (increment the last number)
-    IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-    MAJOR=${VERSION_PARTS[0]}
-    MINOR=${VERSION_PARTS[1]}
-    PATCH=${VERSION_PARTS[2]}
+    MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+    MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+    PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
     NEW_PATCH=$((PATCH + 1))
     NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
     
