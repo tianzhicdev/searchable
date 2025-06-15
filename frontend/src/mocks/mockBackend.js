@@ -99,12 +99,58 @@ const mockHandlers = {
           },
           created_at: new Date(Date.now() - 172800000).toISOString(),
           username: 'designer_pro'
+        },
+        {
+          _id: 'mock-offline-1',
+          searchable_id: 'mock-offline-1',
+          terminal_id: 'mock-terminal-3',
+          payloads: {
+            public: {
+              title: 'Local Coffee Shop Menu',
+              description: 'Fresh handcrafted coffee, pastries, and light meals. Pickup available Monday-Friday 7AM-6PM',
+              type: 'offline',
+              currency: 'usd',
+              images: [mockData.mockImage1, mockData.mockImage2],
+              offlineItems: [
+                { itemId: 'coffee-1', name: 'Espresso', price: 3.50 },
+                { itemId: 'coffee-2', name: 'Cappuccino', price: 4.50 },
+                { itemId: 'coffee-3', name: 'Latte', price: 5.00 },
+                { itemId: 'pastry-1', name: 'Croissant', price: 2.50 },
+                { itemId: 'pastry-2', name: 'Muffin', price: 3.00 }
+              ]
+            }
+          },
+          created_at: new Date(Date.now() - 259200000).toISOString(),
+          username: 'local_cafe'
+        },
+        {
+          _id: 'mock-offline-2',
+          searchable_id: 'mock-offline-2',
+          terminal_id: 'mock-terminal-4',
+          payloads: {
+            public: {
+              title: 'Handmade Crafts Store',
+              description: 'Beautiful handmade jewelry, pottery, and artwork. Custom orders welcome!',
+              type: 'offline',
+              currency: 'usd',
+              images: [mockData.mockImage2, mockData.mockImage1],
+              offlineItems: [
+                { itemId: 'jewelry-1', name: 'Silver Necklace', price: 45.00 },
+                { itemId: 'jewelry-2', name: 'Handmade Earrings', price: 25.00 },
+                { itemId: 'pottery-1', name: 'Ceramic Mug', price: 18.00 },
+                { itemId: 'pottery-2', name: 'Decorative Vase', price: 65.00 },
+                { itemId: 'art-1', name: 'Small Canvas Painting', price: 120.00 }
+              ]
+            }
+          },
+          created_at: new Date(Date.now() - 345600000).toISOString(),
+          username: 'artisan_maker'
         }
       ],
       pagination: {
         current_page: 1,
         page_size: 10,
-        total_count: 2,
+        total_count: 4,
         total_pages: 1
       }
     });
@@ -122,7 +168,63 @@ const mockHandlers = {
   
   'v1/searchable/': (url) => {
     if (url.includes('v1/searchable/')) {
-      // Return mock data with image URLs - manually create copy to preserve imports
+      const searchableId = url.split('/').pop();
+      console.log(`[MOCK] Fetching searchable: ${searchableId}`);
+      
+      // Handle offline items
+      if (searchableId === 'mock-offline-1') {
+        return createMockResponse({
+          _id: 'mock-offline-1',
+          searchable_id: 'mock-offline-1',
+          terminal_id: 'mock-terminal-3',
+          payloads: {
+            public: {
+              title: 'Local Coffee Shop Menu',
+              description: 'Fresh handcrafted coffee, pastries, and light meals. Pickup available Monday-Friday 7AM-6PM. Located at 123 Main Street, Downtown.',
+              type: 'offline',
+              currency: 'usd',
+              images: [mockData.mockImage1, mockData.mockImage2],
+              offlineItems: [
+                { itemId: 'coffee-1', name: 'Espresso', price: 3.50 },
+                { itemId: 'coffee-2', name: 'Cappuccino', price: 4.50 },
+                { itemId: 'coffee-3', name: 'Latte', price: 5.00 },
+                { itemId: 'pastry-1', name: 'Croissant', price: 2.50 },
+                { itemId: 'pastry-2', name: 'Muffin', price: 3.00 }
+              ]
+            }
+          },
+          created_at: new Date(Date.now() - 259200000).toISOString(),
+          username: 'local_cafe'
+        });
+      }
+      
+      if (searchableId === 'mock-offline-2') {
+        return createMockResponse({
+          _id: 'mock-offline-2',
+          searchable_id: 'mock-offline-2',
+          terminal_id: 'mock-terminal-4',
+          payloads: {
+            public: {
+              title: 'Handmade Crafts Store',
+              description: 'Beautiful handmade jewelry, pottery, and artwork. Custom orders welcome! Visit our studio at 456 Art Lane.',
+              type: 'offline',
+              currency: 'usd',
+              images: [mockData.mockImage2, mockData.mockImage1],
+              offlineItems: [
+                { itemId: 'jewelry-1', name: 'Silver Necklace', price: 45.00 },
+                { itemId: 'jewelry-2', name: 'Handmade Earrings', price: 25.00 },
+                { itemId: 'pottery-1', name: 'Ceramic Mug', price: 18.00 },
+                { itemId: 'pottery-2', name: 'Decorative Vase', price: 65.00 },
+                { itemId: 'art-1', name: 'Small Canvas Painting', price: 120.00 }
+              ]
+            }
+          },
+          created_at: new Date(Date.now() - 345600000).toISOString(),
+          username: 'artisan_maker'
+        });
+      }
+      
+      // Default to downloadable item for backwards compatibility
       const originalItem = mockData.mockSearchableItem;
       const mockItem = {
         ...originalItem,
@@ -370,6 +472,92 @@ const mockHandlers = {
               }
             ]
           }
+        },
+        {
+          id: "purchase-3",
+          amount: 16.50,  // Invoice amount (3.50 * 2 + 4.50 * 2 + 2.50 * 1)
+          payment_status: "complete",
+          type: "stripe",
+          currency: "usd",
+          other_party_username: "local_cafe",
+          payment_date: new Date(Date.now() - 1800000).toISOString(),
+          created_at: new Date(Date.now() - 2400000).toISOString(),
+          fee: 0.02,  // Platform fee (0.1% of 16.50)
+          buyer_id: "mock-user-1",
+          seller_id: "mock-terminal-3",
+          searchable_id: "mock-offline-1",
+          metadata: {
+            address: "123 Main St, City, State 12345",
+            tel: "+1-555-0123",
+            description: "Local Coffee Shop Menu - Morning Order",
+            stripe_fee: 0.58,  // Stripe fee (3.5% of 16.50)
+            selections: [
+              {
+                id: "coffee-1",
+                type: "offline",
+                name: "Espresso",
+                price: 3.50,
+                count: 2
+              },
+              {
+                id: "coffee-2",
+                type: "offline",
+                name: "Cappuccino",
+                price: 4.50,
+                count: 2
+              },
+              {
+                id: "pastry-1",
+                type: "offline",
+                name: "Croissant",
+                price: 2.50,
+                count: 1
+              }
+            ]
+          }
+        },
+        {
+          id: "purchase-4",
+          amount: 108.00,  // Invoice amount (45.00 + 18.00 * 2 + 25.00)
+          payment_status: "complete",
+          type: "stripe",
+          currency: "usd",
+          other_party_username: "artisan_maker",
+          payment_date: new Date(Date.now() - 7200000).toISOString(),
+          created_at: new Date(Date.now() - 7800000).toISOString(),
+          fee: 0.11,  // Platform fee (0.1% of 108.00)
+          buyer_id: "mock-user-1",
+          seller_id: "mock-terminal-4",
+          searchable_id: "mock-offline-2",
+          metadata: {
+            address: "123 Main St, City, State 12345",
+            tel: "+1-555-0123",
+            description: "Handmade Crafts Store - Birthday Gifts",
+            stripe_fee: 3.78,  // Stripe fee (3.5% of 108.00)
+            selections: [
+              {
+                id: "jewelry-1",
+                type: "offline",
+                name: "Silver Necklace",
+                price: 45.00,
+                count: 1
+              },
+              {
+                id: "pottery-1",
+                type: "offline",
+                name: "Ceramic Mug",
+                price: 18.00,
+                count: 2
+              },
+              {
+                id: "jewelry-2",
+                type: "offline",
+                name: "Handmade Earrings",
+                price: 25.00,
+                count: 1
+              }
+            ]
+          }
         }
       ],
       sales: [
@@ -430,7 +618,7 @@ const mockHandlers = {
           }
         }
       ],
-      purchases_count: 2,
+      purchases_count: 4,
       sales_count: 2
     });
   },
