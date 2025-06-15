@@ -619,6 +619,8 @@ const DownloadableSearchableDetails = () => {
                 })}
               </div>
             )}
+
+            <Divider />
             
             {/* Files Section */}
             {renderDownloadableFiles()}
