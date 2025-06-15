@@ -156,7 +156,8 @@ const RestRegister = ({ ...others }) => {
     };
 
     useEffect(() => {
-        changePassword('123456');
+        // Initialize password strength to 0 for empty password
+        changePassword('');
     }, []);
 
     return (
@@ -285,11 +286,21 @@ const RestRegister = ({ ...others }) => {
                 </Box>
             )}
 
+            {strength > 0 && strength <= 2 && formValues.password && (
+                <Box mb={2}>
+                    <FormHelperText>
+                        Password must be stronger than "Weak" to register
+                    </FormHelperText>
+                </Box>
+            )}
+
             <Box>
                 <Button
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || strength <= 2}
                     fullWidth
                     type="submit"
+                    variant="contained"
+                    color="primary"
                 >
                     Sign Up
                 </Button>
