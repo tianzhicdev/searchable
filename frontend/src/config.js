@@ -33,7 +33,7 @@ if (APP_BRANDING === 'eccentricprotocol') {
   }
 } else if (APP_BRANDING === 'local') {
   branding_config = {
-    logo: 'camel_logo.jpg',
+    logo: 'eccentricprotocol.gif',
     domain: 'localhost',
   }
 }
