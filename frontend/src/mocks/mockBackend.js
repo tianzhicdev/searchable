@@ -70,6 +70,7 @@ const mockHandlers = {
               description: 'A comprehensive collection of high-quality digital assets including templates, graphics, and source files',
               type: 'downloadable',
               currency: 'usd',
+              images: [mockData.mockImage1, mockData.mockImage2],
               downloadableFiles: [
                 { name: 'Design Templates Pack', price: 29.99 },
                 { name: 'Stock Photos Collection', price: 49.99 }
@@ -89,6 +90,7 @@ const mockHandlers = {
               description: 'High-quality design templates and resources for professional projects',
               type: 'downloadable',
               currency: 'usd',
+              images: [mockData.mockImage2, mockData.mockImage1],
               downloadableFiles: [
                 { name: 'Logo Templates', price: 19.99 },
                 { name: 'Business Card Designs', price: 14.99 }
