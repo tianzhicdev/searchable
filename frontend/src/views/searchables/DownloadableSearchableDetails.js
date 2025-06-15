@@ -71,6 +71,7 @@ const DownloadableSearchableDetails = () => {
     // User must be logged in to access this page (enforced by AuthGuard)
     fetchItemDetails();
     refreshPaymentsBySearchable();
+    fetchRatings();
   }, [id]);
   
   useEffect(() => {
