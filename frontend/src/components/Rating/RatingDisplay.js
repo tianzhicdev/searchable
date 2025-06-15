@@ -72,11 +72,6 @@ const RatingDisplay = ({
                     size="small"
                     emptyIcon={<StarBorder fontSize="inherit" />}
                   />
-                  <Chip
-                    label={ratingItem.rating.toFixed(1)}
-                    size="small"
-                    color="primary"
-                  />
                 </Box>
                 
                 <Box display="flex" alignItems="center" gap={1}>

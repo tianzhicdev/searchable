@@ -443,9 +443,6 @@ const DownloadableSearchableDetails = () => {
     
     return (
       <Box>
-        <Typography variant="h4" className={classes.staticText}>
-          Files to Download:
-        </Typography>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
           const isPaidByCurrentUser = userPaidFiles.has(file.fileId.toString());
           const isPaidBySomeone = paidFiles.has(file.fileId.toString());
@@ -573,20 +570,22 @@ const DownloadableSearchableDetails = () => {
             </Typography>
             <Divider />
             
-            {/* Posted by section */}
-            <PostedBy 
-              username={SearchableItem.username} 
-              terminalId={SearchableItem.terminal_id} 
-              maxLength={30}
-            />
-            
             {!loadingRatings && searchableRating && (
               <Box>
                 <Typography variant="body1" className={classes.staticText}>
                   Rating: {searchableRating.average_rating?.toFixed(1)}/5 ({searchableRating.total_ratings} reviews)
                 </Typography>
               </Box>
-            )}
+            )}            
+            {/* Posted by section */}
+            <PostedBy 
+              username={SearchableItem.username} 
+              terminalId={SearchableItem.terminal_id} 
+              maxLength={30}
+            />
+
+
+            <Divider />
             
             {/* Description */}
             {SearchableItem.payloads.public.description && (
@@ -596,6 +595,8 @@ const DownloadableSearchableDetails = () => {
                 </Typography>
               </Box>
             )}
+
+            <Divider />
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
