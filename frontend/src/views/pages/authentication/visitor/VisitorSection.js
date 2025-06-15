@@ -129,7 +129,10 @@ const VisitorSection = () => {
                         <Grid container spacing={2} direction="column">
                             <Grid item>
                                 <Button
+                                    fullWidth
+                                    variant="contained"
                                     color="primary"
+                                    onClick={handleVisitAsGuest}
                                 >
                                     {isCreatingGuest ? (
                                         <>
@@ -144,7 +147,10 @@ const VisitorSection = () => {
 
                             <Grid item>
                                 <Button
+                                    fullWidth
+                                    variant="contained"
                                     color="primary"
+                                    onClick={handleLogin}
                                 >
                                     LOG IN
                                 </Button>
@@ -152,7 +158,10 @@ const VisitorSection = () => {
 
                             <Grid item>
                                 <Button
+                                    fullWidth
+                                    variant="contained"
                                     color="primary"
+                                    onClick={handleRegister}
 
                                 >
                                     REGISTER
