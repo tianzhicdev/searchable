@@ -21,17 +21,19 @@ const Declaration = () => {
                     </Typography>
                 </Box>
 
+                <Divider />
+
                 {/* Introduction Section */}
                 <Typography variant="h4" className={classes.staticText}>
                     Our Mission
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    {config.BRANDING_CONFIG.domain} is a marketplace that leverages the Lightning Network to provide 
+                    {config.BRANDING_CONFIG.domain} is a marketplace that leverages digital currencies to provide 
                     fast, secure, and low-cost transactions for our users. We aim to create a platform where 
                     individuals and businesses can buy and sell goods and services with ease and confidence.
                 </Typography>
 
-                <Divider className={classes.divider} />
+                <Divider/>
 
                 {/* Vision Section */}
                 <Typography variant="h4" className={classes.staticText}>
@@ -39,10 +41,11 @@ const Declaration = () => {
                 </Typography>
                 <Typography variant="body1" paragraph>
                     We envision a world where commerce is accessible to everyone, regardless of location or 
-                    background. By utilizing Bitcoin's Lightning Network, we're building a marketplace that 
+                    background. By utilizing digital currencies, we're building a marketplace that 
                     is global, efficient, and user-friendly.
                 </Typography>
                 
+                <Divider />
                 <Typography variant="h4" className={classes.staticText}>
                     Core Values
                 </Typography>
@@ -52,18 +55,19 @@ const Declaration = () => {
                     need to succeed in the digital marketplace.
                 </Typography>
 
-                <Divider className={classes.divider} />
+                <Divider />
 
                 {/* Team Section */}
                 <Typography variant="h4" className={classes.staticText}>
                     Our Team
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    We are a dedicated group of professionals passionate about Bitcoin, the Lightning Network, 
-                    and creating innovative solutions for e-commerce. Our team combines expertise in blockchain 
+                    We are a dedicated group of professionals passionate about the real world applications of
+                    blockchain technology and creating innovative solutions for e-commerce. Our team combines expertise in blockchain 
                     technology, web development, and user experience design.
                 </Typography>
                 
+                <Divider />
                 <Typography variant="h4" className={classes.staticText}>
                     Join Our Community
                 </Typography>
