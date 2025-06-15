@@ -1,3 +1,8 @@
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,9 +10,44 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Prevent horizontal overflow on all elements */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure images don't overflow */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure root and app containers don't overflow */
+#root, .App {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Fix Material-UI Container overflow issues */
+.MuiContainer-root {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
 }

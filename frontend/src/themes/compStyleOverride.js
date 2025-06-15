@@ -437,8 +437,12 @@ export function componentStyleOverrides(theme) {
                     zIndex: 9999,
                     maxWidth: '95%',
                     width: 'auto',
-                    minWidth: '300px',
+                    minWidth: '280px',
                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+                    '@media (max-width: 320px)': {
+                        minWidth: '260px',
+                        fontSize: '0.875rem'
+                    }
                 },
                 standardSuccess: {
                     backgroundColor: theme.colors.background,
