@@ -23,7 +23,7 @@ let branding_config = {
 
 if (APP_BRANDING === 'eccentricprotocol') {
   branding_config = {
-    logo: 'eccentricprotocol.mp4',
+    logo: 'eccentricprotocol.gif',
     domain: 'eccentricprotocol.com',
   }
 } else if (APP_BRANDING === 'silkroadonlightning') {

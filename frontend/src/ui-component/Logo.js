@@ -34,7 +34,6 @@ const Logo = () => {
             alt={config.APP_BRANDING === 'eccentricprotocol' ? 'Eccentric Protocol' : 'Silk Road on Lightning'} 
             width="100%" 
             style={{ 
-                filter: theme.palette.mode === 'dark' ? 'invert(1)' : 'none',
                 maxWidth: '320px'
             }} 
         />
