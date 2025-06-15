@@ -45,14 +45,18 @@ export function componentStyleOverrides(theme) {
         MuiCheckbox: {
           styleOverrides: {
             root: {
-                minWidth: '10px',
+              minWidth: '44px',
+              minHeight: '44px',
+              padding: '12px',
               '& .MuiIconButton-root': {
                 color: theme.colors.primary,
                 border: `1px solid ${theme.colors.primary}`,
                 borderRadius: '0px'
               },
               '& .MuiSvgIcon-root': {
-                fontSize: '1.1rem'
+                fontSize: '1.25rem',
+                minWidth: '20px',
+                minHeight: '20px'
               },
               '&.Mui-checked .MuiIconButton-root': {
                 color: theme.colors.primary,
@@ -60,6 +64,26 @@ export function componentStyleOverrides(theme) {
               },
               '&.Mui-checked, &.MuiCheckbox-indeterminate': {
                 color: theme.colors.primary,
+              }
+            }
+          }
+        },
+        MuiIconButton: {
+          styleOverrides: {
+            root: {
+              minWidth: '44px',
+              minHeight: '44px',
+              padding: '10px',
+              '& .MuiSvgIcon-root': {
+                fontSize: '1.5rem',
+                minWidth: '24px',
+                minHeight: '24px'
+              },
+              // Ensure touch target on mobile
+              '@media (max-width: 600px)': {
+                minWidth: '48px',
+                minHeight: '48px',
+                padding: '12px'
               }
             }
           }
