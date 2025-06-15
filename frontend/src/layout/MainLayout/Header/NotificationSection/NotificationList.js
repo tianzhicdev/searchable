@@ -32,7 +32,8 @@ const useStyles = makeStyles((theme) => ({
         paddingBottom: 0,
         borderRadius: '10px',
         [theme.breakpoints.down('sm')]: {
-            maxWidth: '300px'
+            maxWidth: '280px',
+            minWidth: '250px'
         }
     },
     listAction: {
