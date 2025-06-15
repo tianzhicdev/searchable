@@ -45,6 +45,7 @@ export function componentStyleOverrides(theme) {
         MuiCheckbox: {
           styleOverrides: {
             root: {
+                minWidth: '10px',
               '& .MuiIconButton-root': {
                 color: theme.colors.primary,
                 border: `1px solid ${theme.colors.primary}`,
