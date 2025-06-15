@@ -211,6 +211,7 @@ const RestLogin = (props, { ...others }) => {
             <Box display="flex" justifyContent="space-between">
                 <Box></Box>
                 <Button
+                    variant="contained"
                     disabled={isSubmitting}
                     fullWidth
                     type="submit"

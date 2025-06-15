@@ -215,6 +215,8 @@ const Profile = () => {
         </div>
         <div>
           <Button 
+
+            variant='contained'
             onClick={handleMenuOpen}
           >
             <MoreVertIcon />

@@ -486,8 +486,7 @@ const DownloadableSearchableDetails = () => {
               
               {isPaidByCurrentUser && (
                 <Button
-                  variant="outlined"
-                  size="small"
+                 variant='contained'
                   onClick={() => downloadFile(file.fileId, file.name)}
                   disabled={isDownloading}
                   startIcon={isDownloading ? <CircularProgress size={20} /> : <GetAppIcon />}
@@ -516,6 +515,7 @@ const DownloadableSearchableDetails = () => {
         <Box>
               <Button 
                 color="primary" 
+                variant='contained'
                 onClick={() => history.push('/searchables')}
               >
                 <ChevronLeftIcon />

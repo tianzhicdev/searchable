@@ -146,6 +146,8 @@ const UserInvoices = () => {
       <Paper>
       <Box display="flex" gap={2} mb={3} flexWrap="wrap">
         <Button
+
+          variant='contained'
           style={{ 
             flex: 1, 
           }}
@@ -168,6 +170,8 @@ const UserInvoices = () => {
           style={{ 
             flex: 1, 
           }}
+
+          variant='contained'
           onClick={() => setActiveTab(1)}
         >
           <Box display="flex" alignItems="center" gap={1} width="100%">
@@ -187,6 +191,8 @@ const UserInvoices = () => {
           style={{ 
             flex: 1, 
           }}
+
+          variant='contained'
           onClick={() => setActiveTab(2)}
         >
           <Box display="flex" alignItems="center" gap={1} width="100%">

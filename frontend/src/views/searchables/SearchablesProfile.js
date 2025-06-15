@@ -19,6 +19,7 @@ const SearchablesProfile = ({ item, onClick }) => {
 
   return (
     <Paper 
+    
       id="searchable-profile"
       onClick={onClick}
       style={{ marginBottom: '16px', cursor: 'pointer' }}

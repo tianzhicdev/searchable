@@ -120,6 +120,8 @@ const Searchables = () => {
             InputProps={{
               endAdornment: (
                 <Button 
+
+                  variant='contained'
                   onClick={handleSearchButtonClick} 
                   style={{ padding: '4px', minWidth: 'unset' }}
                 >
