@@ -289,7 +289,7 @@ const RestRegister = ({ ...others }) => {
             {strength > 0 && strength <= 2 && formValues.password && (
                 <Box mb={2}>
                     <FormHelperText>
-                        Password must be stronger than "Weak" to register
+                        Use a stronger password. It should be at least 8 characters long and include a mix of letters, numbers, and special characters.
                     </FormHelperText>
                 </Box>
             )}
