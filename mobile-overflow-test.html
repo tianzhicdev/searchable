@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Overflow Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .pass {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .fail {
+            background: #f44336;
+            color: white;
+        }
+        
+        #viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        
+        .overflow-test {
+            width: 1200px;
+            background: #ff5252;
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .fixed-width-test {
+            width: 500px;
+            background: #2196f3;
+            color: white;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .absolute-test {
+            position: absolute;
+            right: -100px;
+            top: 50px;
+            width: 200px;
+            background: #ff9800;
+            color: white;
+            padding: 10px;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewport-info"></div>
+    
+    <h1>Mobile Horizontal Overflow Test</h1>
+    
+    <div class="test-section">
+        <div class="test-title">Test 1: Elements with Fixed Width Larger than Viewport</div>
+        <div class="overflow-test">This div has width: 1200px</div>
+        <div id="test1-status" class="status"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">Test 2: Elements with Fixed Width</div>
+        <div class="fixed-width-test">This div has width: 500px</div>
+        <div id="test2-status" class="status"></div>
+    </div>
+    
+    <div class="test-section" style="position: relative; overflow: visible;">
+        <div class="test-title">Test 3: Absolutely Positioned Elements</div>
+        <div class="absolute-test">Absolute positioned element</div>
+        <div id="test3-status" class="status" style="margin-top: 60px;"></div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">Test 4: Application Frontend</div>
+        <p>Test the actual application below in an iframe:</p>
+        <iframe src="http://localhost:3000" id="app-frame"></iframe>
+        <div id="test4-status" class="status"></div>
+    </div>
+    
+    <script>
+        // Update viewport info
+        function updateViewportInfo() {
+            const info = document.getElementById('viewport-info');
+            info.innerHTML = `
+                Viewport: ${window.innerWidth} x ${window.innerHeight}<br>
+                Document: ${document.documentElement.scrollWidth} x ${document.documentElement.scrollHeight}<br>
+                Body: ${document.body.scrollWidth} x ${document.body.scrollHeight}<br>
+                Overflow: ${document.documentElement.scrollWidth > window.innerWidth ? 'YES' : 'NO'}
+            `;
+        }
+        
+        // Check for horizontal overflow
+        function checkOverflow() {
+            const hasOverflow = document.documentElement.scrollWidth > window.innerWidth || 
+                              document.body.scrollWidth > window.innerWidth;
+            
+            // Test 1: Large fixed width
+            const test1 = document.querySelector('.overflow-test');
+            const test1Status = document.getElementById('test1-status');
+            if (test1.getBoundingClientRect().width > window.innerWidth) {
+                test1Status.className = 'status fail';
+                test1Status.textContent = 'FAIL: Element causes overflow';
+            } else {
+                test1Status.className = 'status pass';
+                test1Status.textContent = 'PASS: Element constrained to viewport';
+            }
+            
+            // Test 2: Medium fixed width
+            const test2 = document.querySelector('.fixed-width-test');
+            const test2Status = document.getElementById('test2-status');
+            if (window.innerWidth < 500 && test2.getBoundingClientRect().width > window.innerWidth) {
+                test2Status.className = 'status fail';
+                test2Status.textContent = 'FAIL: Element causes overflow on small screens';
+            } else {
+                test2Status.className = 'status pass';
+                test2Status.textContent = 'PASS: Element responsive or fits viewport';
+            }
+            
+            // Test 3: Absolute positioning
+            const test3 = document.querySelector('.absolute-test');
+            const test3Status = document.getElementById('test3-status');
+            const test3Rect = test3.getBoundingClientRect();
+            if (test3Rect.right > window.innerWidth) {
+                test3Status.className = 'status fail';
+                test3Status.textContent = 'FAIL: Absolute element extends beyond viewport';
+            } else {
+                test3Status.className = 'status pass';
+                test3Status.textContent = 'PASS: Absolute element contained';
+            }
+            
+            // Test 4: Overall page overflow
+            const test4Status = document.getElementById('test4-status');
+            if (hasOverflow) {
+                test4Status.className = 'status fail';
+                test4Status.textContent = 'FAIL: Page has horizontal overflow';
+            } else {
+                test4Status.className = 'status pass';
+                test4Status.textContent = 'PASS: No horizontal overflow detected';
+            }
+        }
+        
+        // Run tests
+        updateViewportInfo();
+        checkOverflow();
+        
+        // Update on resize
+        window.addEventListener('resize', () => {
+            updateViewportInfo();
+            checkOverflow();
+        });
+        
+        // Check iframe content when loaded
+        document.getElementById('app-frame').addEventListener('load', function() {
+            try {
+                const iframeDoc = this.contentDocument || this.contentWindow.document;
+                const iframeOverflow = iframeDoc.documentElement.scrollWidth > this.contentWindow.innerWidth;
+                console.log('Iframe overflow check:', iframeOverflow ? 'Has overflow' : 'No overflow');
+            } catch (e) {
+                console.log('Cannot access iframe content (cross-origin)');
+            }
+        });
+    </script>
+</body>
+</html>

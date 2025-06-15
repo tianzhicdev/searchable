@@ -16,6 +16,8 @@ import config from './config';
 import './assets/scss/style.scss';
 import './assets/scss/global-overrides.scss';
 import 'leaflet/dist/leaflet.css';
+import './index.css';
+import './mobile-overflow-fix.css';
 
 //-----------------------|| REACT DOM RENDER  ||-----------------------//
 
