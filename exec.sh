@@ -36,6 +36,8 @@ show_usage() {
     echo "  ./exec.sh local deploy-all                  - Deploy all containers locally"
     echo "  ./exec.sh local logs <container_name>       - Show logs for local container"
     echo "  ./exec.sh local status                      - Show status of local containers"
+    echo "  ./exec.sh local it                          - Run comprehensive integration tests"
+    echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
@@ -52,6 +54,8 @@ show_usage() {
     echo "  ./exec.sh local react"
     echo "  ./exec.sh local deploy-all"
     echo "  ./exec.sh local status"
+    echo "  ./exec.sh local it"
+    echo "  ./exec.sh local mock"
 }
 
 # Function to check if container name is valid
@@ -194,6 +198,49 @@ local_react() {
     echo ""
     
     # Start React development server
+    REACT_APP_ENV=local \
+    REACT_APP_BRANDING=silkroadonlightning \
+    REACT_APP_LOGO=camel_logo.jpg \
+    REACT_APP_DESCRIPTION='Silk Road on Lightning' \
+    NODE_OPTIONS=--openssl-legacy-provider \
+    npm start
+}
+
+# Local integration tests
+local_it() {
+    echo -e "${BLUE}🧪 Running comprehensive integration tests...${NC}"
+    
+    if [ ! -d "integration-tests" ]; then
+        echo -e "${RED}Error: integration-tests directory not found${NC}"
+        exit 1
+    fi
+    
+    cd integration-tests
+    
+    echo -e "${YELLOW}Starting integration test suite...${NC}"
+    echo ""
+    
+    # Run the comprehensive tests
+    ./run_comprehensive_tests.sh
+}
+
+# Local React development server in mock mode
+local_mock() {
+    echo -e "${BLUE}🚀 Starting React development server in mock mode...${NC}"
+    
+    cd frontend
+    
+    # Check if node_modules exists
+    if [ ! -d "node_modules" ]; then
+        echo "📦 Installing dependencies..."
+        npm install --legacy-peer-deps
+    fi
+    
+    echo -e "${YELLOW}Starting React app in mock mode...${NC}"
+    echo "Access the app at: http://localhost:3000"
+    echo ""
+    
+    # Start React development server with mock mode enabled
     REACT_APP_MOCK_MODE=true \
     REACT_APP_ENV=local \
     REACT_APP_BRANDING=silkroadonlightning \
@@ -341,6 +388,12 @@ case "$ENVIRONMENT" in
                 ;;
             "status")
                 local_status
+                ;;
+            "it")
+                local_it
+                ;;
+            "mock")
+                local_mock
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"

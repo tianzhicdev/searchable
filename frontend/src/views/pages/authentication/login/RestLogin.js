@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TextField } from '@material-ui/core';
 import configData from '../../../../config';
@@ -30,6 +30,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 const RestLogin = (props, { ...others }) => {
     const dispatcher = useDispatch();
     const history = useHistory();
+    const location = useLocation();
 
     const scriptedRef = useScriptRef();
     const [checked, setChecked] = useState(true);
@@ -123,6 +124,12 @@ const RestLogin = (props, { ...others }) => {
                     type: ACCOUNT_INITIALIZE,
                     payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }
                 });
+                
+                // Redirect to intended destination
+                const intendedDestination = location.state?.from || '/';
+                console.log('Login: Redirecting to', intendedDestination);
+                history.push(intendedDestination);
+                
                 if (scriptedRef.current) {
                     setIsSubmitting(false);
                 }

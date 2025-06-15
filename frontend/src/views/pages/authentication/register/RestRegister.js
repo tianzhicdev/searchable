@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 
 import configData from '../../../../config';
 
@@ -33,6 +33,7 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 const RestRegister = ({ ...others }) => {
     let history = useHistory();
+    const location = useLocation();
     const scriptedRef = useScriptRef();
     const [showPassword, setShowPassword] = useState(false);
     const [checked, setChecked] = useState(true);
@@ -140,7 +141,10 @@ const RestRegister = ({ ...others }) => {
             if (response.data.success) {
                 // Clear the logout flag in case it was set
                 sessionStorage.removeItem('userLoggedOut');
-                history.push('/login');
+                
+                // Pass the intended destination to login page
+                const intendedDestination = location.state?.from || '/';
+                history.push('/login', { from: intendedDestination });
             } else {
                 setSubmitError(response.data.msg);
                 setIsSubmitting(false);
