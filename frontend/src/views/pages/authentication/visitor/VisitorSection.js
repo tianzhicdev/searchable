@@ -118,9 +118,6 @@ const VisitorSection = () => {
                 <Card elevation={3}>
                     <CardContent style={{ padding: '32px' }}>
                         <Box textAlign="center" mb={4}>
-                            <Typography variant="h4" component="h1" gutterBottom>
-                                Welcome to Searchable
-                            </Typography>
                             <Typography variant="body1" color="textSecondary">
                                 Choose how you'd like to continue
                             </Typography>
@@ -131,7 +128,6 @@ const VisitorSection = () => {
                                 <Button
                                     fullWidth
                                     variant="contained"
-                                    color="primary"
                                     onClick={handleVisitAsGuest}
                                 >
                                     {isCreatingGuest ? (
@@ -149,7 +145,6 @@ const VisitorSection = () => {
                                 <Button
                                     fullWidth
                                     variant="contained"
-                                    color="primary"
                                     onClick={handleLogin}
                                 >
                                     LOG IN
@@ -160,7 +155,6 @@ const VisitorSection = () => {
                                 <Button
                                     fullWidth
                                     variant="contained"
-                                    color="primary"
                                     onClick={handleRegister}
 
                                 >
@@ -168,14 +162,6 @@ const VisitorSection = () => {
                                 </Button>
                             </Grid>
                         </Grid>
-
-                        {intendedDestination !== '/' && (
-                            <Box mt={3} textAlign="center">
-                                <Typography variant="caption" color="textSecondary">
-                                    You'll be redirected to: {intendedDestination}
-                                </Typography>
-                            </Box>
-                        )}
                     </CardContent>
                 </Card>
             </Grid>
