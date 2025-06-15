@@ -16,16 +16,16 @@ const FAQ = () => {
                         FAQ
                     </Typography>
                 </Box>
-
+                <Divider />
 
                 {/* Introduction Section */}
                 <Typography variant="h4" className={classes.staticText}>
                     What is {config.BRANDING_CONFIG.domain}?
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    {config.BRANDING_CONFIG.domain} is a modern marketplace inspired by the principles of free trade that guided the original Silk Road platform. 
+                    {config.BRANDING_CONFIG.domain} is a marketplace that facilitate the free exchange between money and information. 
                     We firmly believe that free trade is fundamental to human prosperity. In today's complex global landscape marked by political and economic challenges, we maintain that voluntary exchange between individuals represents a crucial pathway to economic growth and peaceful coexistence.
-                    {config.BRANDING_CONFIG.domain} provides a secure platform for users to sell legal items and services using Bitcoin on the Lightning Network. We offer buyers multiple payment options, including Bitcoin transactions via the Lightning Network or traditional payments through US dollars using Stripe.
+                    {config.BRANDING_CONFIG.domain} provides a secure platform for users to sell legal digital items and services using digital currency. We currently offer buyers traditional payments through US dollars using Stripe while offer sellers to receive payments in Tether (USDT).
                 </Typography>
 
                 <Divider className={classes.divider} />
@@ -35,17 +35,17 @@ const FAQ = () => {
                     How does it work?
                 </Typography>
                 <Typography variant="body1" paragraph>
-                    Using our platform is simple: Register an account, post your item or service for sale, and when a buyer purchases it, you'll receive payment. We securely manage all transactions between buyers and sellers. Buyers can pay using either Bitcoin through the Lightning Network or US dollars via Stripe, while sellers always receive Bitcoin payments on the Lightning Network. If a buyer pays in US dollars, our system automatically converts it to Bitcoin for the seller.
+                    Using our platform is simple: Register an account, post your item or service for sale, and when a buyer purchases it, you'll receive payment. We securely manage all transactions between buyers and sellers. Buyers pay using US dollars via Stripe, while sellers always receive payments in Tether (USDT.
                 </Typography>
                 
                 <Divider className={classes.divider} />
 
-                {/* Privacy Section */}
+                {/* Payment Section */}
                 <Typography variant="h4" className={classes.staticText}>
                     How do I get paid?
                 </Typography>
                 <Typography variant="body1" className={classes.staticText}>
-                    You can withdraw your funds by visiting your profile and clicking the "Withdraw" button. The system will prompt you to provide a Lightning Network invoice, which you can generate using services like CashApp, Strike, or any wallet that supports Lightning Network. Withdrawals are processed immediately and typically complete within 2 minutes.
+                    You can withdraw your funds by visiting your profile and clicking the "Withdraw" button. The system will prompt you to provide a Ethereum wallet address, which you can generate using any wallet that supports USDT. Withdrawals are processed immediately and typically complete within 10 seconds.
                 </Typography>
 
                 <Divider className={classes.divider} />

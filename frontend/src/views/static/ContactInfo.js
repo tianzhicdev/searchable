@@ -12,11 +12,12 @@ const ContactInfo = () => {
     return (
             <Paper elevation={1} sx={{ p: 3, marginTop: '24px' }}>
                 {/* Header */}
-                <Box className={classes.header}>
+                <Box>
                     <Typography variant="h2" gutterBottom>
                         Contact Information
                     </Typography>
                 </Box>
+                <Divider />
 
 
                 {/* Introduction Section */}
@@ -25,9 +26,6 @@ const ContactInfo = () => {
                 </Typography>
                 <Typography variant="body1" paragraph>
                     Email: admin@{config.BRANDING_CONFIG.domain}
-                </Typography>
-                <Typography variant="body1" paragraph>
-                    Phone: +1 (412) 961-4793
                 </Typography>
 
             </Paper>

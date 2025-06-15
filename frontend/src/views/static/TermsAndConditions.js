@@ -15,6 +15,7 @@ const TermsAndConditions = () => {
                         Terms and Conditions
                     </Typography>
                 </Box>
+                <Divider />
 
 
                 {/* Introduction Section */}
