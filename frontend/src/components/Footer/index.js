@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Link, Container } from '@material-ui/core';
 // import useComponentStyles from '../../themes/componentStyles';
 import config from '../../config';
+import { APP_VERSION } from '../../version';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -32,6 +33,10 @@ const Footer = () => {
           <Link color="inherit" href="/getting-started" underline="hover">
             Getting Started
           </Link>
+          {' | '}
+          <span style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+            {APP_VERSION}
+          </span>
         </Typography>
       </Container>
     </Box>

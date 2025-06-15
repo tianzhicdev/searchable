@@ -39,6 +39,8 @@ show_usage() {
     echo "  ./exec.sh local it                          - Run comprehensive integration tests"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo ""
+    echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
+    echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
     echo "  - flask_api"
@@ -56,6 +58,7 @@ show_usage() {
     echo "  ./exec.sh local status"
     echo "  ./exec.sh local it"
     echo "  ./exec.sh local mock"
+    echo "  ./exec.sh release"
 }
 
 # Function to check if container name is valid
@@ -250,6 +253,87 @@ local_mock() {
     npm start
 }
 
+# Release workflow - merge to main, bump version, and deploy
+release() {
+    echo -e "${BLUE}🚀 Starting release workflow...${NC}"
+    
+    # Check if we have uncommitted changes
+    if [ -n "$(git status --porcelain)" ]; then
+        echo -e "${RED}Error: You have uncommitted changes. Please commit or stash them first.${NC}"
+        exit 1
+    fi
+    
+    # Get current branch
+    CURRENT_BRANCH=$(git branch --show-current)
+    echo "Current branch: $CURRENT_BRANCH"
+    
+    if [ "$CURRENT_BRANCH" = "main" ]; then
+        echo -e "${RED}Error: You are already on main branch. Please run this from a feature branch.${NC}"
+        exit 1
+    fi
+    
+    # Get current version
+    CURRENT_VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+    echo "Current version: $CURRENT_VERSION"
+    
+    # Bump patch version (increment the last number)
+    MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+    MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+    PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+    NEW_PATCH=$((PATCH + 1))
+    NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+    
+    echo -e "${YELLOW}Bumping version from $CURRENT_VERSION to $NEW_VERSION${NC}"
+    
+    # Update root package.json
+    sed -i.bak "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+    rm package.json.bak
+    
+    # Update frontend package.json if it exists
+    if [ -f "frontend/package.json" ]; then
+        sed -i.bak "s/\"version\": \"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" frontend/package.json
+        rm frontend/package.json.bak
+    fi
+    
+    # Update frontend version.js
+    echo "// Auto-generated version file" > frontend/src/version.js
+    echo "// This file is updated by the release script" >> frontend/src/version.js
+    echo "export const APP_VERSION = '$NEW_VERSION';" >> frontend/src/version.js
+    
+    # Commit version changes
+    git add package.json frontend/package.json frontend/src/version.js
+    git commit -m "Bump version to $NEW_VERSION"
+    
+    echo -e "${YELLOW}Switching to main branch...${NC}"
+    git checkout main
+    
+    echo -e "${YELLOW}Pulling latest changes from main...${NC}"
+    git pull origin main
+    
+    echo -e "${YELLOW}Merging $CURRENT_BRANCH into main...${NC}"
+    git merge "$CURRENT_BRANCH" --no-ff -m "Merge branch '$CURRENT_BRANCH' - Release $NEW_VERSION"
+    
+    echo -e "${YELLOW}Pushing to remote main...${NC}"
+    git push origin main
+    
+    echo -e "${YELLOW}Creating version tag...${NC}"
+    git tag "v$NEW_VERSION"
+    git push origin "v$NEW_VERSION"
+    
+    echo -e "${YELLOW}Deploying to remote...${NC}"
+    remote_deploy_all
+    
+    echo -e "${GREEN}✅ Release $NEW_VERSION completed successfully!${NC}"
+    echo -e "${BLUE}📝 Summary:${NC}"
+    echo "  - Version bumped: $CURRENT_VERSION → $NEW_VERSION"
+    echo "  - Branch merged: $CURRENT_BRANCH → main"
+    echo "  - Tag created: v$NEW_VERSION"
+    echo "  - Remote deployment completed"
+    echo ""
+    echo -e "${YELLOW}You can now switch back to your feature branch:${NC}"
+    echo "  git checkout $CURRENT_BRANCH"
+}
+
 # Local deploy single container
 local_deploy_container() {
     local container=$1
@@ -320,14 +404,24 @@ local_status() {
 }
 
 # Main script logic
-if [ $# -lt 2 ]; then
+if [ $# -lt 1 ]; then
     show_usage
     exit 1
 fi
 
-ENVIRONMENT=$1
-ACTION=$2
-CONTAINER=$3
+# Special case for release command
+if [ "$1" = "release" ]; then
+    ENVIRONMENT="release"
+    ACTION=""
+    CONTAINER=""
+elif [ $# -lt 2 ]; then
+    show_usage
+    exit 1
+else
+    ENVIRONMENT=$1
+    ACTION=$2
+    CONTAINER=$3
+fi
 
 case "$ENVIRONMENT" in
     "remote")
@@ -401,6 +495,10 @@ case "$ENVIRONMENT" in
                 exit 1
                 ;;
         esac
+        ;;
+    
+    "release")
+        release
         ;;
     
     *)
