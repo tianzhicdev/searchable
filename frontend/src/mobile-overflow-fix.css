@@ -45,10 +45,10 @@ html, body {
   max-width: calc(100vw - 32px) !important;
 }
 
-/* Fix any elements with explicit width */
+/* Fix any elements with explicit width
 [style*="width:"] {
   max-width: 100% !important;
-}
+} */
 
 /* Responsive utilities for small screens */
 @media (max-width: 600px) {
