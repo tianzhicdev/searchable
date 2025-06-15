@@ -462,7 +462,6 @@ const DownloadableSearchableDetails = () => {
                         />
                       }
                       label=""
-                      style={{ marginRight: 8 }}
                     />
                   ) : (
                     <CheckIcon style={{ color: 'green', marginRight: 16 }} />
