@@ -17,7 +17,7 @@ const Login = () => {
 
     return (
     <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
-        <Grid item sx={{ mb: 6 }}></Grid>
+        <Grid item sx={{ mb: 2 }}></Grid>
         <Grid item sx={{ mb: 3 }}>
             <RouterLink to="#">
                 <Logo />
