@@ -41,11 +41,12 @@ const useStyles = makeStyles((theme) => ({
     navContainer: {
         width: '100%',
         maxWidth: '350px',
-        minWidth: '300px',
+        minWidth: '280px',
         backgroundColor: theme.palette.background.paper,
         borderRadius: '10px',
         [theme.breakpoints.down('sm')]: {
-            minWidth: '100%'
+            minWidth: '250px',
+            maxWidth: '90vw'
         }
     },
     headerAvatar: {
