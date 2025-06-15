@@ -21,10 +21,10 @@ const Logo = () => {
     
     // Determine which logo to use based on config
     const getLogo = () => {
-        if (config.APP_BRANDING === 'eccentricprotocol') {
-            return eccentricLogo;
-        } else {
+        if (config.APP_BRANDING === 'silkroadonlightning') {
             return camelLogo;
+        } else {
+            return eccentricLogo;
         }
     };
     
