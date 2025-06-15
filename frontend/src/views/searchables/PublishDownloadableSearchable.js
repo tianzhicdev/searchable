@@ -240,7 +240,6 @@ const PublishDownloadableSearchable = () => {
       <Grid item xs={12} className={classes.header}>
         <Button 
           variant="contained" 
-          className={classes.iconButton} 
           onClick={() => history.push('/searchables')}
         >
           <ArrowBackIcon />
