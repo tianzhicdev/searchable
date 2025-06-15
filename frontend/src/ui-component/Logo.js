@@ -6,7 +6,7 @@ import config from '../config';
 
 // Import logo images
 import camelLogo from './../assets/images/camel_logo.gif';
-import eccentricLogo from './../assets/images/eccentricprotocol.jpg';
+import eccentricLogo from './../assets/images/eccentricprotocol.mp4';
 /**
  * if you want to use image instead of <svg> uncomment following.
  *
