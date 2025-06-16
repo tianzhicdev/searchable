@@ -5,7 +5,7 @@ import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles';
 import { 
   Grid, Typography, Button, Paper, Box, TextField, 
-  CircularProgress, Divider, IconButton, MenuItem, Switch,
+  CircularProgress, Divider, IconButton,
   FormControlLabel, Checkbox
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
@@ -24,7 +24,6 @@ const OfflinePublishSearchable = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    currency: 'usd',
     require_address: false
   });
   
@@ -33,8 +32,7 @@ const OfflinePublishSearchable = () => {
   const [newItem, setNewItem] = useState({ 
     name: '', 
     description: '', 
-    price: '',
-    available: true
+    price: ''
   });
   
   // State for preview images
@@ -85,12 +83,11 @@ const OfflinePublishSearchable = () => {
         itemId: Date.now(), // Simple ID generation
         name: newItem.name,
         description: newItem.description,
-        price: priceValue,
-        available: newItem.available
+        price: priceValue
       };
       
       setOfflineItems([...offlineItems, item]);
-      setNewItem({ name: '', description: '', price: '', available: true });
+      setNewItem({ name: '', description: '', price: '' });
       setError(null);
     } else {
       setError('Please provide item name and price');
@@ -133,7 +130,7 @@ const OfflinePublishSearchable = () => {
         title: formData.title,
         description: formData.description,
         type: 'offline',
-        currency: formData.currency,
+        currency: 'usd', // Default to USD
         require_address: formData.require_address,
         offlineItems: offlineItems,
         images: images
@@ -185,7 +182,7 @@ const OfflinePublishSearchable = () => {
           </Typography>
         </Grid>
 
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12}>
           <Paper elevation={3}>
             <Box p={3}>
               <form onSubmit={handleSubmit}>
@@ -223,19 +220,6 @@ const OfflinePublishSearchable = () => {
                     />
                   </Grid>
                   
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      name="currency"
-                      label="Currency"
-                      value={formData.currency}
-                      onChange={handleInputChange}
-                      select
-                      fullWidth
-                    >
-                      <MenuItem value="usd">USD</MenuItem>
-                      <MenuItem value="usdt">USDT</MenuItem>
-                    </TextField>
-                  </Grid>
 
                   <Grid item xs={12}>
                     <FormControlLabel
@@ -292,10 +276,10 @@ const OfflinePublishSearchable = () => {
                           />
                         </Grid>
                         
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={12} sm={6}>
                           <TextField
                             name="price"
-                            label="Price"
+                            label="Price (USD)"
                             value={newItem.price}
                             onChange={handleItemDataChange}
                             type="number"
@@ -305,18 +289,6 @@ const OfflinePublishSearchable = () => {
                           />
                         </Grid>
 
-                        <Grid item xs={12} sm={3}>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                name="available"
-                                checked={newItem.available}
-                                onChange={handleItemDataChange}
-                              />
-                            }
-                            label="Available"
-                          />
-                        </Grid>
                         
                         <Grid item xs={12}>
                           <TextField
@@ -369,7 +341,7 @@ const OfflinePublishSearchable = () => {
                               <TextField
                                 value={item.price}
                                 onChange={(e) => updateOfflineItem(item.itemId, 'price', e.target.value)}
-                                label="Price"
+                                label="Price (USD)"
                                 type="number"
                                 inputProps={{ step: "0.01", min: "0" }}
                                 size="small"
@@ -377,7 +349,7 @@ const OfflinePublishSearchable = () => {
                               />
                             </Grid>
                             
-                            <Grid item xs={12} sm={4}>
+                            <Grid item xs={12} sm={5}>
                               <TextField
                                 value={item.description}
                                 onChange={(e) => updateOfflineItem(item.itemId, 'description', e.target.value)}
@@ -387,20 +359,7 @@ const OfflinePublishSearchable = () => {
                               />
                             </Grid>
                             
-                            <Grid item xs={6} sm={1}>
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    checked={item.available}
-                                    onChange={(e) => updateOfflineItem(item.itemId, 'available', e.target.checked)}
-                                    size="small"
-                                  />
-                                }
-                                label="Available"
-                              />
-                            </Grid>
-                            
-                            <Grid item xs={6} sm={1}>
+                            <Grid item xs={12} sm={1}>
                               <IconButton
                                 onClick={() => removeOfflineItem(item.itemId)}
                                 color="secondary"
@@ -460,35 +419,6 @@ const OfflinePublishSearchable = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Paper elevation={3}>
-            <Box p={3}>
-              <Typography variant="h6" gutterBottom>
-                How Offline Searchables Work
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                • Create a menu of your offline products or services
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                • Customers can view your items and select quantities
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                • They can purchase multiple items and quantities in one order
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                • You handle fulfillment offline (pickup, delivery, etc.)
-              </Typography>
-              
-              <Typography variant="body2" paragraph>
-                • Payment is processed online through the platform
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
       </Grid>
     </Box>
   );

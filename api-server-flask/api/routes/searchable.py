@@ -103,10 +103,12 @@ class CreateSearchable(Resource):
             # Add terminal info to the searchable data
             data['terminal_id'] = str(current_user.id)
             
+            # Extract type from payload, default to 'downloadable' for backward compatibility
+            searchable_type = data.get('payloads', {}).get('public', {}).get('type', 'downloadable')
             
-            # Insert into searchables table
+            # Insert into searchables table with type field
             logger.info("Executing database insert...")
-            sql = f"INSERT INTO searchables (terminal_id, searchable_data) VALUES ('{current_user.id}', {Json(data)}) RETURNING searchable_id;"
+            sql = f"INSERT INTO searchables (terminal_id, type, searchable_data) VALUES ('{current_user.id}', '{searchable_type}', {Json(data)}) RETURNING searchable_id;"
             execute_sql(cur, sql)
             searchable_id = cur.fetchone()[0]
             
@@ -254,9 +256,9 @@ class SearchSearchables(Resource):
         cur = conn.cursor()
         
         try:
-            # Query all searchables
+            # Query all searchables including type field
             execute_sql(cur, """
-                SELECT s.searchable_id, s.searchable_data
+                SELECT s.searchable_id, s.type, s.searchable_data
                 FROM searchables s
                 WHERE s.searchable_data->>'removed' IS NULL 
                 OR s.searchable_data->>'removed' != 'true'
@@ -268,11 +270,12 @@ class SearchSearchables(Resource):
             items = []
             
             for result in results:
-                searchable_id, searchable_data = result
+                searchable_id, searchable_type, searchable_data = result
                 
-                # Add searchable_id to data
+                # Add searchable_id and type to data
                 item_data = dict(searchable_data)
                 item_data['searchable_id'] = searchable_id
+                item_data['type'] = searchable_type
                 
                 # Apply text filtering
                 if query_term:
