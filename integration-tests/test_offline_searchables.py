@@ -208,13 +208,9 @@ class TestOfflineSearchables:
         assert self.client.token, "No authentication token available"
         
         # Search with a term that should match our item
-        search_params = {
-            "q": f"Test Coffee Shop {self.test_id}",
-            "page": 1,
-            "page_size": 10
-        }
+        search_term = f"Test Coffee Shop {self.test_id}"
         
-        response = self.client.search_searchables(search_params)
+        response = self.client.search_searchables(query_term=search_term)
         
         # Verify search response
         assert 'results' in response, f"No results in search response: {response}"
