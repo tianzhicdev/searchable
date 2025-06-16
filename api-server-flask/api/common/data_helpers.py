@@ -91,7 +91,7 @@ def get_searchable(searchable_id):
         cur = conn.cursor()
         
         execute_sql(cur, f"""
-            SELECT searchable_id, searchable_data
+            SELECT searchable_id, type, searchable_data
             FROM searchables
             WHERE searchable_id = {searchable_id}
         """)
@@ -104,11 +104,12 @@ def get_searchable(searchable_id):
         if not result:
             return None
             
-        searchable_id, searchable_data = result
+        searchable_id, searchable_type, searchable_data = result
         
-        # Add searchable_id to the data object for convenience
+        # Add searchable_id and type to the data object for convenience
         item_data = dict(searchable_data)
         item_data['searchable_id'] = searchable_id
+        item_data['type'] = searchable_type
         
         return item_data
         

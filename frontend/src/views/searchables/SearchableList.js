@@ -162,7 +162,8 @@ const SearchableList = ({ criteria }) => {
 
   // Handle clicking on an item
   const handleItemClick = (item) => {
-    const itemType = item.payloads?.public?.type || 'downloadable';
+    // Use the type field from the backend if available, fallback to payload type
+    const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
       history.push(`/offline-item/${item.searchable_id}`);
     } else {
