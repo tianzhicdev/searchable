@@ -201,7 +201,8 @@ const UserInvoices = () => {
               <Typography variant="h6" className={classes.staticText}>
                 {formatCurrency(stats.totalWithdrawn)}
               </Typography>
-              <Typography className={classes.staticText}>
+              <Typography className={classes.staticText} 
+                              style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}>
                 Total Withdrawn ({stats.withdrawalsCount})
               </Typography>
             </Box>
@@ -296,6 +297,11 @@ const UserInvoices = () => {
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                         <Box flex={1}>
+                          <Chip 
+                            label={withdrawal.status.toUpperCase()}
+                            color={withdrawal.status === 'complete' ? 'primary' : 'default'}
+                            size="small"
+                          />
                           <Typography variant="h6" className={classes.staticText}>
                             Withdrawal #{withdrawal.id}
                           </Typography>
@@ -303,10 +309,17 @@ const UserInvoices = () => {
                             {new Date(withdrawal.created_at).toLocaleDateString()} at {new Date(withdrawal.created_at).toLocaleTimeString()}
                           </Typography>
                           {withdrawal.metadata?.address && (
-                            <Typography variant="body2" className={classes.systemText}>
+                            <Typography
+                              variant="body2"
+                              className={classes.systemText}
+                              style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}
+                            >
                               To: {withdrawal.metadata.address}
                             </Typography>
                           )}
+                          <Typography variant="caption" display="block" style={{ marginTop: 4 }}>
+                            {withdrawal.type.replace('_', ' ').toUpperCase()}
+                          </Typography>
                           
                           {/* Withdrawal Breakdown */}
                           <Box mt={2} p={2} >
@@ -340,16 +353,6 @@ const UserInvoices = () => {
                               </Typography>
                             </Box>
                           </Box>
-                        </Box>
-                        <Box textAlign="right" ml={2}>
-                          <Chip 
-                            label={withdrawal.status.toUpperCase()}
-                            color={withdrawal.status === 'complete' ? 'primary' : 'default'}
-                            size="small"
-                          />
-                          <Typography variant="caption" display="block" style={{ marginTop: 4 }}>
-                            {withdrawal.type.replace('_', ' ').toUpperCase()}
-                          </Typography>
                         </Box>
                       </Box>
                     </Paper>
