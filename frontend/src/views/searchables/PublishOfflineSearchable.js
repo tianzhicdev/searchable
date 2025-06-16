@@ -213,22 +213,6 @@ const PublishOfflineSearchable = () => {
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
-                  Currency
-                </Typography>
-                <TextField
-                  fullWidth
-                  id="currency"
-                  name="currency"
-                  value={"USD"}
-                  variant="outlined"
-                  size="small"
-                  disabled
-                  className={classes.textInput}
-                />
-              </Grid>
-              
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
                   Description
                 </Typography>
                 <TextField

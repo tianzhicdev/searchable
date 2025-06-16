@@ -59,9 +59,6 @@ const DownloadableSearchableDetails = () => {
   const [selectedFiles, setSelectedFiles] = useState({});
   const [totalPrice, setTotalPrice] = useState(0);
   
-  // Currency state
-  const [currency, setCurrency] = useState('usd');
-  
   // Download states
   const [downloadingFiles, setDownloadingFiles] = useState({});
   const [paidFiles, setPaidFiles] = useState(new Set());
@@ -91,17 +88,7 @@ const DownloadableSearchableDetails = () => {
       checkOwnership();
     }
   }, [SearchableItem, account]);
-  
-  useEffect(() => {
-    if (SearchableItem) {
-      // Set the currency based on the item's configuration
-      if (SearchableItem.payloads.public.currency === 'usdt') {
-        setCurrency('usdt');
-      } else {
-        setCurrency('usd');
-      }
-    }
-  }, [SearchableItem]);
+
   
   useEffect(() => {
     if (SearchableItem) {
@@ -125,7 +112,7 @@ const DownloadableSearchableDetails = () => {
       
       // No need to convert prices anymore - all prices are in USD
     }
-  }, [selectedFiles, SearchableItem, currency]);
+  }, [selectedFiles, SearchableItem]);
   
   useEffect(() => {
     // Initialize selectedFiles when SearchableItem is loaded
@@ -599,6 +586,7 @@ const DownloadableSearchableDetails = () => {
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
+              <>
               <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {SearchableItem.payloads.public.images.map((image, index) => {
                   // Check if it's a URL (mock mode) or base64
@@ -616,10 +604,13 @@ const DownloadableSearchableDetails = () => {
                     />
                   );
                 })}
+
               </div>
+            <Divider />
+              </>
+
             )}
 
-            <Divider />
             
             {/* Files Section */}
             {renderDownloadableFiles()}
@@ -639,9 +630,6 @@ const DownloadableSearchableDetails = () => {
                 <Divider style={{ margin: '8px 0' }} />
                 <Typography variant="body1" className={classes.userText} style={{ fontWeight: 'bold' }}>
                   Total to Pay: {formatCurrency(totalPrice * 1.035)}
-                </Typography>
-                <Typography variant="caption" className={classes.systemText}>
-                  Note: Platform fee (0.1%) will be deducted from seller's earnings
                 </Typography>
               </Box>
             )}
