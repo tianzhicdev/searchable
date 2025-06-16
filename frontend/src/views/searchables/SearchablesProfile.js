@@ -69,6 +69,7 @@ const SearchablesProfile = ({ item, onClick }) => {
         </Box>
         <Box id="item-profile-image" flex="0 0 auto" style={{ marginLeft: '16px' }}>
           {publicData.images && publicData.images.length > 0 && (
+          <Paper>
             <Box display="flex" justifyContent="center">
               <img 
                 src={publicData.images[0]} 
@@ -77,10 +78,10 @@ const SearchablesProfile = ({ item, onClick }) => {
                   maxWidth: '120px', 
                   maxHeight: '120px', 
                   objectFit: 'cover',
-                  borderRadius: '8px'
                 }}
               />
             </Box>
+            </Paper>
           )}
         </Box> 
       </Box>

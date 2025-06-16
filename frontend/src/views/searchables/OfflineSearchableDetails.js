@@ -4,28 +4,28 @@ import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
 import { 
-  Grid, Typography, Button, Paper, Box, CircularProgress, Divider,
-  TextField, IconButton, Collapse
+  Grid, Typography, Button, Paper, Box, CircularProgress, Divider, 
+  Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, 
+  Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails,
+  TextField, IconButton
 } from '@material-ui/core';
-import AddIcon from '@material-ui/icons/Add';
-import RemoveIcon from '@material-ui/icons/Remove';
+import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import CheckIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import CloseIcon from '@material-ui/icons/Close';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
+import AddIcon from '@material-ui/icons/Add';
+import RemoveIcon from '@material-ui/icons/Remove';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Alert from '@material-ui/lab/Alert';
-import PostedBy from '../../components/PostedBy';
-import ZoomableImage from '../../components/ZoomableImage';
-import RatingDisplay from '../../components/Rating/RatingDisplay';
+import Collapse from '@material-ui/core/Collapse';
 import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
+import ZoomableImage from '../../components/ZoomableImage';
+import RatingDisplay from '../../components/Rating/RatingDisplay';
+import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
-import { 
-  SearchableDetailsHeader,
-  SearchableDetailsInfo,
-  SearchableDetailsActions
-} from '../../components/SearchableDetails';
 
 const OfflineSearchableDetails = () => {
   const classes = useComponentStyles();
@@ -34,7 +34,6 @@ const OfflineSearchableDetails = () => {
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [searchablePayments, setSearchablePayments] = useState([]);
   
   // UI states
   const [loading, setLoading] = useState(true);
@@ -63,10 +62,11 @@ const OfflineSearchableDetails = () => {
   const [selectedItems, setSelectedItems] = useState({});
   const [totalPrice, setTotalPrice] = useState(0);
   
-  // Currency state
-  const [currency, setCurrency] = useState('usd');
+  // Purchased items tracking
+  const [userPaidItems, setUserPaidItems] = useState(new Set());
 
   useEffect(() => {
+    // User must be logged in to access this page (enforced by AuthGuard)
     fetchItemDetails();
     refreshPaymentsBySearchable();
     fetchRatings();
@@ -75,6 +75,8 @@ const OfflineSearchableDetails = () => {
   useEffect(() => {
     const checkOwnership = async () => {
       try {
+        console.log("User:", account.user);
+        console.log("Item:", SearchableItem);
         if (account && account.user && SearchableItem && SearchableItem.terminal_id === String(account.user._id)) {
           setIsOwner(true);
         } 
@@ -90,83 +92,90 @@ const OfflineSearchableDetails = () => {
   
   useEffect(() => {
     if (SearchableItem) {
-      // Set the currency based on the item's configuration
-      if (SearchableItem.payloads.public.currency === 'usdt') {
-        setCurrency('usdt');
-      } else {
-        setCurrency('usd');
-      }
+      fetchUserPaidItems();
     }
   }, [SearchableItem]);
-
+  
   useEffect(() => {
-    // Calculate total price when selections change
-    let total = 0;
-    Object.entries(selectedItems).forEach(([itemId, count]) => {
-      if (count > 0) {
-        const offlineItem = SearchableItem?.payloads.public.offlineItems?.find(
+    // Calculate total price based on selected items
+    if (SearchableItem && SearchableItem.payloads.public.offlineItems) {
+      let total = 0;
+      Object.entries(selectedItems).forEach(([itemId, count]) => {
+        const offlineItem = SearchableItem.payloads.public.offlineItems.find(
           item => item.itemId.toString() === itemId
         );
-        if (offlineItem) {
+        if (offlineItem && count > 0) {
           total += offlineItem.price * count;
         }
-      }
-    });
-    setTotalPrice(total);
+      });
+      setTotalPrice(total);
+    }
   }, [selectedItems, SearchableItem]);
-
+  
+  useEffect(() => {
+    // Initialize selectedItems when SearchableItem is loaded
+    if (SearchableItem && SearchableItem.payloads.public.offlineItems) {
+      const initialSelections = {};
+      SearchableItem.payloads.public.offlineItems.forEach(item => {
+        initialSelections[item.itemId] = 0;
+      });
+      setSelectedItems(initialSelections);
+    }
+  }, [SearchableItem]);
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (paymentCheckRef.current) {
+        clearTimeout(paymentCheckRef.current);
+      }
+    };
+  }, []);
+  
   const fetchItemDetails = async () => {
     setLoading(true);
     setError(null);
+    
     try {
       const response = await backend.get(`v1/searchable/${id}`);
-      console.log('[OFFLINE DETAILS] Item details:', response.data);
       setSearchableItem(response.data);
     } catch (err) {
       console.error("Error fetching item details:", err);
-      setError("Failed to load item details. Please try again.");
+      setError("Failed to load item details. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
-
-  const refreshPaymentsBySearchable = async () => {
-    try {
-      const response = await backend.get(`v1/payments-by-searchable/${id}`);
-      setSearchablePayments(response.data.receipts || []);
-    } catch (err) {
-      console.error("Error fetching payments:", err);
-    }
-  };
-
+  
+  // Fetch ratings for both the searchable item and the seller
   const fetchRatings = async () => {
     setLoadingRatings(true);
     try {
-      const [searchableRatingResponse, terminalRatingResponse] = await Promise.all([
-        backend.get(`v1/rating/searchable/${id}`),
-        backend.get(`v1/rating/terminal/${SearchableItem?.terminal_id}`)
-      ]);
+      // Fetch searchable item rating
+      const searchableResponse = await backend.get(`v1/rating/searchable/${id}`);
+      setSearchableRating(searchableResponse.data);
       
-      if (searchableRatingResponse.data) {
-        setSearchableRating(searchableRatingResponse.data);
-      }
-      
-      if (terminalRatingResponse.data) {
-        setTerminalRating(terminalRatingResponse.data);
+      // Fetch terminal (seller) rating if terminal_id is available
+      if (SearchableItem && SearchableItem.terminal_id) {
+        try {
+          const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
+          setTerminalRating(terminalResponse.data);
+        } catch (terminalErr) {
+          console.error("Error fetching terminal ratings:", terminalErr);
+          // Set empty rating data if fetch fails
+          setTerminalRating({ average_rating: 0, total_ratings: 0 });
+        }
       }
     } catch (err) {
       console.error("Error fetching ratings:", err);
+      // Don't set an error state, as this is not critical functionality
     } finally {
       setLoadingRatings(false);
     }
   };
   
-  const handleItemCountChange = (itemId, newCount) => {
-    if (newCount < 0) return;
-    setSelectedItems(prev => ({
-      ...prev,
-      [itemId]: newCount
-    }));
+  const handleItemSelection = (itemId, count) => {
+    setSelectedItems(prev => ({ ...prev, [itemId]: Math.max(0, count) }));
   };
 
   const incrementCount = (itemId) => {
@@ -182,11 +191,11 @@ const OfflineSearchableDetails = () => {
       [itemId]: Math.max(0, (prev[itemId] || 0) - 1)
     }));
   };
-
+  
   const createInvoice = async (invoiceType = 'stripe') => {
     if (!SearchableItem) return;
     
-    // Validate if we have any selections
+    // Validate if we have any item selections
     const hasSelections = Object.values(selectedItems).some(count => count > 0);
     
     if (!hasSelections) {
@@ -196,6 +205,10 @@ const OfflineSearchableDetails = () => {
     
     setCreatingInvoice(true);
     try {
+      // Get buyer ID - use account.user._id if available, otherwise use visitor ID
+      const buyerId = account?.user?._id;
+      
+      // Prepare common payload properties
       const payload = {
         searchable_id: id,
         invoice_type: invoiceType,
@@ -219,274 +232,407 @@ const OfflineSearchableDetails = () => {
           }
         }
       });
-      
       payload.selections = selections;
+      payload.total_price = totalPrice;
       
-      if (SearchableItem.payloads.public.require_address) {
-        payload.address = account?.user?.address || '';
-        payload.tel = account?.user?.tel || '';
+      // Add Stripe-specific properties if needed
+      if (invoiceType === 'stripe') {
+        payload.success_url = `${window.location.origin}${window.location.pathname}`;
+        payload.cancel_url = `${window.location.origin}${window.location.pathname}`;
       }
-
-      console.log('[OFFLINE DETAILS] Creating invoice with payload:', payload);
+      
+      // Add address and tel for logged-in users
+      if (account?.user) {
+        payload.address = account.user.address;
+        payload.tel = account.user.tel;
+      }
+      
       const response = await backend.post('v1/create-invoice', payload);
-
-      if (response.data.url) {
+      
+      if (invoiceType === 'stripe' && response.data.url) {
         window.location.href = response.data.url;
-      } else {
-        showAlert("Invoice created successfully", "success");
-        refreshPaymentsBySearchable();
       }
     } catch (err) {
-      console.error("Error creating invoice:", err);
-      showAlert(err.response?.data?.msg || "Failed to create invoice", "error");
+      console.error(`Error creating ${invoiceType} invoice:`, err);
+      showAlert(`Failed to create payment invoice. Please try again.`, "error");
     } finally {
       setCreatingInvoice(false);
     }
   };
+  
+  const handleRemoveItem = async () => {
+    if (!window.confirm("Are you sure you want to remove this item?")) {
+      return;
+    }
+    
+    setIsRemoving(true);
+    try {
+      await backend.put(
+        `v1/searchable/remove/${id}`,
+        {}
+      );
+      showAlert("Item removed successfully");
+      history.push('/searchables');
+    } catch (error) {
+      console.error("Error removing item:", error);
+      showAlert("Failed to remove the item", "error");
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+  
+  const fetchProfileData = async () => {
+    if (!account.user || !account.token) return;
+    
+    try {
+      const response = await backend.get('profile');
+      
+      // Update Redux store with new profile data
+      dispatch({
+        type: SET_USER,
+        payload: {
+          ...account.user,
+          address: response.data.address,
+          tel: response.data.tel
+        }
+      });
 
+    } catch (err) {
+      console.error('Error fetching user profile data:', err);
+    }
+  };
+
+  // Function to show alerts
   const showAlert = (message, severity = 'success') => {
     setAlertMessage(message);
     setAlertSeverity(severity);
     setAlertOpen(true);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+      setAlertOpen(false);
+    }, 5000);
   };
-
-  const handleGoBack = () => {
-    history.goBack();
+  
+  const handleStripePayButtonClick = async () => {
+    // Check if user is logged in
+    const isUserLoggedIn = !!account?.user;
+    
+    if (isUserLoggedIn) {
+      fetchProfileData();
+      
+      // Check if price meets minimum payment requirement
+      if (totalPrice < 1) {
+        showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
+        return;
+      }
+    }
+    
+    // Create Stripe checkout session
+    createInvoice('stripe');
   };
-
-  if (loading) {
+  
+  // Add this new function to refresh payments by searchable id
+  const refreshPaymentsBySearchable = async () => {
+    try {
+      await backend.get(`v1/refresh-payments-by-searchable/${id}`);
+      
+    } catch (err) {
+      console.error("Error refreshing payments for searchable:", err);
+      // Don't show an alert as this is a background operation
+    }
+  };
+  
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+      return `$${amount.toFixed(2)}`;
+  };
+  
+  // Add new function to fetch user-specific paid items
+  const fetchUserPaidItems = async () => {
+    try {
+      const response = await backend.get(`v1/user-paid-items/${id}`);
+      const userPaidItemIds = new Set(response.data.paid_item_ids);
+      setUserPaidItems(userPaidItemIds);
+    } catch (err) {
+      console.error("Error fetching user paid items:", err);
+      // Set empty set if there's an error (user probably hasn't paid)
+      setUserPaidItems(new Set());
+    }
+  };
+  
+  // Render offline items selection UI
+  const renderOfflineItems = () => {
+    if (!SearchableItem || !SearchableItem.payloads.public.offlineItems) {
+      return null;
+    }
+    
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box display="flex" flexDirection="column" alignItems="center" height="200px">
-        <ErrorIcon color="error" style={{ fontSize: 48, marginBottom: 16 }} />
-        <Typography variant="h6" color="error">{error}</Typography>
-        <Button onClick={fetchItemDetails} variant="contained" style={{ marginTop: 16 }}>
-          Retry
-        </Button>
-      </Box>
-    );
-  }
-
-  if (!SearchableItem) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-        <Typography>Item not found</Typography>
-      </Box>
-    );
-  }
-
-  const publicData = SearchableItem.payloads?.public || {};
-
-  return (
-    <Box>
-      <Collapse in={alertOpen}>
-        <Alert 
-          severity={alertSeverity}
-          action={
-            <IconButton
-              aria-label="close"
-              color="inherit"
-              size="small"
-              onClick={() => setAlertOpen(false)}
-            >
-              <CloseIcon fontSize="inherit" />
-            </IconButton>
-          }
-        >
-          {alertMessage}
-        </Alert>
-      </Collapse>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Button 
-            startIcon={<ChevronLeftIcon />}
-            onClick={handleGoBack}
-            variant="outlined"
-          >
-            Back to Search
-          </Button>
-        </Grid>
-
-        <Grid item xs={12} md={8}>
-          <Paper elevation={3}>
-            <Box p={3}>
-              <Typography variant="h4" gutterBottom>
-                {publicData.title}
-              </Typography>
-              
-              <PostedBy 
-                username={SearchableItem.username} 
-                terminalId={SearchableItem.terminal_id} 
-              />
-              
-              <Divider style={{ margin: '16px 0' }} />
-              
-              <Typography variant="body1" paragraph>
-                {publicData.description}
-              </Typography>
-
-              {/* Display images */}
-              {publicData.images && publicData.images.length > 0 && (
-                <Box mb={3}>
-                  <Typography variant="h6" gutterBottom>Images</Typography>
-                  <Grid container spacing={2}>
-                    {publicData.images.map((image, index) => (
-                      <Grid item xs={6} sm={4} md={3} key={index}>
-                        <ZoomableImage 
-                          src={image} 
-                          alt={`${publicData.title} - Image ${index + 1}`}
-                          style={{ width: '100%', height: '150px', objectFit: 'cover' }}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Box>
-              )}
-
-              {/* Offline Items Menu */}
-              <Typography variant="h6" gutterBottom>
-                Available Items
-              </Typography>
-              
-              {publicData.offlineItems && publicData.offlineItems.length > 0 ? (
-                <Box>
-                  {publicData.offlineItems.map((item, index) => (
-                    <Paper key={item.itemId} elevation={1} style={{ marginBottom: 16, padding: 16 }}>
-                      <Grid container alignItems="center" spacing={2}>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="h6">{item.name}</Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {item.description}
-                          </Typography>
-                          <Typography variant="h6" color="primary">
-                            ${item.price.toFixed(2)} {currency?.toUpperCase()}
-                          </Typography>
-                        </Grid>
-                        
-                        <Grid item xs={12} sm={6}>
-                          <Box display="flex" alignItems="center" justifyContent="flex-end">
-                            <IconButton 
-                              onClick={() => decrementCount(item.itemId)}
-                              disabled={!selectedItems[item.itemId] || selectedItems[item.itemId] === 0}
-                            >
-                              <RemoveIcon />
-                            </IconButton>
-                            
-                            <TextField
-                              type="number"
-                              value={selectedItems[item.itemId] || 0}
-                              onChange={(e) => handleItemCountChange(item.itemId, parseInt(e.target.value) || 0)}
-                              inputProps={{ min: 0, style: { textAlign: 'center', width: '60px' } }}
-                              variant="outlined"
-                              size="small"
-                            />
-                            
-                            <IconButton onClick={() => incrementCount(item.itemId)}>
-                              <AddIcon />
-                            </IconButton>
-                          </Box>
-                          
-                          {selectedItems[item.itemId] > 0 && (
-                            <Typography variant="body2" align="right" color="primary">
-                              Subtotal: ${(item.price * selectedItems[item.itemId]).toFixed(2)}
-                            </Typography>
-                          )}
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  ))}
-                  
-                  {totalPrice > 0 && (
-                    <Paper elevation={2} style={{ padding: 16, backgroundColor: '#f5f5f5' }}>
-                      <Typography variant="h6" align="right">
-                        Total: ${totalPrice.toFixed(2)} {currency?.toUpperCase()}
+      <Box>
+        {SearchableItem.payloads.public.offlineItems.map((item) => {
+          const isPaidByCurrentUser = userPaidItems.has(item.itemId.toString());
+          const currentCount = selectedItems[item.itemId] || 0;
+          
+          return (
+            <Paper key={item.itemId} >
+              <Box flex={1}>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <Box flex={1}>
+                    <Typography variant="body1" className={classes.staticText}>{item.name}</Typography>
+                    <Typography variant="body2" className={classes.userText}>
+                      {item.description}
+                    </Typography>
+                    <Typography variant="body2" className={classes.userText}>{formatCurrency(item.price)}</Typography>
+                    {isPaidByCurrentUser && (
+                      <Typography variant="caption" className={classes.userText} style={{ color: 'green' }}>
+                        ✓ Purchased
                       </Typography>
-                      
-                      <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => createInvoice('stripe')}
-                          disabled={creatingInvoice}
-                          startIcon={creatingInvoice ? <CircularProgress size={20} /> : null}
-                        >
-                          {creatingInvoice ? 'Creating...' : 'Purchase with Card'}
-                        </Button>
-                        
-                        {currency === 'usdt' && (
-                          <Button
-                            variant="outlined"
-                            onClick={() => createInvoice('usdt')}
-                            disabled={creatingInvoice}
-                          >
-                            Pay with USDT
-                          </Button>
-                        )}
-                      </Box>
-                    </Paper>
+                    )}
+                  </Box>
+                  
+                  {!isPaidByCurrentUser && (
+                    <Box display="flex" alignItems="center">
+                      <IconButton 
+                        size="small"
+                        onClick={() => decrementCount(item.itemId)}
+                        disabled={currentCount === 0}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                      <TextField
+                        type="number"
+                        value={currentCount}
+                        onChange={(e) => handleItemSelection(item.itemId, parseInt(e.target.value) || 0)}
+                        inputProps={{ min: 0, style: { textAlign: 'center', width: '60px' } }}
+                        variant="outlined"
+                        size="small"
+                        style={{ margin: '0 8px' }}
+                      />
+                      <IconButton 
+                        size="small"
+                        onClick={() => incrementCount(item.itemId)}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                    </Box>
                   )}
                 </Box>
-              ) : (
-                <Typography color="textSecondary">
-                  No items available for purchase.
-                </Typography>
-              )}
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          {/* Ratings Section */}
-          <Paper elevation={3}>
-            <Box p={2}>
-              <Typography variant="h6" gutterBottom>Ratings</Typography>
-              {loadingRatings ? (
-                <Box display="flex" justifyContent="center">
-                  <CircularProgress size={24} />
-                </Box>
-              ) : (
-                <>
-                  {searchableRating && (
-                    <RatingDisplay 
-                      title="Item Rating"
-                      rating={searchableRating}
-                    />
-                  )}
-                  {terminalRating && (
-                    <RatingDisplay 
-                      title="Seller Rating"
-                      rating={terminalRating}
-                    />
-                  )}
-                </>
-              )}
-            </Box>
-          </Paper>
-
-          {/* Owner's Invoice History */}
-          {isOwner && (
-            <Paper elevation={3} style={{ marginTop: 16 }}>
-              <Box p={2}>
-                <Typography variant="h6" gutterBottom>Sales History</Typography>
-                <InvoiceList 
-                  invoices={searchablePayments} 
-                  showBuyerInfo={true}
-                  userRole="seller"
-                />
               </Box>
             </Paper>
-          )}
-        </Grid>
+          );
+        })}
+        
+        {totalPrice > 0 && (
+          <Box mt={2} display="flex" justifyContent="flex-end" width="100%">
+            <Typography variant="h6">
+              Total: {formatCurrency(totalPrice)}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    );
+  };
+  
+  return (
+    <Grid container spacing={2}>
+      <Grid item xs={12}>
+        <Box>
+              <Button 
+                color="primary" 
+                variant='contained'
+                onClick={() => history.push('/searchables')}
+              >
+                <ChevronLeftIcon />
+              </Button>
+        </Box>
       </Grid>
-    </Box>
+      
+      {/* Alert notification */}
+      <Box>
+        <Collapse in={alertOpen}>
+          <Alert
+            severity={alertSeverity}
+            action={
+              <IconButton
+                aria-label="close"
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  setAlertOpen(false);
+                }}
+              >
+                <CloseIcon fontSize="inherit" />
+              </IconButton>
+            }
+            icon={alertSeverity === 'success' ? <CheckIcon fontSize="inherit" /> : <ErrorIcon fontSize="inherit" />}
+          >
+            {alertMessage}
+          </Alert>
+        </Collapse>
+      </Box>
+      
+      {loading && (
+        <Grid item xs={12}>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+            <CircularProgress />
+          </Box>
+        </Grid>
+      )}
+      
+      {error && (
+        <Grid item xs={12}>
+          <Paper>
+            <Typography variant="body1">{error}</Typography>
+          </Paper>
+        </Grid>
+      )}
+      
+      {!loading && SearchableItem && (
+        <Grid item xs={12}>
+          <Paper>
+            {/* Title and Rating Summary */}
+            <Typography variant="h3" className={classes.userText}>
+              {SearchableItem.payloads.public.title || `Offline Menu #${SearchableItem.searchable_id}`}
+            </Typography>
+            <Divider />
+            
+            {!loadingRatings && searchableRating && (
+              <Box>
+                <Typography variant="body1" className={classes.staticText}>
+                  Rating: {searchableRating.average_rating?.toFixed(1)}/5 ({searchableRating.total_ratings} reviews)
+                </Typography>
+              </Box>
+            )}            
+            {/* Posted by section */}
+            <PostedBy 
+              username={SearchableItem.username} 
+              terminalId={SearchableItem.terminal_id} 
+              maxLength={30}
+            />
+
+            <Divider />
+            
+            {/* Description */}
+            {SearchableItem.payloads.public.description && (
+              <Box >
+                <Typography variant="body1" className={classes.userText}>
+                  {SearchableItem.payloads.public.description}
+                </Typography>
+              </Box>
+            )}
+
+            <Divider />
+
+            {/* Images */}
+            {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
+              <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {SearchableItem.payloads.public.images.map((image, index) => {
+                  // Check if it's a URL (mock mode) or base64
+                  const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
+                  const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
+                  
+                  return (
+                    <ZoomableImage 
+                      key={index}
+                      src={imageSrc} 
+                      alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
+                      style={{ maxWidth: '300px'}}
+                    />
+                  );
+                })}
+
+            <Divider />
+              </div>
+            )}
+
+            
+            {/* Items Section */}
+            {renderOfflineItems()}
+            
+            {/* Payment Summary and Button */}
+            {totalPrice > 0 && (
+              <Box mt={2} p={2} bgcolor="background.paper">
+                <Typography variant="subtitle2" className={classes.staticText}>
+                  Payment Summary:
+                </Typography>
+                <Typography variant="body2" className={classes.userText}>
+                  Subtotal: {formatCurrency(totalPrice)}
+                </Typography>
+                <Typography variant="body2" className={classes.userText}>
+                  Stripe Fee (3.5%): {formatCurrency(totalPrice * 0.035)}
+                </Typography>
+                <Divider style={{ margin: '8px 0' }} />
+                <Typography variant="body1" className={classes.userText} style={{ fontWeight: 'bold' }}>
+                  Total to Pay: {formatCurrency(totalPrice * 1.035)}
+                </Typography>
+              </Box>
+            )}
+            
+            {/* Payment Button */}
+            <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                onClick={handleStripePayButtonClick}
+                disabled={creatingInvoice || totalPrice === 0}
+              >
+                <Typography variant="body2" className={classes.staticText}>
+                  Pay {formatCurrency(totalPrice * 1.035)}
+                </Typography>
+              </Button>
+            </div>
+            
+            {/* Remove Button for Owner */}
+            {isOwner && (
+              <div style={{ margin: '4px', display: 'flex', justifyContent: 'center' }}>
+                <Button
+                  variant="contained"
+                  onClick={handleRemoveItem}
+                  disabled={isRemoving}
+                  fullWidth
+                >
+                  Remove Item
+                </Button>
+              </div>
+            )}
+          </Paper>
+          
+          {/* Collapsible Reviews Section */}
+          {!loadingRatings && searchableRating && searchableRating.individual_ratings && searchableRating.individual_ratings.length > 0 && (
+            
+            <Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon className={classes.iconColor} />}
+                aria-controls="reviews-content"
+                id="reviews-header"
+              >
+                <Typography className={classes.staticText}>
+                  Recent Reviews ({searchableRating.individual_ratings.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box width="100%">
+                  <RatingDisplay
+                    averageRating={searchableRating.average_rating || 0}
+                    totalRatings={searchableRating.total_ratings || 0}
+                    individualRatings={searchableRating.individual_ratings || []}
+                    showIndividualRatings={true}
+                    maxIndividualRatings={10}
+                  />
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          )}
+          
+          <InvoiceList 
+            searchableId={id} 
+            onRatingSubmitted={() => {
+              fetchRatings();
+            }}
+          />
+        </Grid>
+      )}
+
+    </Grid>
   );
 };
 
