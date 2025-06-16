@@ -121,7 +121,6 @@ const Searchables = () => {
               <Button 
                 variant="contained" 
                 onClick={handleAddNew}
-                endIcon={<ArrowDropDownIcon />}
                 style={{ float: 'right' }}
               >
                 <AddIcon />

@@ -202,13 +202,13 @@ const PublishOfflineSearchable = () => {
                 images={images}
                 onImagesChange={handleImagesChange}
                 onError={setError}
-                imageDescription="Add up to 10 images to showcase your offline products"
+                imageDescription="Add up to 10 images "
                 showCurrency={false}
               />
               
               <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Offline Items *
+                <Typography variant="subtitle1">
+                  Product Items *
                 </Typography>
                 <Typography variant="caption" className={classes.formHelp}>
                   Add items that customers can order from your menu

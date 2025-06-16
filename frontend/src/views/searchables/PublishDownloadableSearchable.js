@@ -274,7 +274,7 @@ const PublishDownloadableSearchable = () => {
                 images={images}
                 onImagesChange={handleImagesChange}
                 onError={setError}
-                imageDescription="Add up to 10 images to showcase your downloadable content"
+                imageDescription="Add up to 10 images"
               />
               
               <Grid item xs={12} className={classes.formGroup}>
