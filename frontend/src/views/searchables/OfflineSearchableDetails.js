@@ -3,15 +3,20 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory } from 'react-router-dom';
 import configData from '../../config';
-import { Grid, Typography, Button, Paper, Box, CircularProgress, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails } from '@material-ui/core';
+import { 
+  Grid, Typography, Button, Paper, Box, CircularProgress, Divider, 
+  Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, 
+  Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails,
+  TextField, IconButton
+} from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import CloseIcon from '@material-ui/icons/Close';
-import GetAppIcon from '@material-ui/icons/GetApp';
+import AddIcon from '@material-ui/icons/Add';
+import RemoveIcon from '@material-ui/icons/Remove';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Alert from '@material-ui/lab/Alert';
-import IconButton from '@material-ui/core/IconButton';
 import Collapse from '@material-ui/core/Collapse';
 import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
@@ -22,21 +27,19 @@ import RatingDisplay from '../../components/Rating/RatingDisplay';
 import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
 
-const DownloadableSearchableDetails = () => {
+const OfflineSearchableDetails = () => {
   const classes = useComponentStyles();
   const dispatch = useDispatch();
 
   // Item data
   const [SearchableItem, setSearchableItem] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [searchablePayments, setSearchablePayments] = useState([]);
   
   // UI states
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
-  
   
   // Rating states
   const [searchableRating, setSearchableRating] = useState(null);
@@ -55,15 +58,13 @@ const DownloadableSearchableDetails = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
   
-  // File selection states (changed from selectedVariations to selectedFiles)
-  const [selectedFiles, setSelectedFiles] = useState({});
+  // Item selection states for offline products (with count)
+  const [selectedItems, setSelectedItems] = useState({});
   const [totalPrice, setTotalPrice] = useState(0);
   
-  // Download states
-  const [downloadingFiles, setDownloadingFiles] = useState({});
-  const [paidFiles, setPaidFiles] = useState(new Set());
-  const [userPaidFiles, setUserPaidFiles] = useState(new Set());
-  
+  // Purchased items tracking
+  const [userPaidItems, setUserPaidItems] = useState(new Set());
+
   useEffect(() => {
     // User must be logged in to access this page (enforced by AuthGuard)
     fetchItemDetails();
@@ -88,60 +89,39 @@ const DownloadableSearchableDetails = () => {
       checkOwnership();
     }
   }, [SearchableItem, account]);
-
   
   useEffect(() => {
     if (SearchableItem) {
-      fetchUserPaidFiles();
+      fetchUserPaidItems();
     }
   }, [SearchableItem]);
   
   useEffect(() => {
-    // Calculate total price based on selected files
-    if (SearchableItem && SearchableItem.payloads.public.downloadableFiles) {
+    // Calculate total price based on selected items
+    if (SearchableItem && SearchableItem.payloads.public.offlineItems) {
       let total = 0;
-      Object.entries(selectedFiles).forEach(([id, isSelected]) => {
-        const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
-          file => file.fileId.toString() === id
+      Object.entries(selectedItems).forEach(([itemId, count]) => {
+        const offlineItem = SearchableItem.payloads.public.offlineItems.find(
+          item => item.itemId.toString() === itemId
         );
-        if (downloadable && isSelected) {
-          total += downloadable.price;
+        if (offlineItem && count > 0) {
+          total += offlineItem.price * count;
         }
       });
       setTotalPrice(total);
-      
-      // No need to convert prices anymore - all prices are in USD
     }
-  }, [selectedFiles, SearchableItem]);
+  }, [selectedItems, SearchableItem]);
   
   useEffect(() => {
-    // Initialize selectedFiles when SearchableItem is loaded
-    if (SearchableItem && SearchableItem.payloads.public.downloadableFiles) {
+    // Initialize selectedItems when SearchableItem is loaded
+    if (SearchableItem && SearchableItem.payloads.public.offlineItems) {
       const initialSelections = {};
-      SearchableItem.payloads.public.downloadableFiles.forEach(file => {
-        initialSelections[file.fileId] = false;
+      SearchableItem.payloads.public.offlineItems.forEach(item => {
+        initialSelections[item.itemId] = 0;
       });
-      setSelectedFiles(initialSelections);
+      setSelectedItems(initialSelections);
     }
   }, [SearchableItem]);
-  
-  useEffect(() => {
-    // Update paid files from payment history (for display purposes only - shows files purchased by anyone)
-    if (searchablePayments && searchablePayments.length > 0) {
-      const paidFileIds = new Set();
-      searchablePayments.forEach(payment => {
-        if (payment.public && payment.public.status === 'complete' && payment.public.selections) {
-          // Use the selections data from the payment
-          payment.public.selections.forEach(selection => {
-            if (selection.type === 'downloadable') {
-              paidFileIds.add(selection.id.toString());
-            }
-          });
-        }
-      });
-      setPaidFiles(paidFileIds);
-    }
-  }, [searchablePayments, SearchableItem]);
   
   useEffect(() => {
     return () => {
@@ -176,7 +156,7 @@ const DownloadableSearchableDetails = () => {
       setSearchableRating(searchableResponse.data);
       
       // Fetch terminal (seller) rating if terminal_id is available
-      if (SearchableItem.terminal_id) {
+      if (SearchableItem && SearchableItem.terminal_id) {
         try {
           const terminalResponse = await backend.get(`v1/rating/terminal/${SearchableItem.terminal_id}`);
           setTerminalRating(terminalResponse.data);
@@ -194,19 +174,32 @@ const DownloadableSearchableDetails = () => {
     }
   };
   
-  
-  const handleFileSelection = (id, checked) => {
-    setSelectedFiles(prev => ({ ...prev, [id]: checked }));
+  const handleItemSelection = (itemId, count) => {
+    setSelectedItems(prev => ({ ...prev, [itemId]: Math.max(0, count) }));
+  };
+
+  const incrementCount = (itemId) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: (prev[itemId] || 0) + 1
+    }));
+  };
+
+  const decrementCount = (itemId) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [itemId]: Math.max(0, (prev[itemId] || 0) - 1)
+    }));
   };
   
   const createInvoice = async (invoiceType = 'stripe') => {
     if (!SearchableItem) return;
     
-    // Validate if we have any file selections
-    const hasSelections = Object.values(selectedFiles).some(isSelected => isSelected);
+    // Validate if we have any item selections
+    const hasSelections = Object.values(selectedItems).some(count => count > 0);
     
     if (!hasSelections) {
-      showAlert("Please select at least one file to purchase", "warning");
+      showAlert("Please select at least one item to purchase", "warning");
       return;
     }
     
@@ -221,19 +214,20 @@ const DownloadableSearchableDetails = () => {
         invoice_type: invoiceType,
       };
       
-      // Add selected files
+      // Add selected items with counts
       const selections = [];
-      Object.entries(selectedFiles).forEach(([id, isSelected]) => {
-        if (isSelected) {
-          const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
-            file => file.fileId.toString() === id
+      Object.entries(selectedItems).forEach(([itemId, count]) => {
+        if (count > 0) {
+          const offlineItem = SearchableItem.payloads.public.offlineItems.find(
+            item => item.itemId.toString() === itemId
           );
-          if (downloadable) {
+          if (offlineItem) {
             selections.push({
-              id: downloadable.fileId,
-              name: downloadable.name,
-              price: downloadable.price,
-              type: 'downloadable'
+              id: offlineItem.itemId,
+              name: offlineItem.name,
+              price: offlineItem.price,
+              count: count,
+              type: 'offline'
             });
           }
         }
@@ -265,8 +259,6 @@ const DownloadableSearchableDetails = () => {
       setCreatingInvoice(false);
     }
   };
-  
-
   
   const handleRemoveItem = async () => {
     if (!window.confirm("Are you sure you want to remove this item?")) {
@@ -322,7 +314,6 @@ const DownloadableSearchableDetails = () => {
     }, 5000);
   };
   
-  
   const handleStripePayButtonClick = async () => {
     // Check if user is logged in
     const isUserLoggedIn = !!account?.user;
@@ -341,16 +332,6 @@ const DownloadableSearchableDetails = () => {
     createInvoice('stripe');
   };
   
-  const fetchPayments = async () => {
-    try {
-      const response = await backend.get(`v1/payments-by-searchable/${id}`);
-      setSearchablePayments(response.data.receipts);
-    } catch (err) {
-      console.error("Error fetching payments:", err);
-      showAlert("Failed to load payment history", "error");
-    }
-  };
-  
   // Add this new function to refresh payments by searchable id
   const refreshPaymentsBySearchable = async () => {
     try {
@@ -362,122 +343,81 @@ const DownloadableSearchableDetails = () => {
     }
   };
   
-  
   // Helper function to format currency
   const formatCurrency = (amount) => {
       return `$${amount.toFixed(2)}`;
   };
   
-  // Add new function to fetch user-specific paid files
-  const fetchUserPaidFiles = async () => {
+  // Add new function to fetch user-specific paid items
+  const fetchUserPaidItems = async () => {
     try {
-      const response = await backend.get(`v1/user-paid-files/${id}`);
-      const userPaidFileIds = new Set(response.data.paid_file_ids);
-      setUserPaidFiles(userPaidFileIds);
+      const response = await backend.get(`v1/user-paid-items/${id}`);
+      const userPaidItemIds = new Set(response.data.paid_item_ids);
+      setUserPaidItems(userPaidItemIds);
     } catch (err) {
-      console.error("Error fetching user paid files:", err);
+      console.error("Error fetching user paid items:", err);
       // Set empty set if there's an error (user probably hasn't paid)
-      setUserPaidFiles(new Set());
+      setUserPaidItems(new Set());
     }
   };
   
-  // Download file function
-  const downloadFile = async (fileId, fileName) => {
-    // Check if user has paid for this specific file
-    if (!userPaidFiles.has(fileId.toString())) {
-      showAlert("You haven't paid for this file yet", "error");
-      return;
-    }
-    
-    setDownloadingFiles(prev => ({ ...prev, [fileId]: true }));
-    
-    try {
-      const response = await backend.get(`v1/download-file/${id}/${fileId}`, {
-        responseType: 'blob'
-      });
-      
-      // Create blob URL and trigger download
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      showAlert(`Successfully downloaded ${fileName}`);
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      if (error.response && error.response.status === 403) {
-        showAlert("Payment required to download this file", "error");
-      } else if (error.response && error.response.status === 401) {
-        showAlert("Please log in to download files", "error");
-      } else {
-        showAlert(`Failed to download ${fileName}`, "error");
-      }
-    } finally {
-      setDownloadingFiles(prev => ({ ...prev, [fileId]: false }));
-    }
-  };
-  
-  // Render downloadable files selection UI
-  const renderDownloadableFiles = () => {
-    if (!SearchableItem || !SearchableItem.payloads.public.downloadableFiles) {
+  // Render offline items selection UI
+  const renderOfflineItems = () => {
+    if (!SearchableItem || !SearchableItem.payloads.public.offlineItems) {
       return null;
     }
     
     return (
       <Box>
-        {SearchableItem.payloads.public.downloadableFiles.map((file) => {
-          const isPaidByCurrentUser = userPaidFiles.has(file.fileId.toString());
-          const isPaidBySomeone = paidFiles.has(file.fileId.toString());
-          const isDownloading = downloadingFiles[file.fileId];
+        {SearchableItem.payloads.public.offlineItems.map((item) => {
+          const isPaidByCurrentUser = userPaidItems.has(item.itemId.toString());
+          const currentCount = selectedItems[item.itemId] || 0;
           
           return (
-            <Paper key={file.fileId} >
+            <Paper key={item.itemId} >
               <Box flex={1}>
-                <Box display="flex" alignItems="center">
-                  {!isPaidByCurrentUser ? (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={selectedFiles[file.fileId] || false}
-                          onChange={(e) => handleFileSelection(file.fileId, e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label=""
-                    />
-                  ) : (
-                    <CheckIcon style={{ color: 'green', marginRight: 16 }} />
-                  )}
-                  <Box>
-                    <Typography variant="body1" className={classes.staticText}>{file.name}</Typography>
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <Box flex={1}>
+                    <Typography variant="body1" className={classes.staticText}>{item.name}</Typography>
                     <Typography variant="body2" className={classes.userText}>
-                      {file.description}
+                      {item.description}
                     </Typography>
-                    <Typography variant="body2" className={classes.userText}>{formatCurrency(file.price)}</Typography>
-                    {isPaidBySomeone && !isPaidByCurrentUser && (
-                      <Typography variant="caption" className={classes.userText}>
-                        (Purchased by others)
+                    <Typography variant="body2" className={classes.userText}>{formatCurrency(item.price)}</Typography>
+                    {isPaidByCurrentUser && (
+                      <Typography variant="caption" className={classes.userText} style={{ color: 'green' }}>
+                        ✓ Purchased
                       </Typography>
                     )}
                   </Box>
+                  
+                  {!isPaidByCurrentUser && (
+                    <Box display="flex" alignItems="center">
+                      <IconButton 
+                        size="small"
+                        onClick={() => decrementCount(item.itemId)}
+                        disabled={currentCount === 0}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                      <TextField
+                        type="number"
+                        value={currentCount}
+                        onChange={(e) => handleItemSelection(item.itemId, parseInt(e.target.value) || 0)}
+                        inputProps={{ min: 0, style: { textAlign: 'center', width: '60px' } }}
+                        variant="outlined"
+                        size="small"
+                        style={{ margin: '0 8px' }}
+                      />
+                      <IconButton 
+                        size="small"
+                        onClick={() => incrementCount(item.itemId)}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                    </Box>
+                  )}
                 </Box>
               </Box>
-              
-              {isPaidByCurrentUser && (
-                <Button
-                 variant='contained'
-                  onClick={() => downloadFile(file.fileId, file.name)}
-                  disabled={isDownloading}
-                  startIcon={isDownloading ? <CircularProgress size={20} /> : <GetAppIcon />}
-                >
-                  {isDownloading ? 'Downloading...' : 'Download'}
-                </Button>
-              )}
             </Paper>
           );
         })}
@@ -552,7 +492,7 @@ const DownloadableSearchableDetails = () => {
           <Paper>
             {/* Title and Rating Summary */}
             <Typography variant="h3" className={classes.userText}>
-              {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
+              {SearchableItem.payloads.public.title || `Offline Menu #${SearchableItem.searchable_id}`}
             </Typography>
             <Divider />
             
@@ -570,7 +510,6 @@ const DownloadableSearchableDetails = () => {
               maxLength={30}
             />
 
-
             <Divider />
             
             {/* Description */}
@@ -586,14 +525,11 @@ const DownloadableSearchableDetails = () => {
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-              <>
               <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {SearchableItem.payloads.public.images.map((image, index) => {
                   // Check if it's a URL (mock mode) or base64
                   const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
                   const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
-                  
-                  // console.log(`[DEBUG] Image ${index}: isUrl=${isUrl}, src=${imageSrc?.substring(0, 50)}...`);
                   
                   return (
                     <ZoomableImage 
@@ -605,15 +541,13 @@ const DownloadableSearchableDetails = () => {
                   );
                 })}
 
-              </div>
             <Divider />
-              </>
-
+              </div>
             )}
 
             
-            {/* Files Section */}
-            {renderDownloadableFiles()}
+            {/* Items Section */}
+            {renderOfflineItems()}
             
             {/* Payment Summary and Button */}
             {totalPrice > 0 && (
@@ -702,4 +636,4 @@ const DownloadableSearchableDetails = () => {
   );
 };
 
-export default DownloadableSearchableDetails;
+export default OfflineSearchableDetails;

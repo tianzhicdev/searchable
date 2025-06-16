@@ -123,6 +123,7 @@ failed_test_names=()
 # Test execution order (dependencies considered)
 test_files=(
     "test_integration.py"                    # Core functionality (existing)
+    "test_offline_searchables.py"           # Offline searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
     "test_withdrawals.py"                   # Withdrawal operations
     "test_ratings.py"                       # Rating system
@@ -244,8 +245,9 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "=============================="
     echo "The comprehensive test suite covers:"
     echo "✅ User Authentication (register, login, logout)"
-    echo "✅ Searchable CRUD Operations"
-    echo "✅ Payment Processing (invoice creation, completion)"
+    echo "✅ Searchable CRUD Operations (downloadable and offline types)"
+    echo "✅ Offline Searchables (menu items, quantity handling)"
+    echo "✅ Payment Processing (invoice creation, completion, count field)"
     echo "✅ File Management (upload, metadata, listing)"
     echo "✅ Media Management (upload, retrieval)"
     echo "✅ Profile Management (create, update, retrieve)"

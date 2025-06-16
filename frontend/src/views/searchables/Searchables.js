@@ -3,12 +3,15 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
-  Grid, Button, Box, TextField, MenuItem, Select
+  Grid, Button, Box, TextField, MenuItem, Select, Menu, MenuList, ListItemIcon, ListItemText
 } from '@material-ui/core';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonIcon from '@material-ui/icons/Person';
 import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
+import GetAppIcon from '@material-ui/icons/GetApp';
+import StorefrontIcon from '@material-ui/icons/Storefront';
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import { useLogout } from '../../components/LogoutHandler';
 import useComponentStyles from '../../themes/componentStyles';
 import SearchableList from './SearchableList';
@@ -53,12 +56,28 @@ const Searchables = () => {
 
   const classes = useComponentStyles();
 
+  // State for dropdown menu
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
+  // Handle dropdown menu
+  const handleAddNew = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
-  // Handle navigation to publish page
-  const handleAddNew = () => {
+  // Handle navigation to publish pages
+  const handlePublishDigital = () => {
     history.push('/publish-searchables');
+    handleMenuClose();
+  };
+
+  const handlePublishOffline = () => {
+    history.push('/publish-offline-searchables');
+    handleMenuClose();
   };
 
   // Handle navigation to profile page
@@ -106,6 +125,33 @@ const Searchables = () => {
               >
                 <AddIcon />
               </Button>
+              
+              <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={handlePublishDigital}>
+                  <ListItemIcon>
+                    <GetAppIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Sell Digital Products" />
+                </MenuItem>
+                <MenuItem onClick={handlePublishOffline}>
+                  <ListItemIcon>
+                    <StorefrontIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Sell Offline Products" />
+                </MenuItem>
+              </Menu>
             </>
         </Box>
       </Grid>

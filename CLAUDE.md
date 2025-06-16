@@ -38,8 +38,9 @@ Searchable is a declarative framework for building information deposit and retri
 ## Core Development Rules
 
 1. **Use history not navigate** - React Router navigation
-4. **Mock mode for UI testing** - Always verify UI changes with mock data
-5. **Restart services after changes** - Verify functionality using `./exec.sh local deploy-all` and `cd integration-tests && ./run_comprehensive_tests.sh` before declaring success
+2. **Button styling** - Always use `variant="contained"` for all buttons throughout the application
+3. **Mock mode for UI testing** - Always verify UI changes with mock data
+4. **Restart services after changes** - Verify functionality using `./exec.sh local deploy-all` and `cd integration-tests && ./run_comprehensive_tests.sh` before declaring success
 
 ## Architecture Overview
 
