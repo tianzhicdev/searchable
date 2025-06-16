@@ -525,24 +525,25 @@ const OfflineSearchableDetails = () => {
 
             {/* Images */}
             {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-              <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {SearchableItem.payloads.public.images.map((image, index) => {
-                  // Check if it's a URL (mock mode) or base64
-                  const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
-                  const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
-                  
-                  return (
-                    <ZoomableImage 
-                      key={index}
-                      src={imageSrc} 
-                      alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
-                      style={{ maxWidth: '300px'}}
-                    />
-                  );
-                })}
-
-            <Divider />
-              </div>
+              <div>
+                <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {SearchableItem.payloads.public.images.map((image, index) => {
+                    // Check if it's a URL (mock mode) or base64
+                    const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
+                    const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
+                    
+                    return (
+                      <ZoomableImage 
+                        key={index}
+                        src={imageSrc} 
+                        alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
+                        style={{ maxWidth: '300px'}}
+                      />
+                    );
+                  })}
+                </div>
+              <Divider />
+            </div>
             )}
 
             
