@@ -11,6 +11,8 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import AddIcon from '@material-ui/icons/Add';
 import backend from '../utilities/Backend';
 import ImageUploader from '../../components/ImageUploader';
+import PublishSearchableCommon from '../../components/PublishSearchableCommon';
+import PublishSearchableActions from '../../components/PublishSearchableActions';
 
 const PublishOfflineSearchable = () => {
   console.log("PublishOfflineSearchable component is being rendered");
@@ -194,51 +196,15 @@ const PublishOfflineSearchable = () => {
         <Paper elevation={3}>
           <form onSubmit={handleSubmit}>
             <Grid container spacing={1}>
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Title *
-                </Typography>
-                <TextField
-                  fullWidth
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  size="small"
-                  required
-                  className={classes.textInput}
-                />
-              </Grid>
-              
-              <Grid item xs={12} className={classes.formGroup}>
-                <Typography variant="subtitle1" className={classes.formLabel}>
-                  Description
-                </Typography>
-                <TextField
-                  fullWidth
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  variant="outlined"
-                  multiline
-                  rows={4}
-                  className={classes.textInput}
-                />
-              </Grid>
-              
-              <Grid item xs={12} className={classes.formGroup}>
-                <ImageUploader
-                  images={images.map(uri => ({ uri, preview: uri }))}
-                  onImagesChange={handleImagesChange}
-                  maxImages={10}
-                  title="Preview Images (Optional)"
-                  description="Add up to 10 images to showcase your offline products"
-                  imageSize={100}
-                  onError={setError}
-                />
-              </Grid>
+              <PublishSearchableCommon
+                formData={formData}
+                onInputChange={handleInputChange}
+                images={images}
+                onImagesChange={handleImagesChange}
+                onError={setError}
+                imageDescription="Add up to 10 images to showcase your offline products"
+                showCurrency={false}
+              />
               
               <Grid item xs={12} className={classes.formGroup}>
                 <Typography variant="subtitle1" className={classes.formLabel}>
@@ -321,25 +287,13 @@ const PublishOfflineSearchable = () => {
                 </Box>
               </Grid>
               
-              <Grid item xs={12}>
-                <Box className={classes.formActions}>
-                  <Button 
-                    variant="contained"
-                    className={classes.button} 
-                    onClick={() => history.push('/searchables')}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit"
-                    variant="contained" 
-                    className={classes.button}
-                    disabled={loading || offlineItems.length === 0}
-                  >
-                    {loading ? <CircularProgress size={20} /> : 'Publish'}
-                  </Button>
-                </Box>
-              </Grid>
+              <PublishSearchableActions
+                loading={loading}
+                disabled={offlineItems.length === 0}
+                onSubmit={null}
+                submitText="Publish"
+                loadingText="Publishing..."
+              />
             </Grid>
           </form>
         </Paper>
