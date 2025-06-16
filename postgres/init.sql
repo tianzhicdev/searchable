@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS searchables (
     searchable_id SERIAL PRIMARY KEY,
     terminal_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
     searchable_data JSONB NOT NULL
 );
 

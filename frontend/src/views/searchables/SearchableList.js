@@ -161,8 +161,14 @@ const SearchableList = ({ criteria }) => {
   };
 
   // Handle clicking on an item
-  const handleItemClick = (itemId) => {
-    history.push(`/searchable-item/${itemId}`);
+  const handleItemClick = (item) => {
+    // Use the type field from the backend if available, fallback to payload type
+    const itemType = item.type || item.payloads?.public?.type || 'downloadable';
+    if (itemType === 'offline') {
+      history.push(`/offline-item/${item.searchable_id}`);
+    } else {
+      history.push(`/searchable-item/${item.searchable_id}`);
+    }
   };
 
   return (
@@ -190,7 +196,7 @@ const SearchableList = ({ criteria }) => {
               <SearchablesProfile 
                 key={item.searchable_id}
                 item={item}
-                onClick={() => handleItemClick(item.searchable_id)} 
+                onClick={() => handleItemClick(item)} 
               />
             ))}
           </Grid>

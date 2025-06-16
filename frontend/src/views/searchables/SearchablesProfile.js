@@ -11,6 +11,10 @@ const SearchablesProfile = ({ item, onClick }) => {
   const publicData = item.payloads?.public || {};
   const privateData = item.payloads?.private || {};
 
+  // Debug logging
+  console.log('[SearchablesProfile] Item:', item);
+  console.log('[SearchablesProfile] Public data:', publicData);
+
   // Helper function to truncate text
   const truncateText = (text, maxLength) => {
     if (!text) return '';
@@ -19,19 +23,17 @@ const SearchablesProfile = ({ item, onClick }) => {
 
   return (
     <Paper 
-    
       id="searchable-profile"
       onClick={onClick}
-      style={{ marginBottom: '16px', cursor: 'pointer' }}
+      style={{ marginBottom: '16px', cursor: 'pointer', padding: '16px' }}
     >
       <Box display="flex" flexDirection="row">
         <Box id="item-details" flex="1 1 auto">
-            <Typography variant="h4">
-              {truncateText(publicData.title, 50)}
-            </Typography>
+          <Typography variant="h4" gutterBottom>
+            {truncateText(publicData.title, 50)}
+          </Typography>
 
-          
-          <Divider />
+          <Divider style={{ margin: '8px 0' }} />
           
           <Box>
             <PostedBy 
@@ -42,31 +44,43 @@ const SearchablesProfile = ({ item, onClick }) => {
             
             {/* Only show price if it's in public payload */}
             {publicData.price && (
-              <Typography variant="body2">
+              <Typography variant="body2" style={{ marginTop: '4px' }}>
                 Price: ${publicData.price}
               </Typography>
             )}
 
-            
             {publicData.category && (
-              <Typography variant="body2">
+              <Typography variant="body2" style={{ marginTop: '4px' }}>
                 Category: {truncateText(publicData.category, 30)}
               </Typography>
             )}
             
-              <Typography variant="body2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                Description: {truncateText(publicData.description, 150)}
-              </Typography>
+            <Typography 
+              variant="body2" 
+              style={{ 
+                wordBreak: 'break-word', 
+                overflowWrap: 'break-word',
+                marginTop: '8px'
+              }}
+            >
+              Description: {truncateText(publicData.description, 150)}
+            </Typography>
           </Box>
         </Box>
-        <Box id="item-profile-image" flex="0 0 auto" >
+        <Box id="item-profile-image" flex="0 0 auto" style={{ marginLeft: '16px' }}>
           {publicData.images && publicData.images.length > 0 && (
-            <Paper display="flex" justifyContent="center">
+          <Paper>
+            <Box display="flex" justifyContent="center">
               <img 
                 src={publicData.images[0]} 
                 alt={publicData.title || `Item #${item.searchable_id}`}
-                style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'contain' }}
+                style={{ 
+                  maxWidth: '120px', 
+                  maxHeight: '120px', 
+                  objectFit: 'cover',
+                }}
               />
+            </Box>
             </Paper>
           )}
         </Box> 
