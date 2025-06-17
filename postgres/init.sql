@@ -239,3 +239,31 @@ CREATE TRIGGER update_user_profile_updated_at
     BEFORE UPDATE ON user_profile 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- Metrics table for event tracking and analytics
+CREATE TABLE IF NOT EXISTS metrics (
+    event_id SERIAL PRIMARY KEY,
+    metric_name VARCHAR(100) NOT NULL,  -- e.g., 'page_view', 'user_signup'
+    metric_value DOUBLE PRECISION DEFAULT 1,  -- Default 1 for count events
+    tag1 TEXT,  -- e.g., 'user_id:123'
+    tag2 TEXT,  -- e.g., 'searchable_type:offline'
+    tag3 TEXT,  -- e.g., 'ip:192.168.1.1'
+    tag4 TEXT,  -- Optional extra tags
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_metrics_name_time ON metrics(metric_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_metrics_tag1 ON metrics(tag1) WHERE tag1 IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_metrics_tag2 ON metrics(tag2) WHERE tag2 IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_metrics_tag3 ON metrics(tag3) WHERE tag3 IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_metrics_created_at ON metrics(created_at DESC);
+
+-- Partial index for recent queries (most queries are for recent data)
+CREATE INDEX IF NOT EXISTS idx_metrics_recent ON metrics(created_at DESC) 
+WHERE created_at > NOW() - INTERVAL '7 days';
+
+
+
+
+

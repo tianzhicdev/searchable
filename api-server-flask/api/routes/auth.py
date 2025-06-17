@@ -13,6 +13,7 @@ from ..common.config import BaseConfig
 from ..common.models import db, Users, JWTTokenBlocklist
 from ..common.database import get_db_connection, execute_sql, Json
 from ..common.logging_config import setup_logger
+from ..common.metrics_collector import track_user_signup, track_user_login, track_error
 
 # Set up the logger
 logger = setup_logger(__name__, 'auth.log')
@@ -151,6 +152,15 @@ class Register(Resource):
 
         new_user.set_password(_password)
         new_user.save()
+        
+        # Track user signup metric
+        try:
+            track_user_signup(
+                user_id=new_user.id,
+                ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+            )
+        except Exception as e:
+            logger.warning(f"Failed to track signup metric: {e}")
 
         return {"success": True,
                 "userID": new_user.id,
@@ -186,6 +196,15 @@ class Login(Resource):
 
         user_exists.set_jwt_auth_active(True)
         user_exists.save()
+        
+        # Track user login metric
+        try:
+            track_user_login(
+                user_id=user_exists.id,
+                ip_address=request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+            )
+        except Exception as e:
+            logger.warning(f"Failed to track login metric: {e}")
 
         return {"success": True,
                 "token": token,

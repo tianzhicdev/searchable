@@ -1,15 +1,16 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Sat Jun 14 00:22:09 EDT 2025
+Timestamp: Tue Jun 17 15:33:59 EDT 2025
 Duration: 26s
-Total Tests: 7
-Passed: 7
+Total Tests: 8
+Passed: 8
 Failed: 0
 Success Rate: 100%
 
 Test Results:
 ============
 ✅ test_integration - PASSED
+✅ test_offline_searchables - PASSED
 ✅ test_comprehensive_scenarios - PASSED
 ✅ test_withdrawals - PASSED
 ✅ test_ratings - PASSED
@@ -21,8 +22,9 @@ API Endpoint Coverage Analysis:
 ==============================
 The comprehensive test suite covers:
 ✅ User Authentication (register, login, logout)
-✅ Searchable CRUD Operations
-✅ Payment Processing (invoice creation, completion)
+✅ Searchable CRUD Operations (downloadable and offline types)
+✅ Offline Searchables (menu items, quantity handling)
+✅ Payment Processing (invoice creation, completion, count field)
 ✅ File Management (upload, metadata, listing)
 ✅ Media Management (upload, retrieval)
 ✅ Profile Management (create, update, retrieve)
