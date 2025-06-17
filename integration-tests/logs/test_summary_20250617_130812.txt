@@ -1,15 +1,16 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Sat Jun 14 21:37:28 EDT 2025
-Duration: 5s
-Total Tests: 7
+Timestamp: Tue Jun 17 13:08:15 PDT 2025
+Duration: 3s
+Total Tests: 8
 Passed: 0
-Failed: 7
+Failed: 8
 Success Rate: 0%
 
 Test Results:
 ============
 ❌ test_integration - FAILED
+❌ test_offline_searchables - FAILED
 ❌ test_comprehensive_scenarios - FAILED
 ❌ test_withdrawals - FAILED
 ❌ test_ratings - FAILED
@@ -19,20 +20,22 @@ Test Results:
 
 Failed Test Details:
 ===================
-- test_integration: See test_integration_20250614_213722.log for details
-- test_comprehensive_scenarios: See test_comprehensive_scenarios_20250614_213722.log for details
-- test_withdrawals: See test_withdrawals_20250614_213722.log for details
-- test_ratings: See test_ratings_20250614_213722.log for details
-- test_file_management: See test_file_management_20250614_213722.log for details
-- test_invoice_notes: See test_invoice_notes_20250614_213722.log for details
-- test_payment_refresh: See test_payment_refresh_20250614_213722.log for details
+- test_integration: See test_integration_20250617_130812.log for details
+- test_offline_searchables: See test_offline_searchables_20250617_130812.log for details
+- test_comprehensive_scenarios: See test_comprehensive_scenarios_20250617_130812.log for details
+- test_withdrawals: See test_withdrawals_20250617_130812.log for details
+- test_ratings: See test_ratings_20250617_130812.log for details
+- test_file_management: See test_file_management_20250617_130812.log for details
+- test_invoice_notes: See test_invoice_notes_20250617_130812.log for details
+- test_payment_refresh: See test_payment_refresh_20250617_130812.log for details
 
 API Endpoint Coverage Analysis:
 ==============================
 The comprehensive test suite covers:
 ✅ User Authentication (register, login, logout)
-✅ Searchable CRUD Operations
-✅ Payment Processing (invoice creation, completion)
+✅ Searchable CRUD Operations (downloadable and offline types)
+✅ Offline Searchables (menu items, quantity handling)
+✅ Payment Processing (invoice creation, completion, count field)
 ✅ File Management (upload, metadata, listing)
 ✅ Media Management (upload, retrieval)
 ✅ Profile Management (create, update, retrieve)

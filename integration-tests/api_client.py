@@ -435,3 +435,43 @@ class SearchableAPIClient:
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
+
+    # Test Cleanup Methods
+    def cleanup_test_user(self, user_email: str, cleanup_associated_data: bool = True) -> Dict[str, Any]:
+        """Clean up test user and associated data"""
+        url = f"{self.base_url}/test/cleanup/user"
+        data = {
+            "user_email": user_email,
+            "cleanup_associated_data": cleanup_associated_data
+        }
+        response = self.session.delete(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def cleanup_test_searchable(self, searchable_id: int) -> Dict[str, Any]:
+        """Clean up test searchable and associated data"""
+        url = f"{self.base_url}/test/cleanup/searchable/{searchable_id}"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def cleanup_test_invoice(self, invoice_id: str) -> Dict[str, Any]:
+        """Clean up test invoice and associated data"""
+        url = f"{self.base_url}/test/cleanup/invoice/{invoice_id}"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def cleanup_all_test_data(self) -> Dict[str, Any]:
+        """Clean up ALL test data (dangerous - use with caution)"""
+        url = f"{self.base_url}/test/cleanup/all"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def get_cleanup_status(self) -> Dict[str, Any]:
+        """Get cleanup system status and data counts"""
+        url = f"{self.base_url}/test/cleanup/status"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()

@@ -39,6 +39,8 @@ show_usage() {
     echo "  ./exec.sh local it                          - Run comprehensive integration tests"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo ""
+    echo "  ./exec.sh health_check <domain>             - Run integration tests with cleanup against domain"
+    echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
@@ -58,6 +60,7 @@ show_usage() {
     echo "  ./exec.sh local status"
     echo "  ./exec.sh local it"
     echo "  ./exec.sh local mock"
+    echo "  ./exec.sh health_check cherry-interest.metalseed.net"
     echo "  ./exec.sh release"
 }
 
@@ -225,6 +228,65 @@ local_it() {
     
     # Run the comprehensive tests
     ./run_comprehensive_tests.sh
+}
+
+# Health check - run integration tests with cleanup against a domain
+health_check() {
+    local domain=$1
+    
+    if [ -z "$domain" ]; then
+        echo -e "${RED}Error: Domain is required for health check${NC}"
+        echo "Usage: ./exec.sh health_check <domain>"
+        echo "Example: ./exec.sh health_check cherry-interest.metalseed.net"
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🏥 Running health check against $domain...${NC}"
+    echo -e "${YELLOW}This will run comprehensive integration tests with cleanup${NC}"
+    echo ""
+    
+    if [ ! -d "integration-tests" ]; then
+        echo -e "${RED}Error: integration-tests directory not found${NC}"
+        exit 1
+    fi
+    
+    cd integration-tests
+    
+    # Check if .env file exists
+    if [ ! -f ".env" ]; then
+        echo -e "${YELLOW}Creating .env file for domain $domain...${NC}"
+        echo "BASE_URL=https://$domain" > .env
+    else
+        echo -e "${YELLOW}Updating .env file for domain $domain...${NC}"
+        # Update or add BASE_URL
+        if grep -q "^BASE_URL=" .env; then
+            sed -i.bak "s|^BASE_URL=.*|BASE_URL=https://$domain|" .env
+            rm -f .env.bak
+        else
+            echo "BASE_URL=https://$domain" >> .env
+        fi
+    fi
+    
+    echo -e "${YELLOW}Configuration:${NC}"
+    echo "  Domain: $domain"
+    echo "  Base URL: https://$domain"
+    echo "  Cleanup: ENABLED"
+    echo ""
+    
+    echo -e "${YELLOW}Starting comprehensive integration tests with cleanup...${NC}"
+    
+    # Run the comprehensive tests with cleanup
+    if ./run_comprehensive_tests.sh --clean-up; then
+        echo ""
+        echo -e "${GREEN}✅ Health check PASSED for $domain${NC}"
+        echo -e "${GREEN}🧹 Test data has been cleaned up${NC}"
+        exit 0
+    else
+        echo ""
+        echo -e "${RED}❌ Health check FAILED for $domain${NC}"
+        echo -e "${YELLOW}🧹 Test data cleanup was attempted${NC}"
+        exit 1
+    fi
 }
 
 # Local React development server in mock mode
@@ -409,11 +471,16 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-# Special case for release command
+# Special cases for commands that don't follow the standard pattern
 if [ "$1" = "release" ]; then
     ENVIRONMENT="release"
     ACTION=""
     CONTAINER=""
+elif [ "$1" = "health_check" ]; then
+    ENVIRONMENT="health_check"
+    ACTION=""
+    CONTAINER=""
+    DOMAIN=$2
 elif [ $# -lt 2 ]; then
     show_usage
     exit 1
@@ -499,6 +566,10 @@ case "$ENVIRONMENT" in
     
     "release")
         release
+        ;;
+    
+    "health_check")
+        health_check "$DOMAIN"
         ;;
     
     *)
