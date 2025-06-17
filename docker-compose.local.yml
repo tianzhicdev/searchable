@@ -96,6 +96,24 @@ services:
     networks:
       - web_network
 
+  metrics:
+    container_name: metrics_service
+    restart: always
+    build:
+      context: ./metrics-service
+    env_file:
+      - ./api-server-flask/.secrets.env
+    environment:
+      - DB_HOST=db
+      - METRICS_DOMAIN=http://metrics:5007
+    ports:
+      - "5007:5007"
+    networks:
+      - db_network
+      - web_network
+    depends_on:
+      - db
+
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
   postgres_data:

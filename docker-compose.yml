@@ -104,6 +104,26 @@ services:
     networks:
       - web_network
 
+  metrics:
+    container_name: metrics_service
+    restart: always
+    build:
+      context: ./metrics-service
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=searchable
+      - DB_USER=postgres
+      - DB_PASSWORD=localpassword
+      - METRICS_DOMAIN=http://metrics:5007
+    ports:
+      - "5007:5007"
+    depends_on:
+      - db
+    networks:
+      - db_network
+      - web_network
+
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
   postgres_data:
