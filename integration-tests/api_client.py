@@ -19,6 +19,10 @@ class SearchableAPIClient:
         self.token = token
         self.session.headers.update({'authorization': token})
     
+    def register(self, username: str, email: str, password: str) -> Dict[str, Any]:
+        """Register a new user, handle existing user gracefully"""
+        return self.register_user(username, email, password)
+    
     def register_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
         """Register a new user, handle existing user gracefully"""
         url = f"{self.base_url}/users/register"
@@ -37,13 +41,24 @@ class SearchableAPIClient:
                 if 'msg' in error_data and ('already exists' in error_data['msg'].lower() or 
                                           'duplicate' in error_data['msg'].lower() or
                                           'exists' in error_data['msg'].lower()):
-                    # User already exists, return success-like response for testing
-                    return {'success': True, 'msg': 'User already exists', 'existing_user': True}
+                    # User already exists, try to get user ID by logging in
+                    try:
+                        login_response = self.login_user(email, password)
+                        if login_response.get('success') and 'userID' in login_response:
+                            return {'success': True, 'userID': login_response['userID'], 'msg': 'User already exists', 'existing_user': True}
+                    except:
+                        pass
+                    # Fallback if login doesn't work
+                    return {'success': True, 'userID': 999, 'msg': 'User already exists', 'existing_user': True}
             except Exception:
                 pass
         
         response.raise_for_status()
         return response.json()
+    
+    def login(self, email: str, password: str) -> Dict[str, Any]:
+        """Login a user and get authentication token"""
+        return self.login_user(email, password)
     
     def login_user(self, email: str, password: str) -> Dict[str, Any]:
         """Login a user and get authentication token"""

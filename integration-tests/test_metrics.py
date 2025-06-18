@@ -21,7 +21,7 @@ class TestMetrics:
         cls.test_id = str(uuid.uuid4())[:8]
         cls.test_username = f"test_metrics_{cls.test_id}"
         cls.test_email = f"test_metrics_{cls.test_id}@example.com"
-        cls.test_password = "test_password_123"
+        cls.test_password = "test123"
         cls.user_id = None
         
         # Direct metrics API endpoint for testing
@@ -236,7 +236,7 @@ class TestMetrics:
         # Get aggregated metrics for last 24 hours
         params = {'hours': 24}
         response = self.client.session.get(
-            f"{self.metrics_base_url}/api/v1/metrics/aggregate",
+            f"{self.metrics_base_url}/api/v1/metrics/summary",
             params=params
         )
         assert response.status_code == 200
@@ -609,7 +609,7 @@ class TestMetrics:
         # Test aggregation endpoint
         params = {'hours': 48}  # Last 48 hours
         response = self.client.session.get(
-            f"{self.metrics_base_url}/api/v1/metrics/aggregate",
+            f"{self.metrics_base_url}/api/v1/metrics/summary",
             params=params
         )
         assert response.status_code == 200

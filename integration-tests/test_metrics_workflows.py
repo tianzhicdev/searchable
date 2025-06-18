@@ -34,7 +34,7 @@ class TestMetricsWorkflows:
         # Create test user
         test_username = f"workflow_user_{self.test_id}"
         test_email = f"workflow_{self.test_id}@example.com"
-        test_password = "test_password_123"
+        test_password = "test123"
         
         # Record initial metrics count
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics")
@@ -87,7 +87,7 @@ class TestMetricsWorkflows:
         test_user = self.test_users[0]
         
         # Login user (this should trigger metrics)
-        response = self.client.login(test_user['email'], "test_password_123")
+        response = self.client.login(test_user['email'], "test123")
         assert response['success'] is True
         
         print(f"✓ User logged in: {test_user['username']}")
@@ -124,13 +124,24 @@ class TestMetricsWorkflows:
         test_user = self.test_users[0]
         
         # Login user first
-        login_response = self.client.login(test_user['email'], "test_password_123")
+        login_response = self.client.login(test_user['email'], "test123")
         assert login_response['success'] is True
         
-        # Upload a test file
-        file_response = self.client.upload_file("test_searchable_file.txt", b"Test file content for metrics workflow")
-        assert file_response['success'] is True
-        file_id = file_response['file_id']
+        # Create a temporary file for upload
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix='.txt', delete=False) as tmp_file:
+            tmp_file.write(b"Test file content for metrics workflow")
+            tmp_file_path = tmp_file.name
+        
+        try:
+            file_response = self.client.upload_file(tmp_file_path)
+            assert file_response['success'] is True
+            file_id = file_response['file_id']
+        finally:
+            # Clean up temp file
+            os.unlink(tmp_file_path)
         
         # Create searchable
         searchable_data = {
@@ -268,7 +279,7 @@ class TestMetricsWorkflows:
         searchable_id = self.test_searchables[0]
         
         # Login user
-        login_response = self.client.login(test_user['email'], "test_password_123")
+        login_response = self.client.login(test_user['email'], "test123")
         assert login_response['success'] is True
         
         # Create invoice (simulate purchase initiation)
@@ -511,7 +522,7 @@ class TestMetricsWorkflows:
         
         # Get aggregated metrics for analysis
         params = {'hours': 24}
-        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics/aggregate", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics/summary", params=params)
         assert response.status_code == 200
         
         agg_data = response.json()
