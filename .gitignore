@@ -1,3 +1,4 @@
+integration-tests/logs/*
 api-server-flask/.secrets.env
 .env
 .files/*
