@@ -124,9 +124,31 @@ services:
       - db_network
       - web_network
 
+  grafana:
+    container_name: grafana_service
+    image: grafana/grafana:latest
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_SERVER_ROOT_URL=http://localhost/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - metrics
+    networks:
+      - db_network
+      - web_network
+
 volumes:
   frontend_build:  # Shared volume between frontend and nginx
   postgres_data:
+  grafana_data:  # Grafana data persistence
   # file_storage:  # Volume for file storage
   
 networks:

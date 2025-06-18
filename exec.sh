@@ -50,6 +50,7 @@ show_usage() {
     echo "  - nginx"
     echo "  - usdt-api"
     echo "  - metrics"
+    echo "  - grafana"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
     echo "  ./exec.sh remote deploy flask_api"
@@ -65,7 +66,7 @@ show_usage() {
 # Function to check if container name is valid
 validate_container() {
     local container=$1
-    local valid_containers=("frontend" "flask_api" "file_server" "background" "db" "nginx" "usdt-api" "metrics")
+    local valid_containers=("frontend" "flask_api" "file_server" "background" "db" "nginx" "usdt-api" "metrics" "grafana")
     
     for valid in "${valid_containers[@]}"; do
         if [ "$container" = "$valid" ]; then

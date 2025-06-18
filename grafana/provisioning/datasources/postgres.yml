@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: db:5432
+    database: searchable
+    user: searchable
+    secureJsonData:
+      password: 19901228
+    isDefault: true
+    jsonData:
+      sslmode: "disable"
+      postgresVersion: 1300
+      timescaledb: false
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+    editable: true
