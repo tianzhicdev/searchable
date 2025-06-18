@@ -259,10 +259,6 @@ CREATE INDEX IF NOT EXISTS idx_metrics_tag2 ON metrics(tag2) WHERE tag2 IS NOT N
 CREATE INDEX IF NOT EXISTS idx_metrics_tag3 ON metrics(tag3) WHERE tag3 IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_metrics_created_at ON metrics(created_at DESC);
 
--- Partial index for recent queries (most queries are for recent data)
-CREATE INDEX IF NOT EXISTS idx_metrics_recent ON metrics(created_at DESC) 
-WHERE created_at > NOW() - INTERVAL '7 days';
-
 
 
 

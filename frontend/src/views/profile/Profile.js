@@ -237,7 +237,7 @@ const Profile = () => {
                 handleMenuClose();
                 handleWithdrawalUSDTClick();
               }}>
-                Withdraw USD as USDT
+                Withdraw USDT
               </MenuItem>
             )}
             <MenuItem onClick={() => {
@@ -323,11 +323,11 @@ const Profile = () => {
             ) : (
               <Box>
                 <Typography variant="body2"  className={classes.staticText}>
-                  USD Balance:
+                  Balance:
                 </Typography>
                 
                 <Typography variant="body1"  className={classes.userText}>
-                  ${balance.usd} USD
+                  ${balance.usd} USDT
                 </Typography>
               </Box>
             )}

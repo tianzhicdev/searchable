@@ -242,10 +242,11 @@ local_mock() {
     fi
     
     echo -e "${YELLOW}Starting React app in mock mode...${NC}"
-    echo "Access the app at: http://localhost:3000"
+    echo "Access the app at: http://localhost:3001"
     echo ""
     
-    # Start React development server with mock mode enabled
+    # Start React development server with mock mode enabled on port 3001
+    PORT=3001 \
     REACT_APP_MOCK_MODE=true \
     REACT_APP_ENV=local \
     REACT_APP_BRANDING=silkroadonlightning \
