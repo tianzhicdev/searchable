@@ -322,7 +322,7 @@ class SearchableAPIClient:
     def list_user_files(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
         """List user's files with pagination"""
         url = f"{self.base_url}/v1/files"
-        params = {'page': page, 'pageSize': page_size}
+        params = {'page': page, 'per_page': page_size}
         response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
@@ -395,10 +395,13 @@ class SearchableAPIClient:
         return response.json()
     
     # Payment Refresh Methods
-    def refresh_payment_status(self, invoice_id: str) -> Dict[str, Any]:
+    def refresh_payment_status(self, session_id: str, invoice_type: str = "stripe") -> Dict[str, Any]:
         """Refresh status of a specific payment"""
         url = f"{self.base_url}/v1/refresh-payment"
-        data = {'invoice_id': invoice_id}
+        data = {
+            'session_id': session_id,
+            'invoice_type': invoice_type
+        }
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()

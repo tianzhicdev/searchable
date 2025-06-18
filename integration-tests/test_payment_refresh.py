@@ -250,8 +250,10 @@ class TestPaymentRefresh:
                     print(f"! Payment refresh failed for {invoice_id}: {refresh_response}")
                     
             except Exception as e:
-                print(f"! Individual payment refresh may not be available: {str(e)}")
-                return
+                if "404" in str(e) or "400" in str(e):
+                    pytest.skip(f"Payment refresh API not implemented: {str(e)}")
+                else:
+                    pytest.fail(f"Individual payment refresh failed: {str(e)}")
     
     def test_04_bulk_refresh_by_searchable(self):
         """Test bulk refreshing all payments for a searchable"""
@@ -283,7 +285,10 @@ class TestPaymentRefresh:
                 print(f"! Bulk payment refresh failed: {bulk_refresh_response}")
                 
         except Exception as e:
-            print(f"! Bulk payment refresh may not be available: {str(e)}")
+            if "404" in str(e) or "400" in str(e):
+                pytest.skip(f"Bulk payment refresh API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Bulk payment refresh failed: {str(e)}")
     
     def test_05_payment_status_consistency(self):
         """Test that payment statuses remain consistent after refresh"""
@@ -302,23 +307,21 @@ class TestPaymentRefresh:
                 time.sleep(0.5)  # Small delay between checks
             
             # All status checks should return the same result
-            # Be more lenient with status consistency - allow for some variation
+            # Verify status consistency
             unique_statuses = set(statuses)
             if len(unique_statuses) == 1:
                 print(f"✓ Status consistent for {invoice_id}: {expected_status}")
             else:
-                print(f"! Status inconsistent for {invoice_id}: {statuses} (expected: {expected_status})")
-                # Don't fail the test - just log the inconsistency
-                # This may be due to timing or refresh issues
-                # assert all(s == expected_status for s in statuses)
+                print(f"✗ Status inconsistent for {invoice_id}: {statuses} (expected: {expected_status})")
+                # Status must be consistent across all checks
+                assert all(s == expected_status for s in statuses), f"Status inconsistency detected for {invoice_id}: {statuses}"
     
     def test_06_refresh_timing_and_performance(self):
         """Test refresh operation timing and performance"""
         print("Testing refresh operation performance")
         
         if not self.created_invoices:
-            print("! No invoices to test refresh performance")
-            return
+            pytest.fail("No invoices available to test refresh performance")
         
         try:
             # Time individual refresh operations
@@ -337,7 +340,7 @@ class TestPaymentRefresh:
                     print(f"  Individual refresh time: {refresh_time:.2f}s")
                     
                 except Exception as e:
-                    print(f"  Individual refresh failed: {str(e)}")
+                    pytest.fail(f"Individual refresh failed: {str(e)}")
             
             if refresh_times:
                 avg_refresh_time = sum(refresh_times) / len(refresh_times)
@@ -360,113 +363,93 @@ class TestPaymentRefresh:
                 assert bulk_refresh_time < 15.0, "Bulk refresh taking too long"
                 
             except Exception as e:
-                print(f"  Bulk refresh failed: {str(e)}")
+                pytest.fail(f"Bulk refresh failed: {str(e)}")
                 
         except Exception as e:
-            print(f"! Refresh performance testing failed: {str(e)}")
+            if "404" in str(e) or "400" in str(e):
+                pytest.skip(f"Payment refresh API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Refresh performance testing failed: {str(e)}")
     
     def test_07_refresh_error_handling(self):
         """Test refresh operations with invalid data"""
         print("Testing refresh error handling")
         
         # Test refresh with non-existent invoice ID
-        try:
-            fake_invoice_id = "non-existent-invoice-123"
-            refresh_response = self.seller_client.refresh_payment_status(fake_invoice_id)
-            
-            # Should either fail gracefully or indicate no invoice found
-            if 'success' in refresh_response:
-                assert not refresh_response['success']
-                print("✓ Non-existent invoice refresh handled gracefully")
-            
-        except Exception as e:
-            # Expected to fail
-            print(f"✓ Non-existent invoice refresh correctly failed: {str(e)}")
+        fake_invoice_id = "non-existent-invoice-123"
+        refresh_response = self.seller_client.refresh_payment_status(fake_invoice_id)
+        
+        # Should fail for non-existent invoice
+        assert 'success' in refresh_response
+        assert not refresh_response['success'], "Non-existent invoice refresh should fail"
+        print("✓ Non-existent invoice refresh handled correctly")
         
         # Test bulk refresh with non-existent searchable ID
-        try:
-            fake_searchable_id = 999999
-            bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(fake_searchable_id)
-            
-            # Should either fail gracefully or indicate no searchable found
-            if 'success' in bulk_refresh_response:
-                if not bulk_refresh_response['success']:
-                    print("✓ Non-existent searchable bulk refresh handled gracefully")
-                elif bulk_refresh_response.get('refreshed_count', 0) == 0:
-                    print("✓ Non-existent searchable returned zero refreshed payments")
-            
-        except Exception as e:
-            # Expected to fail
-            print(f"✓ Non-existent searchable bulk refresh correctly failed: {str(e)}")
+        fake_searchable_id = 999999
+        bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(fake_searchable_id)
+        
+        # Should either fail or return zero refreshed count
+        assert 'success' in bulk_refresh_response
+        if bulk_refresh_response['success']:
+            assert bulk_refresh_response.get('refreshed_count', 0) == 0, "Non-existent searchable should refresh 0 payments"
+            print("✓ Non-existent searchable returned zero refreshed payments")
+        else:
+            print("✓ Non-existent searchable bulk refresh failed correctly")
     
     def test_08_refresh_permissions(self):
         """Test that refresh operations respect user permissions"""
         print("Testing refresh operation permissions")
         
         if not self.created_invoices:
-            print("! No invoices to test permissions")
-            return
+            pytest.fail("No invoices available to test permissions")
         
         # Try to refresh payment as buyer (should work for own invoices)
         buyer1_invoice = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer1'][0]
         
-        try:
-            # Buyer should be able to refresh their own invoice
-            refresh_response = self.buyer1_client.refresh_payment_status(buyer1_invoice['invoice_id'])
-            
-            if 'success' in refresh_response:
-                print("✓ Buyer can refresh own invoice")
-            else:
-                print("! Buyer refresh own invoice failed - may be restricted")
-                
-        except Exception as e:
-            print(f"! Buyer refresh own invoice failed: {str(e)}")
+        # Buyer should be able to refresh their own invoice
+        refresh_response = self.buyer1_client.refresh_payment_status(buyer1_invoice['session_id'])
+        
+        if 'success' in refresh_response:
+            print("✓ Buyer can refresh own invoice")
+        else:
+            pytest.fail(f"Buyer should be able to refresh own invoice: {refresh_response}")
         
         # Try to refresh payment as different buyer (should fail or be restricted)
         buyer2_invoice = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer2'][0]
         
-        try:
-            # Buyer 1 tries to refresh Buyer 2's invoice
-            refresh_response = self.buyer1_client.refresh_payment_status(buyer2_invoice['invoice_id'])
-            
-            # Should fail or indicate no permission
-            if 'success' in refresh_response and refresh_response['success']:
-                print("! WARNING: Buyer can refresh other buyer's invoice - check permissions")
-            else:
-                print("✓ Cross-buyer refresh correctly restricted")
-                
-        except Exception as e:
-            # Expected to fail
-            print(f"✓ Cross-buyer refresh correctly failed: {str(e)}")
+        # Buyer 1 tries to refresh Buyer 2's invoice
+        refresh_response = self.buyer1_client.refresh_payment_status(buyer2_invoice['session_id'])
+        
+        # Should fail or indicate no permission
+        if 'success' in refresh_response and refresh_response['success']:
+            pytest.fail("Security violation: Buyer can refresh other buyer's invoice - check permissions")
+        else:
+            print("✓ Cross-buyer refresh correctly restricted")
     
     def test_09_refresh_impact_on_balances(self):
         """Test that refresh operations correctly update user balances"""
         print("Testing refresh impact on user balances")
         
         # Get seller balance before and after refresh operations
-        try:
-            initial_balance = self.seller_client.get_balance()
-            initial_usd = initial_balance.get('balance', {}).get('usd', 0)
-            
-            # Perform bulk refresh
-            bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(self.searchable_id)
-            
-            # Small delay to allow balance updates
-            time.sleep(2)
-            
-            # Get balance after refresh
-            updated_balance = self.seller_client.get_balance()
-            updated_usd = updated_balance.get('balance', {}).get('usd', 0)
-            
-            print(f"  Balance before refresh: ${initial_usd}")
-            print(f"  Balance after refresh: ${updated_usd}")
-            
-            # Balance should be consistent (refresh shouldn't change completed payments)
-            assert updated_usd == initial_usd or abs(updated_usd - initial_usd) < 0.01
-            print("✓ Balance remained consistent after refresh")
-            
-        except Exception as e:
-            print(f"! Balance verification failed: {str(e)}")
+        initial_balance = self.seller_client.get_balance()
+        initial_usd = initial_balance.get('balance', {}).get('usd', 0)
+        
+        # Perform bulk refresh
+        bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(self.searchable_id)
+        
+        # Small delay to allow balance updates
+        time.sleep(2)
+        
+        # Get balance after refresh
+        updated_balance = self.seller_client.get_balance()
+        updated_usd = updated_balance.get('balance', {}).get('usd', 0)
+        
+        print(f"  Balance before refresh: ${initial_usd}")
+        print(f"  Balance after refresh: ${updated_usd}")
+        
+        # Balance should be consistent (refresh shouldn't change completed payments)
+        assert updated_usd == initial_usd or abs(updated_usd - initial_usd) < 0.01, f"Balance changed unexpectedly: {initial_usd} -> {updated_usd}"
+        print("✓ Balance remained consistent after refresh")
 
 
 if __name__ == "__main__":

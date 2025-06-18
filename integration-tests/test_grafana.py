@@ -366,14 +366,18 @@ class TestGrafana:
                     auth=self.grafana_auth,
                     timeout=5
                 )
-                if response.status_code in [200, 404]:  # Both are acceptable
+                if response.status_code == 200:  # Only 200 is acceptable for working endpoints
                     working_endpoints.append(endpoint)
                     print(f"  ✓ {endpoint}: {response.status_code}")
+                elif response.status_code == 404:
+                    print(f"  ! {endpoint}: {response.status_code} (endpoint not available)")
+                else:
+                    print(f"  ✗ {endpoint}: {response.status_code} (unexpected status)")
             except Exception as e:
                 print(f"  ✗ {endpoint}: {e}")
         
-        # As long as we can access some alerting-related endpoints, that's fine
-        assert len(working_endpoints) > 0, f"No alerting endpoints accessible from {alerting_endpoints}"
+        # We need at least one working alerting endpoint
+        assert len(working_endpoints) > 0, f"No alerting endpoints working (200 status) from {alerting_endpoints}"
         
         print("✓ Alerting capability verified")
         

@@ -178,10 +178,12 @@ class TestRatingSystem:
                 payment_response = self.buyer1_client.complete_payment_directly(session_id)
                 assert payment_response['success']
             else:
-                print("⚠ No session_id found, skipping payment completion")
+                pytest.fail("No session_id found - invoice creation failed")
             
+            invoice_id = invoice_response.get('invoice_id')
             self.buyer1_invoices.append({
                 'session_id': session_id,
+                'invoice_id': invoice_id,
                 'searchable_id': searchable['id']
             })
             
@@ -214,10 +216,12 @@ class TestRatingSystem:
             payment_response = self.buyer2_client.complete_payment_directly(session_id)
             assert payment_response['success']
         else:
-            print("⚠ No session_id found, skipping payment completion")
+            pytest.fail("No session_id found - invoice creation failed")
         
+        invoice_id = invoice_response.get('invoice_id')
         self.buyer2_invoices.append({
             'session_id': session_id,
+            'invoice_id': invoice_id,
             'searchable_id': searchable['id']
         })
         
@@ -229,39 +233,41 @@ class TestRatingSystem:
         
         # Check Buyer 1's eligibility for both purchases
         for invoice in self.buyer1_invoices:
-            if not invoice.get('session_id'):
-                print(f"⚠ No session_id for invoice, skipping eligibility check")
-                continue
+            if not invoice.get('invoice_id'):
+                pytest.fail("No invoice_id for invoice - purchase failed")
                 
             try:
-                eligibility = self.buyer1_client.check_rating_eligibility(invoice['session_id'])
+                eligibility = self.buyer1_client.check_rating_eligibility(invoice['invoice_id'])
                 
                 if 'can_rate' in eligibility:
                     assert eligibility['can_rate'] == True
-                    print(f"✓ Buyer 1 can rate invoice {invoice['session_id']}")
+                    print(f"✓ Buyer 1 can rate invoice {invoice['invoice_id']}")
                 else:
-                    print(f"✓ Rating eligibility checked for {invoice['session_id']}")
+                    print(f"✓ Rating eligibility checked for {invoice['invoice_id']}")
             except Exception as e:
-                print(f"⚠ Rating eligibility API not available: {e}")
-                print(f"✓ Test continues (rating functionality may not be available)")
+                if "404" in str(e) or "500" in str(e):
+                    pytest.skip(f"Rating eligibility API not implemented: {e}")
+                else:
+                    pytest.fail(f"Rating eligibility check failed: {e}")
         
         # Check Buyer 2's eligibility
         for invoice in self.buyer2_invoices:
-            if not invoice.get('session_id'):
-                print(f"⚠ No session_id for invoice, skipping eligibility check")
-                continue
+            if not invoice.get('invoice_id'):
+                pytest.fail("No invoice_id for invoice - purchase failed")
                 
             try:
-                eligibility = self.buyer2_client.check_rating_eligibility(invoice['session_id'])
+                eligibility = self.buyer2_client.check_rating_eligibility(invoice['invoice_id'])
                 
                 if 'can_rate' in eligibility:
                     assert eligibility['can_rate'] == True
-                    print(f"✓ Buyer 2 can rate invoice {invoice['session_id']}")
+                    print(f"✓ Buyer 2 can rate invoice {invoice['invoice_id']}")
                 else:
-                    print(f"✓ Rating eligibility checked for {invoice['session_id']}")
+                    print(f"✓ Rating eligibility checked for {invoice['invoice_id']}")
             except Exception as e:
-                print(f"⚠ Rating eligibility API not available: {e}")
-                print(f"✓ Test continues (rating functionality may not be available)")
+                if "404" in str(e) or "500" in str(e):
+                    pytest.skip(f"Rating eligibility API not implemented: {e}")
+                else:
+                    pytest.fail(f"Rating eligibility check failed: {e}")
     
     def test_05_get_user_purchases_for_rating(self):
         """Test retrieving user's purchases that can be rated"""
@@ -292,8 +298,10 @@ class TestRatingSystem:
                 print(f"✓ Buyer 2 purchase API responded: {list(buyer2_purchases.keys())}")
                 
         except Exception as e:
-            print(f"⚠ User purchases API not available: {e}")
-            print(f"✓ Test continues (purchase retrieval functionality may not be available)")
+            if "404" in str(e) or "500" in str(e):
+                pytest.skip(f"User purchases API not implemented: {e}")
+            else:
+                pytest.fail(f"User purchases API failed: {e}")
     
     def test_06_submit_ratings(self):
         """Test submitting ratings for purchased items"""
@@ -304,13 +312,13 @@ class TestRatingSystem:
             if len(self.buyer1_invoices) >= 2:
                 ratings_data = [
                     {
-                        'session_id': self.buyer1_invoices[0]['session_id'],
+                        'invoice_id': self.buyer1_invoices[0]['invoice_id'],
                         'rating': 5,
                         'review': 'Excellent quality! Exactly what I needed for my project.',
                         'searchable_id': self.buyer1_invoices[0]['searchable_id']
                     },
                     {
-                        'session_id': self.buyer1_invoices[1]['session_id'],
+                        'invoice_id': self.buyer1_invoices[1]['invoice_id'],
                         'rating': 4,
                         'review': 'Good value for money. Quick download and well organized.',
                         'searchable_id': self.buyer1_invoices[1]['searchable_id']
@@ -318,9 +326,8 @@ class TestRatingSystem:
                 ]
                 
                 for rating_data in ratings_data:
-                    if not rating_data['session_id']:
-                        print(f"⚠ No session_id for rating, skipping")
-                        continue
+                    if not rating_data['invoice_id']:
+                        pytest.fail("No invoice_id for rating - purchase failed")
                         
                     response = self.buyer1_client.submit_rating(rating_data)
                     
@@ -329,7 +336,7 @@ class TestRatingSystem:
                             'user': 'buyer1',
                             'rating': rating_data['rating'],
                             'searchable_id': rating_data['searchable_id'],
-                            'session_id': rating_data['session_id']
+                            'invoice_id': rating_data['invoice_id']
                         })
                         
                         print(f"✓ Buyer 1 rated searchable {rating_data['searchable_id']}: {rating_data['rating']}/5 stars")
@@ -337,9 +344,9 @@ class TestRatingSystem:
                         print(f"✓ Rating submitted for searchable {rating_data['searchable_id']}: {response}")
             
             # Buyer 2 rates their purchase (if they have invoices)
-            if len(self.buyer2_invoices) >= 1 and self.buyer2_invoices[0].get('session_id'):
+            if len(self.buyer2_invoices) >= 1 and self.buyer2_invoices[0].get('invoice_id'):
                 rating_data = {
-                    'session_id': self.buyer2_invoices[0]['session_id'],
+                    'invoice_id': self.buyer2_invoices[0]['invoice_id'],
                     'rating': 3,
                     'review': 'Decent package but could use better documentation.',
                     'searchable_id': self.buyer2_invoices[0]['searchable_id']
@@ -352,18 +359,20 @@ class TestRatingSystem:
                         'user': 'buyer2',
                         'rating': rating_data['rating'],
                         'searchable_id': rating_data['searchable_id'],
-                        'session_id': rating_data['session_id']
+                        'invoice_id': rating_data['invoice_id']
                     })
                     
                     print(f"✓ Buyer 2 rated searchable {rating_data['searchable_id']}: {rating_data['rating']}/5 stars")
                 else:
                     print(f"✓ Rating submitted for searchable {rating_data['searchable_id']}: {response}")
             else:
-                print(f"⚠ No session_id for buyer2 rating, skipping")
+                pytest.fail("No invoice_id available for buyer2 rating - purchase failed")
                 
         except Exception as e:
-            print(f"⚠ Rating submission API not available: {e}")
-            print(f"✓ Test continues (rating functionality may not be available)")
+            if "404" in str(e) or "500" in str(e):
+                pytest.skip(f"Rating submission API not implemented: {e}")
+            else:
+                pytest.fail(f"Rating submission API failed: {e}")
     
     def test_07_retrieve_searchable_ratings(self):
         """Test retrieving ratings for searchable items"""
@@ -384,9 +393,11 @@ class TestRatingSystem:
                     print(f"✓ Searchable {searchable_id}:")
                     print(f"  Average: {average_rating}/5 stars ({total_ratings} ratings)")
                     
-                    # Don't assert ratings > 0 since rating submission may have failed
-                    if total_ratings > 0:
-                        print(f"  ✓ Found {total_ratings} ratings")
+                    # Verify we have ratings if we submitted any for this searchable
+                    submitted_for_this = [r for r in self.submitted_ratings if r['searchable_id'] == searchable_id]
+                    if len(submitted_for_this) > 0:
+                        assert total_ratings > 0, f"Expected ratings for searchable {searchable_id} but found {total_ratings}"
+                        print(f"  ✓ Found {total_ratings} ratings as expected")
                         # Verify individual ratings if available
                         for rating in individual_ratings:
                             if 'rating' in rating and 'review' in rating:
@@ -394,13 +405,15 @@ class TestRatingSystem:
                             else:
                                 print(f"  Rating: {rating}")
                     else:
-                        print(f"  ✓ No ratings found (rating submission may not be available)")
+                        print(f"  ✓ No ratings submitted for this searchable, found {total_ratings} ratings")
                 else:
                     print(f"✓ Searchable {searchable_id} ratings retrieved: {ratings_response}")
                     
         except Exception as e:
-            print(f"⚠ Searchable ratings API not available: {e}")
-            print(f"✓ Test continues (rating retrieval functionality may not be available)")
+            if "404" in str(e) or "500" in str(e):
+                pytest.skip(f"Searchable ratings API not implemented: {e}")
+            else:
+                pytest.fail(f"Searchable ratings API failed: {e}")
     
     def test_08_retrieve_terminal_ratings(self):
         """Test retrieving overall ratings for the seller (terminal)"""
@@ -408,9 +421,7 @@ class TestRatingSystem:
         
         # Check if we have seller_id
         if not hasattr(self, 'seller_id') or self.seller_id is None:
-            print("⚠ No seller_id available, skipping terminal ratings test")
-            print("✓ Test continues (seller_id not set during user setup)")
-            return
+            pytest.skip("No seller_id available - user setup incomplete")
         
         try:
             terminal_ratings = self.seller_client.get_terminal_ratings(self.seller_id)
@@ -421,7 +432,7 @@ class TestRatingSystem:
                 
                 print(f"✓ Seller terminal rating: {average_rating}/5 stars ({total_ratings} total ratings)")
                 
-                # Only verify ratings if we successfully retrieved them and have submitted ratings
+                # Verify ratings if we successfully submitted them
                 if len(self.submitted_ratings) > 0:
                     submitted_rating_values = [r['rating'] for r in self.submitted_ratings]
                     expected_average = sum(submitted_rating_values) / len(submitted_rating_values)
@@ -430,24 +441,29 @@ class TestRatingSystem:
                     if abs(average_rating - expected_average) < 0.1:
                         print(f"✓ Terminal rating matches expected average: {expected_average}")
                     else:
-                        print(f"⚠ Terminal rating difference: expected {expected_average}, got {average_rating}")
+                        pytest.fail(f"Terminal rating mismatch: expected {expected_average}, got {average_rating}")
                 else:
-                    print(f"✓ Terminal rating retrieved: {average_rating} (no submitted ratings to compare)")
+                    if len(self.submitted_ratings) > 0:
+                        pytest.fail(f"Terminal rating shows no ratings but we submitted {len(self.submitted_ratings)} ratings")
+                    else:
+                        print(f"✓ Terminal rating retrieved: {average_rating} (no submitted ratings to compare)")
             else:
                 print(f"✓ Terminal ratings retrieved: {terminal_ratings}")
                 
         except Exception as e:
-            print(f"⚠ Terminal ratings API not available: {e}")
-            print(f"✓ Test continues (terminal rating functionality may not be available)")
+            if "404" in str(e) or "500" in str(e):
+                pytest.skip(f"Terminal ratings API not implemented: {e}")
+            else:
+                pytest.fail(f"Terminal ratings API failed: {e}")
     
     def test_09_prevent_duplicate_ratings(self):
         """Test that users cannot rate the same purchase twice"""
         print("Testing prevention of duplicate ratings")
         
         # Try to rate the same invoice again (if we have invoices)
-        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('session_id'):
+        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('invoice_id'):
             duplicate_rating = {
-                'session_id': self.buyer1_invoices[0]['session_id'],
+                'invoice_id': self.buyer1_invoices[0]['invoice_id'],
                 'rating': 1,
                 'review': 'Trying to submit duplicate rating',
                 'searchable_id': self.buyer1_invoices[0]['searchable_id']
@@ -460,23 +476,23 @@ class TestRatingSystem:
                     if not response['success']:
                         print("✓ Duplicate rating correctly prevented")
                     else:
-                        print("⚠ Duplicate rating was allowed (may be by design)")
+                        pytest.fail("Duplicate rating was allowed - should be prevented")
                 else:
-                    print("✓ Duplicate rating handled appropriately")
+                    pytest.fail(f"Unexpected duplicate rating response: {response}")
             except Exception as e:
                 # Expected to fail
                 print(f"✓ Duplicate rating correctly prevented: {str(e)}")
         else:
-            print(f"⚠ No session_id available for duplicate rating test")
+            pytest.fail("No invoice_id available for duplicate rating test - purchase failed")
     
     def test_10_verify_rating_eligibility_after_rating(self):
         """Verify that rating eligibility changes after submitting a rating"""
         print("Checking rating eligibility after submitting ratings")
         
         # Check that Buyer 1 can no longer rate their first purchase (if available)
-        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('session_id'):
+        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('invoice_id'):
             try:
-                eligibility = self.buyer1_client.check_rating_eligibility(self.buyer1_invoices[0]['session_id'])
+                eligibility = self.buyer1_client.check_rating_eligibility(self.buyer1_invoices[0]['invoice_id'])
                 
                 # This might still show can_rate=True if the system allows updates, 
                 # or can_rate=False if it prevents duplicates
@@ -489,14 +505,17 @@ class TestRatingSystem:
                     print(f"✓ Rating eligibility checked after rating submission")
                     
             except Exception as e:
-                print(f"⚠ Rating eligibility check after rating not available: {e}")
-                print(f"✓ Test continues (rating eligibility API may not be available)")
+                pytest.fail(f"Rating eligibility check after rating failed: {e}")
         else:
-            print(f"⚠ No session_id available for post-rating eligibility check")
+            pytest.fail("No invoice_id available for post-rating eligibility check - purchase failed")
     
     def test_11_rating_statistics_verification(self):
         """Verify rating statistics are calculated correctly"""
         print("Verifying rating statistics calculations")
+        
+        # Only verify statistics if we have submitted ratings
+        if not self.submitted_ratings:
+            pytest.fail("No ratings were successfully submitted to verify statistics")
         
         # Get all ratings submitted and verify calculations
         for searchable in self.created_searchables:
@@ -510,8 +529,8 @@ class TestRatingSystem:
                 expected_average = sum(r['rating'] for r in searchable_ratings) / len(searchable_ratings)
                 actual_average = ratings_response['average_rating']
                 
-                assert abs(actual_average - expected_average) < 0.01
-                assert ratings_response['total_ratings'] == len(searchable_ratings)
+                assert abs(actual_average - expected_average) < 0.01, f"Rating average mismatch: expected {expected_average}, got {actual_average}"
+                assert ratings_response['total_ratings'] == len(searchable_ratings), f"Rating count mismatch: expected {len(searchable_ratings)}, got {ratings_response['total_ratings']}"
                 
                 print(f"✓ Searchable {searchable_id} statistics correct:")
                 print(f"  Expected: {expected_average}, Actual: {actual_average}")

@@ -197,7 +197,8 @@ class TestMetrics:
         assert response.status_code == 200
         
         data = response.json()
-        assert len(data['metrics']) >= 5
+        # Since metrics may persist from previous runs, check for at least our batch
+        assert len(data['metrics']) >= 5, f"Expected at least 5 batch test events, found {len(data['metrics'])}"
         print(f"✓ Found {len(data['metrics'])} batch test events")
         
         # Query by tags
@@ -211,7 +212,7 @@ class TestMetrics:
         
         data = response.json()
         test_metrics = [m for m in data['metrics'] if m['tags'].get('test_id') == self.test_id]
-        assert len(test_metrics) >= 6  # 1 direct + 5 batch
+        assert len(test_metrics) >= 6, f"Expected at least 6 test metrics (1 direct + 5 batch), found {len(test_metrics)}"  # 1 direct + 5 batch
         print(f"✓ Found {len(test_metrics)} metrics for test_id {self.test_id}")
     
     def test_07_time_range_queries(self):
@@ -229,7 +230,7 @@ class TestMetrics:
         assert response.status_code == 200
         
         data = response.json()
-        assert len(data['metrics']) > 0
+        assert len(data['metrics']) > 0, "No time range metrics found"
         
         # Verify all metrics are within time range
         for metric in data['metrics']:
@@ -256,12 +257,10 @@ class TestMetrics:
         aggregations = data['aggregations']
         
         # Check expected aggregation fields
-        assert 'unique_visitors' in aggregations
-        assert 'page_views' in aggregations
-        assert 'new_users' in aggregations
-        assert 'item_views_by_type' in aggregations
-        assert 'new_items_by_type' in aggregations
-        assert 'invoices_by_type' in aggregations
+        required_fields = ['unique_visitors', 'page_views', 'new_users', 'item_views_by_type', 'new_items_by_type', 'invoices_by_type']
+        for field in required_fields:
+            assert field in aggregations, f"Missing required aggregation field: {field}"
+            assert isinstance(aggregations[field], (int, float, dict)), f"Invalid type for {field}: {type(aggregations[field])}"
         
         print("✓ Metrics aggregation working correctly")
         print(f"  Unique visitors: {aggregations['unique_visitors']}")
@@ -464,16 +463,18 @@ class TestMetrics:
         workflow_events = data['metrics']
         print(f"Retrieved {len(workflow_events)} workflow events out of {len(workflow_metrics)} submitted")
         
-        # Verify that we got some events (may not be all due to timing)
-        assert len(workflow_events) > 0, "No workflow events retrieved"
+        # Verify that we got our submitted events (may be mixed with previous data)
+        workflow_session_events = [e for e in workflow_events if e['tags'].get('user_session') == workflow_user_id]
+        assert len(workflow_session_events) >= len(workflow_metrics), f"Expected at least {len(workflow_metrics)} workflow events for our session, got {len(workflow_session_events)}"
         
         # Verify funnel progression (check that key events exist)
         event_types = [event['metric_name'] for event in workflow_events]
         assert 'page_view' in event_types, f"page_view not found in {event_types}"
-        # Make other assertions more flexible since timing might affect what's retrieved
+        # Verify key workflow events are present (be flexible about which ones)
         expected_events = ['user_signup_attempt', 'user_signup_success', 'searchable_view', 'purchase_initiated']
-        found_events = [e for e in expected_events if e in event_types]
-        assert len(found_events) >= 2, f"Expected at least 2 workflow events, found: {found_events}"
+        session_event_types = [e['metric_name'] for e in workflow_session_events]
+        found_events = [e for e in expected_events if e in session_event_types]
+        assert len(found_events) >= 3, f"Expected at least 3 workflow events from our session, found: {found_events}"  # Be flexible
         
         print("✓ User workflow metrics recorded and analyzable")
     
@@ -548,6 +549,8 @@ class TestMetrics:
             )
             # Should accept edge case metrics
             assert response.status_code == 201, f"Edge case metric {i} rejected: {edge_metric}"
+            result = response.json()
+            assert result.get('success') is True, f"Edge case metric {i} failed: {result}"
         
         print("✓ Edge case metrics properly handled")
         
@@ -575,11 +578,23 @@ class TestMetrics:
             json=mixed_batch
         )
         
-        # Should handle mixed batch appropriately
-        # (either reject all or accept valid ones)
-        assert response.status_code in [201, 400, 422]
+        # Check mixed batch handling - API may accept valid entries and reject invalid ones
+        if response.status_code == 201:
+            # API accepts valid entries, check if invalid ones were rejected
+            result = response.json()
+            # If API processes selectively, that's acceptable behavior
+            print(f"✓ Mixed batch processed selectively: {result}")
+        else:
+            assert response.status_code in [400, 422], f"Mixed batch should be rejected or processed selectively, got {response.status_code}"
         
-        print("✓ Mixed batch error handling working")
+        if response.status_code == 400:
+            print("✓ Mixed batch correctly rejected with 400")
+        elif response.status_code == 422:
+            print("✓ Mixed batch correctly rejected with 422")
+        elif response.status_code == 201:
+            print("✓ Mixed batch processed selectively")
+        else:
+            pytest.fail(f"Unexpected status code for invalid batch: {response.status_code}")
     
     def test_14_metrics_analytics_queries(self):
         """Test complex analytics queries on metrics data"""

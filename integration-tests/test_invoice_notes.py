@@ -100,7 +100,7 @@ class TestInvoiceNotes:
         # Buyer creates and pays for invoice
         invoice_data = {
             'searchable_id': self.searchable_id,
-            'currency': 'usd',
+            'invoice_type': 'stripe',
             'selections': [
                 {
                     'id': 'notes-test-file',
@@ -112,17 +112,19 @@ class TestInvoiceNotes:
         }
         
         invoice_response = self.buyer_client.create_invoice(invoice_data)
+        print(f"Invoice response: {invoice_response}")  # Debug output
         
         # Handle different response formats - sometimes invoice_id is not directly returned
         if 'invoice_id' in invoice_response:
-            self.invoice_id = invoice_response['invoice_id']
+            self.invoice_id = str(invoice_response['invoice_id'])  # Ensure it's a string
+            print(f"Using invoice_id: {self.invoice_id}")
         elif 'session_id' in invoice_response:
-            # Use session_id as invoice_id for now - this is a known issue
-            self.invoice_id = invoice_response['session_id']
+            # For notes, we need the actual invoice_id, not session_id
+            # Let's try to find the invoice_id through the backend
+            pytest.skip("Need to implement lookup from session_id to invoice_id for notes functionality")
         else:
-            # If neither is present, set to None and tests will be skipped
-            self.invoice_id = None
-            print("! Warning: No invoice_id found in response, using None")
+            # If neither is present, fail the test
+            pytest.fail(f"No invoice_id or session_id found in invoice response: {invoice_response}")
         
         # Complete payment
         session_id = invoice_response.get('session_id')
@@ -138,6 +140,10 @@ class TestInvoiceNotes:
         """Test retrieving notes for invoice with no notes yet"""
         print("Testing retrieval of empty invoice notes")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
             
@@ -149,11 +155,18 @@ class TestInvoiceNotes:
             print("✓ Empty notes retrieved successfully")
             
         except Exception as e:
-            print(f"! Invoice notes endpoint may not be available: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Invoice notes API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Invoice notes endpoint failed: {str(e)}")
     
     def test_03_seller_creates_notes(self):
         """Test seller creating notes on the invoice"""
         print("Testing seller creating invoice notes")
+        
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
         
         seller_notes = [
             {
@@ -186,17 +199,23 @@ class TestInvoiceNotes:
                     })
                     print(f"✓ Seller note created: {note_data['note_type']}")
                 else:
-                    print(f"! Seller note creation failed: {response}")
+                    pytest.fail(f"Seller note creation failed: {response}")
                     
             except Exception as e:
-                print(f"! Invoice notes creation may not be available: {str(e)}")
-                return
+                if "404" in str(e):
+                    pytest.skip(f"Invoice notes creation API not implemented: {str(e)}")
+                else:
+                    pytest.fail(f"Invoice notes creation failed: {str(e)}")
         
         print(f"✓ Seller created {len([n for n in self.created_notes if n['created_by'] == 'seller'])} notes")
     
     def test_04_buyer_creates_notes(self):
         """Test buyer creating notes on the invoice"""
         print("Testing buyer creating invoice notes")
+        
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
         
         buyer_notes = [
             {
@@ -224,11 +243,13 @@ class TestInvoiceNotes:
                     })
                     print(f"✓ Buyer note created: {note_data['note_type']}")
                 else:
-                    print(f"! Buyer note creation failed: {response}")
+                    pytest.fail(f"Buyer note creation failed: {response}")
                     
             except Exception as e:
-                print(f"! Buyer notes creation may not be available: {str(e)}")
-                return
+                if "404" in str(e):
+                    pytest.skip(f"Buyer notes creation API not implemented: {str(e)}")
+                else:
+                    pytest.fail(f"Buyer notes creation failed: {str(e)}")
         
         print(f"✓ Buyer created {len([n for n in self.created_notes if n['created_by'] == 'buyer'])} notes")
     
@@ -236,9 +257,12 @@ class TestInvoiceNotes:
         """Test seller retrieving all notes on the invoice"""
         print("Testing seller retrieving all invoice notes")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping retrieval test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -264,15 +288,21 @@ class TestInvoiceNotes:
                 print(f"  Note: {note['note_type']} - {note['note_text'][:30]}...")
                 
         except Exception as e:
-            print(f"! Invoice notes retrieval may not be available: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Invoice notes retrieval API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Invoice notes retrieval failed: {str(e)}")
     
     def test_06_buyer_retrieves_shared_notes(self):
         """Test buyer retrieving only shared notes on the invoice"""
         print("Testing buyer retrieving shared invoice notes")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping retrieval test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             response = self.buyer_client.get_invoice_notes(self.invoice_id)
@@ -304,15 +334,21 @@ class TestInvoiceNotes:
                 print(f"  Visible note: {note['note_type']} - {note['note_text'][:30]}...")
                 
         except Exception as e:
-            print(f"! Buyer notes retrieval may not be available: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Buyer notes retrieval API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Buyer notes retrieval failed: {str(e)}")
     
     def test_07_note_timestamps_and_ordering(self):
         """Test that notes have proper timestamps and ordering"""
         print("Testing note timestamps and ordering")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping timestamp test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -337,15 +373,21 @@ class TestInvoiceNotes:
                 print("✓ Notes have proper timestamps")
             
         except Exception as e:
-            print(f"! Note timestamp verification failed: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Note timestamp API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Note timestamp verification failed: {str(e)}")
     
     def test_08_note_authorship_verification(self):
         """Test that note authorship is properly tracked"""
         print("Testing note authorship verification")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping authorship test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -368,15 +410,21 @@ class TestInvoiceNotes:
             print(f"✓ Found {seller_notes_found} seller notes, {buyer_notes_found} buyer notes")
             
         except Exception as e:
-            print(f"! Note authorship verification failed: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Note authorship API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Note authorship verification failed: {str(e)}")
     
     def test_09_note_search_and_filtering(self):
         """Test searching and filtering notes by type or content"""
         print("Testing note search and filtering")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping search test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -400,15 +448,21 @@ class TestInvoiceNotes:
             print(f"  Containing 'customer': {len(customer_notes)}")
             
         except Exception as e:
-            print(f"! Note search/filtering failed: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Note search API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Note search/filtering failed: {str(e)}")
     
     def test_10_invoice_notes_integration(self):
         """Test integration between invoice notes and invoice data"""
         print("Testing integration between notes and invoice data")
         
+        # Skip if invoice_id is None (invoice creation failed)
+        if self.invoice_id is None:
+            pytest.skip("Invoice creation failed - cannot test invoice notes")
+        
         if not self.created_notes:
-            print("! No notes created, skipping integration test")
-            return
+            pytest.fail("No notes created - note creation failed")
         
         try:
             # Get invoice details
@@ -435,7 +489,10 @@ class TestInvoiceNotes:
             print(f"  Associated notes: {len(notes)}")
             
         except Exception as e:
-            print(f"! Invoice-notes integration test failed: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"Invoice-notes integration API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"Invoice-notes integration test failed: {str(e)}")
 
 
 if __name__ == "__main__":

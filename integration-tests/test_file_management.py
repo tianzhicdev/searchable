@@ -83,9 +83,7 @@ class TestFileManagement:
         
         # Check if test_file_configs exists
         if not hasattr(self, 'test_file_configs') or not self.test_file_configs:
-            print("⚠ No test file configs available, skipping upload test")
-            print("✓ Test continues (file creation may have failed)")
-            return
+            pytest.fail("No test file configs available - file creation failed")
         
         try:
             for i, config in enumerate(self.test_file_configs):
@@ -112,12 +110,14 @@ class TestFileManagement:
                     self.__class__.uploaded_files.append(file_info)
                     print(f"✓ Uploaded {config['name']}: ID {response['file_id']}")
                 else:
-                    print(f"⚠ Upload failed for {config['name']}: {response}")
+                    pytest.fail(f"Upload failed for {config['name']}: {response}")
                     
         except Exception as e:
-            print(f"⚠ File upload API not available: {e}")
-            print(f"✓ Test continues (file upload functionality may not be available)")
+            pytest.fail(f"File upload API failed: {e}")
         
+        # Verify we uploaded files successfully
+        if len(self.uploaded_files) == 0:
+            pytest.fail("No files were uploaded successfully")
         print(f"✓ Successfully uploaded {len(self.uploaded_files)} files")
     
     def test_04_retrieve_file_metadata(self):
@@ -168,11 +168,18 @@ class TestFileManagement:
         files = response['files']
         pagination = response['pagination']
         
-        # Should have files (but be lenient about counts since upload may have failed)
+        # Should have files matching what we uploaded
         print(f"  Found {len(files)} files, uploaded {len(self.uploaded_files)} files")
         if len(self.uploaded_files) > 0:
-            # Only assert if we actually uploaded files
-            pass  # Be lenient with file count assertions
+            # We should find at least some of our uploaded files
+            our_files_in_list = 0
+            for f in files:
+                filename = f.get('original_filename') or (f.get('metadata', {}).get('original_filename'))
+                if filename and self.test_id in filename:
+                    our_files_in_list += 1
+            
+            if our_files_in_list == 0:
+                pytest.fail(f"None of our {len(self.uploaded_files)} uploaded files found in file listing")
         
         # Verify pagination info (be flexible with field names)
         page_field = 'page' if 'page' in pagination else 'current_page'
@@ -195,8 +202,10 @@ class TestFileManagement:
         
         assert 'files' in response_small
         files_small = response_small['files']
-        # Be lenient with file count since we may have more files than expected
-        # assert len(files_small) <= 2  # Remove strict assertion
+        # Check if pagination is implemented
+        if len(files_small) > 2:
+            pytest.skip(f"Pagination not implemented - page size 2 returned {len(files_small)} files")
+        print(f"✓ Pagination working correctly: page size 2 returned {len(files_small)} files")
         
         print(f"✓ Listed with page_size=2: {len(files_small)} files")
         
@@ -237,9 +246,15 @@ class TestFileManagement:
         
         # Be lenient about file type counts since upload may have failed
         print(f"  Found {len(document_files)} document files, {len(code_files)} code files")
-        if len(document_files) == 0 and len(code_files) == 0:
-            print("⚠ No files with expected metadata found (upload may have failed)")
-            print("✓ Test continues (file upload or metadata may not be available)")
+        # Only verify metadata if we uploaded files with metadata
+        expected_document_files = [f for f in self.test_file_configs if f['type'] == 'document']
+        expected_code_files = [f for f in self.test_file_configs if f['type'] == 'code']
+        
+        # Check if custom metadata is preserved
+        if len(expected_document_files) > 0 and len(document_files) == 0:
+            pytest.skip("Custom metadata not preserved - document type files not found")
+        if len(expected_code_files) > 0 and len(code_files) == 0:
+            pytest.skip("Custom metadata not preserved - code type files not found")
         
         print(f"✓ Found {len(document_files)} document files")
         print(f"✓ Found {len(code_files)} code files")
@@ -286,7 +301,7 @@ class TestFileManagement:
                 assert abs(stored_size - expected_size) <= 10
                 print(f"✓ {file_info['original_name']}: {stored_size} bytes (expected ~{expected_size})")
             else:
-                print(f"✓ {file_info['original_name']}: file_size not available in metadata")
+                pytest.skip(f"File size not available for {file_info['original_name']} - metadata field not implemented")
     
     def test_08_file_content_type_detection(self):
         """Test that content types are properly detected"""
@@ -319,29 +334,29 @@ class TestFileManagement:
                         if 'text' in detected_type.lower():
                             print(f"✓ {filename}: {detected_type}")
                         else:
-                            print(f"⚠ {filename}: {detected_type} (expected text type)")
+                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected text type)")
                     elif filename.endswith('.json'):
                         if 'json' in detected_type.lower() or 'text' in detected_type.lower():
                             print(f"✓ {filename}: {detected_type}")
                         else:
-                            print(f"⚠ {filename}: {detected_type} (expected JSON or text type)")
+                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected JSON or text type)")
                     elif filename.endswith('.py'):
                         if 'python' in detected_type.lower() or 'text' in detected_type.lower():
                             print(f"✓ {filename}: {detected_type}")
                         else:
-                            print(f"⚠ {filename}: {detected_type} (expected Python or text type)")
+                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected Python or text type)")
                     elif filename.endswith('.yaml'):
                         if 'yaml' in detected_type.lower() or 'text' in detected_type.lower():
                             print(f"✓ {filename}: {detected_type}")
                         else:
-                            print(f"⚠ {filename}: {detected_type} (expected YAML or text type)")
+                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected YAML or text type)")
                     else:
                         print(f"✓ {filename}: {detected_type}")
                 else:
-                    print(f"✓ Content type check completed for {filename} (content_type field not available)")
+                    pytest.skip(f"Content type not available for {filename} - content_type field not implemented")
                     
             except Exception as e:
-                print(f"⚠ Content type detection failed for {file_info['original_name']}: {e}")
+                pytest.skip(f"Content type detection failed for {file_info['original_name']}: {e}")
     
     def test_09_file_metadata_updates(self):
         """Test updating file metadata"""
@@ -349,9 +364,7 @@ class TestFileManagement:
         
         # Try to update metadata for first uploaded file (if any)
         if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for metadata update test")
-            print("✓ Test continues (no files were uploaded)")
-            return
+            pytest.fail("No uploaded files available for metadata update test")
             
         file_info = self.uploaded_files[0]
         file_id = file_info['file_id']
@@ -380,10 +393,13 @@ class TestFileManagement:
                 
                 print("✓ File metadata successfully updated")
             else:
-                print("! File metadata update not supported or failed")
+                pytest.skip(f"File metadata update not supported: {response}")
                 
         except Exception as e:
-            print(f"! File metadata update not available: {str(e)}")
+            if "404" in str(e):
+                pytest.skip(f"File metadata update API not implemented: {str(e)}")
+            else:
+                pytest.fail(f"File metadata update failed: {str(e)}")
     
     def test_10_file_access_permissions(self):
         """Test file access permissions and security"""
@@ -408,10 +424,8 @@ class TestFileManagement:
         
         # Try to access files uploaded by the first user (if any)
         if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for access permission test")
-            print("✓ Test continues (no files were uploaded)")
             other_user_client.logout()
-            return
+            pytest.fail("No uploaded files available for access permission test")
             
         file_id = self.uploaded_files[0]['file_id']
         
@@ -419,8 +433,9 @@ class TestFileManagement:
             # This should fail with 403/404 since other user doesn't own the file
             response = other_user_client.get_file_metadata(file_id)
             
-            # If it succeeds, the file might be public or there's a security issue
-            print(f"! WARNING: Other user can access file {file_id} - check permissions")
+            # If it succeeds, this is a security issue
+            other_user_client.logout()
+            pytest.fail(f"Security violation: Other user can access file {file_id} - permissions not working")
             
         except Exception as e:
             # Expected to fail
@@ -435,9 +450,7 @@ class TestFileManagement:
         
         # Delete the last uploaded file (if any)
         if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for deletion test")
-            print("✓ Test continues (no files were uploaded)")
-            return
+            pytest.fail("No uploaded files available for deletion test")
             
         file_to_delete = self.uploaded_files[-1]
         file_id = file_to_delete['file_id']
@@ -452,7 +465,7 @@ class TestFileManagement:
                 # Verify file is no longer accessible
                 try:
                     verify_response = self.client.get_file_metadata(file_id)
-                    print(f"! WARNING: Deleted file {file_id} still accessible")
+                    pytest.fail(f"Deleted file {file_id} still accessible - deletion failed")
                 except Exception as e:
                     print(f"✓ Deleted file correctly inaccessible: {str(e)}")
                 
@@ -460,10 +473,10 @@ class TestFileManagement:
                 self.uploaded_files.remove(file_to_delete)
                 
             else:
-                print(f"! File deletion failed or not supported: {response}")
+                pytest.fail(f"File deletion failed: {response}")
                 
         except Exception as e:
-            print(f"! File deletion not available: {str(e)}")
+            pytest.fail(f"File deletion failed: {str(e)}")
     
     def test_12_file_storage_verification(self):
         """Verify file storage consistency and integrity"""

@@ -306,17 +306,20 @@ class TestMetricsWorkflows:
         # Create invoice (simulate purchase initiation)
         # Use the correct API format that matches working integration tests
         try:
-            selections = None  # No specific selections for this test
+            # Create a basic selection for the file
+            selections = [{
+                'type': 'downloadable',
+                'price': 5.00
+            }]
             response = self.client.create_invoice(searchable_id, selections, "stripe")
-            assert response['success'] is True
+            assert 'session_id' in response, f"Expected session_id in response: {response}"
             session_id = response['session_id']
             invoice_id = response.get('invoice_id')
         except Exception as e:
-            print(f"Invoice creation failed: {e}")
-            print("Creating metrics for simulated purchase instead...")
-            # Create simulated session for metrics testing
-            session_id = f"simulated_session_{self.test_id}"
-            invoice_id = f"simulated_invoice_{self.test_id}"
+            if "500" in str(e) or "404" in str(e):
+                pytest.skip(f"Invoice creation API issue: {e}")
+            else:
+                pytest.fail(f"Invoice creation failed: {e}")
         
         print(f"✓ Invoice created: {session_id}")
         
@@ -347,9 +350,10 @@ class TestMetricsWorkflows:
                 completion_response = self.client.complete_payment_directly(session_id, self.test_id)
                 payment_completed = completion_response.get('success')
             except Exception as e:
-                print(f"Payment completion failed: {e}")
-                print("Creating completion metric for simulated payment...")
-                payment_completed = True  # Simulate successful completion for metrics testing
+                if "500" in str(e) or "404" in str(e):
+                    pytest.skip(f"Payment completion API issue: {e}")
+                else:
+                    pytest.fail(f"Payment completion failed: {e}")
             
             if payment_completed:
                 # Create purchase completion metric
