@@ -18,7 +18,8 @@ from ..common.data_helpers import (
     create_payment,
     update_payment_status,
     get_invoices,
-    get_user_paid_files
+    get_user_paid_files,
+    get_user_all_invoices
 )
 from ..common.payment_helpers import calc_invoice
 from ..common.models import PaymentStatus, PaymentType, Currency
@@ -473,4 +474,246 @@ class TestCompletePayment(Resource):
             
         except Exception as e:
             logger.error(f"Error in test payment completion: {str(e)}")
-            return {"error": str(e)}, 500 
+            return {"error": str(e)}, 500
+
+# Invoice Notes API Endpoints
+@rest_api.route('/api/v1/invoice/<string:invoice_id>/notes')
+class InvoiceNotes(Resource):
+    """
+    Manage notes for a specific invoice
+    """
+    @token_required
+    def get(self, current_user, invoice_id, request_origin='unknown'):
+        """Get all notes for an invoice"""
+        try:
+            from ..common.database import get_db_connection, execute_sql
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # First verify that the user is either buyer or seller for this invoice
+            execute_sql(cur, f"""
+                SELECT buyer_id, seller_id, external_id
+                FROM invoice 
+                WHERE id = {invoice_id} OR external_id = '{invoice_id}'
+            """)
+            
+            invoice_result = cur.fetchone()
+            if not invoice_result:
+                return {"error": "Invoice not found"}, 404
+                
+            buyer_id, seller_id, external_id = invoice_result
+            actual_invoice_id = invoice_id if invoice_id.isdigit() else None
+            
+            # Check if current user is buyer or seller
+            if current_user.id not in [buyer_id, seller_id]:
+                return {"error": "Access denied - not buyer or seller for this invoice"}, 403
+            
+            # Get notes based on user role
+            if current_user.id == buyer_id:
+                # Buyer can see shared notes and their own notes
+                execute_sql(cur, f"""
+                    SELECT in_.id, in_.content, in_.buyer_seller, in_.created_at, in_.metadata,
+                           u.username as created_by
+                    FROM invoice_note in_
+                    LEFT JOIN terminal t ON t.terminal_id = in_.user_id
+                    LEFT JOIN LATERAL (
+                        SELECT username FROM jsonb_to_recordset(t.terminal_data->'profiles') 
+                        AS x(username text) LIMIT 1
+                    ) u ON true
+                    WHERE in_.invoice_id = {actual_invoice_id or f"(SELECT id FROM invoice WHERE external_id = '{invoice_id}')"}
+                    AND (in_.metadata->>'visibility' = 'shared' OR in_.user_id = {current_user.id})
+                    ORDER BY in_.created_at ASC
+                """)
+            else:
+                # Seller can see all notes
+                execute_sql(cur, f"""
+                    SELECT in_.id, in_.content, in_.buyer_seller, in_.created_at, in_.metadata,
+                           u.username as created_by
+                    FROM invoice_note in_
+                    LEFT JOIN terminal t ON t.terminal_id = in_.user_id
+                    LEFT JOIN LATERAL (
+                        SELECT username FROM jsonb_to_recordset(t.terminal_data->'profiles') 
+                        AS x(username text) LIMIT 1
+                    ) u ON true
+                    WHERE in_.invoice_id = {actual_invoice_id or f"(SELECT id FROM invoice WHERE external_id = '{invoice_id}')"}
+                    ORDER BY in_.created_at ASC
+                """)
+            
+            notes = []
+            for row in cur.fetchall():
+                note_id, content, buyer_seller, created_at, metadata, created_by = row
+                notes.append({
+                    'id': note_id,
+                    'note_id': note_id,
+                    'note_text': content,
+                    'note_type': metadata.get('note_type', 'general'),
+                    'visibility': metadata.get('visibility', 'shared'),
+                    'buyer_seller': buyer_seller,
+                    'created_by': created_by or buyer_seller,
+                    'created_at': created_at.isoformat() if created_at else None,
+                    'metadata': metadata
+                })
+            
+            cur.close()
+            conn.close()
+            
+            return {"notes": notes}, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving invoice notes: {str(e)}")
+            return {"error": f"Failed to retrieve notes: {str(e)}"}, 500
+    
+    @token_required
+    def post(self, current_user, invoice_id, request_origin='unknown'):
+        """Add a new note to an invoice"""
+        try:
+            from ..common.database import get_db_connection, execute_sql
+            import json
+            
+            data = request.get_json()
+            if not data or 'note_text' not in data:
+                return {"error": "note_text is required"}, 400
+            
+            note_text = data['note_text']
+            note_type = data.get('note_type', 'general')
+            visibility = data.get('visibility', 'shared')
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # First verify that the user is either buyer or seller for this invoice
+            execute_sql(cur, f"""
+                SELECT id, buyer_id, seller_id, external_id
+                FROM invoice 
+                WHERE id = {invoice_id} OR external_id = '{invoice_id}'
+            """)
+            
+            invoice_result = cur.fetchone()
+            if not invoice_result:
+                return {"error": "Invoice not found"}, 404
+                
+            actual_invoice_id, buyer_id, seller_id, external_id = invoice_result
+            
+            # Check if current user is buyer or seller
+            if current_user.id not in [buyer_id, seller_id]:
+                return {"error": "Access denied - not buyer or seller for this invoice"}, 403
+            
+            # Determine buyer_seller designation
+            buyer_seller = 'buyer' if current_user.id == buyer_id else 'seller'
+            
+            # Prepare metadata
+            metadata = {
+                'note_type': note_type,
+                'visibility': visibility
+            }
+            
+            # Insert the note
+            execute_sql(cur, f"""
+                INSERT INTO invoice_note (invoice_id, user_id, buyer_seller, content, metadata)
+                VALUES ({actual_invoice_id}, {current_user.id}, '{buyer_seller}', '{note_text}', '{json.dumps(metadata)}')
+                RETURNING id
+            """)
+            
+            note_id = cur.fetchone()[0]
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "success": True,
+                "note_id": note_id,
+                "message": "Note created successfully"
+            }, 201
+            
+        except Exception as e:
+            logger.error(f"Error creating invoice note: {str(e)}")
+            return {"error": f"Failed to create note: {str(e)}"}, 500 
+
+@rest_api.route('/api/v1/user/invoices')
+class UserInvoices(Resource):
+    """
+    Get all invoices for the current user (both purchases and sales)
+    """
+    @token_required
+    @track_metrics('get_user_invoices')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            # Get all invoices for this user
+            all_invoices = get_user_all_invoices(current_user.id)
+            
+            # Separate purchases (as buyer) and sales (as seller)
+            purchases = []
+            sales = []
+            
+            for invoice in all_invoices:
+                if invoice['user_role'] == 'buyer':
+                    purchases.append(invoice)
+                elif invoice['user_role'] == 'seller':
+                    sales.append(invoice)
+            
+            return {
+                "user_id": current_user.id,
+                "purchases": purchases,
+                "sales": sales,
+                "invoices": all_invoices,  # All invoices combined
+                "summary": {
+                    "total_purchases": len(purchases),
+                    "total_sales": len(sales),
+                    "total_invoices": len(all_invoices)
+                }
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user invoices: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/searchable/<string:searchable_id>/invoices')
+class SearchableInvoices(Resource):
+    """
+    Get all invoices for a specific searchable item
+    """
+    @token_required
+    @track_metrics('get_searchable_invoices')
+    def get(self, current_user, searchable_id, request_origin='unknown'):
+        try:
+            from ..common.data_helpers import get_invoices_for_searchable
+            
+            # Get invoices for this searchable filtered by user role
+            invoices = get_invoices_for_searchable(searchable_id, current_user.id)
+            
+            return {
+                "searchable_id": searchable_id,
+                "invoices": invoices,
+                "total_count": len(invoices)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving searchable invoices: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/user/purchases')
+class UserPurchases(Resource):
+    """
+    Get all purchases for the current user (items they bought)
+    """
+    @token_required
+    @track_metrics('get_user_purchases')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            # Get all purchases (as buyer) for this user
+            all_invoices = get_user_all_invoices(current_user.id)
+            
+            # Filter only purchases (as buyer) with complete payment status
+            purchases = [invoice for invoice in all_invoices 
+                        if invoice['user_role'] == 'buyer' and invoice['payment_status'] == 'complete']
+            
+            return {
+                "user_id": current_user.id,
+                "purchases": purchases,
+                "total_purchases": len(purchases)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error retrieving user purchases: {str(e)}")
+            return {"error": str(e)}, 500
