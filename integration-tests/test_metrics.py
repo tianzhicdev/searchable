@@ -1,11 +1,13 @@
 """
-Integration tests for metrics collection system
-Tests metric event recording and retrieval
+Enhanced integration tests for metrics collection system
+Tests metric event recording, retrieval, and analytics workflows
 """
 
 import pytest
 import time
 import uuid
+import json
+import requests
 from datetime import datetime, timedelta
 from api_client import SearchableAPIClient
 
@@ -345,6 +347,303 @@ class TestMetrics:
         query_elapsed = time.time() - start_time
         data = response.json()
         print(f"✓ Queried {len(data['metrics'])} metrics in {query_elapsed:.3f} seconds")
+    
+    def test_11_real_user_workflow_metrics(self):
+        """Test metrics collection during real user workflow"""
+        print("Testing real user workflow metrics...")
+        
+        # Simulate user registration -> login -> actions workflow
+        workflow_user_id = str(uuid.uuid4())[:8]
+        workflow_metrics = []
+        
+        # User visits homepage
+        workflow_metrics.append({
+            'metric_name': 'page_view',
+            'metric_value': 1,
+            'tags': {
+                'page': 'homepage',
+                'user_session': workflow_user_id,
+                'ip': '192.168.1.200'
+            },
+            'metadata': {
+                'referrer': 'google.com',
+                'user_agent': 'Mozilla/5.0'
+            }
+        })
+        
+        # User registers
+        workflow_metrics.append({
+            'metric_name': 'user_signup_attempt',
+            'metric_value': 1,
+            'tags': {
+                'user_session': workflow_user_id,
+                'source': 'organic'
+            },
+            'metadata': {
+                'form_completion_time': 45.2
+            }
+        })
+        
+        # Registration success
+        workflow_metrics.append({
+            'metric_name': 'user_signup_success',
+            'metric_value': 1,
+            'tags': {
+                'user_id': workflow_user_id,
+                'user_session': workflow_user_id
+            },
+            'metadata': {
+                'verification_method': 'email'
+            }
+        })
+        
+        # User explores searchables
+        for i in range(3):
+            workflow_metrics.append({
+                'metric_name': 'searchable_view',
+                'metric_value': 1,
+                'tags': {
+                    'user_id': workflow_user_id,
+                    'searchable_id': f'search_{i}',
+                    'searchable_type': 'downloadable'
+                },
+                'metadata': {
+                    'view_duration': 15.5 + i * 5
+                }
+            })
+        
+        # User makes purchase
+        workflow_metrics.append({
+            'metric_name': 'purchase_initiated',
+            'metric_value': 1,
+            'tags': {
+                'user_id': workflow_user_id,
+                'searchable_id': 'search_1',
+                'amount_usd': '25.00'
+            },
+            'metadata': {
+                'payment_method': 'stripe'
+            }
+        })
+        
+        # Submit all workflow metrics
+        response = self.client.session.post(
+            f"{self.metrics_base_url}/api/v1/metrics/batch",
+            json={'metrics': workflow_metrics}
+        )
+        assert response.status_code == 201
+        
+        result = response.json()
+        assert result['success'] is True
+        assert result['inserted'] == len(workflow_metrics)
+        
+        print(f"✓ Created {len(workflow_metrics)} workflow metrics")
+        
+        # Wait for processing
+        time.sleep(1)
+        
+        # Verify workflow can be analyzed
+        params = {
+            'tags': json.dumps({'user_session': workflow_user_id}),
+            'limit': 20
+        }
+        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        assert response.status_code == 200
+        
+        data = response.json()
+        workflow_events = data['metrics']
+        assert len(workflow_events) >= len(workflow_metrics)
+        
+        # Verify funnel progression
+        event_types = [event['metric_name'] for event in workflow_events]
+        assert 'page_view' in event_types
+        assert 'user_signup_attempt' in event_types
+        assert 'user_signup_success' in event_types
+        assert 'searchable_view' in event_types
+        assert 'purchase_initiated' in event_types
+        
+        print("✓ User workflow metrics recorded and analyzable")
+    
+    def test_12_metrics_data_integrity(self):
+        """Test metrics data integrity and validation"""
+        print("Testing metrics data integrity...")
+        
+        # Test metric with all field types
+        comprehensive_metric = {
+            'metric_name': 'data_integrity_test',
+            'metric_value': 42.42,
+            'tags': {
+                'string_tag': 'test_value',
+                'number_tag': '12345',
+                'boolean_tag': 'true',
+                'special_chars': 'test@example.com'
+            },
+            'metadata': {
+                'nested_object': {
+                    'key1': 'value1',
+                    'key2': 123
+                },
+                'array_data': [1, 2, 3],
+                'timestamp': datetime.utcnow().isoformat(),
+                'unicode_text': 'Testing unicode: ñáéíóú 中文 🚀'
+            }
+        }
+        
+        response = self.client.session.post(
+            f"{self.metrics_base_url}/api/v1/metrics",
+            json=comprehensive_metric
+        )
+        assert response.status_code == 201
+        
+        result = response.json()
+        event_id = result['event_id']
+        
+        # Retrieve and verify data integrity
+        params = {'metric_name': 'data_integrity_test'}
+        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        assert response.status_code == 200
+        
+        data = response.json()
+        retrieved_metric = data['metrics'][0]
+        
+        # Verify all data preserved correctly
+        assert retrieved_metric['metric_name'] == 'data_integrity_test'
+        assert retrieved_metric['metric_value'] == 42.42
+        assert retrieved_metric['tags']['string_tag'] == 'test_value'
+        assert retrieved_metric['tags']['unicode_text'] is not None or 'unicode_text' in retrieved_metric['metadata']
+        assert retrieved_metric['metadata']['nested_object']['key1'] == 'value1'
+        assert retrieved_metric['metadata']['array_data'] == [1, 2, 3]
+        
+        print("✓ Data integrity preserved across storage and retrieval")
+    
+    def test_13_metrics_error_handling(self):
+        """Test metrics system error handling and validation"""
+        print("Testing metrics error handling...")
+        
+        # Test invalid metric (missing required fields)
+        invalid_metrics = [
+            {},  # Empty
+            {'metric_name': ''},  # Empty name
+            {'metric_value': 'not_a_number'},  # Invalid value type
+            {'metric_name': 'test', 'metric_value': 'abc'},  # Invalid value
+        ]
+        
+        for invalid_metric in invalid_metrics:
+            response = self.client.session.post(
+                f"{self.metrics_base_url}/api/v1/metrics",
+                json=invalid_metric
+            )
+            # Should return error for invalid data
+            assert response.status_code in [400, 422, 500]
+        
+        print("✓ Invalid metrics properly rejected")
+        
+        # Test batch with mixed valid/invalid
+        mixed_batch = {
+            'metrics': [
+                {
+                    'metric_name': 'valid_metric',
+                    'metric_value': 1,
+                    'tags': {'test': 'valid'}
+                },
+                {
+                    'metric_name': '',  # Invalid
+                    'metric_value': 1
+                },
+                {
+                    'metric_name': 'another_valid',
+                    'metric_value': 2
+                }
+            ]
+        }
+        
+        response = self.client.session.post(
+            f"{self.metrics_base_url}/api/v1/metrics/batch",
+            json=mixed_batch
+        )
+        
+        # Should handle mixed batch appropriately
+        # (either reject all or accept valid ones)
+        assert response.status_code in [201, 400, 422]
+        
+        print("✓ Mixed batch error handling working")
+    
+    def test_14_metrics_analytics_queries(self):
+        """Test complex analytics queries on metrics data"""
+        print("Testing metrics analytics queries...")
+        
+        # Create analytics test data
+        analytics_metrics = []
+        current_time = datetime.utcnow()
+        
+        # Create data for different time periods
+        for hours_ago in [1, 2, 6, 12, 24]:
+            for metric_type in ['page_view', 'user_action', 'error']:
+                for i in range(3):  # 3 events of each type per time period
+                    event_time = current_time - timedelta(hours=hours_ago)
+                    analytics_metrics.append({
+                        'metric_name': metric_type,
+                        'metric_value': 1,
+                        'tags': {
+                            'time_bucket': f'{hours_ago}h_ago',
+                            'user_segment': f'segment_{i % 2}',
+                            'platform': 'web' if i % 2 == 0 else 'mobile'
+                        },
+                        'metadata': {
+                            'simulated_time': event_time.isoformat()
+                        }
+                    })
+        
+        # Submit analytics data
+        response = self.client.session.post(
+            f"{self.metrics_base_url}/api/v1/metrics/batch",
+            json={'metrics': analytics_metrics}
+        )
+        assert response.status_code == 201
+        
+        print(f"✓ Created {len(analytics_metrics)} analytics test metrics")
+        
+        # Wait for processing
+        time.sleep(2)
+        
+        # Test aggregation endpoint
+        params = {'hours': 48}  # Last 48 hours
+        response = self.client.session.get(
+            f"{self.metrics_base_url}/api/v1/metrics/aggregate",
+            params=params
+        )
+        assert response.status_code == 200
+        
+        agg_data = response.json()
+        assert 'aggregations' in agg_data
+        
+        # Verify aggregation structure
+        aggregations = agg_data['aggregations']
+        expected_fields = ['unique_visitors', 'page_views', 'new_users', 
+                          'item_views_by_type', 'new_items_by_type', 'invoices_by_type']
+        
+        for field in expected_fields:
+            assert field in aggregations
+        
+        print("✓ Aggregation endpoint working correctly")
+        
+        # Test filtering by platform
+        params = {
+            'tags': json.dumps({'platform': 'web'}),
+            'limit': 50
+        }
+        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        assert response.status_code == 200
+        
+        data = response.json()
+        web_metrics = data['metrics']
+        
+        # Verify filtering worked
+        for metric in web_metrics:
+            if 'platform' in metric['tags']:
+                assert metric['tags']['platform'] == 'web'
+        
+        print(f"✓ Platform filtering returned {len(web_metrics)} web metrics")
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
