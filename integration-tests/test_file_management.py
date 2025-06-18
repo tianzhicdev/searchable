@@ -138,22 +138,20 @@ class TestFileManagement:
             
             # Check for filename in various locations
             filename = None
+            # Ensure original filename is available
             if 'original_filename' in file_data:
                 filename = file_data['original_filename']
             elif 'metadata' in file_data and 'original_filename' in file_data['metadata']:
                 filename = file_data['metadata']['original_filename']
-            
-            if filename:
-                print(f"✓ Retrieved metadata for {filename}")
             else:
-                print(f"✓ Retrieved metadata for file ID {file_info['file_id']}")
+                pytest.fail(f"Original filename not found in file metadata for file {file_info['file_id']}")
             
-            # Check for metadata (be lenient about structure)
-            if 'metadata' in file_data:
-                stored_metadata = file_data['metadata']
-                print(f"  Metadata keys: {list(stored_metadata.keys())}")
-            else:
-                print(f"  Response keys: {list(file_data.keys())}")
+            print(f"✓ Retrieved metadata for {filename}")
+            
+            # Verify metadata exists in response
+            assert 'metadata' in file_data, f"No metadata field in file response for file {file_info['file_id']}"
+            stored_metadata = file_data['metadata']
+            print(f"  Metadata keys: {list(stored_metadata.keys())}")
     
     def test_05_list_user_files(self):
         """Test listing user's files with pagination"""
@@ -181,16 +179,12 @@ class TestFileManagement:
             if our_files_in_list == 0:
                 pytest.fail(f"None of our {len(self.uploaded_files)} uploaded files found in file listing")
         
-        # Verify pagination info (be flexible with field names)
-        page_field = 'page' if 'page' in pagination else 'current_page'
-        size_field = 'pageSize' if 'pageSize' in pagination else 'per_page' 
-        count_field = 'totalCount' if 'totalCount' in pagination else 'total_count'
-        pages_field = 'totalPages' if 'totalPages' in pagination else 'total_pages'
+        # Verify required pagination fields exist
+        required_fields = ['current_page', 'per_page', 'total_count', 'total_pages']
+        alternative_fields = ['page', 'pageSize', 'totalCount', 'totalPages']
         
-        assert page_field in pagination
-        assert size_field in pagination
-        assert count_field in pagination
-        assert pages_field in pagination
+        for req_field, alt_field in zip(required_fields, alternative_fields):
+            assert req_field in pagination or alt_field in pagination, f"Missing pagination field: {req_field} or {alt_field}"
         
         print(f"✓ Listed {len(files)} files")
         page_num = pagination.get('page', pagination.get('current_page', 1))
@@ -202,9 +196,8 @@ class TestFileManagement:
         
         assert 'files' in response_small
         files_small = response_small['files']
-        # Check if pagination is implemented
-        if len(files_small) > 2:
-            pytest.skip(f"Pagination not implemented - page size 2 returned {len(files_small)} files")
+        # Verify pagination is working correctly
+        assert len(files_small) <= 2, f"Pagination not working - page size 2 returned {len(files_small)} files"
         print(f"✓ Pagination working correctly: page size 2 returned {len(files_small)} files")
         
         print(f"✓ Listed with page_size=2: {len(files_small)} files")
@@ -250,11 +243,11 @@ class TestFileManagement:
         expected_document_files = [f for f in self.test_file_configs if f['type'] == 'document']
         expected_code_files = [f for f in self.test_file_configs if f['type'] == 'code']
         
-        # Check if custom metadata is preserved
-        if len(expected_document_files) > 0 and len(document_files) == 0:
-            pytest.skip("Custom metadata not preserved - document type files not found")
-        if len(expected_code_files) > 0 and len(code_files) == 0:
-            pytest.skip("Custom metadata not preserved - code type files not found")
+        # Verify custom metadata is preserved
+        if len(expected_document_files) > 0:
+            assert len(document_files) > 0, "Custom metadata not preserved - document type files not found"
+        if len(expected_code_files) > 0:
+            assert len(code_files) > 0, "Custom metadata not preserved - code type files not found"
         
         print(f"✓ Found {len(document_files)} document files")
         print(f"✓ Found {len(code_files)} code files")
@@ -263,6 +256,8 @@ class TestFileManagement:
         txt_files = []
         json_files = []
         
+        # Search for files by extension
+        assert len(files) > 0, "No files available for filename pattern search"
         for f in files:
             filename = None
             if 'original_filename' in f:
@@ -292,16 +287,14 @@ class TestFileManagement:
             else:
                 file_data = response
             
-            # Check if file_size is available
-            if 'file_size' in file_data:
-                stored_size = file_data['file_size']
-                expected_size = file_info['config']['size']
-                
-                # Allow some tolerance for potential encoding differences
-                assert abs(stored_size - expected_size) <= 10
-                print(f"✓ {file_info['original_name']}: {stored_size} bytes (expected ~{expected_size})")
-            else:
-                pytest.skip(f"File size not available for {file_info['original_name']} - metadata field not implemented")
+            # Verify file_size is available (required field after our implementation)
+            assert 'file_size' in file_data, f"File size not available for {file_info['original_name']} - metadata field not implemented"
+            stored_size = file_data['file_size']
+            expected_size = file_info['config']['size']
+            
+            # Allow some tolerance for potential encoding differences
+            assert abs(stored_size - expected_size) <= 10, f"File size mismatch for {file_info['original_name']}: {stored_size} vs {expected_size}"
+            print(f"✓ {file_info['original_name']}: {stored_size} bytes (expected ~{expected_size})")
     
     def test_08_file_content_type_detection(self):
         """Test that content types are properly detected"""
@@ -327,36 +320,28 @@ class TestFileManagement:
                 
                 filename = file_info['original_name']
                 detected_type = file_data.get('content_type')
+
+                # Verify content type is available (required field after our implementation)
+                assert detected_type is not None, f"Content type not available for {filename} - content_type field not implemented"
                 
-                if detected_type:
-                    # Content type detection might vary, so check for reasonable types
-                    if filename.endswith('.txt'):
-                        if 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected text type)")
-                    elif filename.endswith('.json'):
-                        if 'json' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected JSON or text type)")
-                    elif filename.endswith('.py'):
-                        if 'python' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected Python or text type)")
-                    elif filename.endswith('.yaml'):
-                        if 'yaml' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            pytest.fail(f"Wrong content type for {filename}: {detected_type} (expected YAML or text type)")
-                    else:
-                        print(f"✓ {filename}: {detected_type}")
+                # Content type detection might vary, so check for reasonable types
+                if filename.endswith('.txt'):
+                    assert 'text' in detected_type.lower(), f"Wrong content type for {filename}: {detected_type} (expected text type)"
+                    print(f"✓ {filename}: {detected_type}")
+                elif filename.endswith('.json'):
+                    assert 'json' in detected_type.lower() or 'text' in detected_type.lower(), f"Wrong content type for {filename}: {detected_type} (expected JSON or text type)"
+                    print(f"✓ {filename}: {detected_type}")
+                elif filename.endswith('.py'):
+                    assert 'python' in detected_type.lower() or 'text' in detected_type.lower(), f"Wrong content type for {filename}: {detected_type} (expected Python or text type)"
+                    print(f"✓ {filename}: {detected_type}")
+                elif filename.endswith('.yaml'):
+                    assert 'yaml' in detected_type.lower() or 'text' in detected_type.lower(), f"Wrong content type for {filename}: {detected_type} (expected YAML or text type)"
+                    print(f"✓ {filename}: {detected_type}")
                 else:
-                    pytest.skip(f"Content type not available for {filename} - content_type field not implemented")
+                    print(f"✓ {filename}: {detected_type}")
                     
             except Exception as e:
-                pytest.skip(f"Content type detection failed for {file_info['original_name']}: {e}")
+                pytest.fail(f"Content type detection failed for {file_info['original_name']}: {e}")
     
     def test_09_file_metadata_updates(self):
         """Test updating file metadata"""
@@ -383,23 +368,22 @@ class TestFileManagement:
             # Attempt to update metadata (this endpoint might not exist)
             response = self.client.update_file_metadata(file_id, updated_metadata)
             
-            if 'success' in response and response['success']:
-                # Verify the update
-                verify_response = self.client.get_file_metadata(file_id)
+            assert 'success' in response and response['success'], f"File metadata update failed: {response}"
+            
+            # Verify the update
+            verify_response = self.client.get_file_metadata(file_id)
+            if 'file' in verify_response:
                 updated_file_data = verify_response['file']
-                
-                assert updated_file_data['metadata']['description'] == updated_metadata['description']
-                assert updated_file_data['metadata']['version'] == updated_metadata['version']
-                
-                print("✓ File metadata successfully updated")
             else:
-                pytest.skip(f"File metadata update not supported: {response}")
+                updated_file_data = verify_response
+            
+            assert updated_file_data['metadata']['description'] == updated_metadata['description']
+            assert updated_file_data['metadata']['version'] == updated_metadata['version']
+            
+            print("✓ File metadata successfully updated")
                 
         except Exception as e:
-            if "404" in str(e):
-                pytest.skip(f"File metadata update API not implemented: {str(e)}")
-            else:
-                pytest.fail(f"File metadata update failed: {str(e)}")
+            pytest.fail(f"File metadata update failed: {str(e)}")
     
     def test_10_file_access_permissions(self):
         """Test file access permissions and security"""
@@ -488,6 +472,8 @@ class TestFileManagement:
         
         # Count should match our remaining uploaded files
         our_files = []
+        # Verify files exist before iterating
+        assert len(current_files) > 0, "No files found in current file listing"
         for f in current_files:
             filename = None
             if 'original_filename' in f:
@@ -509,10 +495,12 @@ class TestFileManagement:
                     accessible_count += 1
             except:
                 pass
-        
+        # Verify all remaining files are still accessible
+        assert accessible_count == len(self.uploaded_files), f"File accessibility mismatch: {accessible_count}/{len(self.uploaded_files)} files accessible"
         print(f"✓ {accessible_count}/{len(self.uploaded_files)} uploaded files still accessible")
         
         # Verify file IDs are consistent
+        assert len(self.uploaded_files) > 0, "No uploaded files available for ID consistency check"
         for file_info in self.uploaded_files:
             response = self.client.get_file_metadata(file_info['file_id'])
             if 'file' in response:

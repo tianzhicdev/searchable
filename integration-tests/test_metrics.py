@@ -413,6 +413,7 @@ class TestMetrics:
                 'metric_value': 1,
                 'tags': {
                     'user_id': workflow_user_id,
+                    'user_session': workflow_user_id,
                     'searchable_id': f'search_{i}',
                     'searchable_type': 'downloadable'
                 },
@@ -427,6 +428,7 @@ class TestMetrics:
             'metric_value': 1,
             'tags': {
                 'user_id': workflow_user_id,
+                'user_session': workflow_user_id,
                 'searchable_id': 'search_1',
                 'amount_usd': '25.00'
             },

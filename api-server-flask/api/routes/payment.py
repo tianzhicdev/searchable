@@ -153,7 +153,12 @@ class RefreshPayment(Resource):
                 
             # Use our helper function to check stripe payment status
             payment_data = refresh_stripe_payment(session_id)
-            return payment_data, 200
+            
+            # Check if there was an error
+            if 'error' in payment_data:
+                return {"success": False, "error": payment_data['error']}, 200
+            else:
+                return {"success": True, "data": payment_data}, 200
             
         else:
             return {"error": "Invalid invoice_type. Must be 'stripe'"}, 400
@@ -170,9 +175,15 @@ class RefreshPaymentsBySearchable(Resource):
             invoices = get_invoices(searchable_id=searchable_id)
             
             if not invoices:
-                return {"message": "No invoices found for this searchable item"}, 200
+                return {
+                    "success": True, 
+                    "searchable_id": searchable_id, 
+                    "refreshed_count": 0,
+                    "message": "No invoices found for this searchable item"
+                }, 200
             
             results = []
+            refreshed_count = 0
             
             # Process each invoice
             for invoice in invoices:
@@ -189,12 +200,18 @@ class RefreshPaymentsBySearchable(Resource):
                         "status": payment_status.get('status', 'unknown'),
                         "data": payment_status
                     })
+                    refreshed_count += 1
             
-            return {"searchable_id": searchable_id, "payments": results}, 200
+            return {
+                "success": True,
+                "searchable_id": searchable_id, 
+                "refreshed_count": refreshed_count,
+                "payments": results
+            }, 200
             
         except Exception as e:
             logger.error(f"Error refreshing payments for searchable {searchable_id}: {str(e)}")
-            return {"error": str(e)}, 500
+            return {"success": False, "error": str(e)}, 500
 
 
 

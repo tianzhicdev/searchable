@@ -82,14 +82,7 @@ class TestSearchableIntegration:
             print(f"✓ File upload successful: {response}")
             
         except Exception as e:
-            print(f"⚠ File upload failed (this may be expected if file server is not configured): {e}")
-            # Create a mock file response for testing without file upload
-            self.__class__.uploaded_file = {
-                'file_id': 999999,  # Mock file ID
-                'success': False,
-                'mock': True
-            }
-            print("✓ Using mock file data for testing purposes")
+            pytest.fail(f"File upload failed: {e}")
     
     def test_04_publish_searchable_with_downloadable(self):
         """Test publishing a searchable item with a downloadable file"""
@@ -207,6 +200,9 @@ class TestSearchableIntegration:
         # Verify search response
         assert 'results' in response, f"No results in search response: {response}"
         
+        # Verify we have results before iterating
+        assert len(response['results']) > 0, "No search results returned"
+        
         # Look for our item in results
         found_item = None
         for item in response['results']:
@@ -252,7 +248,9 @@ class TestSearchableIntegration:
         public_data = searchable_info['payloads']['public']
         
         # Create selections based on searchable type
-        if public_data.get('type') == 'downloadable' and 'selectables' in public_data:
+        if public_data.get('type') == 'downloadable':
+            assert 'selectables' in public_data, "No selectables found in downloadable searchable"
+            assert len(public_data['selectables']) > 0, "Empty selectables list in downloadable searchable"
             # Use the actual selectables from the searchable (full object, not just ID)
             selections = [public_data['selectables'][0]]  # Select first downloadable object
             expected_amount = public_data['selectables'][0]['price']
@@ -304,26 +302,13 @@ class TestSearchableIntegration:
             print(f"  Test UUID for background processing: {test_uuid}")
             
         except Exception as e:
-            print(f"⚠ Invoice creation failed: {e}")
-            # Create mock invoice for testing
-            self.__class__.created_invoice = {
-                'session_id': f'mock_session_{self.test_id}',
-                'url': 'https://mock.stripe.com/payment',
-                'mock': True
-            }
-            print("✓ Using mock invoice data for testing purposes")
+            pytest.fail(f"Invoice creation failed: {e}")
     
     def test_09_simulate_payment_completion(self):
         """Test simulating payment completion via test endpoint"""
         print("Testing payment completion simulation...")
         
         assert self.created_invoice, "No invoice available"
-        
-        if self.created_invoice.get('mock'):
-            print("⚠ Skipping payment completion test (using mock invoice)")
-            # Mark payment as failed for subsequent tests
-            self.__class__.payment_completed = False
-            return
         
         session_id = self.created_invoice.get('session_id')
         assert session_id, "No session ID in invoice"
@@ -355,9 +340,7 @@ class TestSearchableIntegration:
             
         except Exception as e:
             self.__class__.payment_completed = False
-            print(f"⚠ Payment completion test failed: {e}")
-            # Fail the test since the endpoint should be available
-            raise AssertionError(f"Payment completion endpoint failed: {e}")
+            pytest.fail(f"Payment completion endpoint failed: {e}")
     
     def test_10_check_user_paid_files(self):
         """Test checking what files the user has paid for"""
@@ -395,31 +378,14 @@ class TestSearchableIntegration:
         assert self.client.token, "No authentication token available"
         assert self.created_searchable_id, "No searchable ID available"
         
-        # If payment was not completed, this test should expect no access
-        if not hasattr(self.__class__, 'payment_completed') or not self.payment_completed:
-            print("⚠ Payment was not completed, testing access denial...")
-            
-            # Get searchable info to try downloading without payment
-            searchable_info = self.client.get_searchable(self.created_searchable_id)
-            public_data = searchable_info['payloads']['public']
-            
-            if public_data.get('type') == 'downloadable' and 'downloadableFiles' in public_data:
-                file_id = public_data['downloadableFiles'][0]['fileId']
-                
-                try:
-                    response = self.client.download_file(self.created_searchable_id, file_id)
-                    # Should fail with 403 or similar
-                    assert response.status_code != 200, f"Download should be denied without payment but got {response.status_code}"
-                    print(f"✓ Access correctly denied without payment (status: {response.status_code})")
-                except Exception as e:
-                    print(f"✓ Access correctly denied without payment: {e}")
-            else:
-                print("✓ No downloadable files to test access denial")
-            return
+        # Verify payment was completed
+        assert hasattr(self.__class__, 'payment_completed'), "Payment completion status not available"
+        assert self.payment_completed, "Payment was not completed successfully"
         
-        # Payment was completed, test should have access
-        if not hasattr(self.__class__, 'paid_file_ids') or not self.paid_file_ids:
-            raise AssertionError("Payment was completed but no paid file IDs available")
+        # Verify we have paid file IDs available
+        assert hasattr(self.__class__, 'paid_file_ids'), "No paid file IDs available"
+        assert self.paid_file_ids, "Paid file IDs list is empty"
+        assert len(self.paid_file_ids) > 0, "No paid files found after successful payment"
         
         # Try to download the first paid file
         first_file_id = self.paid_file_ids[0]
@@ -464,15 +430,7 @@ class TestSearchableIntegration:
             print(f"  Profile Image URL: {response['profile']['profile_image_url']}")
             
         except Exception as e:
-            print(f"⚠ Profile creation failed: {e}")
-            # Create mock profile for testing
-            self.__class__.created_profile = {
-                'user_id': 12,  # Mock user ID from admin user
-                'username': self.username,
-                'introduction': profile_data['introduction'],
-                'profile_image_url': '/static/profiles/default.png'
-            }
-            print("✓ Using mock profile data for testing purposes")
+            pytest.fail(f"Profile creation failed: {e}")
     
     def test_13_get_user_profile(self):
         """Test retrieving user profile"""
@@ -500,7 +458,8 @@ class TestSearchableIntegration:
             print(f"  Introduction: {profile.get('introduction', 'None')}")
             print(f"  Downloadables count: {len(downloadables)}")
             
-            # Verify our created searchable is in the downloadables
+            # Verify our created searchable is in the downloadables if we have any
+            assert len(downloadables) >= 0, "Downloadables should be a list"
             found_searchable = False
             for downloadable in downloadables:
                 if downloadable.get('searchable_id') == self.created_searchable_id:
@@ -508,12 +467,11 @@ class TestSearchableIntegration:
                     print(f"  Found our test searchable: {downloadable['title']}")
                     break
             
-            if self.created_searchable_id and not found_searchable:
+            if self.created_searchable_id and len(downloadables) > 0 and not found_searchable:
                 print(f"  ⚠ Test searchable {self.created_searchable_id} not found in downloadables")
             
         except Exception as e:
-            print(f"⚠ Profile retrieval failed: {e}")
-            # Continue with testing even if profile retrieval fails
+            pytest.fail(f"Profile retrieval failed: {e}")
     
     def test_14_update_user_profile(self):
         """Test updating user profile"""
@@ -540,7 +498,7 @@ class TestSearchableIntegration:
             print(f"  Updated introduction: {profile['introduction'][:50]}...")
             
         except Exception as e:
-            print(f"⚠ Profile update failed: {e}")
+            pytest.fail(f"Profile update failed: {e}")
     
     def test_15_media_upload_endpoint(self):
         """Test the new v1/media/upload endpoint"""

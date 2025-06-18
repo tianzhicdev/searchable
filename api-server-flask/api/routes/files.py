@@ -60,6 +60,14 @@ class UploadFile(Resource):
             metadata['user_id'] = current_user.id
             metadata['original_filename'] = file.filename
             
+            # Add file information to metadata
+            file_content = file.read()
+            metadata['file_size'] = len(file_content)
+            metadata['content_type'] = file.content_type
+            
+            # Reset file stream for upload
+            file.seek(0)
+            
             # Forward the file to the file server
             files = {'file': (file.filename, file.stream, file.content_type)}
             data = {'file_id': file_id}
@@ -286,4 +294,70 @@ class DeleteFile(Resource):
             
         except Exception as e:
             logger.exception(f"Error deleting file: {str(e)}")
-            return {"error": f"Failed to delete file: {str(e)}"}, 500 
+            return {"error": f"Failed to delete file: {str(e)}"}, 500
+
+@rest_api.route('/api/v1/files/<int:file_id>/metadata', methods=['PUT'])
+class UpdateFileMetadata(Resource):
+    """
+    Update file metadata
+    """
+    @token_required
+    def put(self, current_user, file_id, request_origin='unknown'):
+        try:
+            # Get JSON data from request
+            if not request.json:
+                return {"error": "No JSON data provided"}, 400
+            
+            updated_metadata = request.json
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # First, get the current file metadata to check ownership
+            execute_sql(cur, f"""
+                SELECT file_id, uri, metadata
+                FROM files
+                WHERE file_id = {file_id}
+            """)
+            
+            result = cur.fetchone()
+            
+            if not result:
+                return {"error": "File not found"}, 404
+                
+            db_file_id, uri, current_metadata = result
+            
+            # Check if the user has permission to update this file
+            if current_metadata.get('user_id') != current_user.id:
+                return {"error": "Access denied"}, 403
+            
+            # Merge updated metadata with existing metadata
+            # Preserve system fields like user_id, original_filename
+            merged_metadata = current_metadata.copy()
+            
+            # Update only user-editable fields
+            editable_fields = ['description', 'type', 'category', 'version', 'tags', 'last_modified']
+            for field in editable_fields:
+                if field in updated_metadata:
+                    merged_metadata[field] = updated_metadata[field]
+            
+            # Update the metadata in database
+            execute_sql(cur, f"""
+                UPDATE files
+                SET metadata = {Json(merged_metadata)}
+                WHERE file_id = {file_id}
+            """, commit=True, connection=conn)
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "success": True,
+                "message": "File metadata updated successfully",
+                "file_id": db_file_id,
+                "metadata": merged_metadata
+            }, 200
+            
+        except Exception as e:
+            logger.exception(f"Error updating file metadata: {str(e)}")
+            return {"error": f"Failed to update file metadata: {str(e)}"}, 500 

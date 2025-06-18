@@ -78,8 +78,7 @@ class TestMetricsWorkflows:
         """Test metrics collection during user login workflow"""
         print("Testing user login metrics workflow...")
         
-        if not self.test_users:
-            pytest.skip("No test users available from registration test")
+        assert len(self.test_users) > 0, "No test users available from registration test"
         
         test_user = self.test_users[0]
         
@@ -139,8 +138,7 @@ class TestMetricsWorkflows:
         """Test metrics collection during searchable creation"""
         print("Testing searchable creation metrics workflow...")
         
-        if not self.test_users:
-            pytest.skip("No test users available")
+        assert len(self.test_users) > 0, "No test users available from previous tests"
         
         test_user = self.test_users[0]
         
@@ -229,8 +227,7 @@ class TestMetricsWorkflows:
         """Test metrics collection for searchable viewing"""
         print("Testing searchable view metrics workflow...")
         
-        if not self.test_searchables:
-            pytest.skip("No test searchables available")
+        assert len(self.test_searchables) > 0, "No test searchables available from previous tests"
         
         searchable_id = self.test_searchables[0]
         
@@ -293,8 +290,8 @@ class TestMetricsWorkflows:
         """Test metrics collection during purchase workflow"""
         print("Testing purchase workflow metrics...")
         
-        if not self.test_users or not self.test_searchables:
-            pytest.skip("No test users or searchables available")
+        assert len(self.test_users) > 0, "No test users available from previous tests"
+        assert len(self.test_searchables) > 0, "No test searchables available from previous tests"
         
         test_user = self.test_users[0]
         searchable_id = self.test_searchables[0]
@@ -316,10 +313,7 @@ class TestMetricsWorkflows:
             session_id = response['session_id']
             invoice_id = response.get('invoice_id')
         except Exception as e:
-            if "500" in str(e) or "404" in str(e):
-                pytest.skip(f"Invoice creation API issue: {e}")
-            else:
-                pytest.fail(f"Invoice creation failed: {e}")
+            pytest.fail(f"Invoice creation failed: {e}")
         
         print(f"✓ Invoice created: {session_id}")
         
@@ -350,10 +344,7 @@ class TestMetricsWorkflows:
                 completion_response = self.client.complete_payment_directly(session_id, self.test_id)
                 payment_completed = completion_response.get('success')
             except Exception as e:
-                if "500" in str(e) or "404" in str(e):
-                    pytest.skip(f"Payment completion API issue: {e}")
-                else:
-                    pytest.fail(f"Payment completion failed: {e}")
+                pytest.fail(f"Payment completion failed: {e}")
             
             if payment_completed:
                 # Create purchase completion metric

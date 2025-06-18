@@ -250,10 +250,7 @@ class TestPaymentRefresh:
                     print(f"! Payment refresh failed for {invoice_id}: {refresh_response}")
                     
             except Exception as e:
-                if "404" in str(e) or "400" in str(e):
-                    pytest.skip(f"Payment refresh API not implemented: {str(e)}")
-                else:
-                    pytest.fail(f"Individual payment refresh failed: {str(e)}")
+                pytest.fail(f"Individual payment refresh failed: {str(e)}")
     
     def test_04_bulk_refresh_by_searchable(self):
         """Test bulk refreshing all payments for a searchable"""
@@ -285,10 +282,7 @@ class TestPaymentRefresh:
                 print(f"! Bulk payment refresh failed: {bulk_refresh_response}")
                 
         except Exception as e:
-            if "404" in str(e) or "400" in str(e):
-                pytest.skip(f"Bulk payment refresh API not implemented: {str(e)}")
-            else:
-                pytest.fail(f"Bulk payment refresh failed: {str(e)}")
+            pytest.fail(f"Bulk payment refresh failed: {str(e)}")
     
     def test_05_payment_status_consistency(self):
         """Test that payment statuses remain consistent after refresh"""
@@ -366,10 +360,7 @@ class TestPaymentRefresh:
                 pytest.fail(f"Bulk refresh failed: {str(e)}")
                 
         except Exception as e:
-            if "404" in str(e) or "400" in str(e):
-                pytest.skip(f"Payment refresh API not implemented: {str(e)}")
-            else:
-                pytest.fail(f"Refresh performance testing failed: {str(e)}")
+            pytest.fail(f"Refresh performance testing failed: {str(e)}")
     
     def test_07_refresh_error_handling(self):
         """Test refresh operations with invalid data"""

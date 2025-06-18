@@ -1,14 +1,13 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## 🚨 CRITICAL DEVELOPER INSTRUCTIONS - Added 2025-01-06
-
 ### Workflow Requirements
 1. **No confirmation needed** - Execute code changes, deployments, and testing immediately
 2. **Always verify changes** - Restart services after changes to catch compile/runtime errors 
+3. **Useful Tests** - in integration tests, NEVER skip on unexpected result - fix the backend API if neccessary. Don't just print, use assert. when using for loop, assert on the length first.
 5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
 6. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them - leave them running so developer can manually verify
+
 
 ### Development Flow Pattern
 ```

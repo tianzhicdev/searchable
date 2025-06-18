@@ -245,10 +245,7 @@ class TestRatingSystem:
                 else:
                     print(f"✓ Rating eligibility checked for {invoice['invoice_id']}")
             except Exception as e:
-                if "404" in str(e) or "500" in str(e):
-                    pytest.skip(f"Rating eligibility API not implemented: {e}")
-                else:
-                    pytest.fail(f"Rating eligibility check failed: {e}")
+                pytest.fail(f"Buyer 1 rating eligibility check failed: {e}")
         
         # Check Buyer 2's eligibility
         for invoice in self.buyer2_invoices:
@@ -264,10 +261,7 @@ class TestRatingSystem:
                 else:
                     print(f"✓ Rating eligibility checked for {invoice['invoice_id']}")
             except Exception as e:
-                if "404" in str(e) or "500" in str(e):
-                    pytest.skip(f"Rating eligibility API not implemented: {e}")
-                else:
-                    pytest.fail(f"Rating eligibility check failed: {e}")
+                pytest.fail(f"Buyer 2 rating eligibility check failed: {e}")
     
     def test_05_get_user_purchases_for_rating(self):
         """Test retrieving user's purchases that can be rated"""
@@ -298,10 +292,7 @@ class TestRatingSystem:
                 print(f"✓ Buyer 2 purchase API responded: {list(buyer2_purchases.keys())}")
                 
         except Exception as e:
-            if "404" in str(e) or "500" in str(e):
-                pytest.skip(f"User purchases API not implemented: {e}")
-            else:
-                pytest.fail(f"User purchases API failed: {e}")
+            pytest.fail(f"User purchases API failed: {e}")
     
     def test_06_submit_ratings(self):
         """Test submitting ratings for purchased items"""
@@ -369,10 +360,7 @@ class TestRatingSystem:
                 pytest.fail("No invoice_id available for buyer2 rating - purchase failed")
                 
         except Exception as e:
-            if "404" in str(e) or "500" in str(e):
-                pytest.skip(f"Rating submission API not implemented: {e}")
-            else:
-                pytest.fail(f"Rating submission API failed: {e}")
+            pytest.fail(f"Rating submission API failed: {e}")
     
     def test_07_retrieve_searchable_ratings(self):
         """Test retrieving ratings for searchable items"""
@@ -410,10 +398,7 @@ class TestRatingSystem:
                     print(f"✓ Searchable {searchable_id} ratings retrieved: {ratings_response}")
                     
         except Exception as e:
-            if "404" in str(e) or "500" in str(e):
-                pytest.skip(f"Searchable ratings API not implemented: {e}")
-            else:
-                pytest.fail(f"Searchable ratings API failed: {e}")
+            pytest.fail(f"Searchable ratings API failed: {e}")
     
     def test_08_retrieve_terminal_ratings(self):
         """Test retrieving overall ratings for the seller (terminal)"""
@@ -451,10 +436,7 @@ class TestRatingSystem:
                 print(f"✓ Terminal ratings retrieved: {terminal_ratings}")
                 
         except Exception as e:
-            if "404" in str(e) or "500" in str(e):
-                pytest.skip(f"Terminal ratings API not implemented: {e}")
-            else:
-                pytest.fail(f"Terminal ratings API failed: {e}")
+            pytest.fail(f"Terminal ratings API failed: {e}")
     
     def test_09_prevent_duplicate_ratings(self):
         """Test that users cannot rate the same purchase twice"""

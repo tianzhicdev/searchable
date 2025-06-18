@@ -340,12 +340,13 @@ class TestComprehensiveScenarios:
         }
         
         # Use the correct API format for second invoice too
+
         searchable_info_2 = self.user1_client.get_searchable(searchable_2['id'])
         public_data_2 = searchable_info_2['payloads']['public']
-        if 'selectables' in public_data_2:
-            selections_2 = [public_data_2['selectables'][0]]  # Take first selectable
-        else:
-            selections_2 = files_to_buy_2  # Fallback
+        # Ensure selectables exist in searchable data
+        assert 'selectables' in public_data_2, f"No selectables found in searchable {searchable_2['id']}"
+        assert len(public_data_2['selectables']) > 0, f"Empty selectables list in searchable {searchable_2['id']}"
+        selections_2 = [public_data_2['selectables'][0]]  # Take first selectable
         
         invoice_response_2 = self.user2_client.create_invoice(
             searchable_2['id'],
@@ -356,11 +357,10 @@ class TestComprehensiveScenarios:
         
         # Complete payment for second purchase
         session_id_2 = invoice_response_2.get('session_id')
-        if session_id_2:
-            payment_response_2 = self.user2_client.complete_payment_directly(session_id_2)
-            assert payment_response_2['success']
-        else:
-            print("⚠ No session_id found, skipping payment completion")
+        # Ensure session_id was returned from invoice creation
+        assert session_id_2 is not None, "No session_id returned from invoice creation"
+        payment_response_2 = self.user2_client.complete_payment_directly(session_id_2)
+        assert payment_response_2['success'], f"Payment completion failed for session {session_id_2}"
         
         self.__class__.user2_invoices.append({
             'session_id': session_id_2,
@@ -396,10 +396,10 @@ class TestComprehensiveScenarios:
         # Use the correct API format for third invoice too
         searchable_info_3 = self.user1_client.get_searchable(searchable_3['id'])
         public_data_3 = searchable_info_3['payloads']['public']
-        if 'selectables' in public_data_3:
-            selections_3 = [public_data_3['selectables'][0]]  # Take first selectable
-        else:
-            selections_3 = files_to_buy  # Fallback
+        # Ensure selectables exist in searchable data
+        assert 'selectables' in public_data_3, f"No selectables found in searchable {searchable_3['id']}"
+        assert len(public_data_3['selectables']) > 0, f"Empty selectables list in searchable {searchable_3['id']}"
+        selections_3 = [public_data_3['selectables'][0]]  # Take first selectable
         
         invoice_response = self.user3_client.create_invoice(
             searchable_3['id'],
@@ -423,27 +423,32 @@ class TestComprehensiveScenarios:
         print("Verifying invoice statuses across all users")
         
         # Check User 2's completed invoices
+        assert len(self.user2_invoices) > 0, "No User 2 invoices found for status verification"
         for invoice_info in self.user2_invoices:
-            if invoice_info.get('session_id'):
-                payment_status = self.user2_client.check_payment_status(invoice_info['session_id'])
-                assert 'status' in payment_status
-                assert payment_status['status'] == 'complete'
-                print(f"✓ User 2 invoice {invoice_info['session_id']}: {payment_status['status']}")
-            else:
-                print(f"⚠ No session_id for invoice {invoice_info['session_id']}, skipping status check")
+            # Ensure session_id exists before checking payment status
+            session_id = invoice_info.get('session_id')
+            assert session_id is not None, f"Missing session_id in invoice data: {invoice_info}"
+            
+            payment_status = self.user2_client.check_payment_status(session_id)
+            assert 'status' in payment_status, f"No status field in payment response: {payment_status}"
+            assert payment_status['status'] == 'complete', f"Expected complete status, got: {payment_status['status']}"
+            print(f"✓ User 2 invoice {session_id}: {payment_status['status']}")
         
         # Check User 3's pending invoice
+        assert len(self.user3_invoices) > 0, "No User 3 invoices found for status verification"
         for invoice_info in self.user3_invoices:
-            if invoice_info.get('session_id'):
-                payment_status = self.user3_client.check_payment_status(invoice_info['session_id'])
-                assert 'status' in payment_status
-                # Pending invoices might show as 'incomplete' or 'pending'
-                assert payment_status['status'] in ['pending', 'incomplete']
-                print(f"✓ User 3 invoice {invoice_info['session_id']}: {payment_status['status']}")
-            else:
-                print(f"⚠ No session_id for invoice {invoice_info['session_id']}, skipping status check")
+            # Ensure session_id exists before checking payment status
+            session_id = invoice_info.get('session_id')
+            assert session_id is not None, f"Missing session_id in invoice data: {invoice_info}"
+            
+            payment_status = self.user3_client.check_payment_status(session_id)
+            assert 'status' in payment_status, f"No status field in payment response: {payment_status}"
+            # Pending invoices might show as 'incomplete' or 'pending'
+            assert payment_status['status'] in ['pending', 'incomplete'], f"Expected pending/incomplete status, got: {payment_status['status']}"
+            print(f"✓ User 3 invoice {session_id}: {payment_status['status']}")
         
         # Check invoices by searchable for User 1 (seller perspective)
+        assert len(self.user1_searchables) > 0, "No searchables found for invoice verification"
         for searchable in self.user1_searchables:
             invoices_response = self.user1_client.get_invoices_by_searchable(searchable['id'])
             invoices_data = invoices_response.json()
@@ -504,10 +509,12 @@ class TestComprehensiveScenarios:
         assert current_profile['profile']['introduction'] == profile_data['introduction']
         assert current_profile['profile']['profile_image_url'] == profile_media['media_uri']
         # Check if additional_images exist but don't require exact count
-        if 'metadata' in current_profile['profile'] and 'additional_images' in current_profile['profile']['metadata']:
+        # Verify additional images are properly stored in metadata
+        assert 'metadata' in current_profile['profile'], "No metadata field in profile"
+        if 'additional_images' in current_profile['profile']['metadata']:
             print(f"  ✓ Additional images found: {len(current_profile['profile']['metadata']['additional_images'])}")
         else:
-            print(f"  ⚠ Additional images not stored in metadata (API limitation)")
+            print(f"  ⚠ Additional images field not found in metadata - may need API implementation")
         print(f"✓ User 1 current profile retrieved successfully")
         
         # Retrieve User 1 profile by ID (public view)
@@ -549,11 +556,11 @@ class TestComprehensiveScenarios:
                 invoices = user2_invoices['invoices']
                 print(f"  ✓ User 2 has {len(invoices)} total invoice(s)")
         except Exception as e:
-            print(f"  ⚠ User invoice retrieval API issue: {e}")
-            print(f"  ✓ Test continues (API may not be fully implemented)")
-            user2_invoices = {'purchases': [], 'sales': [], 'invoices': []}  # Fallback
+            # API issue should fail the test instead of skipping
+            pytest.fail(f"User invoice retrieval failed: {e}")
         
         purchases = user2_invoices.get('purchases', [])
+        assert len(purchases) > 0, "No purchases found in user2 invoices"
         for purchase in purchases:
             assert purchase['payment_status'] == 'complete'
             assert 'amount' in purchase
@@ -568,7 +575,7 @@ class TestComprehensiveScenarios:
         sales = user1_invoices['sales']
         print(f"  ✓ User 1 has {len(sales)} sale(s) (expected at least 2)")
         # Don't assert exact count as payment completion may be async
-        
+        assert len(sales) > 0, "No sales found in user1 invoices"
         for sale in sales:
             assert sale['payment_status'] == 'complete'
             assert 'amount' in sale
@@ -595,6 +602,7 @@ class TestComprehensiveScenarios:
         print("Verifying file access permissions")
         
         # User 2 should be able to access files from paid searchables
+        assert len(self.user2_invoices) > 0, "No user2 invoices available for file access verification"
         for invoice_info in self.user2_invoices:
             searchable_id = invoice_info['searchable_id']
             
@@ -617,6 +625,9 @@ class TestComprehensiveScenarios:
                 print(f"✓ User 2 has access rights to file {file_id} (download may fail due to test environment)")
         
         # User 3 should NOT be able to access files (unpaid)
+        
+        # Verify User 3 cannot access paid files (should have no access)
+        assert len(self.user1_searchables) >= 2, "Need at least 2 searchables for access control testing"
         for searchable in self.user1_searchables[:2]:  # Check first 2 searchables
             try:
                 paid_files = self.user3_client.get_user_paid_files(searchable['id'])
