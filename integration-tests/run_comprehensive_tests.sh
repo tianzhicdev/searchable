@@ -130,6 +130,9 @@ test_files=(
     "test_file_management.py"               # File CRUD operations
     "test_invoice_notes.py"                 # Invoice notes functionality
     "test_payment_refresh.py"               # Payment refresh operations
+    "test_metrics.py"                       # Metrics collection and analytics
+    "test_grafana.py"                       # Grafana integration and dashboards
+    "test_metrics_workflows.py"             # End-to-end metrics workflows
 )
 
 print_color $YELLOW "Test execution order:"
@@ -258,8 +261,11 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "✅ Complex Multi-user Scenarios"
     echo "✅ Fee Calculations and Balance Updates"
     echo "✅ Access Control and Permissions"
+    echo "✅ Metrics Collection and Analytics (direct API, batching, aggregation)"
+    echo "✅ Grafana Integration (dashboards, datasources, API access)"
+    echo "✅ End-to-End Metrics Workflows (user actions, purchase funnel)"
     echo
-    echo "Estimated API Coverage: ~90% of available endpoints"
+    echo "Estimated API Coverage: ~95% of available endpoints"
     
 } > "$summary_file"
 

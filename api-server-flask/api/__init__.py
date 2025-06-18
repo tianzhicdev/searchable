@@ -10,6 +10,7 @@ from flask_cors import CORS
 from flask_restx import Api
 from .common.models import db
 from .common.logging_config import setup_logger
+from .common.metrics_collector import init_metrics
 
 # Set up the logger
 logger = setup_logger(__name__, 'api_init.log')
@@ -22,6 +23,11 @@ rest_api = Api(app, version="1.0", title="Users API")
 
 db.init_app(app)
 CORS(app)
+
+# Initialize metrics collector
+metrics_domain = os.environ.get('METRICS_DOMAIN', 'http://metrics:5007')
+logger.info(f"Initializing metrics collector with domain: {metrics_domain}")
+init_metrics(metrics_domain=metrics_domain)
 
 # Import routes after initializing rest_api to avoid circular imports
 # Using new organized structure
