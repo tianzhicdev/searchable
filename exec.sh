@@ -49,6 +49,8 @@ show_usage() {
     echo "  - db"
     echo "  - nginx"
     echo "  - usdt-api"
+    echo "  - metrics"
+    echo "  - grafana"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
     echo "  ./exec.sh remote deploy flask_api"
@@ -64,7 +66,7 @@ show_usage() {
 # Function to check if container name is valid
 validate_container() {
     local container=$1
-    local valid_containers=("frontend" "flask_api" "file_server" "background" "db" "nginx" "usdt-api")
+    local valid_containers=("frontend" "flask_api" "file_server" "background" "db" "nginx" "usdt-api" "metrics" "grafana")
     
     for valid in "${valid_containers[@]}"; do
         if [ "$container" = "$valid" ]; then
@@ -240,10 +242,11 @@ local_mock() {
     fi
     
     echo -e "${YELLOW}Starting React app in mock mode...${NC}"
-    echo "Access the app at: http://localhost:3000"
+    echo "Access the app at: http://localhost:3001"
     echo ""
     
-    # Start React development server with mock mode enabled
+    # Start React development server with mock mode enabled on port 3001
+    PORT=3001 \
     REACT_APP_MOCK_MODE=true \
     REACT_APP_ENV=local \
     REACT_APP_BRANDING=silkroadonlightning \

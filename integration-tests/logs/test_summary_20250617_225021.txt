@@ -1,33 +1,37 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Sat Jun 14 00:16:03 EDT 2025
-Duration: 14s
-Total Tests: 7
-Passed: 5
-Failed: 2
-Success Rate: 71%
+Timestamp: Tue Jun 17 22:51:22 EDT 2025
+Duration: 60s
+Total Tests: 11
+Passed: 10
+Failed: 1
+Success Rate: 90%
 
 Test Results:
 ============
 ✅ test_integration - PASSED
-❌ test_comprehensive_scenarios - FAILED
+✅ test_offline_searchables - PASSED
+✅ test_comprehensive_scenarios - PASSED
 ✅ test_withdrawals - PASSED
 ✅ test_ratings - PASSED
 ✅ test_file_management - PASSED
 ✅ test_invoice_notes - PASSED
-❌ test_payment_refresh - FAILED
+✅ test_payment_refresh - PASSED
+✅ test_metrics - PASSED
+❌ test_grafana - FAILED
+✅ test_metrics_workflows - PASSED
 
 Failed Test Details:
 ===================
-- test_comprehensive_scenarios: See test_comprehensive_scenarios_20250614_001549.log for details
-- test_payment_refresh: See test_payment_refresh_20250614_001549.log for details
+- test_grafana: See test_grafana_20250617_225021.log for details
 
 API Endpoint Coverage Analysis:
 ==============================
 The comprehensive test suite covers:
 ✅ User Authentication (register, login, logout)
-✅ Searchable CRUD Operations
-✅ Payment Processing (invoice creation, completion)
+✅ Searchable CRUD Operations (downloadable and offline types)
+✅ Offline Searchables (menu items, quantity handling)
+✅ Payment Processing (invoice creation, completion, count field)
 ✅ File Management (upload, metadata, listing)
 ✅ Media Management (upload, retrieval)
 ✅ Profile Management (create, update, retrieve)
@@ -38,5 +42,8 @@ The comprehensive test suite covers:
 ✅ Complex Multi-user Scenarios
 ✅ Fee Calculations and Balance Updates
 ✅ Access Control and Permissions
+✅ Metrics Collection and Analytics (direct API, batching, aggregation)
+✅ Grafana Integration (dashboards, datasources, API access)
+✅ End-to-End Metrics Workflows (user actions, purchase funnel)
 
-Estimated API Coverage: ~90% of available endpoints
+Estimated API Coverage: ~95% of available endpoints
