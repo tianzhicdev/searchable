@@ -1,11 +1,11 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Sun Jun 15 22:32:40 EDT 2025
-Duration: 30s
-Total Tests: 8
-Passed: 8
-Failed: 0
-Success Rate: 100%
+Timestamp: Tue Jun 17 22:51:22 EDT 2025
+Duration: 60s
+Total Tests: 11
+Passed: 10
+Failed: 1
+Success Rate: 90%
 
 Test Results:
 ============
@@ -17,6 +17,13 @@ Test Results:
 ✅ test_file_management - PASSED
 ✅ test_invoice_notes - PASSED
 ✅ test_payment_refresh - PASSED
+✅ test_metrics - PASSED
+❌ test_grafana - FAILED
+✅ test_metrics_workflows - PASSED
+
+Failed Test Details:
+===================
+- test_grafana: See test_grafana_20250617_225021.log for details
 
 API Endpoint Coverage Analysis:
 ==============================
@@ -35,5 +42,8 @@ The comprehensive test suite covers:
 ✅ Complex Multi-user Scenarios
 ✅ Fee Calculations and Balance Updates
 ✅ Access Control and Permissions
+✅ Metrics Collection and Analytics (direct API, batching, aggregation)
+✅ Grafana Integration (dashboards, datasources, API access)
+✅ End-to-End Metrics Workflows (user actions, purchase funnel)
 
-Estimated API Coverage: ~90% of available endpoints
+Estimated API Coverage: ~95% of available endpoints

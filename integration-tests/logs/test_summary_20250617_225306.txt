@@ -1,28 +1,33 @@
 Comprehensive Integration Test Summary
 =====================================
-Timestamp: Sun Jun 15 07:41:48 PDT 2025
-Duration: 24s
-Total Tests: 7
-Passed: 7
+Timestamp: Tue Jun 17 22:54:07 EDT 2025
+Duration: 60s
+Total Tests: 11
+Passed: 11
 Failed: 0
 Success Rate: 100%
 
 Test Results:
 ============
 ✅ test_integration - PASSED
+✅ test_offline_searchables - PASSED
 ✅ test_comprehensive_scenarios - PASSED
 ✅ test_withdrawals - PASSED
 ✅ test_ratings - PASSED
 ✅ test_file_management - PASSED
 ✅ test_invoice_notes - PASSED
 ✅ test_payment_refresh - PASSED
+✅ test_metrics - PASSED
+✅ test_grafana - PASSED
+✅ test_metrics_workflows - PASSED
 
 API Endpoint Coverage Analysis:
 ==============================
 The comprehensive test suite covers:
 ✅ User Authentication (register, login, logout)
-✅ Searchable CRUD Operations
-✅ Payment Processing (invoice creation, completion)
+✅ Searchable CRUD Operations (downloadable and offline types)
+✅ Offline Searchables (menu items, quantity handling)
+✅ Payment Processing (invoice creation, completion, count field)
 ✅ File Management (upload, metadata, listing)
 ✅ Media Management (upload, retrieval)
 ✅ Profile Management (create, update, retrieve)
@@ -33,5 +38,8 @@ The comprehensive test suite covers:
 ✅ Complex Multi-user Scenarios
 ✅ Fee Calculations and Balance Updates
 ✅ Access Control and Permissions
+✅ Metrics Collection and Analytics (direct API, batching, aggregation)
+✅ Grafana Integration (dashboards, datasources, API access)
+✅ End-to-End Metrics Workflows (user actions, purchase funnel)
 
-Estimated API Coverage: ~90% of available endpoints
+Estimated API Coverage: ~95% of available endpoints
