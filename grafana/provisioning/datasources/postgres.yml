@@ -8,7 +8,7 @@ datasources:
     database: searchable
     user: searchable
     secureJsonData:
-      password: 19901228
+      password: $__env{GRAFANA_DB_PASSWORD}
     isDefault: true
     jsonData:
       sslmode: "disable"
