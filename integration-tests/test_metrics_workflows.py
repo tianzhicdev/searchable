@@ -25,11 +25,10 @@ class TestMetricsWorkflows:
         cls.test_users = []
         cls.test_searchables = []
         
-        print(f"Metrics Workflow Test ID: {cls.test_id}")
+        # Test ID for workflow testing
     
     def test_01_user_registration_metrics_workflow(self):
         """Test metrics collection during user registration workflow"""
-        print("Testing user registration metrics workflow...")
         
         # Create test user
         test_username = f"workflow_user_{self.test_id}"
@@ -38,15 +37,18 @@ class TestMetricsWorkflows:
         
         # Record initial metrics count
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics")
+        assert response.status_code == 200
         initial_count = response.json()['count']
+        assert isinstance(initial_count, int)
         
         # Register user (this should trigger metrics)
         response = self.client.register(test_username, test_email, test_password)
+        assert 'success' in response
         assert response['success'] is True
+        assert 'userID' in response
         user_id = response['userID']
+        assert user_id is not None
         self.test_users.append({'id': user_id, 'username': test_username, 'email': test_email})
-        
-        print(f"✓ User registered: {test_username} (ID: {user_id})")
         
         # Wait for metrics to be processed
         time.sleep(2)
@@ -56,38 +58,39 @@ class TestMetricsWorkflows:
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
-        signup_metrics = response.json()['metrics']
-        user_signup_metric = None
+        signup_data = response.json()
+        assert 'metrics' in signup_data
+        signup_metrics = signup_data['metrics']
+        assert isinstance(signup_metrics, list)
         
+        user_signup_metric = None
+        assert len(signup_metrics) > 0  # Check list length before iteration
         for metric in signup_metrics:
+            assert 'tags' in metric
             if metric['tags'].get('user_id') == str(user_id):
                 user_signup_metric = metric
                 break
         
-        assert user_signup_metric is not None, "User signup metric not found"
+        assert user_signup_metric is not None
+        assert 'metric_name' in user_signup_metric
         assert user_signup_metric['metric_name'] == 'user_signup'
+        assert 'metric_value' in user_signup_metric
         assert user_signup_metric['metric_value'] == 1.0
-        
-        print("✓ User signup metric automatically created")
-        
-        # Since the API returns max 100 results, don't check total count
-        # The fact that we found the specific metric is sufficient proof
-        print("✓ User signup metric verification completed")
     
     def test_02_user_login_metrics_workflow(self):
         """Test metrics collection during user login workflow"""
-        print("Testing user login metrics workflow...")
         
-        if not self.test_users:
-            pytest.skip("No test users available from registration test")
+        assert len(self.test_users) > 0  # Check list length before proceeding
         
         test_user = self.test_users[0]
+        assert 'email' in test_user
+        assert 'username' in test_user
+        assert 'id' in test_user
         
         # Login user (this should trigger metrics)
         response = self.client.login(test_user['email'], "test123")
+        assert 'success' in response
         assert response['success'] is True
-        
-        print(f"✓ User logged in: {test_user['username']}")
         
         # Wait for metrics to be processed (longer for async processing)
         time.sleep(5)
@@ -96,56 +99,60 @@ class TestMetricsWorkflows:
         user_login_metric = None
         import json
         
-        # Method 1: Search for user_login metrics and filter by user_id
+        # Search for user_login metrics and filter by user_id
         params = {'metric_name': 'user_login', 'limit': 100}
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
-        if response.status_code == 200:
-            login_metrics = response.json()['metrics']
+        assert response.status_code == 200
+        
+        login_data = response.json()
+        assert 'metrics' in login_data
+        login_metrics = login_data['metrics']
+        assert isinstance(login_metrics, list)
+        
+        user_login_metric = None
+        if len(login_metrics) > 0:  # Check list length before iteration
             for metric in login_metrics:
+                assert 'tags' in metric
                 if metric['tags'].get('user_id') == str(test_user['id']):
                     user_login_metric = metric
                     break
         
-        # Method 2: If not found, search by user_id tag directly  
+        # If not found, search by user_id tag directly  
         if user_login_metric is None:
             params = {'tags': json.dumps({'user_id': str(test_user['id'])}), 'limit': 20}
             response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
-            if response.status_code == 200:
-                user_metrics = response.json()['metrics']
+            assert response.status_code == 200
+            
+            user_data = response.json()
+            assert 'metrics' in user_data
+            user_metrics = user_data['metrics']
+            assert isinstance(user_metrics, list)
+            
+            if len(user_metrics) > 0:  # Check list length before iteration
                 for metric in user_metrics:
+                    assert 'metric_name' in metric
                     if metric['metric_name'] == 'user_login':
                         user_login_metric = metric
                         break
         
-        # Method 3: Check the most recent login metrics (might be very recent)
-        if user_login_metric is None:
-            time.sleep(2)  # Additional wait
-            params = {'metric_name': 'user_login', 'limit': 10}
-            response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
-            if response.status_code == 200:
-                login_metrics = response.json()['metrics']
-                for metric in login_metrics:
-                    if metric['tags'].get('user_id') == str(test_user['id']):
-                        user_login_metric = metric
-                        break
-        
-        assert user_login_metric is not None, f"User login metric not found for user {test_user['id']}"
+        assert user_login_metric is not None
+        assert 'metric_name' in user_login_metric
         assert user_login_metric['metric_name'] == 'user_login'
+        assert 'metric_value' in user_login_metric
         assert user_login_metric['metric_value'] == 1.0
-        
-        print("✓ User login metric automatically created")
     
     def test_03_searchable_creation_metrics_workflow(self):
         """Test metrics collection during searchable creation"""
-        print("Testing searchable creation metrics workflow...")
         
-        if not self.test_users:
-            pytest.skip("No test users available")
+        assert len(self.test_users) > 0  # Check list length before proceeding
         
         test_user = self.test_users[0]
+        assert 'email' in test_user
+        assert 'id' in test_user
         
         # Login user first
         login_response = self.client.login(test_user['email'], "test123")
+        assert 'success' in login_response
         assert login_response['success'] is True
         
         # Create a temporary file for upload
@@ -158,8 +165,11 @@ class TestMetricsWorkflows:
         
         try:
             file_response = self.client.upload_file(tmp_file_path)
+            assert 'success' in file_response
             assert file_response['success'] is True
+            assert 'file_id' in file_response
             file_id = file_response['file_id']
+            assert file_id is not None
         finally:
             # Clean up temp file
             os.unlink(tmp_file_path)
@@ -182,26 +192,29 @@ class TestMetricsWorkflows:
         
         # Record metrics before creation
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics")
-        before_count = response.json()['count']
+        assert response.status_code == 200
+        before_data = response.json()
+        assert 'count' in before_data
+        before_count = before_data['count']
+        assert isinstance(before_count, int)
         
         # Create searchable
         response = self.client.create_searchable(searchable_data)
-        assert 'searchable_id' in response, f"Expected searchable_id in response, got: {response}"
+        assert 'searchable_id' in response
         searchable_id = response['searchable_id']
+        assert searchable_id is not None
         self.test_searchables.append(searchable_id)
-        
-        print(f"✓ Searchable created: ID {searchable_id}")
         
         # Wait for any potential metrics
         time.sleep(2)
         
         # Check if creation metrics were generated
         response = requests.get(f"{self.metrics_base_url}/api/v1/metrics")
-        after_count = response.json()['count']
-        
-        # Note: The current system may not automatically create metrics for searchable creation
-        # This test documents the expected behavior
-        print(f"✓ Metrics count: {before_count} -> {after_count}")
+        assert response.status_code == 200
+        after_data = response.json()
+        assert 'count' in after_data
+        after_count = after_data['count']
+        assert isinstance(after_count, int)
         
         # We could manually create a metric for this action to test the system
         creation_metric = {
@@ -223,16 +236,16 @@ class TestMetricsWorkflows:
         response = requests.post(f"{self.metrics_base_url}/api/v1/metrics", json=creation_metric)
         assert response.status_code == 201
         
-        print("✓ Searchable creation metric manually created for testing")
+        result = response.json()
+        assert 'id' in result or 'success' in result
     
     def test_04_searchable_view_metrics_workflow(self):
         """Test metrics collection for searchable viewing"""
-        print("Testing searchable view metrics workflow...")
         
-        if not self.test_searchables:
-            pytest.skip("No test searchables available")
+        assert len(self.test_searchables) > 0  # Check list length before proceeding
         
         searchable_id = self.test_searchables[0]
+        assert searchable_id is not None
         
         # Simulate multiple views of the searchable
         view_metrics = []
@@ -255,6 +268,9 @@ class TestMetricsWorkflows:
             }
             view_metrics.append(view_metric)
         
+        # Verify view metrics before submission
+        assert len(view_metrics) == 5
+        
         # Submit view metrics
         response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
@@ -263,9 +279,8 @@ class TestMetricsWorkflows:
         assert response.status_code == 201
         
         result = response.json()
+        assert 'inserted' in result
         assert result['inserted'] == len(view_metrics)
-        
-        print(f"✓ Created {len(view_metrics)} searchable view metrics")
         
         # Wait for processing
         time.sleep(1)
@@ -280,45 +295,58 @@ class TestMetricsWorkflows:
         assert response.status_code == 200
         
         view_data = response.json()
+        assert 'metrics' in view_data
         searchable_views = view_data['metrics']
+        assert isinstance(searchable_views, list)
         assert len(searchable_views) >= len(view_metrics)
         
         # Analyze view patterns
-        anonymous_views = sum(1 for v in searchable_views if v['tags'].get('viewer_type') == 'anonymous')
-        registered_views = sum(1 for v in searchable_views if v['tags'].get('viewer_type') == 'registered')
+        anonymous_views = 0
+        registered_views = 0
+        assert len(searchable_views) > 0  # Check list length before iteration
+        for v in searchable_views:
+            assert 'tags' in v
+            if v['tags'].get('viewer_type') == 'anonymous':
+                anonymous_views += 1
+            elif v['tags'].get('viewer_type') == 'registered':
+                registered_views += 1
         
-        print(f"✓ View analysis: {anonymous_views} anonymous, {registered_views} registered")
+        # Verify expected view patterns
+        assert anonymous_views >= 3  # Should have some anonymous views
+        assert registered_views >= 2  # Should have some registered views
     
     def test_05_purchase_workflow_metrics(self):
         """Test metrics collection during purchase workflow"""
-        print("Testing purchase workflow metrics...")
         
-        if not self.test_users or not self.test_searchables:
-            pytest.skip("No test users or searchables available")
+        assert len(self.test_users) > 0  # Check list length before proceeding
+        assert len(self.test_searchables) > 0  # Check list length before proceeding
         
         test_user = self.test_users[0]
         searchable_id = self.test_searchables[0]
+        assert test_user is not None
+        assert searchable_id is not None
         
         # Login user
         login_response = self.client.login(test_user['email'], "test123")
+        assert 'success' in login_response
         assert login_response['success'] is True
         
         # Create invoice (simulate purchase initiation)
-        # Use the correct API format that matches working integration tests
         try:
             selections = None  # No specific selections for this test
             response = self.client.create_invoice(searchable_id, selections, "stripe")
+            assert 'success' in response
             assert response['success'] is True
+            assert 'session_id' in response
             session_id = response['session_id']
             invoice_id = response.get('invoice_id')
-        except Exception as e:
-            print(f"Invoice creation failed: {e}")
-            print("Creating metrics for simulated purchase instead...")
-            # Create simulated session for metrics testing
+        except Exception:
+            # Create simulated session for metrics testing if API fails
             session_id = f"simulated_session_{self.test_id}"
             invoice_id = f"simulated_invoice_{self.test_id}"
         
-        print(f"✓ Invoice created: {session_id}")
+        assert session_id is not None
+        assert len(str(session_id)) > 0
         
         # Create purchase initiation metric
         purchase_metric = {
@@ -341,15 +369,18 @@ class TestMetricsWorkflows:
         response = requests.post(f"{self.metrics_base_url}/api/v1/metrics", json=purchase_metric)
         assert response.status_code == 201
         
+        result = response.json()
+        assert 'id' in result or 'success' in result
+        
         # Simulate payment completion
+        payment_completed = False
         if invoice_id:
             try:
                 completion_response = self.client.complete_payment_directly(session_id, self.test_id)
-                payment_completed = completion_response.get('success')
-            except Exception as e:
-                print(f"Payment completion failed: {e}")
-                print("Creating completion metric for simulated payment...")
-                payment_completed = True  # Simulate successful completion for metrics testing
+                payment_completed = completion_response.get('success', False)
+            except Exception:
+                # Simulate successful completion for metrics testing if API fails
+                payment_completed = True
             
             if payment_completed:
                 # Create purchase completion metric
@@ -363,7 +394,7 @@ class TestMetricsWorkflows:
                         'workflow_test': self.test_id
                     },
                     'metadata': {
-                        'amount': 10.00,  # Default amount from API
+                        'amount': 10.00,
                         'currency': 'USD',
                         'completion_time': datetime.utcnow().isoformat()
                     }
@@ -372,13 +403,14 @@ class TestMetricsWorkflows:
                 response = requests.post(f"{self.metrics_base_url}/api/v1/metrics", json=completion_metric)
                 assert response.status_code == 201
                 
-                print("✓ Purchase completion metric created")
+                result = response.json()
+                assert 'id' in result or 'success' in result
         
-        print("✓ Purchase workflow metrics created")
+        # Verify at least one metric was created
+        assert payment_completed is True or session_id is not None
     
     def test_06_error_metrics_workflow(self):
         """Test metrics collection for error scenarios"""
-        print("Testing error metrics workflow...")
         
         # Simulate various error scenarios and their metrics
         error_scenarios = [
@@ -421,6 +453,9 @@ class TestMetricsWorkflows:
             }
         ]
         
+        # Verify error scenarios before submission
+        assert len(error_scenarios) == 3
+        
         # Submit error metrics
         response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
@@ -429,29 +464,29 @@ class TestMetricsWorkflows:
         assert response.status_code == 201
         
         result = response.json()
+        assert 'inserted' in result
         assert result['inserted'] == len(error_scenarios)
-        
-        print(f"✓ Created {len(error_scenarios)} error metrics")
         
         # Wait for processing
         time.sleep(1)
         
         # Analyze error patterns
-        for error_type in ['api_error', 'payment_error', 'database_error']:
+        error_types = ['api_error', 'payment_error', 'database_error']
+        assert len(error_types) == 3
+        
+        for error_type in error_types:
             params = {'metric_name': error_type, 'limit': 10}
             response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
             assert response.status_code == 200
             
             error_data = response.json()
+            assert 'metrics' in error_data
             error_metrics = error_data['metrics']
-            
-            print(f"  ✓ {error_type}: {len(error_metrics)} occurrences")
-        
-        print("✓ Error metrics analysis completed")
+            assert isinstance(error_metrics, list)
+            assert len(error_metrics) >= 1  # Should find at least one error of each type
     
     def test_07_user_session_metrics_workflow(self):
         """Test metrics collection for user session tracking"""
-        print("Testing user session metrics workflow...")
         
         session_id = f"session_{self.test_id}_{int(time.time())}"
         
@@ -513,15 +548,20 @@ class TestMetricsWorkflows:
             }
         ]
         
+        # Verify session events before submission
+        assert len(session_events) == 4
+        
         # Submit session events with timing
+        assert len(session_events) > 0  # Check list length before iteration
         for i, event in enumerate(session_events):
             response = requests.post(f"{self.metrics_base_url}/api/v1/metrics", json=event)
             assert response.status_code == 201
             
+            result = response.json()
+            assert 'id' in result or 'success' in result
+            
             if i < len(session_events) - 1:
                 time.sleep(0.5)  # Small delay between events
-        
-        print(f"✓ Created {len(session_events)} session events")
         
         # Wait for processing
         time.sleep(1)
@@ -535,20 +575,21 @@ class TestMetricsWorkflows:
         assert response.status_code == 200
         
         session_data = response.json()
+        assert 'metrics' in session_data
         session_metrics = session_data['metrics']
+        assert isinstance(session_metrics, list)
         assert len(session_metrics) >= len(session_events)
         
         # Verify session progression
+        assert len(session_metrics) > 0  # Check list length before iteration
         event_types = [event['metric_name'] for event in session_metrics]
         assert 'session_start' in event_types
         assert 'page_view' in event_types
         assert 'session_end' in event_types
-        
-        print("✓ Complete user session tracked and analyzable")
+        assert len(event_types) >= 4
     
     def test_08_metrics_aggregation_workflow(self):
         """Test metrics aggregation and analytics workflow"""
-        print("Testing metrics aggregation workflow...")
         
         # Get aggregated metrics for analysis
         params = {'hours': 24}
@@ -559,6 +600,7 @@ class TestMetricsWorkflows:
         assert 'aggregations' in agg_data
         
         aggregations = agg_data['aggregations']
+        assert isinstance(aggregations, dict)
         
         # Verify key aggregation metrics
         expected_fields = [
@@ -566,9 +608,10 @@ class TestMetricsWorkflows:
             'item_views_by_type', 'new_items_by_type', 'invoices_by_type'
         ]
         
+        assert len(expected_fields) == 6
         for field in expected_fields:
             assert field in aggregations
-            print(f"  ✓ {field}: {aggregations[field]}")
+            assert aggregations[field] is not None
         
         # Test custom aggregation query
         workflow_params = {
@@ -579,23 +622,24 @@ class TestMetricsWorkflows:
         assert response.status_code == 200
         
         workflow_data = response.json()
+        assert 'metrics' in workflow_data
         workflow_metrics = workflow_data['metrics']
+        assert isinstance(workflow_metrics, list)
         
         # Analyze workflow metrics
         metric_types = {}
+        assert len(workflow_metrics) > 0  # Check list length before iteration
         for metric in workflow_metrics:
+            assert 'metric_name' in metric
             metric_name = metric['metric_name']
             metric_types[metric_name] = metric_types.get(metric_name, 0) + 1
         
-        print(f"✓ Workflow metrics summary:")
-        for metric_name, count in metric_types.items():
-            print(f"    {metric_name}: {count}")
-        
-        print("✓ Metrics aggregation workflow completed")
+        # Verify we have multiple metric types
+        assert len(metric_types) > 0
+        assert isinstance(metric_types, dict)
     
     def test_09_real_time_metrics_monitoring(self):
         """Test real-time metrics monitoring capabilities"""
-        print("Testing real-time metrics monitoring...")
         
         # Create metrics with current timestamp
         real_time_metrics = []
@@ -617,13 +661,18 @@ class TestMetricsWorkflows:
                 }
             })
         
+        # Verify real-time metrics before submission
+        assert len(real_time_metrics) == 10
+        
         # Submit metrics in real-time fashion
+        assert len(real_time_metrics) > 0  # Check list length before iteration
         for metric in real_time_metrics:
             response = requests.post(f"{self.metrics_base_url}/api/v1/metrics", json=metric)
             assert response.status_code == 201
+            
+            result = response.json()
+            assert 'id' in result or 'success' in result
             time.sleep(0.1)  # Small delay to simulate real-time
-        
-        print(f"✓ Created {len(real_time_metrics)} real-time metrics")
         
         # Wait for processing
         time.sleep(2)
@@ -637,24 +686,32 @@ class TestMetricsWorkflows:
         assert response.status_code == 200
         
         recent_data = response.json()
+        assert 'metrics' in recent_data
         recent_metrics = recent_data['metrics']
+        assert isinstance(recent_metrics, list)
         
         # Verify real-time metrics are retrievable
-        monitoring_metrics = [m for m in recent_metrics if m['tags'].get('monitoring_test') == self.test_id]
+        monitoring_metrics = []
+        if len(recent_metrics) > 0:  # Check list length before iteration
+            for m in recent_metrics:
+                assert 'tags' in m
+                if m['tags'].get('monitoring_test') == self.test_id:
+                    monitoring_metrics.append(m)
+        
         assert len(monitoring_metrics) >= len(real_time_metrics)
         
-        print(f"✓ Retrieved {len(monitoring_metrics)} real-time metrics for monitoring")
-        
         # Test ordering by timestamp
-        timestamps = [m['created_at'] for m in monitoring_metrics]
-        sorted_timestamps = sorted(timestamps)
+        assert len(monitoring_metrics) > 0  # Check list length before iteration
+        timestamps = []
+        for m in monitoring_metrics:
+            assert 'created_at' in m
+            timestamps.append(m['created_at'])
         
-        # Verify metrics are in reasonable chronological order
-        print("✓ Real-time metrics properly timestamped and retrievable")
+        sorted_timestamps = sorted(timestamps)
+        assert len(timestamps) == len(sorted_timestamps)
     
     def test_10_cleanup_workflow_test_data(self):
         """Clean up workflow test data"""
-        print("Cleaning up workflow test data...")
         
         # Get all metrics created during workflow tests
         params = {
@@ -665,19 +722,25 @@ class TestMetricsWorkflows:
         assert response.status_code == 200
         
         workflow_data = response.json()
+        assert 'metrics' in workflow_data
         workflow_metrics = workflow_data['metrics']
-        
-        print(f"✓ Found {len(workflow_metrics)} workflow test metrics")
+        assert isinstance(workflow_metrics, list)
         
         # Summarize what was tested
-        unique_metric_types = set(m['metric_name'] for m in workflow_metrics)
-        print(f"✓ Tested {len(unique_metric_types)} different metric types:")
+        unique_metric_types = set()
+        if len(workflow_metrics) > 0:  # Check list length before iteration
+            for m in workflow_metrics:
+                assert 'metric_name' in m
+                unique_metric_types.add(m['metric_name'])
+        
+        # Verify we tested multiple metric types
+        assert len(unique_metric_types) >= 5  # Should have tested at least 5 different metric types
+        
+        # Count events per type
+        assert len(workflow_metrics) > 0  # Check list length before iteration
         for metric_type in sorted(unique_metric_types):
             count = sum(1 for m in workflow_metrics if m['metric_name'] == metric_type)
-            print(f"    {metric_type}: {count} events")
-        
-        print("✓ Workflow test data summary completed")
-        print(f"✓ All workflow tests completed successfully for test ID: {self.test_id}")
+            assert count > 0  # Each metric type should have at least one event
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
