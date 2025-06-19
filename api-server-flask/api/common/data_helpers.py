@@ -996,14 +996,20 @@ def get_invoice_notes(invoice_id):
         notes = []
         
         for row in cur.fetchall():
+            metadata = row[5] if row[5] else {}
             note = {
-                'id': row[0],
+                'note_id': row[0],  # Use note_id as expected by tests
+                'id': row[0],  # Keep original for backward compatibility
                 'invoice_id': row[1],
                 'user_id': row[2],
                 'buyer_seller': row[3],
                 'content': row[4],
-                'metadata': row[5],
+                'note_text': row[4],  # Add note_text as expected by tests
+                'note_type': metadata.get('note_type', ''),  # Extract from metadata
+                'visibility': metadata.get('visibility', ''),  # Extract from metadata
+                'metadata': metadata,
                 'created_at': row[6].isoformat() if row[6] else None,
+                'created_by': row[7],  # Use username as created_by
                 'username': row[7]
             }
             notes.append(note)

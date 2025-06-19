@@ -395,10 +395,13 @@ class SearchableAPIClient:
         return response.json()
     
     # Payment Refresh Methods
-    def refresh_payment_status(self, invoice_id: str) -> Dict[str, Any]:
+    def refresh_payment_status(self, session_id: str, invoice_type: str = 'stripe') -> Dict[str, Any]:
         """Refresh status of a specific payment"""
         url = f"{self.base_url}/v1/refresh-payment"
-        data = {'invoice_id': invoice_id}
+        data = {
+            'invoice_type': invoice_type,
+            'session_id': session_id
+        }
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()

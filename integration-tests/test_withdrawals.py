@@ -236,8 +236,8 @@ class TestWithdrawalOperations:
                 assert withdrawal_id is not None
                 self.created_withdrawals.append(withdrawal_id)
                 
-        except Exception:
-            pytest.skip("Withdrawal API not fully implemented")
+        except Exception as e:
+            assert False, f"Withdrawal API failed: {e}"
         
         # Verify balance was deducted
         balance_response = self.client.get_balance()
@@ -277,8 +277,8 @@ class TestWithdrawalOperations:
                 assert withdrawal_id is not None
                 self.created_withdrawals.append(withdrawal_id)
                 
-        except Exception:
-            pytest.skip("Small withdrawal API not fully implemented")
+        except Exception as e:
+            assert False, f"Small withdrawal API failed: {e}"
     
     def test_06_get_withdrawal_history(self):
         """Test retrieving withdrawal history"""
@@ -312,14 +312,14 @@ class TestWithdrawalOperations:
                 assert isinstance(withdrawal['created_at'], str)
                 assert isinstance(withdrawal['fee'], (int, float))
                 
-        except Exception:
-            pytest.skip("Withdrawal history API not available")
+        except Exception as e:
+            assert False, f"Withdrawal history API failed: {e}"
     
     def test_07_check_withdrawal_status(self):
         """Test checking individual withdrawal status"""
         
         if len(self.created_withdrawals) == 0:
-            pytest.skip("No withdrawals created to check status")
+            assert False, "No withdrawals created to check status - withdrawal creation failed"
         
         assert len(self.created_withdrawals) > 0  # Check list length before iteration
         
@@ -344,8 +344,8 @@ class TestWithdrawalOperations:
                 else:
                     assert isinstance(response['status'], str)
                     
-            except Exception:
-                pytest.skip(f"Withdrawal status check not available for {withdrawal_id}")
+            except Exception as e:
+                assert False, f"Withdrawal status check failed for {withdrawal_id}: {e}"
     
     def test_08_withdrawal_metadata_verification(self):
         """Verify withdrawal metadata includes proper address and transaction details"""
@@ -359,7 +359,7 @@ class TestWithdrawalOperations:
             assert isinstance(withdrawals, list)
             
             if len(withdrawals) == 0:
-                pytest.skip("No withdrawals available for metadata verification")
+                assert False, "No withdrawals available for metadata verification - withdrawal creation failed"
             
             assert len(withdrawals) > 0  # Check list length before iteration
             
@@ -381,8 +381,8 @@ class TestWithdrawalOperations:
                     assert isinstance(metadata['transaction_hash'], str)
                     assert len(metadata['transaction_hash']) > 30
                     
-        except Exception:
-            pytest.skip("Withdrawal metadata verification not available")
+        except Exception as e:
+            assert False, f"Withdrawal metadata verification failed: {e}"
     
     def test_09_withdrawal_amount_calculations(self):
         """Verify withdrawal amount calculations with fees"""
@@ -396,7 +396,7 @@ class TestWithdrawalOperations:
             assert isinstance(withdrawals, list)
             
             if len(withdrawals) == 0:
-                pytest.skip("No withdrawals available for amount calculation verification")
+                assert False, "No withdrawals available for amount calculation verification - withdrawal creation failed"
             
             assert len(withdrawals) > 0  # Check list length before iteration
             
@@ -418,8 +418,8 @@ class TestWithdrawalOperations:
                 assert user_receives > 0
                 assert user_receives <= amount  # May be equal if no fee charged
                 
-        except Exception:
-            pytest.skip("Withdrawal amount calculation verification not available")
+        except Exception as e:
+            assert False, f"Withdrawal amount calculation verification failed: {e}"
 
 
 if __name__ == "__main__":
