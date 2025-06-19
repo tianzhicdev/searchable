@@ -427,12 +427,12 @@ class TestComprehensiveScenarios:
     def test_06_user3_creates_pending_invoice(self):
         """User 3 creates an invoice but does not complete payment"""
         
-        # Verify we have a third searchable
-        assert len(self.user1_searchables) >= 3
+        # Verify we have exactly 4 searchables
+        assert len(self.user1_searchables) == 4
         
         # Create invoice for third searchable but don't pay
         searchable_3 = self.user1_searchables[2]
-        assert len(searchable_3['config']['files']) >= 1  # Ensure we have files
+        assert len(searchable_3['config']['files']) == 2  # Must have exactly 2 files
         files_to_buy = [searchable_3['config']['files'][0]]  # Try to buy first file
         
         invoice_data = {
