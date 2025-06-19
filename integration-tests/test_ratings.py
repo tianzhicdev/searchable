@@ -67,7 +67,7 @@ class TestRatingSystem:
         assert 'user' in seller_login
         assert isinstance(seller_login['user'], dict)
         assert '_id' in seller_login['user']
-        self.seller_id = seller_login['user']['_id']
+        self.__class__.seller_id = seller_login['user']['_id']
         
         # Setup Buyer 1
         buyer1_reg = self.buyer1_client.register_user(
@@ -87,7 +87,7 @@ class TestRatingSystem:
         assert 'user' in buyer1_login
         assert isinstance(buyer1_login['user'], dict)
         assert '_id' in buyer1_login['user']
-        self.buyer1_id = buyer1_login['user']['_id']
+        self.__class__.buyer1_id = buyer1_login['user']['_id']
         
         # Setup Buyer 2
         buyer2_reg = self.buyer2_client.register_user(
@@ -107,7 +107,7 @@ class TestRatingSystem:
         assert 'user' in buyer2_login
         assert isinstance(buyer2_login['user'], dict)
         assert '_id' in buyer2_login['user']
-        self.buyer2_id = buyer2_login['user']['_id']
+        self.__class__.buyer2_id = buyer2_login['user']['_id']
     
     def test_02_seller_creates_searchables(self):
         """Seller creates multiple searchables to be rated"""
@@ -227,6 +227,7 @@ class TestRatingSystem:
             
             self.buyer1_invoices.append({
                 'session_id': session_id,
+                'invoice_id': invoice_response.get('invoice_id'),
                 'searchable_id': searchable['id']
             })
         
@@ -279,6 +280,7 @@ class TestRatingSystem:
         
         self.buyer2_invoices.append({
             'session_id': session_id,
+            'invoice_id': invoice_response.get('invoice_id'),
             'searchable_id': searchable['id']
         })
     
@@ -290,212 +292,198 @@ class TestRatingSystem:
         
         for invoice in self.buyer1_invoices:
             assert isinstance(invoice, dict)
-            if not invoice.get('session_id'):
-                pytest.skip("No session_id for invoice")
+            if not invoice.get('invoice_id'):
+                assert False, "No invoice_id for invoice - invoice creation failed"
                 
-            try:
-                eligibility = self.buyer1_client.check_rating_eligibility(invoice['session_id'])
-                assert isinstance(eligibility, dict)
-                
-                if 'can_rate' in eligibility:
-                    assert eligibility['can_rate'] is True
-                    
-            except Exception:
-                pytest.skip("Rating eligibility API not available")
+            eligibility = self.buyer1_client.check_rating_eligibility(invoice['invoice_id'])
+            assert isinstance(eligibility, dict)
+            
+            if 'can_rate' in eligibility:
+                assert eligibility['can_rate'] is True
         
         # Check Buyer 2's eligibility
         assert len(self.buyer2_invoices) > 0  # Check list length before iteration
         
         for invoice in self.buyer2_invoices:
             assert isinstance(invoice, dict)
-            if not invoice.get('session_id'):
-                pytest.skip("No session_id for invoice")
+            if not invoice.get('invoice_id'):
+                assert False, "No invoice_id for invoice - invoice creation failed"
                 
-            try:
-                eligibility = self.buyer2_client.check_rating_eligibility(invoice['session_id'])
-                assert isinstance(eligibility, dict)
-                
-                if 'can_rate' in eligibility:
-                    assert eligibility['can_rate'] is True
-                    
-            except Exception:
-                pytest.skip("Rating eligibility API not available")
+            eligibility = self.buyer2_client.check_rating_eligibility(invoice['invoice_id'])
+            assert isinstance(eligibility, dict)
+            
+            if 'can_rate' in eligibility:
+                assert eligibility['can_rate'] is True
     
     def test_05_get_user_purchases_for_rating(self):
         """Test retrieving user's purchases that can be rated"""
         
-        try:
-            # Buyer 1's ratable purchases
-            buyer1_purchases = self.buyer1_client.get_user_purchases()
-            assert isinstance(buyer1_purchases, dict)
+        # Ensure buyer 1 is logged in
+        if not self.buyer1_client.token:
+            login_response = self.buyer1_client.login_user(self.buyer1_email, self.password)
+            assert 'token' in login_response
+        
+        # Buyer 1's ratable purchases
+        buyer1_purchases = self.buyer1_client.get_user_purchases()
+        assert isinstance(buyer1_purchases, dict)
+        
+        if 'purchases' in buyer1_purchases:
+            purchases = buyer1_purchases['purchases']
+            assert isinstance(purchases, list)
             
-            if 'purchases' in buyer1_purchases:
-                purchases = buyer1_purchases['purchases']
-                assert isinstance(purchases, list)
-                
-                # Check purchase structure
-                if len(purchases) > 0:  # Check list length before iteration
-                    for purchase in purchases:
-                        assert isinstance(purchase, dict)
-            
-            # Buyer 2's ratable purchases
-            buyer2_purchases = self.buyer2_client.get_user_purchases()
-            assert isinstance(buyer2_purchases, dict)
-            
-            if 'purchases' in buyer2_purchases:
-                purchases2 = buyer2_purchases['purchases']
-                assert isinstance(purchases2, list)
-                
-        except Exception:
-            pytest.skip("User purchases API not available")
+            # Check purchase structure
+            if len(purchases) > 0:  # Check list length before iteration
+                for purchase in purchases:
+                    assert isinstance(purchase, dict)
+        
+        # Ensure buyer 2 is logged in
+        if not self.buyer2_client.token:
+            login_response = self.buyer2_client.login_user(self.buyer2_email, self.password)
+            assert 'token' in login_response
+        
+        # Buyer 2's ratable purchases
+        buyer2_purchases = self.buyer2_client.get_user_purchases()
+        assert isinstance(buyer2_purchases, dict)
+        
+        if 'purchases' in buyer2_purchases:
+            purchases2 = buyer2_purchases['purchases']
+            assert isinstance(purchases2, list)
     
     def test_06_submit_ratings(self):
         """Test submitting ratings for purchased items"""
         
-        try:
-            # Buyer 1 rates both purchases (if they have invoices)
-            if len(self.buyer1_invoices) >= 2:
-                ratings_data = [
-                    {
-                        'session_id': self.buyer1_invoices[0]['session_id'],
-                        'rating': 5,
-                        'review': 'Excellent quality! Exactly what I needed for my project.',
-                        'searchable_id': self.buyer1_invoices[0]['searchable_id']
-                    },
-                    {
-                        'session_id': self.buyer1_invoices[1]['session_id'],
-                        'rating': 4,
-                        'review': 'Good value for money. Quick download and well organized.',
-                        'searchable_id': self.buyer1_invoices[1]['searchable_id']
-                    }
-                ]
-                
-                assert len(ratings_data) > 0  # Check list length before iteration
-                
-                for rating_data in ratings_data:
-                    assert isinstance(rating_data, dict)
-                    assert 'session_id' in rating_data
-                    assert 'rating' in rating_data
-                    assert 'searchable_id' in rating_data
-                    
-                    if not rating_data['session_id']:
-                        continue
-                        
-                    response = self.buyer1_client.submit_rating(rating_data)
-                    assert isinstance(response, dict)
-                    
-                    if 'success' in response and response['success']:
-                        self.submitted_ratings.append({
-                            'user': 'buyer1',
-                            'rating': rating_data['rating'],
-                            'searchable_id': rating_data['searchable_id'],
-                            'session_id': rating_data['session_id']
-                        })
-            
-            # Buyer 2 rates their purchase (if they have invoices)
-            if len(self.buyer2_invoices) >= 1 and self.buyer2_invoices[0].get('session_id'):
-                rating_data = {
-                    'session_id': self.buyer2_invoices[0]['session_id'],
-                    'rating': 3,
-                    'review': 'Decent package but could use better documentation.',
-                    'searchable_id': self.buyer2_invoices[0]['searchable_id']
+        # Buyer 1 rates both purchases (if they have invoices)
+        if len(self.buyer1_invoices) >= 2:
+            ratings_data = [
+                {
+                    'invoice_id': self.buyer1_invoices[0]['invoice_id'],
+                    'rating': 5,
+                    'review': 'Excellent quality! Exactly what I needed for my project.',
+                    'searchable_id': self.buyer1_invoices[0]['searchable_id']
+                },
+                {
+                    'invoice_id': self.buyer1_invoices[1]['invoice_id'],
+                    'rating': 4,
+                    'review': 'Good value for money. Quick download and well organized.',
+                    'searchable_id': self.buyer1_invoices[1]['searchable_id']
                 }
-                
+            ]
+            
+            assert len(ratings_data) > 0  # Check list length before iteration
+            
+            for rating_data in ratings_data:
                 assert isinstance(rating_data, dict)
-                assert 'session_id' in rating_data
+                assert 'invoice_id' in rating_data
                 assert 'rating' in rating_data
                 assert 'searchable_id' in rating_data
                 
-                response = self.buyer2_client.submit_rating(rating_data)
+                if not rating_data['invoice_id']:
+                    assert False, "Rating data missing invoice_id - invoice creation failed"
+                    
+                response = self.buyer1_client.submit_rating(rating_data)
                 assert isinstance(response, dict)
                 
                 if 'success' in response and response['success']:
                     self.submitted_ratings.append({
-                        'user': 'buyer2',
+                        'user': 'buyer1',
                         'rating': rating_data['rating'],
                         'searchable_id': rating_data['searchable_id'],
-                        'session_id': rating_data['session_id']
+                        'invoice_id': rating_data['invoice_id']
                     })
-                
-        except Exception:
-            pytest.skip("Rating submission API not available")
+        
+        # Buyer 2 rates their purchase (if they have invoices)
+        if len(self.buyer2_invoices) >= 1 and self.buyer2_invoices[0].get('session_id'):
+            rating_data = {
+                'invoice_id': self.buyer2_invoices[0]['invoice_id'],
+                'rating': 3,
+                'review': 'Decent package but could use better documentation.',
+                'searchable_id': self.buyer2_invoices[0]['searchable_id']
+            }
+            
+            assert isinstance(rating_data, dict)
+            assert 'invoice_id' in rating_data
+            assert 'rating' in rating_data
+            assert 'searchable_id' in rating_data
+            
+            response = self.buyer2_client.submit_rating(rating_data)
+            assert isinstance(response, dict)
+            
+            if 'success' in response and response['success']:
+                self.submitted_ratings.append({
+                    'user': 'buyer2',
+                    'rating': rating_data['rating'],
+                    'searchable_id': rating_data['searchable_id'],
+                    'invoice_id': rating_data['invoice_id']
+                })
     
     def test_07_retrieve_searchable_ratings(self):
         """Test retrieving ratings for searchable items"""
         
-        try:
-            assert len(self.created_searchables) > 0  # Check list length before iteration
+        assert len(self.created_searchables) > 0  # Check list length before iteration
+        
+        for searchable in self.created_searchables:
+            assert isinstance(searchable, dict)
+            assert 'id' in searchable
+            searchable_id = searchable['id']
+            assert searchable_id is not None
             
-            for searchable in self.created_searchables:
-                assert isinstance(searchable, dict)
-                assert 'id' in searchable
-                searchable_id = searchable['id']
-                assert searchable_id is not None
+            # Get ratings for this searchable
+            ratings_response = self.seller_client.get_searchable_ratings(searchable_id)
+            assert isinstance(ratings_response, dict)
+            
+            if 'average_rating' in ratings_response and 'total_ratings' in ratings_response:
+                average_rating = ratings_response['average_rating']
+                total_ratings = ratings_response['total_ratings']
+                individual_ratings = ratings_response.get('individual_ratings', [])
                 
-                # Get ratings for this searchable
-                ratings_response = self.seller_client.get_searchable_ratings(searchable_id)
-                assert isinstance(ratings_response, dict)
+                assert isinstance(average_rating, (int, float))
+                assert isinstance(total_ratings, int)
+                assert isinstance(individual_ratings, list)
                 
-                if 'average_rating' in ratings_response and 'total_ratings' in ratings_response:
-                    average_rating = ratings_response['average_rating']
-                    total_ratings = ratings_response['total_ratings']
-                    individual_ratings = ratings_response.get('individual_ratings', [])
-                    
-                    assert isinstance(average_rating, (int, float))
-                    assert isinstance(total_ratings, int)
-                    assert isinstance(individual_ratings, list)
-                    
-                    if len(individual_ratings) > 0:  # Check list length before iteration
-                        for rating in individual_ratings:
-                            assert isinstance(rating, dict)
-                    
-        except Exception:
-            pytest.skip("Searchable ratings API not available")
+                if len(individual_ratings) > 0:  # Check list length before iteration
+                    for rating in individual_ratings:
+                        assert isinstance(rating, dict)
     
     def test_08_retrieve_terminal_ratings(self):
         """Test retrieving overall ratings for the seller (terminal)"""
         
         # Check if we have seller_id
         if not hasattr(self, 'seller_id') or self.seller_id is None:
-            pytest.skip("No seller_id available")
+            assert False, "No seller_id available - user setup failed"
         
-        try:
-            terminal_ratings = self.seller_client.get_terminal_ratings(self.seller_id)
-            assert isinstance(terminal_ratings, dict)
+        terminal_ratings = self.seller_client.get_terminal_ratings(self.seller_id)
+        assert isinstance(terminal_ratings, dict)
+        
+        if 'average_rating' in terminal_ratings and 'total_ratings' in terminal_ratings:
+            average_rating = terminal_ratings['average_rating']
+            total_ratings = terminal_ratings['total_ratings']
             
-            if 'average_rating' in terminal_ratings and 'total_ratings' in terminal_ratings:
-                average_rating = terminal_ratings['average_rating']
-                total_ratings = terminal_ratings['total_ratings']
+            assert isinstance(average_rating, (int, float))
+            assert isinstance(total_ratings, int)
+            
+            # Only verify ratings if we have submitted ratings
+            if len(self.submitted_ratings) > 0:
+                assert len(self.submitted_ratings) > 0  # Check list length before iteration
+                submitted_rating_values = [r['rating'] for r in self.submitted_ratings]
+                expected_average = sum(submitted_rating_values) / len(submitted_rating_values)
                 
-                assert isinstance(average_rating, (int, float))
-                assert isinstance(total_ratings, int)
-                
-                # Only verify ratings if we have submitted ratings
-                if len(self.submitted_ratings) > 0:
-                    assert len(self.submitted_ratings) > 0  # Check list length before iteration
-                    submitted_rating_values = [r['rating'] for r in self.submitted_ratings]
-                    expected_average = sum(submitted_rating_values) / len(submitted_rating_values)
-                    
-                    # Allow small tolerance for floating point calculation
-                    assert abs(average_rating - expected_average) < 0.1
-                
-        except Exception:
-            pytest.skip("Terminal ratings API not available")
+                # Allow small tolerance for floating point calculation
+                assert abs(average_rating - expected_average) < 0.1
     
     def test_09_prevent_duplicate_ratings(self):
         """Test that users cannot rate the same purchase twice"""
         
         # Try to rate the same invoice again (if we have invoices)
-        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('session_id'):
+        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('invoice_id'):
             duplicate_rating = {
-                'session_id': self.buyer1_invoices[0]['session_id'],
+                'invoice_id': self.buyer1_invoices[0]['invoice_id'],
                 'rating': 1,
                 'review': 'Trying to submit duplicate rating',
                 'searchable_id': self.buyer1_invoices[0]['searchable_id']
             }
             
             assert isinstance(duplicate_rating, dict)
-            assert 'session_id' in duplicate_rating
+            assert 'invoice_id' in duplicate_rating
             assert 'rating' in duplicate_rating
             assert 'searchable_id' in duplicate_rating
             
@@ -512,28 +500,24 @@ class TestRatingSystem:
                 # Expected to fail for duplicates
                 pass
         else:
-            pytest.skip("No session_id available for duplicate rating test")
+            assert False, "No invoice_id available for duplicate rating test - invoice creation failed"
     
     def test_10_verify_rating_eligibility_after_rating(self):
         """Verify that rating eligibility changes after submitting a rating"""
         
         # Check that Buyer 1 can no longer rate their first purchase (if available)
-        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('session_id'):
-            try:
-                eligibility = self.buyer1_client.check_rating_eligibility(self.buyer1_invoices[0]['session_id'])
-                assert isinstance(eligibility, dict)
-                
-                # System might allow updates or prevent duplicates
-                if 'can_rate' in eligibility:
-                    assert isinstance(eligibility['can_rate'], bool)
-                
-                if 'already_rated' in eligibility:
-                    assert isinstance(eligibility['already_rated'], bool)
-                    
-            except Exception:
-                pytest.skip("Rating eligibility check after rating not available")
+        if len(self.buyer1_invoices) > 0 and self.buyer1_invoices[0].get('invoice_id'):
+            eligibility = self.buyer1_client.check_rating_eligibility(self.buyer1_invoices[0]['invoice_id'])
+            assert isinstance(eligibility, dict)
+            
+            # System might allow updates or prevent duplicates
+            if 'can_rate' in eligibility:
+                assert isinstance(eligibility['can_rate'], bool)
+            
+            if 'already_rated' in eligibility:
+                assert isinstance(eligibility['already_rated'], bool)
         else:
-            pytest.skip("No session_id available for post-rating eligibility check")
+            assert False, "No invoice_id available for post-rating eligibility check - invoice creation failed"
     
     def test_11_rating_statistics_verification(self):
         """Verify rating statistics are calculated correctly"""
@@ -546,27 +530,23 @@ class TestRatingSystem:
             assert 'id' in searchable
             searchable_id = searchable['id']
             
-            try:
-                ratings_response = self.seller_client.get_searchable_ratings(searchable_id)
-                assert isinstance(ratings_response, dict)
+            ratings_response = self.seller_client.get_searchable_ratings(searchable_id)
+            assert isinstance(ratings_response, dict)
+            
+            # Get ratings for this specific searchable
+            searchable_ratings = [r for r in self.submitted_ratings if r['searchable_id'] == searchable_id]
+            
+            if len(searchable_ratings) > 0:
+                expected_average = sum(r['rating'] for r in searchable_ratings) / len(searchable_ratings)
                 
-                # Get ratings for this specific searchable
-                searchable_ratings = [r for r in self.submitted_ratings if r['searchable_id'] == searchable_id]
-                
-                if len(searchable_ratings) > 0:
-                    expected_average = sum(r['rating'] for r in searchable_ratings) / len(searchable_ratings)
+                if 'average_rating' in ratings_response and 'total_ratings' in ratings_response:
+                    actual_average = ratings_response['average_rating']
+                    total_ratings = ratings_response['total_ratings']
                     
-                    if 'average_rating' in ratings_response and 'total_ratings' in ratings_response:
-                        actual_average = ratings_response['average_rating']
-                        total_ratings = ratings_response['total_ratings']
-                        
-                        assert isinstance(actual_average, (int, float))
-                        assert isinstance(total_ratings, int)
-                        assert abs(actual_average - expected_average) < 0.01
-                        assert total_ratings == len(searchable_ratings)
-                        
-            except Exception:
-                pytest.skip("Rating statistics verification not available")
+                    assert isinstance(actual_average, (int, float))
+                    assert isinstance(total_ratings, int)
+                    assert abs(actual_average - expected_average) < 0.01
+                    assert total_ratings == len(searchable_ratings)
 
 
 if __name__ == "__main__":
