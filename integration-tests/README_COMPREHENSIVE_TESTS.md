@@ -131,13 +131,16 @@ python -m pytest test_withdrawals.py --cov=api_client -v
 ```
 
 ### **Test Configuration**
-Set up your environment in `integration-tests/.env`:
+Environment variables are automatically set by the `exec.sh` script:
 ```bash
-# Backend URL
-BASE_URL=http://localhost:5005/api
+# Local testing
+./exec.sh local test
 
-# Or for remote testing
-BASE_URL=https://your-api-server.com/api
+# Beta testing
+./exec.sh beta test
+
+# Production testing
+./exec.sh prod test
 ```
 
 ### **Test Data Management**
@@ -354,16 +357,15 @@ pip install pytest requests python-dotenv
 ```
 
 ### **Environment Variables**
+Environment variables are automatically set by the `exec.sh` script based on the environment:
 ```bash
-# Required
-BASE_URL=http://localhost:5005/api
-
-# Optional
+# Automatically configured by exec.sh:
+BASE_URL=<environment-specific-url>
+TEST_USER_PREFIX=<env>_
+TEST_EMAIL_DOMAIN=<env>.test  
+DEFAULT_PASSWORD=TestPass123!
 REQUEST_TIMEOUT=30
 UPLOAD_TIMEOUT=60
-TEST_USER_PREFIX=test_user_
-TEST_EMAIL_DOMAIN=example.com
-DEFAULT_PASSWORD=test123
 ```
 
 ---

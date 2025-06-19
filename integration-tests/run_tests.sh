@@ -2,7 +2,7 @@
 
 # Integration Test Runner for Searchable Platform
 echo "Starting Integration Tests for Searchable Platform..."
-echo "Target: $(grep BASE_URL .env | cut -d'=' -f2)"
+echo "Target: ${BASE_URL:-'http://localhost:5005'}"
 echo "================================================"
 
 # Exit on any error

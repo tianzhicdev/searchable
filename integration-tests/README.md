@@ -20,23 +20,33 @@ The integration tests verify the following functionality:
 pip install -r requirements.txt
 ```
 
-2. Configure the target environment in `.env`:
+2. Environment variables are automatically set by the `exec.sh` script:
 ```bash
-# Default target
-BASE_URL=https://silkroadonlightning.com
-
 # For local testing
-# BASE_URL=http://localhost:5000
+./exec.sh local test
+
+# For beta testing  
+./exec.sh beta test
+
+# For production testing
+./exec.sh prod test
 ```
 
 ## Running Tests
 
-### Run all integration tests:
+### Run all integration tests using exec.sh (recommended):
 ```bash
-python test_integration.py
+# Local testing
+./exec.sh local test
+
+# Beta testing
+./exec.sh beta test
+
+# Production testing  
+./exec.sh prod test
 ```
 
-### Run with pytest:
+### Run with pytest directly (manual setup):
 ```bash
 pytest test_integration.py -v -s
 ```
@@ -52,7 +62,6 @@ pytest test_integration.py::TestSearchableIntegration::test_01_register_user -v 
 - **`api_client.py`** - API client wrapper for HTTP requests
 - **`test_integration.py`** - Main integration test suite
 - **`test_files/`** - Sample files for upload testing
-- **`.env`** - Environment configuration
 
 ## Test Flow
 
@@ -95,8 +104,13 @@ pytest test_integration.py -v -s --tb=long
 
 ### Environment Variables
 
-- `BASE_URL`: Target server URL (default: https://silkroadonlightning.com)
-- Add other environment variables as needed for testing
+Environment variables are automatically set by the `exec.sh` script:
+- `BASE_URL`: Target server URL (set automatically based on environment)
+- `TEST_USER_PREFIX`: Test user prefix (set automatically)
+- `TEST_EMAIL_DOMAIN`: Test email domain (set automatically)
+- `DEFAULT_PASSWORD`: Default test password (set automatically)
+- `REQUEST_TIMEOUT`: API request timeout (set automatically)
+- `UPLOAD_TIMEOUT`: File upload timeout (set automatically)
 
 ## API Endpoints Tested
 
