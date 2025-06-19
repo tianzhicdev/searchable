@@ -8,6 +8,7 @@ import time
 import uuid
 import json
 import requests
+import os
 from datetime import datetime, timedelta
 from api_client import SearchableAPIClient
 
@@ -20,15 +21,22 @@ class TestGrafana:
         cls.client = SearchableAPIClient()
         cls.test_id = str(uuid.uuid4())[:8]
         
-        # Grafana configuration
-        cls.grafana_base_url = "http://localhost/grafana"
-        cls.grafana_direct_url = "http://localhost:3000"
+        # Grafana configuration - derive from BASE_URL
+        base_url = os.getenv('BASE_URL', 'localhost:5005')
+        if base_url.startswith('http'):
+            # For remote URLs like https://silkroadonlightning.com
+            cls.grafana_base_url = f"{base_url}/grafana"
+            cls.grafana_direct_url = f"{base_url}/grafana"
+            cls.metrics_base_url = f"{base_url}/metrics"
+        else:
+            # For local URLs like localhost:5005
+            cls.grafana_base_url = "http://localhost/grafana"
+            cls.grafana_direct_url = "http://localhost:3000"
+            cls.metrics_base_url = "http://localhost:5007"
+        
         cls.grafana_user = "admin"
         cls.grafana_password = "admin123"
         cls.grafana_auth = (cls.grafana_user, cls.grafana_password)
-        
-        # Metrics service for test data
-        cls.metrics_base_url = "http://localhost:5007"
         
         print(f"Grafana Test ID: {cls.test_id}")
     

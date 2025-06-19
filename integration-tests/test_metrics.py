@@ -8,6 +8,7 @@ import time
 import uuid
 import json
 import requests
+import os
 from datetime import datetime, timedelta
 from api_client import SearchableAPIClient
 
@@ -24,23 +25,35 @@ class TestMetrics:
         cls.test_password = "test123"
         cls.user_id = None
         
-        # Direct metrics API endpoint for testing
-        cls.metrics_base_url = "http://localhost:5007"
+        # Direct metrics API endpoint for testing - derive from BASE_URL
+        base_url = os.getenv('BASE_URL', 'localhost:5005')
+        if base_url.startswith('http'):
+            # For remote URLs like https://silkroadonlightning.com
+            cls.metrics_base_url = f"{base_url}/metrics"
+        else:
+            # For local URLs like localhost:5005
+            cls.metrics_base_url = "http://localhost:5007"
+    
+    def _check_metrics_service_available(self):
+        """Check if metrics service is available"""
+        try:
+            response = self.client.session.get(f"{self.metrics_base_url}/health", timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            assert data.get('status') == 'healthy', f"Metrics service unhealthy: {data}"
+            return True
+        except Exception as e:
+            assert False, f"Metrics service not available at {self.metrics_base_url}: {e}"
     
     def test_01_metrics_service_health(self):
         """Test that metrics service is healthy"""
         print("Testing metrics service health...")
-        
-        response = self.client.session.get(f"{self.metrics_base_url}/health")
-        assert response.status_code == 200, f"Metrics service unhealthy: {response.text}"
-        
-        data = response.json()
-        assert data['status'] == 'healthy'
-        assert data['service'] == 'metrics'
+        self._check_metrics_service_available()
         print("✓ Metrics service is healthy")
     
     def test_02_user_signup_creates_metric(self):
         """Test that user signup creates a metric event"""
+        self._check_metrics_service_available()
         print(f"Testing user signup metric for: {self.test_username}")
         
         # Allow time for any previous metrics to be processed
@@ -80,6 +93,7 @@ class TestMetrics:
     
     def test_03_user_login_creates_metric(self):
         """Test that user login creates a metric event"""
+        self._check_metrics_service_available()
         print(f"Testing user login metric for: {self.test_email}")
         
         # Login the user

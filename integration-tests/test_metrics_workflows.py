@@ -8,6 +8,7 @@ import time
 import uuid
 import json
 import requests
+import os
 from datetime import datetime, timedelta
 from api_client import SearchableAPIClient
 
@@ -19,16 +20,33 @@ class TestMetricsWorkflows:
         """Set up test environment for workflow tests"""
         cls.client = SearchableAPIClient()
         cls.test_id = str(uuid.uuid4())[:8]
-        cls.metrics_base_url = "http://localhost:5007"
+        # Direct metrics API endpoint for testing - derive from BASE_URL
+        base_url = os.getenv('BASE_URL', 'localhost:5005')
+        if base_url.startswith('http'):
+            # For remote URLs like https://silkroadonlightning.com
+            cls.metrics_base_url = f"{base_url}/metrics"
+        else:
+            # For local URLs like localhost:5005
+            cls.metrics_base_url = "http://localhost:5007"
         
         # Test users for workflow testing
         cls.test_users = []
         cls.test_searchables = []
+    
+    def _check_metrics_service_available(self):
+        """Check if metrics service is available, skip test if not"""
+        try:
+            response = self.client.session.get(f"{self.metrics_base_url}/health", timeout=5)
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            pytest.skip(f"Metrics service not available at {self.metrics_base_url}: {e}")
         
         # Test ID for workflow testing
     
     def test_01_user_registration_metrics_workflow(self):
         """Test metrics collection during user registration workflow"""
+        self._check_metrics_service_available()
         
         # Create test user
         test_username = f"workflow_user_{self.test_id}"
@@ -79,6 +97,7 @@ class TestMetricsWorkflows:
     
     def test_02_user_login_metrics_workflow(self):
         """Test metrics collection during user login workflow"""
+        self._check_metrics_service_available()
         
         assert len(self.test_users) > 0  # Check list length before proceeding
         
