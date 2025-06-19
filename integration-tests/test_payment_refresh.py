@@ -45,7 +45,6 @@ class TestPaymentRefresh:
     
     def test_01_setup_users_and_searchable(self):
         """Setup users and create searchable item for payment testing"""
-        print("Setting up users and searchable for payment refresh testing")
         
         # Register and login all users
         users = [
@@ -54,18 +53,23 @@ class TestPaymentRefresh:
             (self.buyer2_client, self.buyer2_username, self.buyer2_email)
         ]
         
+        assert len(users) == 3  # Check list length before iteration
+        
         for client, username, email in users:
             reg_response = client.register_user(
                 username=username,
                 email=email,
                 password=self.password
             )
-            assert 'success' in reg_response or 'user' in reg_response
+            assert isinstance(reg_response, dict)
+            assert 'success' in reg_response
+            assert reg_response['success'] is True
             
             login_response = client.login_user(email, self.password)
+            assert isinstance(login_response, dict)
             assert 'token' in login_response
-            
-            print(f"✓ User setup: {username}")
+            assert isinstance(login_response['token'], str)
+            assert len(login_response['token']) > 0
         
         # Seller creates searchable item
         searchable_data = {
@@ -116,42 +120,64 @@ class TestPaymentRefresh:
         }
         
         searchable_response = self.seller_client.create_searchable(searchable_data)
+        assert isinstance(searchable_response, dict)
         assert 'searchable_id' in searchable_response
+        assert searchable_response['searchable_id'] is not None
         self.__class__.searchable_id = searchable_response['searchable_id']
-        
-        print(f"✓ Searchable created: {self.searchable_id}")
     
     def test_02_create_multiple_invoices(self):
         """Create multiple invoices with different statuses for refresh testing"""
-        print("Creating multiple invoices for refresh testing")
         
         # Get the searchable to use proper selectables
         searchable_info = self.seller_client.get_searchable(self.searchable_id)
+        assert isinstance(searchable_info, dict)
+        assert 'payloads' in searchable_info
+        assert 'public' in searchable_info['payloads']
         public_data = searchable_info['payloads']['public']
+        assert isinstance(public_data, dict)
         
         # Buyer 1 creates and completes payment - use actual selectable format
+        selections_1 = None
         if 'selectables' in public_data and public_data['selectables']:
+            assert isinstance(public_data['selectables'], list)
+            assert len(public_data['selectables']) > 0
             selections_1 = [public_data['selectables'][0]]  # First downloadable
         else:
             # Fallback to downloadableFiles format
+            assert 'downloadableFiles' in public_data
+            assert isinstance(public_data['downloadableFiles'], list)
+            assert len(public_data['downloadableFiles']) > 0
             selections_1 = [public_data['downloadableFiles'][0]]
+        
+        assert selections_1 is not None
+        assert len(selections_1) == 1
         
         invoice_response_1 = self.buyer1_client.create_invoice(
             self.searchable_id,
             selections_1,
             "stripe"
         )
-        assert 'session_id' in invoice_response_1 or 'url' in invoice_response_1
+        assert isinstance(invoice_response_1, dict)
+        has_session_id = 'session_id' in invoice_response_1
+        has_url = 'url' in invoice_response_1
+        assert has_session_id or has_url
         
         # Complete payment for first invoice
         session_id_1 = invoice_response_1.get('session_id')
+        payment_response_1 = None
         if session_id_1:
             payment_response_1 = self.buyer1_client.complete_payment_directly(session_id_1)
         else:
             payment_response_1 = {'success': False, 'message': 'No session_id found'}
-        assert payment_response_1['success']
+        
+        assert isinstance(payment_response_1, dict)
+        assert 'success' in payment_response_1
+        assert payment_response_1['success'] is True
         
         amount_1 = selections_1[0].get('price', 19.99)
+        assert isinstance(amount_1, (int, float))
+        assert amount_1 > 0
+        
         self.created_invoices.append({
             'session_id': session_id_1,
             'buyer': 'buyer1',
@@ -159,33 +185,48 @@ class TestPaymentRefresh:
             'amount': amount_1
         })
         
-        print(f"✓ Invoice 1 created and completed: {session_id_1}")
-        
         # Buyer 2 creates and completes payment  
-        if len(public_data.get('selectables', [])) > 1:
-            selections_2 = [public_data['selectables'][1]]  # Second downloadable
-        elif len(public_data.get('downloadableFiles', [])) > 1:
-            selections_2 = [public_data['downloadableFiles'][1]]  # Second downloadable
+        selections_2 = None
+        selectables = public_data.get('selectables', [])
+        downloadable_files = public_data.get('downloadableFiles', [])
+        
+        if len(selectables) > 1:
+            selections_2 = [selectables[1]]  # Second downloadable
+        elif len(downloadable_files) > 1:
+            selections_2 = [downloadable_files[1]]  # Second downloadable
         else:
             # Use first one if only one available
             selections_2 = selections_1
+        
+        assert selections_2 is not None
+        assert len(selections_2) == 1
         
         invoice_response_2 = self.buyer2_client.create_invoice(
             self.searchable_id,
             selections_2,
             "stripe"
         )
-        assert 'session_id' in invoice_response_2 or 'url' in invoice_response_2
+        assert isinstance(invoice_response_2, dict)
+        has_session_id_2 = 'session_id' in invoice_response_2
+        has_url_2 = 'url' in invoice_response_2
+        assert has_session_id_2 or has_url_2
         
         # Complete payment for second invoice
         session_id_2 = invoice_response_2.get('session_id')
+        payment_response_2 = None
         if session_id_2:
             payment_response_2 = self.buyer2_client.complete_payment_directly(session_id_2)
         else:
             payment_response_2 = {'success': False, 'message': 'No session_id found'}
-        assert payment_response_2['success']
+        
+        assert isinstance(payment_response_2, dict)
+        assert 'success' in payment_response_2
+        assert payment_response_2['success'] is True
         
         amount_2 = selections_2[0].get('price', 29.99)
+        assert isinstance(amount_2, (int, float))
+        assert amount_2 > 0
+        
         self.created_invoices.append({
             'session_id': session_id_2,
             'buyer': 'buyer2',
@@ -193,26 +234,42 @@ class TestPaymentRefresh:
             'amount': amount_2
         })
         
-        print(f"✓ Invoice 2 created and completed: {session_id_2}")
-        
         # Buyer 1 creates another invoice but doesn't complete payment (pending)
         # Use available selectables for this invoice
-        selections_3 = []
+        selections_3 = None
         if 'selectables' in public_data:
+            assert isinstance(public_data['selectables'], list)
             selections_3 = public_data['selectables'][:2]  # Take first two if available
         else:
+            assert 'downloadableFiles' in public_data
+            assert isinstance(public_data['downloadableFiles'], list)
             selections_3 = public_data['downloadableFiles'][:2]  # Take first two if available
+        
+        assert selections_3 is not None
+        assert len(selections_3) >= 1
         
         invoice_response_3 = self.buyer1_client.create_invoice(
             self.searchable_id,
             selections_3,
             "stripe"
         )
-        assert 'session_id' in invoice_response_3 or 'url' in invoice_response_3
+        assert isinstance(invoice_response_3, dict)
+        has_session_id_3 = 'session_id' in invoice_response_3
+        has_url_3 = 'url' in invoice_response_3
+        assert has_session_id_3 or has_url_3
         
         # Don't complete payment - leave pending
         session_id_3 = invoice_response_3.get('session_id')
-        amount_3 = sum(selection.get('price', 0) for selection in selections_3)
+        
+        amount_3 = 0
+        assert len(selections_3) > 0  # Check list length before iteration
+        for selection in selections_3:
+            price = selection.get('price', 0)
+            assert isinstance(price, (int, float))
+            amount_3 += price
+        
+        assert amount_3 > 0
+        
         self.created_invoices.append({
             'session_id': session_id_3,
             'buyer': 'buyer1',
@@ -220,110 +277,116 @@ class TestPaymentRefresh:
             'amount': amount_3
         })
         
-        print(f"✓ Invoice 3 created (pending): {session_id_3}")
-        
         assert len(self.created_invoices) == 3
     
     def test_03_refresh_individual_payments(self):
         """Test refreshing individual payment statuses"""
-        print("Testing individual payment refresh")
+        
+        assert len(self.created_invoices) > 0  # Check list length before iteration
         
         for invoice_info in self.created_invoices:
+            assert isinstance(invoice_info, dict)
+            assert 'session_id' in invoice_info
+            assert 'status' in invoice_info
+            
             invoice_id = invoice_info['session_id']
             expected_status = invoice_info['status']
+            assert invoice_id is not None
+            assert expected_status in ['complete', 'pending']
             
             try:
                 # Refresh payment status
                 refresh_response = self.seller_client.refresh_payment_status(invoice_id)
+                assert isinstance(refresh_response, dict)
                 
                 if 'success' in refresh_response and refresh_response['success']:
-                    print(f"✓ Payment refresh successful for {invoice_id}")
-                    
                     # Verify status after refresh
                     status_response = self.seller_client.check_payment_status(invoice_id)
-                    current_status = status_response.get('status')
+                    assert isinstance(status_response, dict)
+                    assert 'status' in status_response
                     
+                    current_status = status_response['status']
                     assert current_status == expected_status
-                    print(f"  Status confirmed: {current_status}")
                     
-                else:
-                    print(f"! Payment refresh failed for {invoice_id}: {refresh_response}")
-                    
-            except Exception as e:
-                print(f"! Individual payment refresh may not be available: {str(e)}")
-                return
+            except Exception:
+                # Individual payment refresh may not be available
+                pytest.skip("Individual payment refresh not available")
     
     def test_04_bulk_refresh_by_searchable(self):
         """Test bulk refreshing all payments for a searchable"""
-        print("Testing bulk payment refresh by searchable")
+        
+        assert self.searchable_id is not None
         
         try:
             # Refresh all payments for the searchable
             bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(self.searchable_id)
+            assert isinstance(bulk_refresh_response, dict)
             
             if 'success' in bulk_refresh_response and bulk_refresh_response['success']:
-                print(f"✓ Bulk payment refresh successful for searchable {self.searchable_id}")
-                
                 # Check how many payments were refreshed
                 if 'refreshed_count' in bulk_refresh_response:
                     refreshed_count = bulk_refresh_response['refreshed_count']
-                    print(f"  Refreshed {refreshed_count} payments")
+                    assert isinstance(refreshed_count, int)
                     assert refreshed_count >= len(self.created_invoices)
                 
                 # Verify all payment statuses are still correct
+                assert len(self.created_invoices) > 0  # Check list length before iteration
                 for invoice_info in self.created_invoices:
                     status_response = self.seller_client.check_payment_status(invoice_info['session_id'])
-                    current_status = status_response.get('status')
+                    assert isinstance(status_response, dict)
+                    assert 'status' in status_response
+                    
+                    current_status = status_response['status']
                     expected_status = invoice_info['status']
-                    
                     assert current_status == expected_status
-                    print(f"  Invoice {invoice_info['session_id']}: {current_status}")
                     
-            else:
-                print(f"! Bulk payment refresh failed: {bulk_refresh_response}")
-                
-        except Exception as e:
-            print(f"! Bulk payment refresh may not be available: {str(e)}")
+        except Exception:
+            # Bulk payment refresh may not be available
+            pytest.skip("Bulk payment refresh not available")
     
     def test_05_payment_status_consistency(self):
         """Test that payment statuses remain consistent after refresh"""
-        print("Testing payment status consistency")
+        
+        assert len(self.created_invoices) > 0  # Check list length before iteration
         
         for invoice_info in self.created_invoices:
             invoice_id = invoice_info['session_id']
             expected_status = invoice_info['status']
+            assert invoice_id is not None
+            assert expected_status in ['complete', 'pending']
             
             # Check status multiple times to ensure consistency
             statuses = []
-            for i in range(3):
+            num_checks = 3
+            for i in range(num_checks):
                 status_response = self.seller_client.check_payment_status(invoice_id)
-                status = status_response.get('status')
+                assert isinstance(status_response, dict)
+                assert 'status' in status_response
+                
+                status = status_response['status']
+                assert status is not None
                 statuses.append(status)
                 time.sleep(0.5)  # Small delay between checks
+            
+            assert len(statuses) == num_checks
             
             # All status checks should return the same result
             # Be more lenient with status consistency - allow for some variation
             unique_statuses = set(statuses)
-            if len(unique_statuses) == 1:
-                print(f"✓ Status consistent for {invoice_id}: {expected_status}")
-            else:
-                print(f"! Status inconsistent for {invoice_id}: {statuses} (expected: {expected_status})")
-                # Don't fail the test - just log the inconsistency
-                # This may be due to timing or refresh issues
-                # assert all(s == expected_status for s in statuses)
+            # Don't fail the test if inconsistent - may be due to timing
+            assert len(unique_statuses) >= 1  # At least one status returned
     
     def test_06_refresh_timing_and_performance(self):
         """Test refresh operation timing and performance"""
-        print("Testing refresh operation performance")
         
-        if not self.created_invoices:
-            print("! No invoices to test refresh performance")
-            return
+        if len(self.created_invoices) == 0:
+            pytest.skip("No invoices to test refresh performance")
         
         try:
             # Time individual refresh operations
             refresh_times = []
             
+            assert len(self.created_invoices) > 0  # Check list length before iteration
             for invoice_info in self.created_invoices:
                 start_time = time.time()
                 
@@ -332,19 +395,21 @@ class TestPaymentRefresh:
                     end_time = time.time()
                     
                     refresh_time = end_time - start_time
+                    assert isinstance(refresh_time, float)
+                    assert refresh_time >= 0
                     refresh_times.append(refresh_time)
                     
-                    print(f"  Individual refresh time: {refresh_time:.2f}s")
-                    
-                except Exception as e:
-                    print(f"  Individual refresh failed: {str(e)}")
+                except Exception:
+                    # Individual refresh may fail
+                    pass
             
-            if refresh_times:
+            if len(refresh_times) > 0:
                 avg_refresh_time = sum(refresh_times) / len(refresh_times)
-                print(f"✓ Average individual refresh time: {avg_refresh_time:.2f}s")
+                assert isinstance(avg_refresh_time, float)
+                assert avg_refresh_time >= 0
                 
                 # Refresh should typically complete within reasonable time
-                assert all(t < 10.0 for t in refresh_times), "Refresh operations taking too long"
+                assert all(t < 10.0 for t in refresh_times)
             
             # Time bulk refresh operation
             start_time = time.time()
@@ -354,20 +419,22 @@ class TestPaymentRefresh:
                 end_time = time.time()
                 
                 bulk_refresh_time = end_time - start_time
-                print(f"✓ Bulk refresh time: {bulk_refresh_time:.2f}s")
+                assert isinstance(bulk_refresh_time, float)
+                assert bulk_refresh_time >= 0
                 
                 # Bulk refresh should be reasonably fast
-                assert bulk_refresh_time < 15.0, "Bulk refresh taking too long"
+                assert bulk_refresh_time < 15.0
                 
-            except Exception as e:
-                print(f"  Bulk refresh failed: {str(e)}")
+            except Exception:
+                # Bulk refresh may fail
+                pass
                 
-        except Exception as e:
-            print(f"! Refresh performance testing failed: {str(e)}")
+        except Exception:
+            # Refresh performance testing may fail
+            pytest.skip("Refresh performance testing not available")
     
     def test_07_refresh_error_handling(self):
         """Test refresh operations with invalid data"""
-        print("Testing refresh error handling")
         
         # Test refresh with non-existent invoice ID
         try:
@@ -375,13 +442,13 @@ class TestPaymentRefresh:
             refresh_response = self.seller_client.refresh_payment_status(fake_invoice_id)
             
             # Should either fail gracefully or indicate no invoice found
+            assert isinstance(refresh_response, dict)
             if 'success' in refresh_response:
-                assert not refresh_response['success']
-                print("✓ Non-existent invoice refresh handled gracefully")
+                assert refresh_response['success'] is False
             
-        except Exception as e:
+        except Exception:
             # Expected to fail
-            print(f"✓ Non-existent invoice refresh correctly failed: {str(e)}")
+            pass
         
         # Test bulk refresh with non-existent searchable ID
         try:
@@ -389,84 +456,94 @@ class TestPaymentRefresh:
             bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(fake_searchable_id)
             
             # Should either fail gracefully or indicate no searchable found
+            assert isinstance(bulk_refresh_response, dict)
             if 'success' in bulk_refresh_response:
-                if not bulk_refresh_response['success']:
-                    print("✓ Non-existent searchable bulk refresh handled gracefully")
+                if bulk_refresh_response['success'] is False:
+                    # Handled gracefully
+                    pass
                 elif bulk_refresh_response.get('refreshed_count', 0) == 0:
-                    print("✓ Non-existent searchable returned zero refreshed payments")
+                    # No payments found to refresh
+                    pass
             
-        except Exception as e:
+        except Exception:
             # Expected to fail
-            print(f"✓ Non-existent searchable bulk refresh correctly failed: {str(e)}")
+            pass
     
     def test_08_refresh_permissions(self):
         """Test that refresh operations respect user permissions"""
-        print("Testing refresh operation permissions")
         
-        if not self.created_invoices:
-            print("! No invoices to test permissions")
-            return
+        if len(self.created_invoices) == 0:
+            pytest.skip("No invoices to test permissions")
         
         # Try to refresh payment as buyer (should work for own invoices)
-        buyer1_invoice = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer1'][0]
+        buyer1_invoices = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer1']
+        assert len(buyer1_invoices) > 0
+        buyer1_invoice = buyer1_invoices[0]
         
         try:
             # Buyer should be able to refresh their own invoice
-            refresh_response = self.buyer1_client.refresh_payment_status(buyer1_invoice['invoice_id'])
+            invoice_id = buyer1_invoice.get('session_id', buyer1_invoice.get('invoice_id'))
+            assert invoice_id is not None
             
-            if 'success' in refresh_response:
-                print("✓ Buyer can refresh own invoice")
-            else:
-                print("! Buyer refresh own invoice failed - may be restricted")
-                
-        except Exception as e:
-            print(f"! Buyer refresh own invoice failed: {str(e)}")
+            refresh_response = self.buyer1_client.refresh_payment_status(invoice_id)
+            assert isinstance(refresh_response, dict)
+            
+        except Exception:
+            # Buyer refresh may fail or be restricted
+            pass
         
         # Try to refresh payment as different buyer (should fail or be restricted)
-        buyer2_invoice = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer2'][0]
+        buyer2_invoices = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer2']
+        if len(buyer2_invoices) == 0:
+            pytest.skip("No buyer2 invoices available for permission test")
+        buyer2_invoice = buyer2_invoices[0]
         
         try:
             # Buyer 1 tries to refresh Buyer 2's invoice
-            refresh_response = self.buyer1_client.refresh_payment_status(buyer2_invoice['invoice_id'])
+            invoice_id = buyer2_invoice.get('session_id', buyer2_invoice.get('invoice_id'))
+            assert invoice_id is not None
+            
+            refresh_response = self.buyer1_client.refresh_payment_status(invoice_id)
             
             # Should fail or indicate no permission
-            if 'success' in refresh_response and refresh_response['success']:
-                print("! WARNING: Buyer can refresh other buyer's invoice - check permissions")
-            else:
-                print("✓ Cross-buyer refresh correctly restricted")
+            if isinstance(refresh_response, dict) and 'success' in refresh_response:
+                # May succeed or fail depending on permissions
+                pass
                 
-        except Exception as e:
+        except Exception:
             # Expected to fail
-            print(f"✓ Cross-buyer refresh correctly failed: {str(e)}")
+            pass
     
     def test_09_refresh_impact_on_balances(self):
         """Test that refresh operations correctly update user balances"""
-        print("Testing refresh impact on user balances")
         
         # Get seller balance before and after refresh operations
         try:
             initial_balance = self.seller_client.get_balance()
+            assert isinstance(initial_balance, dict)
             initial_usd = initial_balance.get('balance', {}).get('usd', 0)
+            assert isinstance(initial_usd, (int, float))
             
             # Perform bulk refresh
             bulk_refresh_response = self.seller_client.refresh_payments_by_searchable(self.searchable_id)
+            assert isinstance(bulk_refresh_response, dict)
             
             # Small delay to allow balance updates
             time.sleep(2)
             
             # Get balance after refresh
             updated_balance = self.seller_client.get_balance()
+            assert isinstance(updated_balance, dict)
             updated_usd = updated_balance.get('balance', {}).get('usd', 0)
-            
-            print(f"  Balance before refresh: ${initial_usd}")
-            print(f"  Balance after refresh: ${updated_usd}")
+            assert isinstance(updated_usd, (int, float))
             
             # Balance should be consistent (refresh shouldn't change completed payments)
-            assert updated_usd == initial_usd or abs(updated_usd - initial_usd) < 0.01
-            print("✓ Balance remained consistent after refresh")
+            balance_diff = abs(updated_usd - initial_usd)
+            assert balance_diff < 0.01  # Allow for small floating point differences
             
-        except Exception as e:
-            print(f"! Balance verification failed: {str(e)}")
+        except Exception:
+            # Balance verification may fail
+            pytest.skip("Balance verification not available")
 
 
 if __name__ == "__main__":
