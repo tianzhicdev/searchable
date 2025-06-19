@@ -26,19 +26,22 @@ NC='\033[0m' # No Color
 show_usage() {
     echo -e "${BLUE}Searchable Execution Script${NC}"
     echo -e "${YELLOW}Usage:${NC}"
-    echo "  ./exec.sh remote deploy <container_name>    - Deploy specific container remotely"
-    echo "  ./exec.sh remote deploy-all                 - Deploy all containers remotely"
-    echo "  ./exec.sh remote logs <container_name>      - Show logs for remote container"
-    echo "  ./exec.sh remote status                     - Show status of remote containers"
+    echo "  ./exec.sh beta deploy <container_name>      - Deploy specific container to beta"
+    echo "  ./exec.sh beta deploy-all                   - Deploy all containers to beta"
+    echo "  ./exec.sh beta logs <container_name>        - Show logs for beta container"
+    echo "  ./exec.sh beta status                       - Show status of beta containers"
+    echo "  ./exec.sh beta test                         - Run tests against beta (silkroadonlightning.com)"
+    echo ""
+    echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo ""
     echo "  ./exec.sh local react                       - Start React development server locally"
     echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
     echo "  ./exec.sh local deploy-all                  - Deploy all containers locally"
     echo "  ./exec.sh local logs <container_name>       - Show logs for local container"
     echo "  ./exec.sh local status                      - Show status of local containers"
-    echo "  ./exec.sh local it                          - Run comprehensive integration tests"
+    echo "  ./exec.sh local test                        - Run tests against local (localhost:5005)"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
-    echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test"
+    echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo ""
@@ -54,12 +57,14 @@ show_usage() {
     echo "  - grafana"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
-    echo "  ./exec.sh remote deploy flask_api"
-    echo "  ./exec.sh remote logs flask_api"
+    echo "  ./exec.sh beta deploy flask_api"
+    echo "  ./exec.sh beta logs flask_api"
+    echo "  ./exec.sh beta test"
+    echo "  ./exec.sh prod test"
     echo "  ./exec.sh local react"
     echo "  ./exec.sh local deploy-all"
     echo "  ./exec.sh local status"
-    echo "  ./exec.sh local it"
+    echo "  ./exec.sh local test"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
     echo "  ./exec.sh release"
@@ -93,8 +98,8 @@ get_docker_compose_cmd() {
     fi
 }
 
-# Remote deploy single container
-remote_deploy_container() {
+# Beta deploy single container
+beta_deploy_container() {
     local container=$1
     validate_container "$container"
     
@@ -129,8 +134,8 @@ EOF
     echo -e "${GREEN}✅ Remote deployment of $container completed!${NC}"
 }
 
-# Remote deploy all containers
-remote_deploy_all() {
+# Beta deploy all containers
+beta_deploy_all() {
     echo -e "${BLUE}🚀 Deploying all containers to remote server...${NC}"
     echo "Remote: $REMOTE_USER@$REMOTE_HOST"
     
@@ -145,8 +150,8 @@ EOF
     echo -e "${GREEN}✅ Remote deployment completed!${NC}"
 }
 
-# Remote container logs
-remote_logs() {
+# Beta container logs
+beta_logs() {
     local container=$1
     validate_container "$container"
     
@@ -172,8 +177,8 @@ remote_logs() {
 EOF
 }
 
-# Remote container status
-remote_status() {
+# Beta container status
+beta_status() {
     echo -e "${BLUE}📊 Checking status of remote containers...${NC}"
     echo "Remote: $REMOTE_USER@$REMOTE_HOST"
     
@@ -186,6 +191,90 @@ remote_status() {
         echo "💾 Docker images:"
         docker images | grep searchable || true
 EOF
+}
+
+# Run comprehensive tests against specified environment
+run_tests() {
+    local environment=$1
+    local api_url
+    local site_name
+    local test_prefix
+    
+    case "$environment" in
+        "local")
+            api_url="http://localhost:5005"
+            site_name="Local (localhost:5005)"
+            test_prefix="local_"
+            ;;
+        "beta")
+            api_url="https://silkroadonlightning.com"
+            site_name="Beta (silkroadonlightning.com)"
+            test_prefix="beta_"
+            ;;
+        "prod")
+            api_url="https://eccentricprotocol.com"
+            site_name="Production (eccentricprotocol.com)"
+            test_prefix="prod_"
+            ;;
+        *)
+            echo -e "${RED}Error: Invalid environment '$environment'. Use 'local', 'beta' or 'prod'${NC}"
+            exit 1
+            ;;
+    esac
+    
+    echo -e "${BLUE}🧪 Running tests against $site_name${NC}"
+    echo "API URL: $api_url/api"
+    echo ""
+    
+    # Check if integration-tests directory exists
+    if [ ! -d "$SCRIPT_DIR/integration-tests" ]; then
+        echo -e "${RED}Error: integration-tests directory not found${NC}"
+        exit 1
+    fi
+    
+    # Navigate to integration tests directory
+    cd "$SCRIPT_DIR/integration-tests"
+    
+    echo -e "${YELLOW}Running comprehensive test suite against $site_name...${NC}"
+    if [ "$environment" != "local" ]; then
+        echo "This will create test users, searchables, and transactions on the server."
+    fi
+    echo ""
+    
+    # Run tests with environment variables directly (no .env file manipulation)
+    BASE_URL="$api_url" \
+    TEST_USER_PREFIX="${test_prefix}" \
+    TEST_EMAIL_DOMAIN="${environment}.test" \
+    DEFAULT_PASSWORD="TestPass123!" \
+    REQUEST_TIMEOUT=30 \
+    UPLOAD_TIMEOUT=60 \
+    ./run_comprehensive_tests.sh
+    
+    TEST_RESULT=$?
+    
+    # Return to original directory
+    cd "$SCRIPT_DIR"
+    
+    echo ""
+    echo -e "${BLUE}🧪 Test Summary for $site_name${NC}"
+    echo "================================"
+    
+    if [ $TEST_RESULT -eq 0 ]; then
+        echo -e "${GREEN}✅ All tests passed!${NC}"
+        echo -e "${GREEN}🎉 $site_name is healthy and functioning correctly.${NC}"
+    else
+        echo -e "${RED}❌ Some tests failed!${NC}"
+        echo -e "${YELLOW}Check the test output above for details.${NC}"
+        echo ""
+        if [ "$environment" != "local" ]; then
+            echo -e "${YELLOW}Common issues:${NC}"
+            echo "  - API endpoint not accessible"
+            echo "  - Database connection issues"
+            echo "  - Service configuration problems"
+            echo "  - Rate limiting or firewall rules"
+        fi
+        exit 1
+    fi
 }
 
 # Local React development server
@@ -213,22 +302,9 @@ local_react() {
     npm start
 }
 
-# Local integration tests
-local_it() {
-    echo -e "${BLUE}🧪 Running comprehensive integration tests...${NC}"
-    
-    if [ ! -d "integration-tests" ]; then
-        echo -e "${RED}Error: integration-tests directory not found${NC}"
-        exit 1
-    fi
-    
-    cd integration-tests
-    
-    echo -e "${YELLOW}Starting integration test suite...${NC}"
-    echo ""
-    
-    # Run the comprehensive tests
-    ./run_comprehensive_tests.sh
+# Local integration tests  
+local_test() {
+    run_tests "local"
 }
 
 # Local React development server in mock mode
@@ -348,23 +424,9 @@ local_cicd() {
     
     echo -e "${BLUE}📋 Step 5/5: Running comprehensive integration tests...${NC}"
     
-    # Check if integration-tests directory exists
-    if [ ! -d "integration-tests" ]; then
-        echo -e "${RED}Error: integration-tests directory not found${NC}"
-        exit 1
-    fi
-    
-    # Navigate to integration tests and run them
-    cd integration-tests
-    
-    echo -e "${YELLOW}Starting comprehensive test suite...${NC}"
-    ./run_comprehensive_tests.sh
-    
-    # Capture test result
+    # Run local tests
+    run_tests "local"
     TEST_RESULT=$?
-    
-    # Return to original directory
-    cd ..
     
     echo ""
     echo -e "${BLUE}🎯 CI/CD Workflow Summary${NC}"
@@ -462,8 +524,8 @@ release() {
     git tag "v$NEW_VERSION"
     git push origin "v$NEW_VERSION"
     
-    echo -e "${YELLOW}Deploying to remote...${NC}"
-    remote_deploy_all
+    echo -e "${YELLOW}Deploying to beta...${NC}"
+    beta_deploy_all
     
     echo -e "${GREEN}✅ Release $NEW_VERSION completed successfully!${NC}"
     echo -e "${BLUE}📝 Summary:${NC}"
@@ -566,7 +628,7 @@ else
 fi
 
 case "$ENVIRONMENT" in
-    "remote")
+    "beta")
         case "$ACTION" in
             "deploy")
                 if [ -z "$CONTAINER" ]; then
@@ -574,10 +636,10 @@ case "$ENVIRONMENT" in
                     show_usage
                     exit 1
                 fi
-                remote_deploy_container "$CONTAINER"
+                beta_deploy_container "$CONTAINER"
                 ;;
             "deploy-all")
-                remote_deploy_all
+                beta_deploy_all
                 ;;
             "logs")
                 if [ -z "$CONTAINER" ]; then
@@ -585,13 +647,30 @@ case "$ENVIRONMENT" in
                     show_usage
                     exit 1
                 fi
-                remote_logs "$CONTAINER"
+                beta_logs "$CONTAINER"
                 ;;
             "status")
-                remote_status
+                beta_status
+                ;;
+            "test")
+                run_tests "beta"
                 ;;
             *)
-                echo -e "${RED}Error: Invalid action '$ACTION' for remote environment${NC}"
+                echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
+                show_usage
+                exit 1
+                ;;
+        esac
+        ;;
+    
+    "prod")
+        case "$ACTION" in
+            "test")
+                run_tests "prod"
+                ;;
+            *)
+                echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
+                echo "Only 'test' action is available for prod environment"
                 show_usage
                 exit 1
                 ;;
@@ -625,8 +704,8 @@ case "$ENVIRONMENT" in
             "status")
                 local_status
                 ;;
-            "it")
-                local_it
+            "test")
+                local_test
                 ;;
             "mock")
                 local_mock
