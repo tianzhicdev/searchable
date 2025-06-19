@@ -252,24 +252,21 @@ class TestMetrics:
         assert response.status_code == 200
         
         data = response.json()
+        assert isinstance(data, dict)
         assert 'aggregations' in data
         aggregations = data['aggregations']
+        assert isinstance(aggregations, dict)
         
         # Check expected aggregation fields
-        assert 'unique_visitors' in aggregations
-        assert 'page_views' in aggregations
-        assert 'new_users' in aggregations
-        assert 'item_views_by_type' in aggregations
-        assert 'new_items_by_type' in aggregations
-        assert 'invoices_by_type' in aggregations
+        expected_fields = ['unique_visitors', 'page_views', 'new_users', 'item_views_by_type', 'new_items_by_type', 'invoices_by_type']
+        assert len(expected_fields) == 6
         
-        print("✓ Metrics aggregation working correctly")
-        print(f"  Unique visitors: {aggregations['unique_visitors']}")
-        print(f"  New users: {aggregations['new_users']}")
+        for field in expected_fields:
+            assert field in aggregations
+            assert aggregations[field] is not None
     
     def test_09_searchable_item_metrics(self):
         """Test metrics for searchable item events"""
-        print("Testing searchable item metrics...")
         
         # Create a searchable item (would normally be done through the API)
         # For now, just create a metric directly
@@ -291,6 +288,10 @@ class TestMetrics:
             json=metric_data
         )
         assert response.status_code == 201
+        
+        result = response.json()
+        assert isinstance(result, dict)
+        assert 'success' in result or 'event_id' in result
         
         # Create item view metric
         view_metric = {
