@@ -38,6 +38,7 @@ show_usage() {
     echo "  ./exec.sh local status                      - Show status of local containers"
     echo "  ./exec.sh local it                          - Run comprehensive integration tests"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
+    echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo ""
@@ -60,6 +61,7 @@ show_usage() {
     echo "  ./exec.sh local status"
     echo "  ./exec.sh local it"
     echo "  ./exec.sh local mock"
+    echo "  ./exec.sh local cicd"
     echo "  ./exec.sh release"
 }
 
@@ -254,6 +256,143 @@ local_mock() {
     REACT_APP_DESCRIPTION='Silk Road on Lightning' \
     NODE_OPTIONS=--openssl-legacy-provider \
     npm start
+}
+
+# Local CI/CD workflow - tear down everything, rebuild, and test
+local_cicd() {
+    echo -e "${BLUE}🔄 Starting full CI/CD workflow...${NC}"
+    echo -e "${YELLOW}This will:${NC}"
+    echo "  1. 🗑️  Stop and remove all Docker containers"
+    echo "  2. 🧹 Remove all Docker volumes and networks"
+    echo "  3. 🏗️  Rebuild and start all containers"
+    echo "  4. ⏳ Wait for services to be ready"
+    echo "  5. 🧪 Run comprehensive integration tests"
+    echo ""
+    
+    # Confirm before proceeding
+    read -p "Continue with CI/CD workflow? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}CI/CD workflow cancelled.${NC}"
+        exit 0
+    fi
+    
+    DOCKER_COMPOSE=$(get_docker_compose_cmd)
+    
+    echo -e "${BLUE}📋 Step 1/5: Stopping and removing containers...${NC}"
+    
+    # Stop all containers (ignore errors)
+    echo "Stopping all containers..."
+    docker stop $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all containers (ignore errors)
+    echo "Removing all containers..."
+    docker rm $(docker ps -aq) 2>/dev/null || true
+    
+    # Remove all volumes (ignore errors)
+    echo "Removing all volumes..."
+    docker volume rm $(docker volume ls -q) 2>/dev/null || true
+    
+    # Remove all networks (ignore errors)
+    echo "Removing custom networks..."
+    docker network rm $(docker network ls --filter type=custom -q) 2>/dev/null || true
+    
+    # Clean up Docker system
+    echo "Cleaning up Docker system..."
+    docker system prune -f 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Step 1 complete: Environment cleaned${NC}"
+    echo ""
+    
+    echo -e "${BLUE}📋 Step 2/5: Building Docker images...${NC}"
+    
+    # Build all images from scratch
+    echo "Building all Docker images..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml build --no-cache --pull
+    
+    echo -e "${GREEN}✅ Step 2 complete: Images built${NC}"
+    echo ""
+    
+    echo -e "${BLUE}📋 Step 3/5: Starting all services...${NC}"
+    
+    # Start all containers
+    echo "Starting all containers..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml up -d
+    
+    echo -e "${GREEN}✅ Step 3 complete: Services started${NC}"
+    echo ""
+    
+    echo -e "${BLUE}📋 Step 4/5: Waiting for services to be ready...${NC}"
+    
+    # Wait for services to be ready
+    echo "Waiting for database to be ready..."
+    sleep 10
+    
+    # Check if Flask API is responding
+    echo "Checking Flask API health..."
+    for i in {1..30}; do
+        if curl -s http://localhost:5005/api/health >/dev/null 2>&1; then
+            echo "✅ Flask API is ready"
+            break
+        fi
+        echo "⏳ Waiting for Flask API... (attempt $i/30)"
+        sleep 2
+    done
+    
+    # Additional wait for full initialization
+    echo "Allowing additional time for full service initialization..."
+    sleep 5
+    
+    echo -e "${GREEN}✅ Step 4 complete: Services are ready${NC}"
+    echo ""
+    
+    echo -e "${BLUE}📋 Step 5/5: Running comprehensive integration tests...${NC}"
+    
+    # Check if integration-tests directory exists
+    if [ ! -d "integration-tests" ]; then
+        echo -e "${RED}Error: integration-tests directory not found${NC}"
+        exit 1
+    fi
+    
+    # Navigate to integration tests and run them
+    cd integration-tests
+    
+    echo -e "${YELLOW}Starting comprehensive test suite...${NC}"
+    ./run_comprehensive_tests.sh
+    
+    # Capture test result
+    TEST_RESULT=$?
+    
+    # Return to original directory
+    cd ..
+    
+    echo ""
+    echo -e "${BLUE}🎯 CI/CD Workflow Summary${NC}"
+    echo "================================"
+    echo "✅ Environment cleaned and rebuilt"
+    echo "✅ All services started"
+    echo "✅ Integration tests completed"
+    
+    if [ $TEST_RESULT -eq 0 ]; then
+        echo -e "${GREEN}🎉 CI/CD workflow completed successfully!${NC}"
+        echo -e "${YELLOW}All containers are running and tests passed.${NC}"
+        echo ""
+        echo -e "${BLUE}🔗 Service URLs:${NC}"
+        echo "  Frontend: http://localhost:80"
+        echo "  API: http://localhost:5005"
+        echo "  Grafana: http://localhost:3050"
+        echo ""
+        echo -e "${YELLOW}To view logs:${NC} ./exec.sh local logs <container_name>"
+        echo -e "${YELLOW}To check status:${NC} ./exec.sh local status"
+    else
+        echo -e "${RED}❌ CI/CD workflow failed!${NC}"
+        echo -e "${YELLOW}Check the test output above for details.${NC}"
+        echo ""
+        echo -e "${YELLOW}To debug:${NC}"
+        echo "  ./exec.sh local status"
+        echo "  ./exec.sh local logs <container_name>"
+        exit 1
+    fi
 }
 
 # Release workflow - merge to main, bump version, and deploy
@@ -491,6 +630,9 @@ case "$ENVIRONMENT" in
                 ;;
             "mock")
                 local_mock
+                ;;
+            "cicd")
+                local_cicd
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"
