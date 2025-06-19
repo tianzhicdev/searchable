@@ -37,7 +37,8 @@ class TestMetrics:
     def _check_metrics_service_available(self):
         """Check if metrics service is available"""
         try:
-            response = self.client.session.get(f"{self.metrics_base_url}/health", timeout=5)
+            # Use direct requests for metrics, not the API client session which adds /api prefix
+            response = requests.get(f"{self.metrics_base_url}/health", timeout=5)
             response.raise_for_status()
             data = response.json()
             assert data.get('status') == 'healthy', f"Metrics service unhealthy: {data}"
@@ -73,7 +74,7 @@ class TestMetrics:
             'metric_name': 'user_signup',
             'limit': 10
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         metrics_data = response.json()
@@ -110,7 +111,7 @@ class TestMetrics:
         
         # Method 1: Search for user_login metrics and filter by user_id
         params = {'metric_name': 'user_login', 'limit': 50}
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         if response.status_code == 200:
             login_metrics = response.json()['metrics']
             for metric in login_metrics:
@@ -121,7 +122,7 @@ class TestMetrics:
         # Method 2: If not found, search by user_id tag directly  
         if found_metric is None:
             params = {'tags': json.dumps({'user_id': str(self.user_id)}), 'limit': 20}
-            response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+            response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
             if response.status_code == 200:
                 user_metrics = response.json()['metrics']
                 for metric in user_metrics:
@@ -152,7 +153,7 @@ class TestMetrics:
             }
         }
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics",
             json=metric_data
         )
@@ -184,7 +185,7 @@ class TestMetrics:
         
         batch_data = {'metrics': metrics}
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
             json=batch_data
         )
@@ -207,7 +208,7 @@ class TestMetrics:
             'metric_name': 'batch_test_event',
             'limit': 10
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()
@@ -220,7 +221,7 @@ class TestMetrics:
             'tags': json.dumps({'test_id': self.test_id}),
             'limit': 20
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()
@@ -239,7 +240,7 @@ class TestMetrics:
             'start_time': start_time,
             'limit': 100
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()
@@ -259,7 +260,7 @@ class TestMetrics:
         
         # Get aggregated metrics for last 24 hours
         params = {'hours': 24}
-        response = self.client.session.get(
+        response = requests.get(
             f"{self.metrics_base_url}/api/v1/metrics/summary",
             params=params
         )
@@ -297,7 +298,7 @@ class TestMetrics:
             }
         }
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics",
             json=metric_data
         )
@@ -318,7 +319,7 @@ class TestMetrics:
             }
         }
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics",
             json=view_metric
         )
@@ -346,7 +347,7 @@ class TestMetrics:
                     }
                 })
             
-            response = self.client.session.post(
+            response = requests.post(
                 f"{self.metrics_base_url}/api/v1/metrics/batch",
                 json={'metrics': metrics}
             )
@@ -363,7 +364,7 @@ class TestMetrics:
             'metric_name': 'performance_test',
             'limit': 100
         }
-        response = self.client.session.get(
+        response = requests.get(
             f"{self.metrics_base_url}/api/v1/metrics",
             params=params
         )
@@ -452,7 +453,7 @@ class TestMetrics:
         })
         
         # Submit all workflow metrics
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
             json={'metrics': workflow_metrics}
         )
@@ -472,7 +473,7 @@ class TestMetrics:
             'tags': json.dumps({'user_session': workflow_user_id}),
             'limit': 20
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()
@@ -517,7 +518,7 @@ class TestMetrics:
             }
         }
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics",
             json=comprehensive_metric
         )
@@ -528,7 +529,7 @@ class TestMetrics:
         
         # Retrieve and verify data integrity
         params = {'metric_name': 'data_integrity_test'}
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()
@@ -557,7 +558,7 @@ class TestMetrics:
         ]
         
         for i, edge_metric in enumerate(edge_case_metrics):
-            response = self.client.session.post(
+            response = requests.post(
                 f"{self.metrics_base_url}/api/v1/metrics",
                 json=edge_metric
             )
@@ -585,7 +586,7 @@ class TestMetrics:
             ]
         }
         
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
             json=mixed_batch
         )
@@ -623,7 +624,7 @@ class TestMetrics:
                     })
         
         # Submit analytics data
-        response = self.client.session.post(
+        response = requests.post(
             f"{self.metrics_base_url}/api/v1/metrics/batch",
             json={'metrics': analytics_metrics}
         )
@@ -636,7 +637,7 @@ class TestMetrics:
         
         # Test aggregation endpoint
         params = {'hours': 48}  # Last 48 hours
-        response = self.client.session.get(
+        response = requests.get(
             f"{self.metrics_base_url}/api/v1/metrics/summary",
             params=params
         )
@@ -660,7 +661,7 @@ class TestMetrics:
             'tags': json.dumps({'platform': 'web'}),
             'limit': 50
         }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+        response = requests.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
         assert response.status_code == 200
         
         data = response.json()

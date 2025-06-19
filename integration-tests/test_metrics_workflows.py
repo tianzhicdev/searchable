@@ -36,7 +36,7 @@ class TestMetricsWorkflows:
     def _check_metrics_service_available(self):
         """Check if metrics service is available, skip test if not"""
         try:
-            response = self.client.session.get(f"{self.metrics_base_url}/health", timeout=5)
+            response = requests.get(f"{self.metrics_base_url}/health", timeout=5)
             response.raise_for_status()
             return True
         except Exception as e:
