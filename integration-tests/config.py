@@ -4,8 +4,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Base URL for the service
-BASE_URL = os.getenv('BASE_URL', 'https://silkroadonlightning.com')
+BASE_URL = os.getenv('BASE_URL', 'localhost:5005')
 API_BASE_URL = f"{BASE_URL}/api"
+
+print(f"Using API base URL: {API_BASE_URL}")
 
 # Test configuration
 TEST_USER_PREFIX = "test_user_"
