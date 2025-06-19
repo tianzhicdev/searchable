@@ -37,7 +37,6 @@ class TestFileManagement:
     
     def test_01_setup_user(self):
         """Register and login user for file management tests"""
-        print(f"Setting up user for file management: {self.username}")
         
         response = self.client.register_user(
             username=self.username,
@@ -50,12 +49,9 @@ class TestFileManagement:
         assert 'token' in login_response
         assert 'user' in login_response
         
-        print(f"✓ User setup complete: {self.username}")
     
     def test_02_create_test_files(self):
         """Create various test files for upload testing"""
-        print("Creating test files for upload")
-        
         test_file_configs = [
             {'name': 'document.txt', 'content': 'This is a test document file.\nLine 2 of content.\nLine 3 with more text.', 'type': 'document'},
             {'name': 'data.json', 'content': '{"test": "data", "number": 42, "array": [1, 2, 3]}', 'type': 'data'},
@@ -64,65 +60,55 @@ class TestFileManagement:
             {'name': 'config.yaml', 'content': 'server:\n  host: localhost\n  port: 8080\ndebug: true', 'type': 'config'}
         ]
         
+        assert len(test_file_configs) == 5, "Expected 5 test file configurations"
+        
         for config in test_file_configs:
             file_path = os.path.join(TEST_FILES_DIR, f"{self.test_id}_{config['name']}")
             
             with open(file_path, 'w') as f:
                 f.write(config['content'])
             
+            assert os.path.exists(file_path), f"File {file_path} was not created successfully"
             self.test_files_created.append(file_path)
             config['path'] = file_path
             config['size'] = len(config['content'])
         
         self.__class__.test_file_configs = test_file_configs  # Store as class variable
-        print(f"✓ Created {len(test_file_configs)} test files")
+        assert len(self.test_files_created) == 5, "Expected 5 test files to be created"
     
     def test_03_upload_files_with_metadata(self):
         """Test uploading files with various metadata configurations"""
-        print("Testing file uploads with metadata")
+        assert hasattr(self, 'test_file_configs'), "test_file_configs not available from previous test"
+        assert len(self.test_file_configs) > 0, "No test file configs available"
         
-        # Check if test_file_configs exists
-        if not hasattr(self, 'test_file_configs') or not self.test_file_configs:
-            print("⚠ No test file configs available, skipping upload test")
-            print("✓ Test continues (file creation may have failed)")
-            return
+        for i, config in enumerate(self.test_file_configs):
+            metadata = {
+                'description': f'Test {config["type"]} file for file management testing',
+                'type': config['type'],
+                'category': 'test_files',
+                'version': '1.0'
+            }
+            
+            response = self.client.upload_file(config['path'], metadata)
+            
+            assert 'file_id' in response, f"Upload response missing file_id for {config['name']}: {response}"
+            
+            file_info = {
+                'file_id': response['file_id'],
+                'uuid': response.get('uuid', response.get('file_id')),
+                'file_path': response.get('file_path', ''),
+                'original_name': config['name'],
+                'metadata': metadata,
+                'config': config
+            }
+            
+            self.__class__.uploaded_files.append(file_info)
         
-        try:
-            for i, config in enumerate(self.test_file_configs):
-                metadata = {
-                    'description': f'Test {config["type"]} file for file management testing',
-                    'type': config['type'],
-                    'category': 'test_files',
-                    'version': '1.0',
-                    'tags': [config['type'], 'test', 'integration']
-                }
-                
-                response = self.client.upload_file(config['path'], metadata)
-                
-                if 'success' in response and response['success']:
-                    file_info = {
-                        'file_id': response['file_id'],
-                        'uuid': response.get('uuid', 'unknown'),
-                        'file_path': response.get('file_path', 'unknown'),
-                        'original_name': config['name'],
-                        'metadata': metadata,
-                        'config': config
-                    }
-                    
-                    self.__class__.uploaded_files.append(file_info)
-                    print(f"✓ Uploaded {config['name']}: ID {response['file_id']}")
-                else:
-                    print(f"⚠ Upload failed for {config['name']}: {response}")
-                    
-        except Exception as e:
-            print(f"⚠ File upload API not available: {e}")
-            print(f"✓ Test continues (file upload functionality may not be available)")
-        
-        print(f"✓ Successfully uploaded {len(self.uploaded_files)} files")
+        assert len(self.uploaded_files) == len(self.test_file_configs), f"Expected {len(self.test_file_configs)} uploaded files, got {len(self.uploaded_files)}"
     
     def test_04_retrieve_file_metadata(self):
         """Test retrieving file metadata by file ID"""
-        print("Testing file metadata retrieval")
+        assert len(self.uploaded_files) > 0, "No uploaded files available for metadata retrieval test"
         
         for file_info in self.uploaded_files:
             response = self.client.get_file_metadata(file_info['file_id'])
@@ -133,98 +119,75 @@ class TestFileManagement:
             else:
                 file_data = response  # Direct fields
             
-            # Verify basic file information (be flexible with field names)
-            assert 'file_id' in file_data or 'id' in file_data
+            # Verify basic file information
+            assert 'file_id' in file_data or 'id' in file_data, f"Response missing file_id/id: {file_data.keys()}"
             
-            # Check for filename in various locations
-            filename = None
-            if 'original_filename' in file_data:
-                filename = file_data['original_filename']
-            elif 'metadata' in file_data and 'original_filename' in file_data['metadata']:
-                filename = file_data['metadata']['original_filename']
+            # Verify file ID matches
+            actual_id = file_data.get('file_id', file_data.get('id'))
+            assert actual_id == file_info['file_id'], f"File ID mismatch: expected {file_info['file_id']}, got {actual_id}"
             
-            if filename:
-                print(f"✓ Retrieved metadata for {filename}")
-            else:
-                print(f"✓ Retrieved metadata for file ID {file_info['file_id']}")
-            
-            # Check for metadata (be lenient about structure)
-            if 'metadata' in file_data:
-                stored_metadata = file_data['metadata']
-                print(f"  Metadata keys: {list(stored_metadata.keys())}")
-            else:
-                print(f"  Response keys: {list(file_data.keys())}")
+            # Check for metadata structure
+            assert 'metadata' in file_data, f"Response missing metadata field: {file_data.keys()}"
     
     def test_05_list_user_files(self):
         """Test listing user's files with pagination"""
-        print("Testing file listing functionality")
-        
         # Test default listing (first page)
         response = self.client.list_user_files()
         
-        assert 'files' in response
-        assert 'pagination' in response
+        assert 'files' in response, f"Response missing 'files' field: {response.keys()}"
+        assert 'pagination' in response, f"Response missing 'pagination' field: {response.keys()}"
         
         files = response['files']
         pagination = response['pagination']
         
-        # Should have files (but be lenient about counts since upload may have failed)
-        print(f"  Found {len(files)} files, uploaded {len(self.uploaded_files)} files")
-        if len(self.uploaded_files) > 0:
-            # Only assert if we actually uploaded files
-            pass  # Be lenient with file count assertions
+        # Should have files since we uploaded some
+        assert len(files) >= len(self.uploaded_files), f"Expected at least {len(self.uploaded_files)} files, got {len(files)}"
         
-        # Verify pagination info (be flexible with field names)
+        # Verify pagination info
         page_field = 'page' if 'page' in pagination else 'current_page'
         size_field = 'pageSize' if 'pageSize' in pagination else 'per_page' 
         count_field = 'totalCount' if 'totalCount' in pagination else 'total_count'
         pages_field = 'totalPages' if 'totalPages' in pagination else 'total_pages'
         
-        assert page_field in pagination
-        assert size_field in pagination
-        assert count_field in pagination
-        assert pages_field in pagination
+        assert page_field in pagination, f"Pagination missing page field: {pagination.keys()}"
+        assert size_field in pagination, f"Pagination missing size field: {pagination.keys()}"
+        assert count_field in pagination, f"Pagination missing count field: {pagination.keys()}"
+        assert pages_field in pagination, f"Pagination missing pages field: {pagination.keys()}"
         
-        print(f"✓ Listed {len(files)} files")
         page_num = pagination.get('page', pagination.get('current_page', 1))
         total_count = pagination.get('totalCount', pagination.get('total_count', 0))
-        print(f"  Page: {page_num}, Total: {total_count}")
+        assert page_num == 1, f"Expected page 1, got {page_num}"
+        assert total_count >= len(self.uploaded_files), f"Expected total count >= {len(self.uploaded_files)}, got {total_count}"
         
         # Test with custom page size
         response_small = self.client.list_user_files(page=1, page_size=2)
         
-        assert 'files' in response_small
+        assert 'files' in response_small, "Small page size response missing 'files' field"
         files_small = response_small['files']
-        # Be lenient with file count since we may have more files than expected
-        # assert len(files_small) <= 2  # Remove strict assertion
+        assert len(files_small) <= 2, f"Expected at most 2 files with page_size=2, got {len(files_small)}"
         
-        print(f"✓ Listed with page_size=2: {len(files_small)} files")
-        
-        # Verify file information in listing
-        for file_data in files[:3]:  # Check first 3 files
-            # Be flexible about ID field name
-            assert 'id' in file_data or 'file_id' in file_data
-            
-            # Check for filename in different locations
-            has_filename = ('original_filename' in file_data or
-                          ('metadata' in file_data and 'original_filename' in file_data['metadata']))
-            assert has_filename
-            
-            # Be lenient about other fields that may not be present
-            # assert 'file_size' in file_data  # May not be available in listing
-            # assert 'upload_date' in file_data  # May not be available in listing
-            assert 'metadata' in file_data
+        # Verify file information in listing - check all files if list not empty
+        if len(files) > 0:
+            for file_data in files[:min(3, len(files))]:
+                assert 'id' in file_data or 'file_id' in file_data, f"File data missing ID field: {file_data.keys()}"
+                
+                # Check for filename in different locations
+                has_filename = ('original_filename' in file_data or
+                              ('metadata' in file_data and 'original_filename' in file_data['metadata']))
+                assert has_filename, f"File data missing filename: {file_data.keys()}"
+                
+                assert 'metadata' in file_data, f"File data missing metadata: {file_data.keys()}"
     
     def test_06_file_filtering_and_search(self):
         """Test file filtering by metadata and content type"""
-        print("Testing file filtering and search")
+        response = self.client.list_user_files()
+        files = response['files']
+        
+        assert len(files) > 0, "No files available for filtering test"
         
         # Test filtering by file type
         document_files = []
         code_files = []
-        
-        response = self.client.list_user_files()
-        files = response['files']
         
         for file_data in files:
             metadata = file_data.get('metadata', {})
@@ -235,16 +198,11 @@ class TestFileManagement:
             elif file_type == 'code':
                 code_files.append(file_data)
         
-        # Be lenient about file type counts since upload may have failed
-        print(f"  Found {len(document_files)} document files, {len(code_files)} code files")
-        if len(document_files) == 0 and len(code_files) == 0:
-            print("⚠ No files with expected metadata found (upload may have failed)")
-            print("✓ Test continues (file upload or metadata may not be available)")
+        # We should have at least one document and one code file from our uploads
+        assert len(document_files) >= 1, f"Expected at least 1 document file, found {len(document_files)}"
+        assert len(code_files) >= 1, f"Expected at least 1 code file, found {len(code_files)}"
         
-        print(f"✓ Found {len(document_files)} document files")
-        print(f"✓ Found {len(code_files)} code files")
-        
-        # Test searching by filename pattern (handle different response structures)
+        # Test searching by filename pattern
         txt_files = []
         json_files = []
         
@@ -261,12 +219,13 @@ class TestFileManagement:
                 elif filename.endswith('.json'):
                     json_files.append(f)
         
-        print(f"✓ Found {len(txt_files)} .txt files")
-        print(f"✓ Found {len(json_files)} .json files")
+        # We should have txt and json files from our uploads
+        assert len(txt_files) >= 2, f"Expected at least 2 .txt files, found {len(txt_files)}"
+        assert len(json_files) >= 1, f"Expected at least 1 .json file, found {len(json_files)}"
     
     def test_07_file_size_verification(self):
         """Verify file sizes match original uploads"""
-        print("Verifying file sizes match uploads")
+        assert len(self.uploaded_files) > 0, "No uploaded files available for size verification"
         
         for file_info in self.uploaded_files:
             response = self.client.get_file_metadata(file_info['file_id'])
@@ -277,117 +236,88 @@ class TestFileManagement:
             else:
                 file_data = response
             
-            # Check if file_size is available
+            # Check if file_size is available and verify it
             if 'file_size' in file_data:
                 stored_size = file_data['file_size']
                 expected_size = file_info['config']['size']
                 
-                # Allow some tolerance for potential encoding differences
-                assert abs(stored_size - expected_size) <= 10
-                print(f"✓ {file_info['original_name']}: {stored_size} bytes (expected ~{expected_size})")
+                # Exact size match (no tolerance for vague assertions)
+                assert stored_size == expected_size, f"Size mismatch for {file_info['original_name']}: expected {expected_size}, got {stored_size}"
             else:
-                print(f"✓ {file_info['original_name']}: file_size not available in metadata")
+                # If file_size not available, we still verify the file exists and has metadata
+                assert 'metadata' in file_data, f"File {file_info['original_name']} metadata missing file_size and other metadata"
     
     def test_08_file_content_type_detection(self):
         """Test that content types are properly detected"""
-        print("Testing content type detection")
-        
-        expected_content_types = {
-            'document.txt': 'text/plain',
-            'data.json': 'application/json',
-            'script.py': 'text/x-python',
-            'large_file.txt': 'text/plain',
-            'config.yaml': 'text/yaml'
-        }
+        assert len(self.uploaded_files) > 0, "No uploaded files available for content type detection test"
         
         for file_info in self.uploaded_files:
-            try:
-                response = self.client.get_file_metadata(file_info['file_id'])
-                
-                # Handle different response structures
-                if 'file' in response:
-                    file_data = response['file']
-                else:
-                    file_data = response
-                
-                filename = file_info['original_name']
-                detected_type = file_data.get('content_type')
-                
-                if detected_type:
-                    # Content type detection might vary, so check for reasonable types
-                    if filename.endswith('.txt'):
-                        if 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            print(f"⚠ {filename}: {detected_type} (expected text type)")
-                    elif filename.endswith('.json'):
-                        if 'json' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            print(f"⚠ {filename}: {detected_type} (expected JSON or text type)")
-                    elif filename.endswith('.py'):
-                        if 'python' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            print(f"⚠ {filename}: {detected_type} (expected Python or text type)")
-                    elif filename.endswith('.yaml'):
-                        if 'yaml' in detected_type.lower() or 'text' in detected_type.lower():
-                            print(f"✓ {filename}: {detected_type}")
-                        else:
-                            print(f"⚠ {filename}: {detected_type} (expected YAML or text type)")
-                    else:
-                        print(f"✓ {filename}: {detected_type}")
-                else:
-                    print(f"✓ Content type check completed for {filename} (content_type field not available)")
-                    
-            except Exception as e:
-                print(f"⚠ Content type detection failed for {file_info['original_name']}: {e}")
+            response = self.client.get_file_metadata(file_info['file_id'])
+            
+            # Handle different response structures
+            if 'file' in response:
+                file_data = response['file']
+            else:
+                file_data = response
+            
+            filename = file_info['original_name']
+            detected_type = file_data.get('content_type')
+            
+            # If content_type is available, verify it's reasonable for the file type
+            if detected_type:
+                if filename.endswith('.txt'):
+                    assert 'text' in detected_type.lower(), f"Expected text content type for {filename}, got {detected_type}"
+                elif filename.endswith('.json'):
+                    assert 'json' in detected_type.lower() or 'text' in detected_type.lower(), f"Expected JSON/text content type for {filename}, got {detected_type}"
+                elif filename.endswith('.py'):
+                    assert 'python' in detected_type.lower() or 'text' in detected_type.lower(), f"Expected Python/text content type for {filename}, got {detected_type}"
+                elif filename.endswith('.yaml'):
+                    assert 'yaml' in detected_type.lower() or 'text' in detected_type.lower(), f"Expected YAML/text content type for {filename}, got {detected_type}"
+            # If content_type not available, at least verify the file metadata exists
+            else:
+                assert 'metadata' in file_data, f"File {filename} missing both content_type and metadata"
     
     def test_09_file_metadata_updates(self):
         """Test updating file metadata"""
-        print("Testing file metadata updates")
-        
-        # Try to update metadata for first uploaded file (if any)
-        if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for metadata update test")
-            print("✓ Test continues (no files were uploaded)")
-            return
+        assert len(self.uploaded_files) > 0, "No uploaded files available for metadata update test"
             
         file_info = self.uploaded_files[0]
         file_id = file_info['file_id']
         
-        # Note: This test assumes there's an update endpoint
-        # If not available, we'll gracefully handle the missing functionality
-        try:
-            updated_metadata = {
-                'description': 'Updated description for file management test',
-                'type': 'updated_document',
-                'category': 'updated_test_files',
-                'version': '2.0',
-                'last_modified': 'integration_test'
-            }
+        updated_metadata = {
+            'description': 'Updated description for file management test',
+            'type': 'updated_document',
+            'category': 'updated_test_files',
+            'version': '2.0'
+        }
+        
+        # Attempt to update metadata
+        response = self.client.update_file_metadata(file_id, updated_metadata)
+        
+        # If the API supports metadata updates, verify the response
+        if 'success' in response:
+            assert response['success'] is True, f"Metadata update failed: {response}"
             
-            # Attempt to update metadata (this endpoint might not exist)
-            response = self.client.update_file_metadata(file_id, updated_metadata)
+            # Verify the update by retrieving the file metadata
+            verify_response = self.client.get_file_metadata(file_id)
             
-            if 'success' in response and response['success']:
-                # Verify the update
-                verify_response = self.client.get_file_metadata(file_id)
+            if 'file' in verify_response:
                 updated_file_data = verify_response['file']
-                
-                assert updated_file_data['metadata']['description'] == updated_metadata['description']
-                assert updated_file_data['metadata']['version'] == updated_metadata['version']
-                
-                print("✓ File metadata successfully updated")
             else:
-                print("! File metadata update not supported or failed")
-                
-        except Exception as e:
-            print(f"! File metadata update not available: {str(e)}")
+                updated_file_data = verify_response
+            
+            assert 'metadata' in updated_file_data, "Updated file missing metadata field"
+            stored_metadata = updated_file_data['metadata']
+            
+            assert stored_metadata['description'] == updated_metadata['description'], f"Description not updated: expected '{updated_metadata['description']}', got '{stored_metadata.get('description')}'"
+            assert stored_metadata['version'] == updated_metadata['version'], f"Version not updated: expected '{updated_metadata['version']}', got '{stored_metadata.get('version')}'"
+        else:
+            # If no 'success' field, check if the API returned updated data directly
+            assert 'file_id' in response or 'id' in response, f"Unexpected response format for metadata update: {response}"
     
     def test_10_file_access_permissions(self):
         """Test file access permissions and security"""
-        print("Testing file access permissions")
+        assert len(self.uploaded_files) > 0, "No uploaded files available for access permission test"
         
         # Create a second user to test cross-user access
         other_user_client = SearchableAPIClient()
@@ -400,114 +330,112 @@ class TestFileManagement:
             email=other_email,
             password=self.password
         )
-        assert 'success' in other_response or 'user' in other_response
+        assert 'success' in other_response or 'user' in other_response or 'userID' in other_response, f"Failed to register other user: {other_response}"
         
         # Login other user
         other_login = other_user_client.login_user(other_email, self.password)
-        assert 'token' in other_login
-        
-        # Try to access files uploaded by the first user (if any)
-        if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for access permission test")
-            print("✓ Test continues (no files were uploaded)")
-            other_user_client.logout()
-            return
+        assert 'token' in other_login, f"Failed to login other user: {other_login}"
             
         file_id = self.uploaded_files[0]['file_id']
         
+        # This should fail with 403/404 since other user doesn't own the file
+        access_denied = False
         try:
-            # This should fail with 403/404 since other user doesn't own the file
             response = other_user_client.get_file_metadata(file_id)
-            
-            # If it succeeds, the file might be public or there's a security issue
-            print(f"! WARNING: Other user can access file {file_id} - check permissions")
-            
-        except Exception as e:
-            # Expected to fail
-            print(f"✓ File access correctly restricted: {str(e)}")
+            # If we get here without exception, check if response indicates access denied
+            if 'error' in response or 'message' in response:
+                access_denied = True
+        except Exception:
+            # Expected to fail - access should be denied
+            access_denied = True
+        
+        assert access_denied, f"Security issue: Other user should not be able to access file {file_id}"
         
         # Cleanup other user
         other_user_client.logout()
     
     def test_11_delete_files(self):
         """Test file deletion functionality"""
-        print("Testing file deletion")
-        
-        # Delete the last uploaded file (if any)
-        if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for deletion test")
-            print("✓ Test continues (no files were uploaded)")
-            return
+        assert len(self.uploaded_files) > 0, "No uploaded files available for deletion test"
             
         file_to_delete = self.uploaded_files[-1]
         file_id = file_to_delete['file_id']
         filename = file_to_delete['original_name']
         
+        response = self.client.delete_file(file_id)
+        
+        # Verify deletion was successful
+        assert 'success' in response, f"Delete response missing success field: {response}"
+        assert response['success'] is True, f"File deletion failed: {response}"
+        
+        # Verify file is no longer accessible
+        file_still_accessible = False
         try:
-            response = self.client.delete_file(file_id)
-            
-            if 'success' in response and response['success']:
-                print(f"✓ Successfully deleted file: {filename}")
-                
-                # Verify file is no longer accessible
-                try:
-                    verify_response = self.client.get_file_metadata(file_id)
-                    print(f"! WARNING: Deleted file {file_id} still accessible")
-                except Exception as e:
-                    print(f"✓ Deleted file correctly inaccessible: {str(e)}")
-                
-                # Remove from our tracking list
-                self.uploaded_files.remove(file_to_delete)
-                
-            else:
-                print(f"! File deletion failed or not supported: {response}")
-                
-        except Exception as e:
-            print(f"! File deletion not available: {str(e)}")
+            verify_response = self.client.get_file_metadata(file_id)
+            # If we get a successful response, the file is still accessible
+            if 'file' in verify_response or 'id' in verify_response:
+                file_still_accessible = True
+        except Exception:
+            # Expected - file should not be accessible after deletion
+            pass
+        
+        assert not file_still_accessible, f"Deleted file {file_id} is still accessible"
+        
+        # Remove from our tracking list
+        self.uploaded_files.remove(file_to_delete)
+        
+        # Verify our tracking list is updated correctly
+        assert len(self.uploaded_files) == len(self.test_file_configs) - 1, "Uploaded files list not updated correctly after deletion"
     
     def test_12_file_storage_verification(self):
         """Verify file storage consistency and integrity"""
-        print("Verifying file storage consistency")
-        
         # Re-list files and verify consistency
         response = self.client.list_user_files()
         current_files = response['files']
         
         # Count should match our remaining uploaded files
         our_files = []
-        for f in current_files:
-            filename = None
-            if 'original_filename' in f:
-                filename = f['original_filename']
-            elif 'metadata' in f and 'original_filename' in f['metadata']:
-                filename = f['metadata']['original_filename']
-            
-            if filename and self.test_id in filename:
-                our_files.append(f)
+        if len(current_files) > 0:
+            for f in current_files:
+                filename = None
+                if 'original_filename' in f:
+                    filename = f['original_filename']
+                elif 'metadata' in f and 'original_filename' in f['metadata']:
+                    filename = f['metadata']['original_filename']
+                
+                if filename and self.test_id in filename:
+                    our_files.append(f)
         
-        print(f"✓ Found {len(our_files)} of our test files in listing")
+        # We should find exactly as many files as we have in our uploaded_files list
+        assert len(our_files) == len(self.uploaded_files), f"File count mismatch: expected {len(self.uploaded_files)} test files in listing, found {len(our_files)}"
         
         # Verify each remaining file is still accessible
         accessible_count = 0
-        for file_info in self.uploaded_files:
-            try:
-                response = self.client.get_file_metadata(file_info['file_id'])
-                if 'file' in response:
-                    accessible_count += 1
-            except:
-                pass
+        if len(self.uploaded_files) > 0:
+            for file_info in self.uploaded_files:
+                try:
+                    response = self.client.get_file_metadata(file_info['file_id'])
+                    if 'file' in response or 'id' in response:
+                        accessible_count += 1
+                except:
+                    pass
         
-        print(f"✓ {accessible_count}/{len(self.uploaded_files)} uploaded files still accessible")
+        assert accessible_count == len(self.uploaded_files), f"Accessibility mismatch: expected {len(self.uploaded_files)} files to be accessible, found {accessible_count}"
         
         # Verify file IDs are consistent
-        for file_info in self.uploaded_files:
-            response = self.client.get_file_metadata(file_info['file_id'])
-            if 'file' in response:
-                file_data = response['file']
-                assert file_data['id'] == file_info['file_id']
-                assert file_data['uuid'] == file_info['uuid']
-        
-        print("✓ File IDs and UUIDs remain consistent")
+        if len(self.uploaded_files) > 0:
+            for file_info in self.uploaded_files:
+                response = self.client.get_file_metadata(file_info['file_id'])
+                if 'file' in response:
+                    file_data = response['file']
+                else:
+                    file_data = response
+                
+                actual_id = file_data.get('id', file_data.get('file_id'))
+                assert actual_id == file_info['file_id'], f"File ID inconsistency: expected {file_info['file_id']}, got {actual_id}"
+                
+                actual_uuid = file_data.get('uuid', file_data.get('file_id'))
+                assert actual_uuid == file_info['uuid'], f"UUID inconsistency: expected {file_info['uuid']}, got {actual_uuid}"
 
 
 if __name__ == "__main__":
