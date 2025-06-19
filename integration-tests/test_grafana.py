@@ -182,7 +182,7 @@ class TestGrafana:
         assert dashboard_data['dashboard']['title'] == 'Searchable Metrics Dashboard'
         assert 'panels' in dashboard_data['dashboard']
         assert isinstance(dashboard_data['dashboard']['panels'], list)
-        assert len(dashboard_data['dashboard']['panels']) == 4  # Should have exactly 4 panels
+        assert len(dashboard_data['dashboard']['panels']) == 5  # Should have exactly 5 panels
     
     def test_05_create_test_metrics_for_visualization(self):
         """Create test metrics data for dashboard visualization testing"""
@@ -356,7 +356,7 @@ class TestGrafana:
         panels = dashboard['panels']
         
         assert isinstance(panels, list)
-        assert len(panels) == 4  # Should have exactly 4 panels
+        assert len(panels) == 5  # Should have exactly 5 panels
         
         # Verify panel types and configuration
         assert len(panels) > 0  # Check list length before iteration
@@ -364,7 +364,7 @@ class TestGrafana:
         expected_types = ['timeseries', 'stat', 'piechart', 'table']
         
         assert len(expected_types) == 4
-        assert len(panel_types) == 4
+        assert len(panel_types) == 5
         
         for expected_type in expected_types:
             assert expected_type in panel_types
@@ -388,7 +388,7 @@ class TestGrafana:
                     assert has_query is True
         
         # At least some panels should have targets
-        assert panels_with_targets == 4  # All 4 panels should have targets
+        assert panels_with_targets == 5  # All 5 panels should have targets
     
     def test_08_grafana_alerting_capability(self):
         """Test Grafana alerting functionality"""
@@ -418,9 +418,9 @@ class TestGrafana:
                 working_endpoints.append(endpoint)
                 successful_requests += 1
         
-        # Must have access to at least 1 alerting endpoint
-        assert len(working_endpoints) == 1
-        assert successful_requests == 1
+        # Must have access to exactly 4 alerting endpoints
+        assert len(working_endpoints) == 4
+        assert successful_requests == 4
         
         # Test that we could create an alert rule (don't actually create it)
         test_alert_rule = {
@@ -578,7 +578,7 @@ class TestGrafana:
         
         assert dashboard_json['title'] == 'Simple Metrics Dashboard'
         assert isinstance(dashboard_json['panels'], list)
-        assert len(dashboard_json['panels']) == 2  # Should have exactly 2 panels
+        assert len(dashboard_json['panels']) == 3  # Should have exactly 3 panels
         
         # Test that we could import (prepare import data)
         import_data = {
