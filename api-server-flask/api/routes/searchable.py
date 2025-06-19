@@ -750,8 +750,8 @@ class UserPurchases(Resource):
                     i.currency,
                     i.created_at as invoice_created,
                     p.created_at as payment_completed,
-                    s.searchable_data->>'payloads'->>'public'->>'title' as item_title,
-                    s.searchable_data->>'payloads'->>'public'->>'description' as item_description,
+                    s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                    s.searchable_data->'payloads'->'public'->>'description' as item_description,
                     EXISTS(
                         SELECT 1 FROM rating r 
                         WHERE r.invoice_id = i.id AND r.user_id = '{current_user.id}'
@@ -799,14 +799,60 @@ class UserPurchases(Resource):
 @rest_api.route('/api/v1/invoice/<int:invoice_id>/notes', methods=['GET'])
 class InvoiceNotes(Resource):
     """
-    Get all notes for a specific invoice
+    Get all notes for a specific invoice with proper user permissions
     """
     @token_required
     @track_metrics('get_invoice_notes')
     def get(self, current_user, invoice_id, request_origin='unknown'):
         try:
-            notes = get_invoice_notes(invoice_id)
-            return {"notes": notes}, 200
+            logger.error(f"DEBUG: GET invoice notes - Step 1: Called for invoice {invoice_id} by user {current_user.id}")
+            
+            # First, determine user's role for this invoice
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            query = f"""
+                SELECT buyer_id, seller_id FROM invoice WHERE id = {invoice_id}
+            """
+            execute_sql(cur, query)
+            result = cur.fetchone()
+            
+            if not result:
+                return {"error": "Invoice not found"}, 404
+            
+            buyer_id, seller_id = result
+            cur.close()
+            conn.close()
+            
+            # Determine user role
+            if str(current_user.id) == str(buyer_id):
+                user_role = 'buyer'
+            elif str(current_user.id) == str(seller_id):
+                user_role = 'seller'
+            else:
+                return {"error": "Access denied - not a party to this invoice"}, 403
+            
+            # Get all notes for the invoice
+            all_notes = get_invoice_notes(invoice_id)
+            logger.error(f"DEBUG: GET invoice notes - Step 2: Got {len(all_notes)} notes from database")
+            
+            # Filter notes based on user role
+            if user_role == 'seller':
+                # Sellers can see all notes
+                filtered_notes = all_notes
+            else:
+                # Buyers can only see shared notes and their own notes
+                filtered_notes = []
+                for note in all_notes:
+                    visibility = note.get('visibility', '')
+                    note_user_id = str(note.get('user_id', ''))
+                    
+                    # Include if it's a shared note or the user's own note
+                    if visibility == 'shared' or note_user_id == str(current_user.id):
+                        filtered_notes.append(note)
+            
+            logger.error(f"DEBUG: GET invoice notes - Step 3: Filtered to {len(filtered_notes)} notes for {user_role}")
+            return {"notes": filtered_notes}, 200
             
         except Exception as e:
             logger.error(f"Error retrieving notes for invoice {invoice_id}: {str(e)}")
@@ -823,10 +869,13 @@ class CreateInvoiceNote(Resource):
         try:
             data = request.get_json()
             
-            if not data or not data.get('content'):
+            # Support both 'content' and 'note_text' for backwards compatibility
+            content = data.get('content') or data.get('note_text')
+            
+            if not data or not content:
                 return {"error": "Note content is required"}, 400
             
-            content = data.get('content').strip()
+            content = content.strip()
             if not content:
                 return {"error": "Note content cannot be empty"}, 400
             
@@ -855,18 +904,28 @@ class CreateInvoiceNote(Resource):
             else:
                 return {"error": "Access denied - not a party to this invoice"}, 403
             
+            # Build metadata from the request data
+            metadata = data.get('metadata', {})
+            
+            # Include test-specific fields in metadata
+            if 'note_type' in data:
+                metadata['note_type'] = data['note_type']
+            if 'visibility' in data:
+                metadata['visibility'] = data['visibility']
+            
             # Create the note
             note = create_invoice_note(
                 invoice_id=invoice_id,
                 user_id=current_user.id,
                 content=content,
                 buyer_seller=buyer_seller,
-                metadata=data.get('metadata', {})
+                metadata=metadata
             )
             
             return {
                 "success": True,
                 "message": "Note created successfully",
+                "note_id": note['id'],  # Return note_id as expected by tests
                 "note": note
             }, 201
             

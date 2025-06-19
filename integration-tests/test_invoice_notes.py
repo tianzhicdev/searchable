@@ -28,6 +28,7 @@ class TestInvoiceNotes:
         cls.password = DEFAULT_PASSWORD
         cls.invoice_id = None
         cls.searchable_id = None
+        cls.session_id = None
         cls.created_notes = []
     
     @classmethod
@@ -99,7 +100,7 @@ class TestInvoiceNotes:
         
         searchable_response = self.seller_client.create_searchable(searchable_data)
         assert 'searchable_id' in searchable_response
-        self.searchable_id = searchable_response['searchable_id']
+        self.__class__.searchable_id = searchable_response['searchable_id']
         
         # Buyer creates and pays for invoice
         selections = [
@@ -123,22 +124,28 @@ class TestInvoiceNotes:
             assert isinstance(invoice_response['session_id'], str)
             assert len(invoice_response['session_id']) > 0
             
+            # Get the actual invoice_id from the response
+            assert 'invoice_id' in invoice_response
+            assert isinstance(invoice_response['invoice_id'], int)
+            
             session_id = invoice_response['session_id']
-            self.invoice_id = session_id  # Use session_id as invoice_id
+            self.__class__.invoice_id = invoice_response['invoice_id']  # Use actual invoice_id
+            self.__class__.session_id = session_id  # Store session_id for later use
             
             # Complete payment
             payment_response = self.buyer_client.complete_payment_directly(session_id)
             assert 'success' in payment_response
             assert payment_response['success'] is True
-        except Exception:
-            # If invoice creation fails, set invoice_id to None and skip invoice notes tests
-            self.invoice_id = None
+        except Exception as e:
+            # If invoice creation fails, set invoice_id to None
+            self.__class__.invoice_id = None
+            assert False, f"Invoice creation failed: {e}"
     
     def test_02_get_empty_invoice_notes(self):
         """Test retrieving notes for invoice with no notes yet"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -149,13 +156,13 @@ class TestInvoiceNotes:
             assert len(notes) == 0
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_03_seller_creates_notes(self):
         """Test seller creating notes on the invoice"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         seller_notes = [
             {
@@ -188,7 +195,7 @@ class TestInvoiceNotes:
                 note_id = response['note_id']
                 assert note_id is not None
                 
-                self.created_notes.append({
+                self.__class__.created_notes.append({
                     'note_id': note_id,
                     'created_by': 'seller',
                     'data': note_data
@@ -198,13 +205,13 @@ class TestInvoiceNotes:
             assert seller_note_count == 3
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_04_buyer_creates_notes(self):
         """Test buyer creating notes on the invoice"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         buyer_notes = [
             {
@@ -232,7 +239,7 @@ class TestInvoiceNotes:
                 note_id = response['note_id']
                 assert note_id is not None
                 
-                self.created_notes.append({
+                self.__class__.created_notes.append({
                     'note_id': note_id,
                     'created_by': 'buyer',
                     'data': note_data
@@ -242,17 +249,17 @@ class TestInvoiceNotes:
             assert buyer_note_count == 2
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_05_seller_retrieves_all_notes(self):
         """Test seller retrieving all notes on the invoice"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -277,17 +284,17 @@ class TestInvoiceNotes:
                 assert len(note['note_text']) > 0
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_06_buyer_retrieves_shared_notes(self):
         """Test buyer retrieving only shared notes on the invoice"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         try:
             response = self.buyer_client.get_invoice_notes(self.invoice_id)
@@ -296,10 +303,10 @@ class TestInvoiceNotes:
             notes = response['notes']
             assert isinstance(notes, list)
             
-            # Buyer should only see shared notes and their own notes
-            shared_notes = [n for n in self.created_notes if n['data']['visibility'] == 'shared']
+            # Buyer should only see shared seller notes and their own notes
+            shared_seller_notes = [n for n in self.created_notes if n['created_by'] == 'seller' and n['data']['visibility'] == 'shared']
             buyer_notes = [n for n in self.created_notes if n['created_by'] == 'buyer']
-            expected_visible_count = len(shared_notes) + len(buyer_notes)
+            expected_visible_count = len(shared_seller_notes) + len(buyer_notes)
             assert len(notes) == expected_visible_count
             
             # Verify buyer cannot see internal seller notes
@@ -319,17 +326,17 @@ class TestInvoiceNotes:
                     assert matching_test_note['data']['visibility'] == 'shared'
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_07_note_timestamps_and_ordering(self):
         """Test that notes have proper timestamps and ordering"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -352,17 +359,17 @@ class TestInvoiceNotes:
             assert len(notes) > 1
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_08_note_authorship_verification(self):
         """Test that note authorship is properly tracked"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -389,17 +396,17 @@ class TestInvoiceNotes:
             assert buyer_notes_found == expected_buyer_notes
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_09_note_search_and_filtering(self):
         """Test searching and filtering notes by type or content"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         try:
             response = self.seller_client.get_invoice_notes(self.invoice_id)
@@ -422,23 +429,23 @@ class TestInvoiceNotes:
             
             # Verify expected keyword matches
             assert len(priority_notes) == 2  # 'priority processing' and 'high priority'
-            assert len(customer_notes) == 2  # 'Customer requested' and 'Customer confirmed'
+            assert len(customer_notes) == 3  # 'Customer requested', 'Customer confirmed', and 'Customer is a repeat buyer'
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
     
     def test_10_invoice_notes_integration(self):
         """Test integration between invoice notes and invoice data"""
         
         if self.invoice_id is None:
-            pytest.skip("Invoice creation failed, skipping invoice notes tests")
+            assert False, "Invoice creation failed - cannot test invoice notes without valid invoices"
         
         # Skip if no notes were created (API not implemented)
         if len(self.created_notes) == 0:
-            pytest.skip("Invoice notes endpoint not implemented")
+            assert False, "Invoice notes endpoint not implemented - API missing required functionality"
         
         # Get invoice details
-        payment_status = self.seller_client.check_payment_status(self.invoice_id)
+        payment_status = self.seller_client.check_payment_status(self.session_id)
         
         # Verify payment status response
         assert 'status' in payment_status
@@ -465,7 +472,7 @@ class TestInvoiceNotes:
                     assert note['invoice_id'] == self.invoice_id
         except requests.exceptions.HTTPError as e:
             if e.response.status_code in [404, 501]:
-                pytest.skip("Invoice notes endpoint not implemented")
+                assert False, "Invoice notes endpoint not implemented - API missing required functionality"
 
 
 if __name__ == "__main__":
