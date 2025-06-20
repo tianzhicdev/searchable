@@ -53,7 +53,7 @@ other=$(grep -cv -E "(200|503|429|404)" "$temp_file" 2>/dev/null || echo "0")
 
 echo "Results:"
 echo "✅ Success (200): $success"
-echo "🚫 Rate Limited (503): $rate_limited_503"  
+echo "🚫 Rate Limited (503): $rate_limited_503"
 echo "🚫 Rate Limited (429): $rate_limited_429"
 echo "❓ Not Found (404): $not_found_404"
 echo "❓ Other: $other"
