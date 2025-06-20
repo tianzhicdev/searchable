@@ -66,3 +66,25 @@ We can define the Searchable schema as follows:
     }
 };
 ```
+
+
+│ > Immediate Actions:                                                                                                 │
+│     1. Add rate limiting (nginx limit_req module)                                                                    │
+│     2. Add security headers to nginx                                                                                 │
+│     3. Remove DEV_BYPASS_TOKEN from production                                                                       │
+│     4. Implement fail2ban for SSH and nginx logs                                                                     │
+│     5. Add request validation/sanitization                                                                           │
+│                                                                                                                      │
+│     Medium-term:                                                                                                     │
+│     1. Implement API rate limiting per user/IP                                                                       │
+│     2. Add WAF (Web Application Firewall) rules                                                                      │
+│     3. Use Redis for JWT blacklist instead of DB                                                                     │
+│     4. Add monitoring/alerting for suspicious patterns                                                               │
+│     5. Implement proper CORS policy                                                                                  │
+│                                                                                                                      │
+│     Long-term:                                                                                                       │
+│     1. Move to asymmetric JWT (RS256)                                                                                │
+│     2. Add API gateway with built-in security                                                                        │
+│     3. Implement comprehensive logging and SIEM                                                                      │
+│     4. Regular security audits                                                                                       │
+│     5. Consider Cloudflare or similar DDoS protection explain to me why each one is important
