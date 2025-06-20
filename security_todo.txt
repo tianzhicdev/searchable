@@ -1,0 +1,159 @@
+SEARCHABLE PLATFORM SECURITY TODO LIST
+======================================
+Created: 2025-01-19
+
+COMPLETED IMMEDIATE ACTIONS:
+✅ 1. Add rate limiting (nginx limit_req module) - DONE
+   - Updated BOTH nginx/conf.d/default.conf and default.local.conf with rate limiting
+   - Different limits for auth (3/min), uploads (1/sec), general API (30/sec)
+   - Works across all environments (local, beta, prod)
+
+✅ 2. Add security headers to nginx - DONE
+   - Added to both default.conf (HSTS, full CSP) and default.local.conf (basic headers)
+   - Server tokens hidden, version info removed
+   - Block common scanner paths (.php, .git, /admin, etc.)
+
+✅ 3. Remove DEV_BYPASS_TOKEN entirely - DONE
+   - Removed from api/routes/auth.py code completely
+   - Removed from .env.secrets
+   - No environment-specific config needed
+
+✅ 4. Implement fail2ban for SSH and nginx logs - DONE
+   - Created jail.conf (base config) and jail.local (environment overrides)
+   - Custom filters for suspicious API patterns and auth failures
+   - Setup script now interactive and works across different environments
+
+REMAINING SECURITY TASKS:
+
+MEDIUM-TERM ACTIONS (1-3 months):
+---------------------------------
+[ ] 1. Implement API rate limiting per user/IP
+   - Add Redis for rate limit tracking
+   - Implement Flask-Limiter or similar
+   - Different limits for authenticated vs anonymous users
+   - Track by user ID for authenticated requests
+
+[ ] 2. Add WAF (Web Application Firewall) rules
+   - Consider ModSecurity for nginx
+   - Or use cloud WAF (Cloudflare, AWS WAF)
+   - Block OWASP Top 10 attack patterns
+   - Custom rules for your API structure
+
+[ ] 3. Use Redis for JWT blacklist instead of DB
+   - Install Redis container
+   - Migrate JWT blacklist from PostgreSQL
+   - Set TTL based on token expiry
+   - Improve token validation performance
+
+[ ] 4. Add monitoring/alerting for suspicious patterns
+   - Set up Prometheus alerts in Grafana
+   - Monitor failed login attempts
+   - Alert on rate limit violations
+   - Track 4xx/5xx error spikes
+   - Unusual file upload patterns
+
+[ ] 5. Implement proper CORS policy
+   - Currently missing from Flask config
+   - Use Flask-CORS extension
+   - Whitelist only your frontend domains
+   - Different policies for different endpoints
+
+LONG-TERM ACTIONS (3-6 months):
+-------------------------------
+[ ] 1. Move to asymmetric JWT (RS256)
+   - Generate RSA key pair
+   - Update JWT signing/verification
+   - Distribute public key safely
+   - Rotate keys periodically
+
+[ ] 2. Add API gateway with built-in security
+   - Kong, Tyk, or AWS API Gateway
+   - Centralized authentication
+   - Built-in rate limiting
+   - Request/response transformation
+
+[ ] 3. Implement comprehensive logging and SIEM
+   - ELK stack (Elasticsearch, Logstash, Kibana)
+   - Or Splunk/Datadog/Sumo Logic
+   - Correlate events across services
+   - Detect attack patterns
+
+[ ] 4. Regular security audits
+   - Quarterly penetration testing
+   - Dependency vulnerability scanning
+   - OWASP ZAP or Burp Suite scans
+   - Code security review
+
+[ ] 5. Consider Cloudflare or similar DDoS protection
+   - Hide origin server IP
+   - DDoS protection
+   - WAF rules
+   - Bot management
+   - SSL/TLS termination
+
+ADDITIONAL SECURITY ENHANCEMENTS:
+--------------------------------
+[ ] Input validation and sanitization
+   - Add request validation middleware
+   - Sanitize all user inputs
+   - Validate file types and sizes
+   - SQL injection prevention
+
+[ ] Secure file handling
+   - Virus scanning for uploads
+   - Store files outside web root
+   - Generate random filenames
+   - Validate MIME types
+
+[ ] Database security
+   - Use prepared statements everywhere
+   - Implement row-level security
+   - Encrypt sensitive data at rest
+   - Regular backups with encryption
+
+[ ] Authentication improvements
+   - Add 2FA support
+   - Password complexity requirements
+   - Account lockout policies
+   - Session management
+
+[ ] Infrastructure security
+   - Regular OS updates
+   - Docker image scanning
+   - Secrets management (Vault, AWS Secrets Manager)
+   - Network segmentation
+
+DEPLOYMENT INSTRUCTIONS:
+-----------------------
+1. Deploy to beta for testing:
+   - Git pull latest changes
+   - Restart containers: ./exec.sh beta deploy-all
+   - Test rate limiting and security headers
+   - Verify DEV_BYPASS_TOKEN no longer works
+
+2. Deploy to production:
+   - Git pull latest changes  
+   - Restart containers: docker-compose up -d
+   - nginx config automatically includes security improvements
+   - No special production config needed
+
+3. Install fail2ban (on host server, not in Docker):
+   - Copy fail2ban directory to server
+   - Run: sudo ./fail2ban/setup.sh
+   - Follow prompts to set log directory path
+   - Monitor: sudo fail2ban-client status
+
+MONITORING:
+----------
+- Check nginx logs for rate limit hits
+- Monitor fail2ban bans: sudo fail2ban-client status
+- Review Grafana dashboards for anomalies
+- Regular security log reviews
+
+NOTES:
+------
+- Test all changes in staging first
+- Keep security patches up to date
+- Document all security changes
+- Train team on security best practices
+- Have incident response plan ready

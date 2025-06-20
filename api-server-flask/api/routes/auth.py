@@ -18,9 +18,6 @@ from ..common.metrics_collector import track_user_signup, track_user_login, trac
 # Set up the logger
 logger = setup_logger(__name__, 'auth.log')
 
-# Test backdoor for development
-DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
-
 """
     Flask-Restx models for api request and response data
 """
@@ -54,12 +51,6 @@ def token_required(f):
 
         if not token:
             return {"success": False, "msg": "Valid JWT token is missing"}, 400
-            
-        if token == DEV_TOKEN:
-            logger.info("Using test admin account for development")
-            # Create a mock admin user for testing
-            admin_user = Users(id=12, username="admin", email="admin@bit-bid.com")
-            return f(self, *args, current_user=admin_user, **kwargs)
 
         try:
             data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
