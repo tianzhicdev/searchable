@@ -44,24 +44,21 @@ export const SOCIAL_MEDIA_PLATFORMS = [
     name: 'Instagram',
     icon: InstagramIcon,
     baseUrl: 'https://instagram.com/',
-    placeholder: 'username',
-    color: '#E4405F'
+    placeholder: 'username'
   },
   {
     id: 'x',
     name: 'X (Twitter)',
     icon: XIcon,
     baseUrl: 'https://x.com/',
-    placeholder: 'username',
-    color: '#000000'
+    placeholder: 'username'
   },
   {
     id: 'youtube',
     name: 'YouTube',
     icon: YouTubeIcon,
     baseUrl: 'https://youtube.com/@',
-    placeholder: 'channelname',
-    color: '#FF0000'
+    placeholder: 'channelname'
   }
 ];
 

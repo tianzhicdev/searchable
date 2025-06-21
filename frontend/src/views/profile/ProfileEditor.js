@@ -408,7 +408,6 @@ const ProfileEditor = () => {
               {/* Introduction */}
               <TextField
                 name="introduction"
-                label="Introduction"
                 type="text"
                 value={profileData.introduction}
                 onChange={handleFormChange}
@@ -441,7 +440,7 @@ const ProfileEditor = () => {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Icon style={{ color: platform.color }} />
+                            <Icon /> {/* Color managed by theme override for MuiSvgIcon */}
                           </InputAdornment>
                         ),
                       }}
