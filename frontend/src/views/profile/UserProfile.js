@@ -11,6 +11,7 @@ import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
+import { navigateWithReferrer } from '../../utils/navigationUtils';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -54,7 +55,7 @@ const UserProfile = () => {
   };
 
   const handleDownloadableClick = (searchableId) => {
-    history.push(`/searchable-item/${searchableId}`);
+    navigateWithReferrer(history, `/searchable-item/${searchableId}`);
   };
 
   const handleBackClick = () => {

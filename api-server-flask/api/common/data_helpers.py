@@ -1385,6 +1385,110 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
         logger.error(f"Error updating user profile: {str(e)}")
         return None
 
+def get_downloadable_items_by_user_id(user_id):
+    """
+    Get all downloadable items purchased by a user
+    
+    Args:
+        user_id: The user ID to get purchases for
+        
+    Returns:
+        list: List of downloadable items with their details
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Query to get all completed purchases for the user
+        query = f"""
+            SELECT 
+                i.id as invoice_id,
+                i.searchable_id,
+                i.amount,
+                i.fee,
+                i.currency,
+                i.metadata as invoice_metadata,
+                p.created_at as purchase_date,
+                s.searchable_data,
+                u.username as seller_username
+            FROM invoice i
+            INNER JOIN payment p ON i.id = p.invoice_id
+            INNER JOIN searchables s ON i.searchable_id = s.searchable_id
+            INNER JOIN users u ON i.seller_id = u.id
+            WHERE i.buyer_id = '{user_id}'
+            AND p.status = 'complete'
+            ORDER BY p.created_at DESC
+        """
+        
+        execute_sql(cur, query)
+        downloadable_items = []
+        
+        for row in cur.fetchall():
+            invoice_id = row[0]
+            searchable_id = row[1]
+            amount = float(row[2])
+            fee = float(row[3]) if row[3] else 0
+            currency = row[4]
+            invoice_metadata = row[5] or {}
+            purchase_date = row[6]
+            searchable_data = row[7] or {}
+            seller_username = row[8]
+            
+            # Extract public data from searchable
+            public_data = searchable_data.get('payloads', {}).get('public', {})
+            
+            # Extract downloadable files from invoice metadata selections
+            downloadable_files = []
+            selections = invoice_metadata.get('selections', [])
+            
+            for selection in selections:
+                if selection.get('type') == 'downloadable':
+                    downloadable_files.append({
+                        'id': selection.get('id'),
+                        'name': selection.get('name'),
+                        'price': selection.get('price'),
+                        'file_uri': selection.get('file_uri', ''),  # This would be set during purchase
+                        'download_url': f"/api/v1/download-file/{selection.get('id')}"  # API endpoint for download
+                    })
+            
+            # If no selections in metadata, fallback to public downloadableFiles
+            if not downloadable_files and public_data.get('downloadableFiles'):
+                for file_data in public_data.get('downloadableFiles', []):
+                    downloadable_files.append({
+                        'id': file_data.get('id', ''),
+                        'name': file_data.get('name', ''),
+                        'price': file_data.get('price', 0),
+                        'file_uri': '',  # Would need to be populated from actual purchase
+                        'download_url': f"/api/v1/download-file/{file_data.get('id', '')}"
+                    })
+            
+            item = {
+                'invoice_id': invoice_id,
+                'searchable_id': searchable_id,
+                'searchable_title': public_data.get('title', 'Untitled'),
+                'searchable_description': public_data.get('description', ''),
+                'seller_username': seller_username,
+                'amount_paid': amount,
+                'fee_paid': fee,
+                'currency': currency,
+                'purchase_date': purchase_date.isoformat() if purchase_date else None,
+                'downloadable_files': downloadable_files,
+                'item_type': public_data.get('type', 'downloadable'),
+                'images': public_data.get('images', [])
+            }
+            
+            downloadable_items.append(item)
+        
+        cur.close()
+        conn.close()
+        
+        logger.info(f"Retrieved {len(downloadable_items)} downloadable items for user {user_id}")
+        return downloadable_items
+        
+    except Exception as e:
+        logger.error(f"Error retrieving downloadable items for user {user_id}: {str(e)}")
+        raise e
+
 
 __all__ = [
     'get_terminal',
@@ -1411,5 +1515,6 @@ __all__ = [
     'get_user_all_invoices',
     'get_user_profile',
     'create_user_profile',
-    'update_user_profile'
+    'update_user_profile',
+    'get_downloadable_items_by_user_id'
 ] 
