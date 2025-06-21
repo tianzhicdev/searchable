@@ -293,7 +293,7 @@ class TestRatingSystem:
         for invoice in self.buyer1_invoices:
             assert isinstance(invoice, dict)
             if not invoice.get('invoice_id'):
-                assert False, "No invoice_id for invoice - invoice creation failed"
+                pytest.fail("No invoice_id for invoice - invoice creation failed")
                 
             eligibility = self.buyer1_client.check_rating_eligibility(invoice['invoice_id'])
             assert isinstance(eligibility, dict)
@@ -307,7 +307,7 @@ class TestRatingSystem:
         for invoice in self.buyer2_invoices:
             assert isinstance(invoice, dict)
             if not invoice.get('invoice_id'):
-                assert False, "No invoice_id for invoice - invoice creation failed"
+                pytest.fail("No invoice_id for invoice - invoice creation failed")
                 
             eligibility = self.buyer2_client.check_rating_eligibility(invoice['invoice_id'])
             assert isinstance(eligibility, dict)
@@ -378,7 +378,7 @@ class TestRatingSystem:
                 assert 'searchable_id' in rating_data
                 
                 if not rating_data['invoice_id']:
-                    assert False, "Rating data missing invoice_id - invoice creation failed"
+                    pytest.fail("Rating data missing invoice_id - invoice creation failed")
                     
                 response = self.buyer1_client.submit_rating(rating_data)
                 assert isinstance(response, dict)
@@ -449,7 +449,7 @@ class TestRatingSystem:
         
         # Check if we have seller_id
         if not hasattr(self, 'seller_id') or self.seller_id is None:
-            assert False, "No seller_id available - user setup failed"
+            pytest.fail("No seller_id available - user setup failed")
         
         terminal_ratings = self.seller_client.get_terminal_ratings(self.seller_id)
         assert isinstance(terminal_ratings, dict)
@@ -500,7 +500,7 @@ class TestRatingSystem:
                 # Expected to fail for duplicates
                 pass
         else:
-            assert False, "No invoice_id available for duplicate rating test - invoice creation failed"
+            pytest.fail("No invoice_id available for duplicate rating test - invoice creation failed")
     
     def test_10_verify_rating_eligibility_after_rating(self):
         """Verify that rating eligibility changes after submitting a rating"""
@@ -517,7 +517,7 @@ class TestRatingSystem:
             if 'already_rated' in eligibility:
                 assert isinstance(eligibility['already_rated'], bool)
         else:
-            assert False, "No invoice_id available for post-rating eligibility check - invoice creation failed"
+            pytest.fail("No invoice_id available for post-rating eligibility check - invoice creation failed")
     
     def test_11_rating_statistics_verification(self):
         """Verify rating statistics are calculated correctly"""

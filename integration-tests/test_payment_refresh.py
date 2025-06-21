@@ -310,7 +310,7 @@ class TestPaymentRefresh:
                     
             except Exception as e:
                 # Individual payment refresh should be available
-                assert False, f"Individual payment refresh failed: {e}"
+                pytest.fail(f"Individual payment refresh failed: {e}")
     
     def test_04_bulk_refresh_by_searchable(self):
         """Test bulk refreshing all payments for a searchable"""
@@ -342,7 +342,7 @@ class TestPaymentRefresh:
                     
         except Exception as e:
             # Bulk payment refresh should be available
-            assert False, f"Bulk payment refresh failed: {e}"
+            pytest.fail(f"Bulk payment refresh failed: {e}")
     
     def test_05_payment_status_consistency(self):
         """Test that payment statuses remain consistent after refresh"""
@@ -380,7 +380,7 @@ class TestPaymentRefresh:
         """Test refresh operation timing and performance"""
         
         if len(self.created_invoices) == 0:
-            assert False, "No invoices available to test refresh performance - invoice creation failed"
+            pytest.fail("No invoices available to test refresh performance - invoice creation failed")
         
         try:
             # Time individual refresh operations
@@ -431,7 +431,7 @@ class TestPaymentRefresh:
                 
         except Exception as e:
             # Refresh performance testing should be available
-            assert False, f"Refresh performance testing failed: {e}"
+            pytest.fail(f"Refresh performance testing failed: {e}")
     
     def test_07_refresh_error_handling(self):
         """Test refresh operations with invalid data"""
@@ -473,7 +473,7 @@ class TestPaymentRefresh:
         """Test that refresh operations respect user permissions"""
         
         if len(self.created_invoices) == 0:
-            assert False, "No invoices available to test permissions - invoice creation failed"
+            pytest.fail("No invoices available to test permissions - invoice creation failed")
         
         # Try to refresh payment as buyer (should work for own invoices)
         buyer1_invoices = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer1']
@@ -495,7 +495,7 @@ class TestPaymentRefresh:
         # Try to refresh payment as different buyer (should fail or be restricted)
         buyer2_invoices = [inv for inv in self.created_invoices if inv['buyer'] == 'buyer2']
         if len(buyer2_invoices) == 0:
-            assert False, "No buyer2 invoices available for permission test - buyer2 invoice creation failed"
+            pytest.fail("No buyer2 invoices available for permission test - buyer2 invoice creation failed")
         buyer2_invoice = buyer2_invoices[0]
         
         try:
@@ -543,7 +543,7 @@ class TestPaymentRefresh:
             
         except Exception as e:
             # Balance verification should be available
-            assert False, f"Balance verification failed: {e}"
+            pytest.fail(f"Balance verification failed: {e}")
 
 
 if __name__ == "__main__":

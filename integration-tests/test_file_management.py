@@ -82,10 +82,9 @@ class TestFileManagement:
         print("Testing file uploads with metadata")
         
         # Check if test_file_configs exists
-        if not hasattr(self, 'test_file_configs') or not self.test_file_configs:
-            print("⚠ No test file configs available, skipping upload test")
-            print("✓ Test continues (file creation may have failed)")
-            return
+        assert hasattr(self, 'test_file_configs'), "test_file_configs attribute missing - setup failed"
+        assert self.test_file_configs, "test_file_configs is empty - file creation failed"
+        assert len(self.test_file_configs) > 0, "No test file configs available"
         
         try:
             for i, config in enumerate(self.test_file_configs):
@@ -378,7 +377,7 @@ class TestFileManagement:
             # This should fail with 403/404 since other user doesn't own the file
             response = other_user_client.get_file_metadata(file_id)
             
-            pytst.fail(f"Other user accessed file {file_id} which should not be allowed")
+            pytest.fail(f"Other user accessed file {file_id} which should not be allowed")
             
         except Exception as e:
             # Expected to fail
@@ -452,8 +451,9 @@ class TestFileManagement:
                 response = self.client.get_file_metadata(file_info['file_id'])
                 if 'file' in response:
                     accessible_count += 1
-            except:
-                pass
+            except Exception as e:
+                # File may have been deleted or is inaccessible - this is expected behavior
+                print(f"File {file_info['file_id']} not accessible: {e}")
         
         print(f"✓ {accessible_count}/{len(self.uploaded_files)} uploaded files still accessible")
         

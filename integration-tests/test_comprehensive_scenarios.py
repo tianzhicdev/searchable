@@ -642,24 +642,33 @@ class TestComprehensiveScenarios:
                 assert 'selections' in purchase['metadata']
         
         # Should have at least some purchases based on previous tests
-        assert len(purchases) >= 0  # Allow 0 if async processing is slow
+        # User 2 made purchases in test_05, so we should have data
+        assert len(purchases) > 0, f"Expected purchases from previous tests, got {len(purchases)}"
         
         # User 1 - Check sales (should have sales from User 2's purchases)
-        user1_invoices = self.user1_client.get_user_invoices()
-        assert 'sales' in user1_invoices
+        # Wait for sales to appear with timeout for async processing
+        timeout = 30  # 30 seconds timeout
+        start_time = time.time()
+        sales = []
         
-        sales = user1_invoices['sales']
+        while time.time() - start_time < timeout:
+            user1_invoices = self.user1_client.get_user_invoices()
+            assert 'sales' in user1_invoices
+            sales = user1_invoices['sales']
+            
+            if len(sales) > 0:
+                break
+            time.sleep(2)  # Wait 2 seconds before retrying
+        
+        # We should have at least one sale since User 2 made purchases
+        assert len(sales) > 0, f"Expected sales from User 2's purchases after {timeout}s, but found {len(sales)} sales"
         
         # Check list length before iterating
-        if len(sales) > 0:
-            for sale in sales:
-                assert 'payment_status' in sale
-                assert sale['payment_status'] == 'complete'
-                assert 'amount' in sale
-                assert 'fee' in sale  # Platform fee
-        
-        # Allow 0 sales if async processing is slow
-        assert len(sales) >= 0
+        for sale in sales:
+            assert 'payment_status' in sale
+            assert sale['payment_status'] == 'complete'
+            assert 'amount' in sale
+            assert 'fee' in sale  # Platform fee
         
         # Check for pending invoices
         assert 'invoices' in user1_invoices
@@ -680,10 +689,29 @@ class TestComprehensiveScenarios:
         else:
             user3_pending = []
         
-        total_pending = len(pending_recent) + len(user3_pending)
+        # Wait for pending invoice from User 3 to appear
+        timeout_pending = 20  # 20 seconds timeout for pending invoice
+        start_time_pending = time.time()
+        total_pending = 0
         
-        # Should find at least one pending invoice from User 3
-        assert total_pending >= 0  # Allow 0 if async processing affects status
+        while time.time() - start_time_pending < timeout_pending:
+            # Re-check User 3's pending invoices
+            user3_invoices = self.user3_client.get_user_invoices()
+            user3_invoices_list = user3_invoices.get('invoices', [])
+            
+            if len(user3_invoices_list) > 0:
+                user3_pending = [inv for inv in user3_invoices_list if inv.get('payment_status') == 'pending']
+            else:
+                user3_pending = []
+            
+            total_pending = len(pending_recent) + len(user3_pending)
+            
+            if total_pending > 0:
+                break
+            time.sleep(1)  # Wait 1 second before retrying
+        
+        # Should find at least one pending invoice from User 3 who created a pending invoice in test_06
+        assert total_pending > 0, f"Expected at least 1 pending invoice from User 3 after {timeout_pending}s, but found {total_pending}"
     
     def test_10_file_access_verification(self):
         """Verify that users can only access files they've paid for"""
