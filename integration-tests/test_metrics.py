@@ -25,7 +25,8 @@ class TestMetrics:
         cls.user_id = None
         
         # Direct metrics API endpoint for testing
-        cls.metrics_base_url = "http://localhost:5007"
+        import os
+        cls.metrics_base_url = os.getenv('METRICS_URL', 'http://localhost:5007')
     
     def test_01_metrics_service_health(self):
         """Test that metrics service is healthy"""

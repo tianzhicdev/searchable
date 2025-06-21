@@ -139,15 +139,62 @@ beta_deploy_all() {
     echo -e "${BLUE}🚀 Deploying all containers to remote server...${NC}"
     echo "Remote: $REMOTE_USER@$REMOTE_HOST"
     
+    # First, commit and push local changes
+    echo -e "${YELLOW}📝 Committing local changes...${NC}"
+    
+    # Check if we have uncommitted changes
+    if [ -n "$(git status --porcelain)" ]; then
+        # Get current branch
+        CURRENT_BRANCH=$(git branch --show-current)
+        echo "Current branch: $CURRENT_BRANCH"
+        
+        # Add all changes
+        git add -A
+        
+        # Create commit with timestamp
+        TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        git commit -m "Auto-deploy commit - $TIMESTAMP
+
+🤖 Generated with Claude Code
+https://claude.ai/code
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+        
+        echo "✅ Changes committed to $CURRENT_BRANCH"
+        
+        # Push to remote
+        echo -e "${YELLOW}📤 Pushing to remote repository...${NC}"
+        git push origin $CURRENT_BRANCH
+        echo "✅ Changes pushed to origin/$CURRENT_BRANCH"
+    else
+        echo "✅ No uncommitted changes found"
+        CURRENT_BRANCH=$(git branch --show-current)
+        echo "Current branch: $CURRENT_BRANCH"
+    fi
+    
+    # Deploy to remote server
     ssh $REMOTE_USER@$REMOTE_HOST << EOF
         cd $REMOTE_PATH
-        echo "📦 Running full deployment..."
+        echo "📦 Running full deployment with git sync..."
+        
+        # Get current branch
+        BRANCH=\$(git branch --show-current)
+        echo "Remote branch: \$BRANCH"
+        
+        # Pull latest changes
+        echo "📥 Pulling latest changes from origin/\$BRANCH..."
+        git pull origin \$BRANCH
         
         # Run the existing redeploy script
+        echo "🔄 Running full redeploy..."
         ./redeploy.sh
 EOF
     
     echo -e "${GREEN}✅ Remote deployment completed!${NC}"
+    echo -e "${BLUE}📝 Summary:${NC}"
+    echo "  - Local changes committed and pushed"
+    echo "  - Remote server pulled latest changes"
+    echo "  - Full redeploy executed on beta server"
 }
 
 # Beta container logs
@@ -241,8 +288,24 @@ run_tests() {
     fi
     echo ""
     
+    # Set URLs based on environment
+    if [ "$environment" = "local" ]; then
+        metrics_url="http://localhost:5007"
+        grafana_url="http://localhost:3000"
+        grafana_proxy_url="http://localhost/grafana"
+    else
+        # For beta and prod, use the same domain as API but different paths
+        base_domain=$(echo "$api_url" | sed 's|^https\?://||')
+        metrics_url="https://${base_domain}/metrics"
+        grafana_url="https://${base_domain}/grafana"
+        grafana_proxy_url="https://${base_domain}/grafana"
+    fi
+    
     # Run tests with environment variables directly (no .env file manipulation)
     BASE_URL="$api_url" \
+    METRICS_URL="$metrics_url" \
+    GRAFANA_URL="$grafana_url" \
+    GRAFANA_PROXY_URL="$grafana_proxy_url" \
     TEST_USER_PREFIX="${test_prefix}" \
     TEST_EMAIL_DOMAIN="${environment}.test" \
     DEFAULT_PASSWORD="TestPass123!" \
