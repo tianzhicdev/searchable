@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useHistory, useLocation } from 'react-router-dom';
 import { 
   Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip, IconButton
 } from '@material-ui/core';
@@ -11,13 +11,14 @@ import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
-import { navigateWithReferrer } from '../../utils/navigationUtils';
+import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
   const theme = useTheme();
   const { identifier } = useParams(); // Can be username or user_id
   const history = useHistory();
+  const location = useLocation();
   
   const [profileData, setProfileData] = useState(null);
   const [downloadables, setDownloadables] = useState([]);
@@ -55,11 +56,12 @@ const UserProfile = () => {
   };
 
   const handleDownloadableClick = (searchableId) => {
-    navigateWithReferrer(history, `/searchable-item/${searchableId}`);
+    navigateWithStack(history, `/searchable-item/${searchableId}`);
   };
 
   const handleBackClick = () => {
-    history.goBack();
+    debugNavigationStack(location, 'UserProfile Back Click');
+    navigateBack(history, '/searchables');
   };
 
   if (loading) {
@@ -113,6 +115,7 @@ const UserProfile = () => {
           variant="contained" 
           className={classes.iconButton}
           onClick={handleBackClick}
+          title={getBackButtonText(location)}
         >
           <ArrowBackIcon />
         </Button>

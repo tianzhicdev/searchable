@@ -1,6 +1,7 @@
 import React from 'react';
 import { Typography, Link } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
+import { navigateWithStack } from '../utils/navigationUtils';
 
 const PostedBy = ({ username, terminalId, maxLength = 30 }) => {
   const history = useHistory();
@@ -15,7 +16,7 @@ const PostedBy = ({ username, terminalId, maxLength = 30 }) => {
   const handleUsernameClick = (e) => {
     e.stopPropagation(); // Prevent triggering any parent click handlers
     if (terminalId) {
-      history.push(`/profile/${terminalId}`);
+      navigateWithStack(history, `/profile/${terminalId}`);
     }
   };
 
