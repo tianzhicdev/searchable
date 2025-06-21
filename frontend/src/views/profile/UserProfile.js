@@ -174,7 +174,7 @@ const UserProfile = () => {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: platform.color }}
+                      // Color managed by theme override for MuiSvgIcon
                       title={`${platform.name}: @${username}`}
                     >
                       <Icon />
