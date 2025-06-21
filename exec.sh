@@ -172,18 +172,25 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         echo "Current branch: $CURRENT_BRANCH"
     fi
     
-    # Deploy to remote server
+    # Deploy to remote server with the current local branch
     ssh $REMOTE_USER@$REMOTE_HOST << EOF
         cd $REMOTE_PATH
         echo "📦 Running full deployment with git sync..."
         
-        # Get current branch
-        BRANCH=\$(git branch --show-current)
-        echo "Remote branch: \$BRANCH"
+        # Switch to the same branch as local (create if doesn't exist)
+        echo "🔄 Switching to branch: $CURRENT_BRANCH"
+        git fetch origin
+        if git branch -r | grep -q "origin/$CURRENT_BRANCH"; then
+            # Branch exists on remote, switch to it
+            git checkout $CURRENT_BRANCH 2>/dev/null || git checkout -b $CURRENT_BRANCH origin/$CURRENT_BRANCH
+        else
+            echo "❌ Branch $CURRENT_BRANCH not found on remote. Please push it first."
+            exit 1
+        fi
         
-        # Pull latest changes
-        echo "📥 Pulling latest changes from origin/\$BRANCH..."
-        git pull origin \$BRANCH
+        # Pull latest changes from the feature branch
+        echo "📥 Pulling latest changes from origin/$CURRENT_BRANCH..."
+        git pull origin $CURRENT_BRANCH
         
         # Run the existing redeploy script
         echo "🔄 Running full redeploy..."
@@ -192,9 +199,9 @@ EOF
     
     echo -e "${GREEN}✅ Remote deployment completed!${NC}"
     echo -e "${BLUE}📝 Summary:${NC}"
-    echo "  - Local changes committed and pushed"
-    echo "  - Remote server pulled latest changes"
-    echo "  - Full redeploy executed on beta server"
+    echo "  - Local changes committed and pushed to branch: $CURRENT_BRANCH"
+    echo "  - Remote server switched to and pulled from branch: $CURRENT_BRANCH"
+    echo "  - Full redeploy executed on beta server from feature branch"
 }
 
 # Beta container logs
