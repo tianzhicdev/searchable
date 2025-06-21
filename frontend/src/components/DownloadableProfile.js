@@ -9,7 +9,7 @@ import {
 } from '@material-ui/core';
 import { Download } from '@material-ui/icons';
 import useComponentStyles from '../themes/componentStyles';
-import { navigateWithReferrer } from '../utils/navigationUtils';
+import { navigateWithStack } from '../utils/navigationUtils';
 
 const DownloadableProfile = ({ downloadableItem, onDownload }) => {
   const classes = useComponentStyles();
@@ -22,7 +22,7 @@ const DownloadableProfile = ({ downloadableItem, onDownload }) => {
   };
 
   const handleSearchableClick = () => {
-    navigateWithReferrer(history, `/searchable-item/${downloadableItem.searchable_id}`, '/my-downloads');
+    navigateWithStack(history, `/searchable-item/${downloadableItem.searchable_id}`);
   };
 
   return (

@@ -1,0 +1,5 @@
+
+> react-berry-admin-template@1.5.27 start
+> NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts start
+
+Something is already running on port 3001.

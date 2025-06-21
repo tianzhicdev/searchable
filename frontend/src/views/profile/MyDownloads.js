@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Grid,
@@ -14,10 +14,12 @@ import { ArrowBack, Download } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 import DownloadableProfile from '../../components/DownloadableProfile';
+import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 
 const MyDownloads = () => {
   const classes = useComponentStyles();
   const history = useHistory();
+  const location = useLocation();
   const account = useSelector((state) => state.account);
   
   const [downloadableItems, setDownloadableItems] = useState([]);
@@ -71,7 +73,8 @@ const MyDownloads = () => {
   };
 
   const handleBackClick = () => {
-    history.push('/profile');
+    debugNavigationStack(location, 'MyDownloads Back Click');
+    navigateBack(history, '/profile');
   };
 
   if (loading) {
@@ -100,6 +103,7 @@ const MyDownloads = () => {
             variant="contained" 
             className={classes.iconButton}
             onClick={handleBackClick}
+            title={getBackButtonText(location)}
           >
             <ArrowBack />
           </Button>
@@ -132,7 +136,7 @@ const MyDownloads = () => {
               <Box mt={2}>
                 <Button
                   variant="contained"
-                  onClick={() => history.push('/searchables')}
+                  onClick={() => navigateWithStack(history, '/searchables', { replaceStack: true })}
                 >
                   Browse Items
                 </Button>
