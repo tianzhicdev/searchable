@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
 import { 
@@ -20,6 +20,7 @@ import { formatDate } from '../utilities/Date';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
+import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState({ usd: null });
@@ -43,6 +44,7 @@ const Profile = () => {
   
   const account = useSelector((state) => state.account);
   const history = useHistory();
+  const location = useLocation();
   
   useEffect(() => {
     fetchBalance();
@@ -209,7 +211,11 @@ const Profile = () => {
           <Button 
             variant="contained" 
             className={classes.iconButton}
-            onClick={() => history.push('/searchables')}
+            onClick={() => {
+              debugNavigationStack(location, 'Profile Page Navigation');
+              navigateBack(history, '/searchables');
+            }}
+            title={getBackButtonText(location)}
           >
             <ArrowBackIcon />
           </Button>
@@ -229,13 +235,13 @@ const Profile = () => {
           >
             <MenuItem onClick={() => {
               handleMenuClose();
-              history.push(`/profile/${account.user._id}`);
+              navigateWithStack(history, `/profile/${account.user._id}`);
             }}>
               Profile Page
             </MenuItem>
             <MenuItem onClick={() => {
               handleMenuClose();
-              history.push('/my-downloads');
+              navigateWithStack(history, '/my-downloads');
             }}>
               My Downloads
             </MenuItem>
