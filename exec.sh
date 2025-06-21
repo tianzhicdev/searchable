@@ -201,7 +201,11 @@ EOF
     echo -e "${BLUE}📝 Summary:${NC}"
     echo "  - Local changes committed and pushed to branch: $CURRENT_BRANCH"
     echo "  - Remote server switched to and pulled from branch: $CURRENT_BRANCH"
-    echo "  - Full redeploy executed on beta server from feature branch"
+    if [ "$CURRENT_BRANCH" = "main" ]; then
+        echo "  - Full redeploy executed on beta server from main branch"
+    else
+        echo "  - Full redeploy executed on beta server from feature branch: $CURRENT_BRANCH"
+    fi
 }
 
 # Beta container logs
