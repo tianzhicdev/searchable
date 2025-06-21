@@ -343,47 +343,6 @@ class TestFileManagement:
             except Exception as e:
                 print(f"⚠ Content type detection failed for {file_info['original_name']}: {e}")
     
-    def test_09_file_metadata_updates(self):
-        """Test updating file metadata"""
-        print("Testing file metadata updates")
-        
-        # Try to update metadata for first uploaded file (if any)
-        if len(self.uploaded_files) == 0:
-            print("⚠ No uploaded files available for metadata update test")
-            print("✓ Test continues (no files were uploaded)")
-            return
-            
-        file_info = self.uploaded_files[0]
-        file_id = file_info['file_id']
-        
-        # Note: This test assumes there's an update endpoint
-        # If not available, we'll gracefully handle the missing functionality
-        try:
-            updated_metadata = {
-                'description': 'Updated description for file management test',
-                'type': 'updated_document',
-                'category': 'updated_test_files',
-                'version': '2.0',
-                'last_modified': 'integration_test'
-            }
-            
-            # Attempt to update metadata (this endpoint might not exist)
-            response = self.client.update_file_metadata(file_id, updated_metadata)
-            
-            if 'success' in response and response['success']:
-                # Verify the update
-                verify_response = self.client.get_file_metadata(file_id)
-                updated_file_data = verify_response['file']
-                
-                assert updated_file_data['metadata']['description'] == updated_metadata['description']
-                assert updated_file_data['metadata']['version'] == updated_metadata['version']
-                
-                print("✓ File metadata successfully updated")
-            else:
-                print("! File metadata update not supported or failed")
-                
-        except Exception as e:
-            print(f"! File metadata update not available: {str(e)}")
     
     def test_10_file_access_permissions(self):
         """Test file access permissions and security"""
@@ -419,8 +378,7 @@ class TestFileManagement:
             # This should fail with 403/404 since other user doesn't own the file
             response = other_user_client.get_file_metadata(file_id)
             
-            # If it succeeds, the file might be public or there's a security issue
-            print(f"! WARNING: Other user can access file {file_id} - check permissions")
+            pytst.fail(f"Other user accessed file {file_id} which should not be allowed")
             
         except Exception as e:
             # Expected to fail
