@@ -1,6 +1,7 @@
 # Metrics routes
 from flask import Response
 from flask_restx import Resource
+from datetime import datetime, timezone
 
 # Import from our new structure
 from .. import rest_api
@@ -35,9 +36,10 @@ class HealthResource(Resource):
     """
     def get(self):
         """
-        Simple health check endpoint
+        Simple health check endpoint with timestamp
         """
         return {
             "status": "healthy",
-            "service": "api-server-flask"
-        }, 200 
+            "service": "api-server-flask",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }, 200
