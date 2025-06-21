@@ -294,11 +294,18 @@ run_tests() {
         grafana_url="http://localhost:3000"
         grafana_proxy_url="http://localhost/grafana"
     else
-        # For beta and prod, use the same domain as API but different paths
-        base_domain=$(echo "$api_url" | sed 's|^https\?://||')
-        metrics_url="https://${base_domain}/metrics"
-        grafana_url="https://${base_domain}/grafana"
-        grafana_proxy_url="https://${base_domain}/grafana"
+        # For beta and prod, construct URLs with same protocol and domain as API
+        # Extract the protocol and domain from api_url
+        if [[ "$api_url" =~ ^(https?)://([^/]+) ]]; then
+            protocol="${BASH_REMATCH[1]}"
+            domain="${BASH_REMATCH[2]}"
+            metrics_url="${protocol}://${domain}/metrics"
+            grafana_url="${protocol}://${domain}/grafana"
+            grafana_proxy_url="${protocol}://${domain}/grafana"
+        else
+            echo "Error: Could not parse API URL: $api_url"
+            exit 1
+        fi
     fi
     
     # Run tests with environment variables directly (no .env file manipulation)
