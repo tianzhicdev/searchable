@@ -19,7 +19,8 @@ class TestMetricsWorkflows:
         """Set up test environment for workflow tests"""
         cls.client = SearchableAPIClient()
         cls.test_id = str(uuid.uuid4())[:8]
-        cls.metrics_base_url = "http://localhost:5007"
+        import os
+        cls.metrics_base_url = os.getenv('METRICS_URL', 'http://localhost:5007')
         
         # Test users for workflow testing
         cls.test_users = []

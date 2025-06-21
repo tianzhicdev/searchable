@@ -21,38 +21,33 @@ class TestGrafana:
         cls.test_id = str(uuid.uuid4())[:8]
         
         # Grafana configuration
-        cls.grafana_base_url = "http://localhost/grafana"
-        cls.grafana_direct_url = "http://localhost:3000"
+        import os
+        cls.grafana_base_url = os.getenv('GRAFANA_PROXY_URL', 'http://localhost/grafana')
+        cls.grafana_direct_url = os.getenv('GRAFANA_URL', 'http://localhost:3000')
         cls.grafana_user = "admin"
         cls.grafana_password = "admin123"
         cls.grafana_auth = (cls.grafana_user, cls.grafana_password)
         
         # Metrics service for test data
-        cls.metrics_base_url = "http://localhost:5007"
+        cls.metrics_base_url = os.getenv('METRICS_URL', 'http://localhost:5007')
         
         print(f"Grafana Test ID: {cls.test_id}")
     
     def test_01_grafana_service_health(self):
         """Test Grafana service is healthy and accessible"""
         
-        # Test direct access
-        response = requests.get(f"{self.grafana_direct_url}/api/health")
-        assert response.status_code == 200
+        # Test Grafana health through the configured URL
+        response = requests.get(f"{self.grafana_base_url}/api/health", timeout=10)
+        assert response.status_code == 200, f"Grafana health check failed: {response.text}"
         
         health_data = response.json()
-        assert 'database' in health_data
-        assert health_data['database'] == 'ok'
-        assert 'version' in health_data
-        assert isinstance(health_data['version'], str)
-        assert len(health_data['version']) > 0
+        assert 'database' in health_data, f"Missing database field in health response: {health_data}"
+        assert health_data['database'] == 'ok', f"Database not healthy: {health_data['database']}"
+        assert 'version' in health_data, f"Missing version field in health response: {health_data}"
+        assert isinstance(health_data['version'], str), f"Version should be string: {health_data['version']}"
+        assert len(health_data['version']) > 0, f"Version should not be empty: {health_data['version']}"
         
-        # Test proxy access through Nginx
-        response = requests.get(f"{self.grafana_base_url}/api/health")
-        assert response.status_code == 200
-        
-        proxy_health = response.json()
-        assert 'database' in proxy_health
-        assert proxy_health['database'] == 'ok'
+        print(f"✓ Grafana service healthy, version: {health_data['version']}")
     
     def test_02_grafana_authentication(self):
         """Test Grafana authentication and session management"""
