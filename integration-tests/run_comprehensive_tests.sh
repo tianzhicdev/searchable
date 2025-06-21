@@ -126,6 +126,7 @@ test_files=(
     "test_offline_searchables.py"           # Offline searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
     "test_social_media_profiles.py"         # Social media profile functionality
+    "test_my_downloads.py"                  # My Downloads functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_ratings.py"                       # Rating system
     "test_file_management.py"               # File CRUD operations

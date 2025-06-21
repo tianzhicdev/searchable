@@ -453,6 +453,13 @@ class APIClient:
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
+    
+    def get_downloadable_items(self) -> Dict[str, Any]:
+        """Get all downloadable items purchased by the current user"""
+        url = f"{self.base_url}/v1/downloadable-items-by-user"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
 
 # Backwards compatibility alias
 SearchableAPIClient = APIClient
