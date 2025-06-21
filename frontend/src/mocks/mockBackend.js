@@ -804,6 +804,103 @@ const mockHandlers = {
     });
   },
   
+  // User downloadable items endpoint
+  'v1/downloadable-items-by-user': () => {
+    console.log('[MOCK] Fetching user downloadable items');
+    return createMockResponse({
+      downloadable_items: [
+        {
+          invoice_id: 'purchase-1',
+          searchable_id: 'mock-item-1',
+          searchable_title: 'Premium Digital Asset Bundle',
+          searchable_description: 'A comprehensive collection of high-quality digital assets including templates, graphics, and source files',
+          seller_username: 'DigitalAssetStore',
+          amount_paid: 29.99,
+          fee_paid: 0.03,
+          currency: 'usd',
+          purchase_date: new Date(Date.now() - 3000000).toISOString(),
+          item_type: 'downloadable',
+          images: [mockData.mockImage1, mockData.mockImage2],
+          downloadable_files: [
+            {
+              id: 'file-1',
+              name: 'Design_Templates_Pack.zip',
+              price: 29.99,
+              file_uri: '/api/v1/download-file/file-1',
+              download_url: '/api/v1/download-file/file-1'
+            }
+          ]
+        },
+        {
+          invoice_id: 'purchase-2',
+          searchable_id: 'mock-item-1',
+          searchable_title: 'Premium Digital Asset Bundle',
+          searchable_description: 'A comprehensive collection of high-quality digital assets including templates, graphics, and source files',
+          seller_username: 'DigitalAssetStore',
+          amount_paid: 79.98,
+          fee_paid: 0.08,
+          currency: 'usd',
+          purchase_date: new Date(Date.now() - 6600000).toISOString(),
+          item_type: 'downloadable',
+          images: [mockData.mockImage1, mockData.mockImage2],
+          downloadable_files: [
+            {
+              id: 'file-1',
+              name: 'Design_Templates_Pack.zip',
+              price: 29.99,
+              file_uri: '/api/v1/download-file/file-1',
+              download_url: '/api/v1/download-file/file-1'
+            },
+            {
+              id: 'file-2',
+              name: 'Stock_Photos_Collection.zip',
+              price: 49.99,
+              file_uri: '/api/v1/download-file/file-2',
+              download_url: '/api/v1/download-file/file-2'
+            }
+          ]
+        },
+        {
+          invoice_id: 'purchase-3',
+          searchable_id: 'mock-item-2',
+          searchable_title: 'Professional Design Templates',
+          searchable_description: 'High-quality design templates for various business and creative projects',
+          seller_username: 'designer_pro',
+          amount_paid: 49.99,
+          fee_paid: 0.05,
+          currency: 'usd',
+          purchase_date: new Date(Date.now() - 10800000).toISOString(),
+          item_type: 'downloadable',
+          images: [mockData.mockImage2],
+          downloadable_files: [
+            {
+              id: 'file-3',
+              name: 'Logo_Templates.zip',
+              price: 19.99,
+              file_uri: '/api/v1/download-file/file-3',
+              download_url: '/api/v1/download-file/file-3'
+            },
+            {
+              id: 'file-4',
+              name: 'Business_Card_Designs.zip',
+              price: 14.99,
+              file_uri: '/api/v1/download-file/file-4',
+              download_url: '/api/v1/download-file/file-4'
+            },
+            {
+              id: 'file-5',
+              name: 'Presentation_Templates.zip',
+              price: 15.01,
+              file_uri: '/api/v1/download-file/file-5',
+              download_url: '/api/v1/download-file/file-5'
+            }
+          ]
+        }
+      ],
+      count: 3
+    });
+  },
+  
   // Default handler for unmatched routes
   default: (url) => {
     console.warn(`Mock handler not found for: ${url}`);

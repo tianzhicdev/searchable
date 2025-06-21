@@ -16,6 +16,7 @@ from ..common.data_helpers import (
     update_user_profile,
     get_searchableIds_by_user,
     get_searchable,
+    get_downloadable_items_by_user_id,
 )
 from ..common.logging_config import setup_logger
 
@@ -289,4 +290,27 @@ class CreateMyProfile(Resource):
             
         except Exception as e:
             logger.error(f"Error creating profile: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/downloadable-items-by-user', methods=['GET'])
+class GetDownloadableItemsByUser(Resource):
+    """
+    Get all downloadable items purchased by the current user
+    """
+    @token_required
+    @track_metrics('get_downloadable_items_by_user')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            user_id = current_user.id
+            
+            # Get downloadable items for the user
+            downloadable_items = get_downloadable_items_by_user_id(user_id)
+            
+            return {
+                "downloadable_items": downloadable_items,
+                "count": len(downloadable_items)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error getting downloadable items for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
