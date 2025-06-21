@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 from config import API_BASE_URL, REQUEST_TIMEOUT, UPLOAD_TIMEOUT
 
 
-class SearchableAPIClient:
+class APIClient:
     """Client for interacting with the Searchable platform API"""
     
     def __init__(self):
@@ -453,3 +453,6 @@ class SearchableAPIClient:
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
+
+# Backwards compatibility alias
+SearchableAPIClient = APIClient

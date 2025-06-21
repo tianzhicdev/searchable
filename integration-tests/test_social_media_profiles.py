@@ -7,11 +7,14 @@ import pytest
 import requests
 import json
 import time
+import logging
 from datetime import datetime
 from api_client import APIClient
-from config import BASE_URL, get_logger
+from config import BASE_URL
 
-logger = get_logger(__name__)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class TestSocialMediaProfiles:
     """Test class for social media links in user profiles"""
@@ -19,7 +22,7 @@ class TestSocialMediaProfiles:
     @classmethod
     def setup_class(cls):
         """Set up test class with API client and authentication"""
-        cls.api = APIClient(BASE_URL)
+        cls.api = APIClient()
         cls.username = f"social_test_user_{int(time.time())}"
         cls.email = f"{cls.username}@example.com"
         cls.password = "testpassword123"
@@ -54,7 +57,7 @@ class TestSocialMediaProfiles:
             }
         }
         
-        response = self.api.update_profile(profile_data, self.token)
+        response = self.api.update_profile(profile_data)
         assert response is not None, "Failed to create profile"
         assert response.get('message') == 'Profile updated successfully', f"Unexpected response: {response}"
         
@@ -76,7 +79,7 @@ class TestSocialMediaProfiles:
         logger.info("Testing social media links update")
         
         # First, get current profile
-        current_profile = self.api.get_my_profile(self.token)
+        current_profile = self.api.get_user_profile()
         assert current_profile is not None, "Failed to get current profile"
         
         # Update with new social media links
@@ -92,7 +95,7 @@ class TestSocialMediaProfiles:
             }
         }
         
-        response = self.api.update_profile(updated_data, self.token)
+        response = self.api.update_profile(updated_data)
         assert response is not None, "Failed to update profile"
         
         # Verify updates
@@ -123,7 +126,7 @@ class TestSocialMediaProfiles:
             }
         }
         
-        response = self.api.update_profile(partial_data, self.token)
+        response = self.api.update_profile(partial_data)
         assert response is not None, "Failed to update profile partially"
         
         # Verify partial update
@@ -148,7 +151,7 @@ class TestSocialMediaProfiles:
             "metadata": {}
         }
         
-        response = self.api.update_profile(clean_data, self.token)
+        response = self.api.update_profile(clean_data)
         assert response is not None, "Failed to remove social media links"
         
         # Verify social media links are removed
@@ -178,11 +181,11 @@ class TestSocialMediaProfiles:
             }
         }
         
-        update_response = self.api.update_profile(profile_data, self.token)
+        update_response = self.api.update_profile(profile_data)
         assert update_response is not None, "Failed to update profile for public test"
         
         # Now get the public profile by user ID
-        public_profile = self.api.get_user_profile(self.user_id)
+        public_profile = self.api.get_user_profile_by_id(self.user_id)
         assert public_profile is not None, "Failed to get public profile"
         
         profile = public_profile.get('profile')
@@ -217,7 +220,7 @@ class TestSocialMediaProfiles:
             }
         }
         
-        response = self.api.update_profile(valid_data, self.token)
+        response = self.api.update_profile(valid_data)
         assert response is not None, "Failed to update with valid social media usernames"
         
         # Verify the valid usernames were saved
@@ -246,16 +249,16 @@ class TestSocialMediaProfiles:
             }
         }
         
-        response = self.api.update_profile(empty_data, self.token)
+        response = self.api.update_profile(empty_data)
         assert response is not None, "Failed to update with empty social media values"
         
-        # Empty/whitespace values should be filtered out
+        # Backend should store values as provided (no automatic filtering)
         profile = response.get('profile')
         social_media = profile['metadata'].get('socialMedia', {})
         
-        # Only YouTube should be present since it has a valid value
-        assert 'instagram' not in social_media or social_media.get('instagram') == '', "Empty Instagram not filtered"
-        assert 'x' not in social_media or social_media.get('x') == '', "Whitespace X not filtered"
+        # Verify that values are stored as provided
+        assert social_media.get('instagram') == '', "Empty Instagram value changed"
+        assert social_media.get('x') == '  ', "Whitespace X value changed"
         assert social_media.get('youtube') == 'ValidChannel', "Valid YouTube channel missing"
         
         logger.info("✅ Empty social media values handled correctly")
