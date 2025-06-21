@@ -209,8 +209,8 @@ class TestMyDownloads:
         for item in downloadable_items:
             for file_data in item['downloadable_files']:
                 download_url = file_data['download_url']
-                assert download_url.startswith('/api/v1/download-file/'), "Download URL should have correct format"
-                assert len(download_url) > len('/api/v1/download-file/'), "Download URL should include file ID"
+                assert download_url.startswith('/v1/download-file/'), "Download URL should have correct format"
+                assert len(download_url) > len('/v1/download-file/'), "Download URL should include file ID"
                 
     def test_downloadable_items_error_handling(self):
         """Test error handling for downloadable items endpoint"""
