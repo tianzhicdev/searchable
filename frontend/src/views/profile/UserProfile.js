@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { 
-  Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip
+  Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip, IconButton
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
@@ -10,6 +10,7 @@ import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
+import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -154,6 +155,33 @@ const UserProfile = () => {
               <Typography variant="body2" color="textSecondary">
                 Member since {new Date(profileData.created_at).toLocaleDateString()}
               </Typography>
+            )}
+
+            {/* Social Media Links */}
+            {profileData.metadata?.socialMedia && (
+              <Box mt={2} display="flex" gap={1} justifyContent="center">
+                {SOCIAL_MEDIA_PLATFORMS.map((platform) => {
+                  const username = profileData.metadata.socialMedia[platform.id];
+                  if (!username) return null;
+                  
+                  const Icon = platform.icon;
+                  const url = formatSocialMediaUrl(platform.id, username);
+                  
+                  return (
+                    <IconButton
+                      key={platform.id}
+                      component="a"
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: platform.color }}
+                      title={`${platform.name}: @${username}`}
+                    >
+                      <Icon />
+                    </IconButton>
+                  );
+                })}
+              </Box>
             )}
           </Box>
         </Paper>
