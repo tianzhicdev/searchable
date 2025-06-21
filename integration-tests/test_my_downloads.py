@@ -3,6 +3,7 @@
 import pytest
 import requests
 import time
+import re
 from config import API_BASE_URL, TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
 from api_client import APIClient
 
@@ -193,6 +194,7 @@ class TestMyDownloads:
                 
     def test_download_url_format(self):
         """Test that download URLs are properly formatted"""
+
         # Register and login user with unique timestamp for this test
         unique_timestamp = str(int(time.time() * 1000))  # Use milliseconds for uniqueness
         unique_username = f"{TEST_USER_PREFIX}url_{unique_timestamp}"
@@ -207,10 +209,13 @@ class TestMyDownloads:
         
         # If we have items, verify download URL format
         for item in downloadable_items:
+            searchable_id = item.get('searchable_id')
             for file_data in item['downloadable_files']:
+                file_id = file_data.get('id')
                 download_url = file_data['download_url']
-                assert download_url.startswith('/v1/download-file/'), "Download URL should have correct format"
-                assert len(download_url) > len('/v1/download-file/'), "Download URL should include file ID"
+                # Check format: /v1/download-file/<searchableid>/<fileid>
+                pattern = rf"^/v1/download-file/{searchable_id}/{file_id}$"
+                assert re.match(pattern, download_url), f"Download URL should match format /v1/download-file/<searchableid>/<fileid>, got {download_url}"
                 
     def test_downloadable_items_error_handling(self):
         """Test error handling for downloadable items endpoint"""

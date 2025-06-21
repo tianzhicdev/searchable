@@ -1448,7 +1448,7 @@ def get_downloadable_items_by_user_id(user_id):
                         'name': selection.get('name'),
                         'price': selection.get('price'),
                         'file_uri': selection.get('file_uri', ''),  # This would be set during purchase
-                        'download_url': f"/v1/download-file/{selection.get('id')}"  # API endpoint for download
+                        'download_url': f"/v1/download-file/{searchable_id}/{selection.get('id')}"  # API endpoint for download
                     })
             
             # If no selections in metadata, fallback to public downloadableFiles
@@ -1459,7 +1459,7 @@ def get_downloadable_items_by_user_id(user_id):
                         'name': file_data.get('name', ''),
                         'price': file_data.get('price', 0),
                         'file_uri': '',  # Would need to be populated from actual purchase
-                        'download_url': f"/v1/download-file/{file_data.get('id', '')}"
+                        'download_url': f"/v1/download-file/{searchable_id}/{file_data.get('id', '')}"
                     })
             
             item = {
