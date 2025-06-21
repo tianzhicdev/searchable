@@ -142,12 +142,12 @@ beta_deploy_all() {
     # First, commit and push local changes
     echo -e "${YELLOW}📝 Committing local changes...${NC}"
     
+    # Get current branch
+    CURRENT_BRANCH=$(git branch --show-current)
+    echo "Current branch: $CURRENT_BRANCH"
+    
     # Check if we have uncommitted changes
     if [ -n "$(git status --porcelain)" ]; then
-        # Get current branch
-        CURRENT_BRANCH=$(git branch --show-current)
-        echo "Current branch: $CURRENT_BRANCH"
-        
         # Add all changes
         git add -A
         
@@ -161,16 +161,14 @@ https://claude.ai/code
 Co-Authored-By: Claude <noreply@anthropic.com>"
         
         echo "✅ Changes committed to $CURRENT_BRANCH"
-        
-        # Push to remote
-        echo -e "${YELLOW}📤 Pushing to remote repository...${NC}"
-        git push origin $CURRENT_BRANCH
-        echo "✅ Changes pushed to origin/$CURRENT_BRANCH"
     else
         echo "✅ No uncommitted changes found"
-        CURRENT_BRANCH=$(git branch --show-current)
-        echo "Current branch: $CURRENT_BRANCH"
     fi
+    
+    # Always push to ensure remote branch is up to date
+    echo -e "${YELLOW}📤 Pushing to remote repository...${NC}"
+    git push origin $CURRENT_BRANCH
+    echo "✅ Changes pushed to origin/$CURRENT_BRANCH"
     
     # Deploy to remote server with the current local branch
     ssh $REMOTE_USER@$REMOTE_HOST << EOF
