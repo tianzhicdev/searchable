@@ -140,7 +140,12 @@ export const mockUserProfile = {
         "/api/v1/media/gallery-mock-2",
         "/api/v1/media/gallery-mock-3",
         "/api/v1/media/gallery-mock-4"
-      ]
+      ],
+      socialMedia: {
+        instagram: "designpro_studio",
+        x: "designpro",
+        youtube: "DesignProTutorials"
+      }
     },
     created_at: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago
   }

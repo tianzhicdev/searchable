@@ -646,7 +646,12 @@ const mockHandlers = {
           '/api/v1/media/gallery-mock-1',
           '/api/v1/media/gallery-mock-2',
           '/api/v1/media/gallery-mock-3'
-        ]
+        ],
+        socialMedia: {
+          instagram: 'mockuser_studio',
+          x: 'mockuser',
+          youtube: 'MockUserChannel'
+        }
       }
     };
     
@@ -674,7 +679,12 @@ const mockHandlers = {
             '/api/v1/media/designer-gallery-2',
             '/api/v1/media/designer-gallery-3',
             '/api/v1/media/designer-gallery-4'
-          ]
+          ],
+          socialMedia: {
+            instagram: 'designer_pro_studio',
+            x: 'designerpro',
+            youtube: 'DesignerProChannel'
+          }
         }
       };
       downloadables = [
@@ -705,7 +715,12 @@ const mockHandlers = {
           additional_images: [
             '/api/v1/media/store-gallery-1',
             '/api/v1/media/store-gallery-2'
-          ]
+          ],
+          socialMedia: {
+            instagram: 'digitalassetstore',
+            x: 'digitalassets',
+            youtube: 'DigitalAssetStore'
+          }
         }
       };
       downloadables = [

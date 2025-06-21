@@ -125,6 +125,7 @@ test_files=(
     "test_integration.py"                    # Core functionality (existing)
     "test_offline_searchables.py"           # Offline searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
+    "test_social_media_profiles.py"         # Social media profile functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_ratings.py"                       # Rating system
     "test_file_management.py"               # File CRUD operations
@@ -253,7 +254,7 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "✅ Payment Processing (invoice creation, completion, count field)"
     echo "✅ File Management (upload, metadata, listing)"
     echo "✅ Media Management (upload, retrieval)"
-    echo "✅ Profile Management (create, update, retrieve)"
+    echo "✅ Profile Management (create, update, retrieve, social media links)"
     echo "✅ Withdrawal Operations (USDT withdrawals)"
     echo "✅ Rating System (submit, retrieve, eligibility)"
     echo "✅ Invoice Notes (create, retrieve, permissions)"
