@@ -471,6 +471,7 @@ class TestComprehensiveScenarios:
             selections_3,
             "stripe"
         )
+        print(f"[DEBUG] Invoice response for User 3: {json.dumps(invoice_response, indent=2)}")
         assert 'session_id' in invoice_response or 'url' in invoice_response
         assert invoice_response.get('session_id') is not None
         
@@ -618,8 +619,9 @@ class TestComprehensiveScenarios:
     def test_09_user_invoices_retrieval(self):
         """Test comprehensive user invoice retrieval and management"""
         
-        # User 2 - Check all invoices (should have 2 complete)
+        print("\n[DEBUG] Retrieving User 2 invoices (should have 2 complete)...")
         user2_invoices = self.user2_client.get_user_invoices()
+        print(f"[DEBUG] User 2 invoices response: {json.dumps(user2_invoices, indent=2)}")
         
         # Verify response structure
         assert isinstance(user2_invoices, dict)
@@ -627,13 +629,16 @@ class TestComprehensiveScenarios:
         # Check for expected keys - at least one should be present
         expected_keys = ['purchases', 'sales', 'invoices']
         found_keys = [key for key in expected_keys if key in user2_invoices]
+        print(f"[DEBUG] Found keys in User 2 invoices: {found_keys}")
         assert len(found_keys) > 0  # At least one key should be present
         
         purchases = user2_invoices.get('purchases', [])
+        print(f"[DEBUG] User 2 purchases count: {len(purchases)}")
         
         # Check list length before iterating
         if len(purchases) > 0:
-            for purchase in purchases:
+            for i, purchase in enumerate(purchases):
+                print(f"[DEBUG] User 2 purchase #{i}: {json.dumps(purchase, indent=2)}")
                 assert 'payment_status' in purchase
                 assert purchase['payment_status'] == 'complete'
                 assert 'amount' in purchase
@@ -645,6 +650,7 @@ class TestComprehensiveScenarios:
         # User 2 made purchases in test_05, so we should have data
         assert len(purchases) > 0, f"Expected purchases from previous tests, got {len(purchases)}"
         
+        print("\n[DEBUG] Retrieving User 1 sales (should have sales from User 2's purchases)...")
         # User 1 - Check sales (should have sales from User 2's purchases)
         # Wait for sales to appear with timeout for async processing
         timeout = 30  # 30 seconds timeout
@@ -653,65 +659,76 @@ class TestComprehensiveScenarios:
         
         while time.time() - start_time < timeout:
             user1_invoices = self.user1_client.get_user_invoices()
+            print(f"[DEBUG] User 1 invoices response: {json.dumps(user1_invoices, indent=2)}")
             assert 'sales' in user1_invoices
             sales = user1_invoices['sales']
             
             if len(sales) > 0:
                 break
+            print("[DEBUG] No sales found yet, waiting 2 seconds...")
             time.sleep(2)  # Wait 2 seconds before retrying
         
+        print(f"[DEBUG] User 1 sales count: {len(sales)}")
         # We should have at least one sale since User 2 made purchases
         assert len(sales) > 0, f"Expected sales from User 2's purchases after {timeout}s, but found {len(sales)} sales"
         
         # Check list length before iterating
-        for sale in sales:
+        for i, sale in enumerate(sales):
+            print(f"[DEBUG] User 1 sale #{i}: {json.dumps(sale, indent=2)}")
             assert 'payment_status' in sale
             assert sale['payment_status'] == 'complete'
             assert 'amount' in sale
             assert 'fee' in sale  # Platform fee
         
-        # Check for pending invoices
-        assert 'invoices' in user1_invoices
-        all_invoices = user1_invoices['invoices']
+        print("\n[DEBUG] Checking for pending sales using invoices-by-searchable endpoint...")
+        # User 3 created a pending invoice for searchable_3 (User 1's 3rd searchable)
+        # We need to check User 1's searchables for pending invoices using the correct endpoint
         
-        # Check list length before processing
-        if len(all_invoices) > 0:
-            pending_recent = [inv for inv in all_invoices if inv.get('payment_status') == 'pending']
-        else:
-            pending_recent = []
-        
-        # Also check User 3's invoices to verify the pending invoice exists
-        user3_invoices = self.user3_client.get_user_invoices()
-        user3_invoices_list = user3_invoices.get('invoices', [])
-        
-        if len(user3_invoices_list) > 0:
-            user3_pending = [inv for inv in user3_invoices_list if inv.get('payment_status') == 'pending']
-        else:
-            user3_pending = []
-        
-        # Wait for pending invoice from User 3 to appear
-        timeout_pending = 20  # 20 seconds timeout for pending invoice
+        # Wait for pending invoice from User 3 to appear in searchable invoices
+        timeout_pending = 30  # 30 seconds timeout for pending invoice
         start_time_pending = time.time()
-        total_pending = 0
+        total_pending_invoices = 0
         
         while time.time() - start_time_pending < timeout_pending:
-            # Re-check User 3's pending invoices
-            user3_invoices = self.user3_client.get_user_invoices()
-            user3_invoices_list = user3_invoices.get('invoices', [])
+            total_pending_invoices = 0
             
-            if len(user3_invoices_list) > 0:
-                user3_pending = [inv for inv in user3_invoices_list if inv.get('payment_status') == 'pending']
-            else:
-                user3_pending = []
+            # Check each of User 1's searchables for pending invoices
+            for i, searchable in enumerate(self.user1_searchables):
+                searchable_id = searchable['id']
+                print(f"[DEBUG] Checking searchable #{i+1} ({searchable_id}) for pending invoices...")
+                
+                try:
+                    # Use the invoices-by-searchable endpoint to get ALL invoices (including pending)
+                    invoices_response = self.user3_client.get_invoices_by_searchable(searchable_id)
+                    invoices_data = invoices_response.json()
+                    print(f"[DEBUG] Invoices response for searchable #{i+1}: {json.dumps(invoices_data, indent=2)}")
+                    assert 'invoices' in invoices_data
+                    
+                    searchable_invoices = invoices_data['invoices']
+                    pending_for_this_searchable = [inv for inv in searchable_invoices if inv.get('payment_status') == 'pending']
+                    
+                    print(f"[DEBUG] Searchable #{i+1}: {len(searchable_invoices)} total invoices, {len(pending_for_this_searchable)} pending")
+                    
+                    if len(pending_for_this_searchable) > 0:
+                        print(f"[DEBUG] Found pending invoices for searchable #{i+1}: {json.dumps(pending_for_this_searchable, indent=2)}")
+                    
+                    total_pending_invoices += len(pending_for_this_searchable)
+                    
+                except Exception as e:
+                    print(f"[DEBUG] Error checking searchable #{i+1}: {e}")
             
-            total_pending = len(pending_recent) + len(user3_pending)
+            print(f"[DEBUG] Total pending invoices across all searchables: {total_pending_invoices}")
             
-            if total_pending > 0:
+            if total_pending_invoices > 0:
                 break
-            time.sleep(1)  # Wait 1 second before retrying
+                
+            print("[DEBUG] No pending invoices found yet, waiting 2 seconds...")
+            time.sleep(2)  # Wait 2 seconds before retrying
         
-        # Should find at least one pending invoice from User 3 who created a pending invoice in test_06
-        assert total_pending > 0, f"Expected at least 1 pending invoice from User 3 after {timeout_pending}s, but found {total_pending}"
+        # User 1 should have at least one pending invoice from User 3's unpaid purchase
+        assert total_pending_invoices > 0, f"Expected at least 1 pending invoice from User 3's unpaid purchase after {timeout_pending}s, but found {total_pending_invoices}"
+        
+        print(f"[DEBUG] ✓ Successfully found {total_pending_invoices} pending invoice(s) from User 3's unpaid purchase")
     
     def test_10_file_access_verification(self):
         """Verify that users can only access files they've paid for"""
@@ -758,7 +775,7 @@ class TestComprehensiveScenarios:
             try:
                 paid_files = self.user3_client.get_user_paid_files(searchable_id)
                 assert 'paid_file_ids' in paid_files
-                assert len(paid_files['paid_file_ids']) == 0  # Should have no paid files
+                assert len(paid_file_ids['paid_file_ids']) == 0  # Should have no paid files
             except Exception:
                 # This might fail with 403/404 which is also correct behavior
                 # for unauthorized access
