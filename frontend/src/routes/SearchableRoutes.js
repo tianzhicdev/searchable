@@ -10,6 +10,7 @@ import Searchables from '../views/searchables/Searchables';
 import DownloadableSearchableDetails from '../views/searchables/DownloadableSearchableDetails';
 import OfflineSearchableDetails from '../views/searchables/OfflineSearchableDetails';
 import UserProfile from '../views/profile/UserProfile';
+import MyDownloads from '../views/profile/MyDownloads';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -17,7 +18,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/searchables', '/searchable-item/:id', '/offline-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/profile', '/my-purchases']}>
+        <Route path={['/searchables', '/searchable-item/:id', '/offline-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/profile', '/my-purchases', '/my-downloads']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -29,6 +30,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/publish-offline-searchables" component={PublishOfflineSearchable} />
                     <Route exact path="/profile" component={Profile} />
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
+                    <Route exact path="/my-downloads" component={MyDownloads} />
                 </AuthGuard>
                 
             </Switch>

@@ -10,6 +10,7 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
 import SearchablesProfile from './SearchablesProfile';
 import backend from '../utilities/Backend';
+import { navigateWithReferrer } from '../../utils/navigationUtils';
 
 const SearchableList = ({ criteria }) => {
     
@@ -165,9 +166,9 @@ const SearchableList = ({ criteria }) => {
     // Use the type field from the backend if available, fallback to payload type
     const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
-      history.push(`/offline-item/${item.searchable_id}`);
+      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/searchables');
     } else {
-      history.push(`/searchable-item/${item.searchable_id}`);
+      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/searchables');
     }
   };
 

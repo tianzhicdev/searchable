@@ -233,6 +233,12 @@ const Profile = () => {
             }}>
               Profile Page
             </MenuItem>
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              history.push('/my-downloads');
+            }}>
+              My Downloads
+            </MenuItem>
             {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {
                 handleMenuClose();

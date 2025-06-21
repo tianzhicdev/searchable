@@ -20,7 +20,7 @@ print(f"Using API base URL: {API_BASE_URL}")
 # Test configuration
 TEST_USER_PREFIX = "test_user_"
 TEST_EMAIL_DOMAIN = "test.example.com"
-DEFAULT_PASSWORD = "TestPassword123"
+DEFAULT_PASSWORD = "TestPassword123!"
 
 # Timeouts
 REQUEST_TIMEOUT = 30

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useHistory, useLocation } from 'react-router-dom';
 import configData from '../../config';
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress, Divider, 
@@ -26,6 +26,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
+import { navigateBack, getBackButtonText } from '../../utils/navigationUtils';
 
 const OfflineSearchableDetails = () => {
   const classes = useComponentStyles();
@@ -49,6 +50,7 @@ const OfflineSearchableDetails = () => {
   const { id } = useParams();
   const account = useSelector((state) => state.account);
   const history = useHistory();
+  const location = useLocation();
   
   const paymentCheckRef = useRef(null);
   const isMountedRef = useRef(true);
@@ -272,7 +274,7 @@ const OfflineSearchableDetails = () => {
         {}
       );
       showAlert("Item removed successfully");
-      history.push('/searchables');
+      navigateBack(history, '/searchables');
     } catch (error) {
       console.error("Error removing item:", error);
       showAlert("Failed to remove the item", "error");
@@ -440,9 +442,11 @@ const OfflineSearchableDetails = () => {
               <Button 
                 color="primary" 
                 variant='contained'
-                onClick={() => history.push('/searchables')}
+                onClick={() => navigateBack(history, '/searchables')}
               >
-                <ChevronLeftIcon />
+                startIcon={<ChevronLeftIcon />}
+              >
+                {getBackButtonText(location)}
               </Button>
         </Box>
       </Grid>
