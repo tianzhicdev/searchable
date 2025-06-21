@@ -19,6 +19,7 @@ import backend from '../utilities/Backend';
 import { formatDate } from '../utilities/Date';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
+import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 const Profile = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState({ usd: null });
@@ -272,6 +273,33 @@ const Profile = () => {
                 <Typography variant="body2" align="center" style={{ marginTop: 8, fontStyle: 'italic' }}>
                   "{userProfile.introduction}"
                 </Typography>
+              )}
+
+              {/* Social Media Links */}
+              {userProfile.metadata?.socialMedia && (
+                <Box mt={2} display="flex" gap={1} justifyContent="center">
+                  {SOCIAL_MEDIA_PLATFORMS.map((platform) => {
+                    const username = userProfile.metadata.socialMedia[platform.id];
+                    if (!username) return null;
+                    
+                    const Icon = platform.icon;
+                    const url = formatSocialMediaUrl(platform.id, username);
+                    
+                    return (
+                      <IconButton
+                        key={platform.id}
+                        component="a"
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: platform.color }}
+                        title={`${platform.name}: @${username}`}
+                      >
+                        <Icon />
+                      </IconButton>
+                    );
+                  })}
+                </Box>
               )}
             </Box>
           )}

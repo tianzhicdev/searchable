@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, 
   TextField, Button, CircularProgress, Typography, Snackbar, Alert,
-  Box, Avatar, IconButton
+  Box, Avatar, IconButton, InputAdornment
 } from '@material-ui/core';
 import { PhotoCamera, Person } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
@@ -11,6 +11,7 @@ import { SET_USER } from '../../store/actions';
 import useComponentStyles from '../../themes/componentStyles';
 import ZoomableImage from '../../components/ZoomableImage';
 import ImageUploader from '../../components/ImageUploader';
+import { SOCIAL_MEDIA_PLATFORMS, validateSocialMediaUrl } from '../../components/SocialMediaIcons';
 
 // Singleton pattern to manage dialog state across components
 const profileEditorState = {
@@ -30,7 +31,12 @@ const ProfileEditor = () => {
     profile_image_url: '',
     address: account.user?.address || '',
     tel: account.user?.tel || '',
-    additional_images: []
+    additional_images: [],
+    socialMedia: {
+      instagram: '',
+      x: '',
+      youtube: ''
+    }
   });
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
@@ -72,7 +78,12 @@ const ProfileEditor = () => {
           profile_image_url: profile.profile_image_url || '',
           address: account.user.address || '',
           tel: account.user.tel || '',
-          additional_images: profile.metadata?.additional_images || []
+          additional_images: profile.metadata?.additional_images || [],
+          socialMedia: {
+            instagram: profile.metadata?.socialMedia?.instagram || '',
+            x: profile.metadata?.socialMedia?.x || '',
+            youtube: profile.metadata?.socialMedia?.youtube || ''
+          }
         });
         
         // Set profile image preview if exists
@@ -103,7 +114,12 @@ const ProfileEditor = () => {
               profile_image_url: '',
               address: terminalResponse.data.address || '',
               tel: terminalResponse.data.tel || '',
-              additional_images: []
+              additional_images: [],
+              socialMedia: {
+                instagram: '',
+                x: '',
+                youtube: ''
+              }
             });
           } catch (terminalErr) {
             console.log('Terminal data not found, using defaults');
@@ -113,7 +129,12 @@ const ProfileEditor = () => {
               profile_image_url: '',
               address: '',
               tel: '',
-              additional_images: []
+              additional_images: [],
+              socialMedia: {
+                instagram: '',
+                x: '',
+                youtube: ''
+              }
             });
           }
         } else {
@@ -134,6 +155,25 @@ const ProfileEditor = () => {
     setProfileData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleSocialMediaChange = (platform) => (e) => {
+    const value = e.target.value;
+    
+    // Validate the input
+    if (!validateSocialMediaUrl(platform, value)) {
+      setError(`Invalid ${platform} username format`);
+      return;
+    }
+    
+    setError(null);
+    setProfileData(prev => ({
+      ...prev,
+      socialMedia: {
+        ...prev.socialMedia,
+        [platform]: value
+      }
     }));
   };
 
@@ -237,6 +277,18 @@ const ProfileEditor = () => {
 
       // Include additional image URIs
       updateData.metadata.additional_images = additionalImages.map(img => img.uri);
+      
+      // Include social media links (only non-empty ones)
+      const socialMediaData = {};
+      Object.entries(profileData.socialMedia).forEach(([platform, username]) => {
+        if (username && username.trim()) {
+          socialMediaData[platform] = username.trim();
+        }
+      });
+      
+      if (Object.keys(socialMediaData).length > 0) {
+        updateData.metadata.socialMedia = socialMediaData;
+      }
 
       // Update the profile using the new API
       const response = await Backend.put('v1/profile', updateData);
@@ -367,6 +419,37 @@ const ProfileEditor = () => {
                 margin="normal"
                 placeholder="Tell others about yourself..."
               />
+
+              {/* Social Media Links Section */}
+              <Box mt={3} mb={2}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Social Media Links
+                </Typography>
+                {SOCIAL_MEDIA_PLATFORMS.map((platform) => {
+                  const Icon = platform.icon;
+                  return (
+                    <TextField
+                      key={platform.id}
+                      name={platform.id}
+                      type="text"
+                      value={profileData.socialMedia[platform.id] || ''}
+                      onChange={handleSocialMediaChange(platform.id)}
+                      variant="outlined"
+                      fullWidth
+                      margin="normal"
+                      placeholder={platform.name}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Icon style={{ color: platform.color }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      helperText={`Enter your ${platform.name} username (without @)`}
+                    />
+                  );
+                })}
+              </Box>
 
               {/* Additional Images Section */}
               <ImageUploader

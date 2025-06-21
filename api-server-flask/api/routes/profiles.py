@@ -15,7 +15,9 @@ from ..common.data_helpers import (
     create_user_profile,
     update_user_profile,
     get_searchableIds_by_user,
-    get_searchable
+    get_searchable,
+    get_db_connection,
+    return_db_connection
 )
 from ..common.logging_config import setup_logger
 
