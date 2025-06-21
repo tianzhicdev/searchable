@@ -443,7 +443,6 @@ const OfflineSearchableDetails = () => {
                 color="primary" 
                 variant='contained'
                 onClick={() => navigateBack(history, '/searchables')}
-              >
                 startIcon={<ChevronLeftIcon />}
               >
                 {getBackButtonText(location)}
