@@ -6,6 +6,7 @@ import os
 import json
 from api_client import SearchableAPIClient
 from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR
+from test_config import get_test_metadata, get_searchable_test_metadata, get_user_test_metadata, get_test_session_id
 
 
 class TestComprehensiveScenarios:
@@ -15,6 +16,8 @@ class TestComprehensiveScenarios:
     def setup_class(cls):
         """Set up test class with multiple users and shared data"""
         cls.test_id = str(uuid.uuid4())[:8]
+        cls.test_session_id = get_test_session_id()
+        print(f"[TEST SESSION] {cls.test_session_id}")
         
         # User 1 - Seller (creates downloadable items)
         cls.user1_username = f"{TEST_USER_PREFIX}s_{cls.test_id}"
@@ -50,11 +53,15 @@ class TestComprehensiveScenarios:
     def test_01_setup_users(self):
         """Register and login all test users"""
         
+        # Get test metadata for user registration
+        user_test_metadata = get_user_test_metadata()
+        
         # Register User 1 (Seller)
         response = self.user1_client.register_user(
             username=self.user1_username,
             email=self.user1_email,
-            password=self.password
+            password=self.password,
+            test_metadata=user_test_metadata
         )
         assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
         
@@ -68,7 +75,8 @@ class TestComprehensiveScenarios:
         response = self.user2_client.register_user(
             username=self.user2_username,
             email=self.user2_email,
-            password=self.password
+            password=self.password,
+            test_metadata=user_test_metadata
         )
         assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
         
@@ -82,7 +90,8 @@ class TestComprehensiveScenarios:
         response = self.user3_client.register_user(
             username=self.user3_username,
             email=self.user3_email,
-            password=self.password
+            password=self.password,
+            test_metadata=user_test_metadata
         )
         assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
         
@@ -214,6 +223,9 @@ class TestComprehensiveScenarios:
         for i, config in enumerate(searchable_configs):
             assert len(config['files']) > 0  # Ensure config has files before processing
             
+            # Inject test metadata for cleanup
+            test_metadata = get_searchable_test_metadata()
+            
             searchable_data = {
                 'payloads': {
                     'public': {
@@ -245,7 +257,9 @@ class TestComprehensiveScenarios:
                         'visibility': {
                             'udf': 'always_true',
                             'data': {}
-                        }
+                        },
+                        # Add test metadata for cleanup
+                        'test_metadata': test_metadata
                     }
                 }
             }

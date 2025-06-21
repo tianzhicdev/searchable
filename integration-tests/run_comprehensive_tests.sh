@@ -20,9 +20,58 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 # Create logs directory
 mkdir -p "$LOG_DIR"
 
+# Parse command line arguments
+KEEP_TEST_DATA=false
+for arg in "$@"; do
+    case $arg in
+        --keep)
+            KEEP_TEST_DATA=true
+            shift
+            ;;
+        *)
+            # Unknown option
+            ;;
+    esac
+done
+
 # Function to handle cleanup
 cleanup() {
     print_color $YELLOW "Cleaning up..."
+    
+    # Clean up test data unless --keep flag is used
+    if [ "$KEEP_TEST_DATA" = false ]; then
+        print_color $YELLOW "Removing test data..."
+        python3 -c "
+import requests
+import sys
+import os
+
+# Use the same base URL logic as the tests (from config.py)
+try:
+    # Import the config to get the base URL
+    import sys
+    sys.path.append('.')
+    from config import API_BASE_URL
+    base_url = API_BASE_URL
+except ImportError:
+    # Fallback to localhost if config import fails
+    base_url = 'http://localhost:5005'
+
+try:
+    # Call cleanup endpoint
+    response = requests.post(f'{base_url}/api/v1/test-cleanup')
+    if response.status_code == 200:
+        result = response.json()
+        print(f'✓ Test data cleanup completed: {result.get(\"message\", \"Success\")}')
+    else:
+        print(f'⚠ Test cleanup failed: HTTP {response.status_code}')
+except Exception as e:
+    print(f'⚠ Test cleanup error: {e}')
+"
+    else
+        print_color $BLUE "Keeping test data as requested (--keep flag used)"
+    fi
+    
     # Deactivate virtual environment if active
     if [[ "$VIRTUAL_ENV" != "" ]]; then
         deactivate 2>/dev/null || true
@@ -69,6 +118,8 @@ cd "$TEST_DIR"
 print_color $BLUE "================================================"
 print_color $BLUE "Comprehensive Integration Test Suite"
 print_color $BLUE "================================================"
+print_color $YELLOW "Usage: $0 [--keep]"
+print_color $YELLOW "  --keep: Keep test data after test completion (default: cleanup)"
 print_color $YELLOW "Timestamp: $TIMESTAMP"
 print_color $YELLOW "Test Directory: $TEST_DIR"
 print_color $YELLOW "Log Directory: $LOG_DIR"

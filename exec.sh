@@ -30,20 +30,23 @@ show_usage() {
     echo "  ./exec.sh beta deploy-all                   - Deploy all containers to beta"
     echo "  ./exec.sh beta logs <container_name>        - Show logs for beta container"
     echo "  ./exec.sh beta status                       - Show status of beta containers"
-    echo "  ./exec.sh beta test                         - Run tests against beta (silkroadonlightning.com)"
+    echo "  ./exec.sh beta test [--keep]                - Run tests against beta (silkroadonlightning.com)"
     echo ""
-    echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
+    echo "  ./exec.sh prod test [--keep]                - Run tests against prod (eccentricprotocol.com)"
     echo ""
     echo "  ./exec.sh local react                       - Start React development server locally"
     echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
     echo "  ./exec.sh local deploy-all                  - Deploy all containers locally"
     echo "  ./exec.sh local logs <container_name>       - Show logs for local container"
     echo "  ./exec.sh local status                      - Show status of local containers"
-    echo "  ./exec.sh local test                        - Run tests against local (localhost:5005)"
+    echo "  ./exec.sh local test [--keep]               - Run tests against local (localhost:5005)"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
+    echo ""
+    echo -e "${YELLOW}Test Options:${NC}"
+    echo "  --keep                                       - Keep test data after test completion (default: cleanup)"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
@@ -252,6 +255,7 @@ EOF
 # Run comprehensive tests against specified environment
 run_tests() {
     local environment=$1
+    local keep_flag=$2
     local api_url
     local site_name
     local test_prefix
@@ -321,7 +325,7 @@ run_tests() {
     DEFAULT_PASSWORD="TestPass123!" \
     REQUEST_TIMEOUT=30 \
     UPLOAD_TIMEOUT=60 \
-    ./run_comprehensive_tests.sh
+    ./run_comprehensive_tests.sh $keep_flag
     
     TEST_RESULT=$?
     
@@ -377,7 +381,7 @@ local_react() {
 
 # Local integration tests  
 local_test() {
-    run_tests "local"
+    run_tests "local" "$1"
 }
 
 # Local React development server in mock mode
@@ -698,6 +702,25 @@ else
     ENVIRONMENT=$1
     ACTION=$2
     CONTAINER=$3
+    
+    # Parse additional flags for test command
+    KEEP_TEST_DATA=""
+    if [ "$ACTION" = "test" ]; then
+        shift 2  # Remove environment and action
+        while [[ $# -gt 0 ]]; do
+            case $1 in
+                --keep)
+                    KEEP_TEST_DATA="--keep"
+                    shift
+                    ;;
+                *)
+                    # Unknown option
+                    echo -e "${YELLOW}Warning: Unknown option '$1' ignored${NC}"
+                    shift
+                    ;;
+            esac
+        done
+    fi
 fi
 
 case "$ENVIRONMENT" in
@@ -726,7 +749,7 @@ case "$ENVIRONMENT" in
                 beta_status
                 ;;
             "test")
-                run_tests "beta"
+                run_tests "beta" "$KEEP_TEST_DATA"
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
@@ -739,7 +762,7 @@ case "$ENVIRONMENT" in
     "prod")
         case "$ACTION" in
             "test")
-                run_tests "prod"
+                run_tests "prod" "$KEEP_TEST_DATA"
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
@@ -778,7 +801,7 @@ case "$ENVIRONMENT" in
                 local_status
                 ;;
             "test")
-                local_test
+                local_test "$KEEP_TEST_DATA"
                 ;;
             "mock")
                 local_mock

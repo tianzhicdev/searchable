@@ -23,7 +23,7 @@ class SearchableAPIClient:
         """Register a new user, handle existing user gracefully"""
         return self.register_user(username, email, password)
     
-    def register_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
+    def register_user(self, username: str, email: str, password: str, test_metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Register a new user, handle existing user gracefully"""
         url = f"{self.base_url}/users/register"
         data = {
@@ -31,6 +31,10 @@ class SearchableAPIClient:
             "email": email,
             "password": password
         }
+        
+        # Add test metadata if provided
+        if test_metadata:
+            data["test_metadata"] = test_metadata
         
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         
@@ -450,6 +454,16 @@ class SearchableAPIClient:
         """Complete a test payment (test helper)"""
         url = f"{self.base_url}/v1/test/complete-payment"
         data = {"invoice_id": invoice_id}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def cleanup_test_data(self, test_session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Clean up test data by test session ID"""
+        url = f"{self.base_url}/api/v1/test-cleanup"
+        data = {}
+        if test_session_id:
+            data["test_session_id"] = test_session_id
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
