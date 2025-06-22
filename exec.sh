@@ -31,8 +31,12 @@ show_usage() {
     echo "  ./exec.sh beta logs <container_name>        - Show logs for beta container"
     echo "  ./exec.sh beta status                       - Show status of beta containers"
     echo "  ./exec.sh beta test                         - Run tests against beta (silkroadonlightning.com)"
+    echo "  ./exec.sh beta test --ls                    - List all available individual tests"
+    echo "  ./exec.sh beta test --t <test_name>         - Run specific test file against beta"
     echo ""
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
+    echo "  ./exec.sh prod test --ls                    - List all available individual tests"
+    echo "  ./exec.sh prod test --t <test_name>         - Run specific test file against prod"
     echo ""
     echo "  ./exec.sh local react                       - Start React development server locally"
     echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
@@ -40,6 +44,8 @@ show_usage() {
     echo "  ./exec.sh local logs <container_name>       - Show logs for local container"
     echo "  ./exec.sh local status                      - Show status of local containers"
     echo "  ./exec.sh local test                        - Run tests against local (localhost:5005)"
+    echo "  ./exec.sh local test --ls                   - List all available individual tests"
+    echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
     echo ""
@@ -65,6 +71,10 @@ show_usage() {
     echo "  ./exec.sh local deploy-all"
     echo "  ./exec.sh local status"
     echo "  ./exec.sh local test"
+    echo "  ./exec.sh local test --ls"
+    echo "  ./exec.sh local test --t invite_codes"
+    echo "  ./exec.sh beta test --t integration"
+    echo "  ./exec.sh prod test --t invite_codes"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
     echo "  ./exec.sh release"
@@ -247,6 +257,155 @@ beta_status() {
         echo "💾 Docker images:"
         docker images | grep searchable || true
 EOF
+}
+
+# Function to list all available tests
+list_tests() {
+    echo -e "${BLUE}📋 Available Individual Tests${NC}"
+    echo "================================"
+    echo ""
+    
+    # Navigate to integration tests directory
+    cd "$SCRIPT_DIR/integration-tests"
+    
+    # Find all test files and extract test names
+    local test_files=($(find . -name "test_*.py" -type f | sort))
+    
+    if [ ${#test_files[@]} -eq 0 ]; then
+        echo -e "${RED}No test files found in integration-tests directory${NC}"
+        return 1
+    fi
+    
+    echo -e "${YELLOW}Test files (use the name after 'test_' without .py):${NC}"
+    echo ""
+    
+    for file in "${test_files[@]}"; do
+        # Extract test name (remove ./test_ prefix and .py suffix)
+        test_name=$(basename "$file" .py | sed 's/^test_//')
+        file_path=$(basename "$file")
+        
+        # Get brief description from the file if available
+        description=""
+        if [ -f "$file" ]; then
+            # Look for class docstring or module docstring
+            description=$(head -20 "$file" | grep -E "Test|test.*for|functionality" | head -1 | sed 's/.*["'"'"']\(.*\)["'"'"'].*/\1/' | sed 's/.*#\s*//')
+        fi
+        
+        if [ -n "$description" ] && [ "$description" != "$file" ]; then
+            echo -e "  ${GREEN}$test_name${NC} - $description"
+        else
+            echo -e "  ${GREEN}$test_name${NC}"
+        fi
+    done
+    
+    echo ""
+    echo -e "${YELLOW}Usage examples:${NC}"
+    echo "  ./exec.sh local test --t invite_codes"
+    echo "  ./exec.sh beta test --t integration"
+    echo "  ./exec.sh local test --t comprehensive_scenarios"
+    
+    # Return to original directory
+    cd "$SCRIPT_DIR"
+}
+
+# Function to run a specific test
+run_single_test() {
+    local environment=$1
+    local test_name=$2
+    local api_url
+    local site_name
+    local test_prefix
+    
+    case "$environment" in
+        "local")
+            api_url="http://localhost:5005"
+            site_name="Local (localhost:5005)"
+            test_prefix="local_"
+            ;;
+        "beta")
+            api_url="https://silkroadonlightning.com"
+            site_name="Beta (silkroadonlightning.com)"
+            test_prefix="beta_"
+            ;;
+        "prod")
+            api_url="https://eccentricprotocol.com"
+            site_name="Production (eccentricprotocol.com)"
+            test_prefix="prod_"
+            ;;
+        *)
+            echo -e "${RED}Error: Invalid environment '$environment'. Use 'local', 'beta' or 'prod'${NC}"
+            exit 1
+            ;;
+    esac
+    
+    # Check if integration-tests directory exists
+    if [ ! -d "$SCRIPT_DIR/integration-tests" ]; then
+        echo -e "${RED}Error: integration-tests directory not found${NC}"
+        exit 1
+    fi
+    
+    # Navigate to integration tests directory
+    cd "$SCRIPT_DIR/integration-tests"
+    
+    # Construct test file name
+    test_file="test_${test_name}.py"
+    
+    # Check if test file exists
+    if [ ! -f "$test_file" ]; then
+        echo -e "${RED}Error: Test file '$test_file' not found${NC}"
+        echo ""
+        echo -e "${YELLOW}Available tests:${NC}"
+        list_tests
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🧪 Running test '$test_name' against $site_name${NC}"
+    echo "API URL: $api_url/api"
+    echo "Test file: $test_file"
+    echo ""
+    
+    # Set URLs based on environment
+    if [ "$environment" = "local" ]; then
+        metrics_url="http://localhost:5007"
+        grafana_url="http://localhost:3000"
+        grafana_proxy_url="http://localhost/grafana"
+    else
+        # For beta and prod, construct URLs with same base as API but different paths
+        base_url=$(echo "$api_url" | sed 's|/api$||')
+        metrics_url="${base_url}/metrics"
+        grafana_url="${base_url}/grafana"
+        grafana_proxy_url="${base_url}/grafana"
+    fi
+    
+    # Run specific test with environment variables
+    echo -e "${YELLOW}Running $test_file...${NC}"
+    BASE_URL="$api_url" \
+    METRICS_URL="$metrics_url" \
+    GRAFANA_URL="$grafana_url" \
+    GRAFANA_PROXY_URL="$grafana_proxy_url" \
+    TEST_USER_PREFIX="${test_prefix}" \
+    TEST_EMAIL_DOMAIN="${environment}.test" \
+    DEFAULT_PASSWORD="TestPass123!" \
+    REQUEST_TIMEOUT=30 \
+    UPLOAD_TIMEOUT=60 \
+    python "$test_file"
+    
+    TEST_RESULT=$?
+    
+    # Return to original directory
+    cd "$SCRIPT_DIR"
+    
+    echo ""
+    echo -e "${BLUE}🧪 Test Summary for '$test_name' on $site_name${NC}"
+    echo "================================"
+    
+    if [ $TEST_RESULT -eq 0 ]; then
+        echo -e "${GREEN}✅ Test '$test_name' passed!${NC}"
+    else
+        echo -e "${RED}❌ Test '$test_name' failed!${NC}"
+        echo -e "${YELLOW}Check the test output above for details.${NC}"
+        exit 1
+    fi
 }
 
 # Run comprehensive tests against specified environment
@@ -726,7 +885,19 @@ case "$ENVIRONMENT" in
                 beta_status
                 ;;
             "test")
-                run_tests "beta"
+                if [ "$CONTAINER" = "--ls" ]; then
+                    list_tests
+                elif [ "$CONTAINER" = "--t" ]; then
+                    if [ -z "$4" ]; then
+                        echo -e "${RED}Error: Test name required for --t option${NC}"
+                        echo "Usage: ./exec.sh beta test --t <test_name>"
+                        echo "Use --ls to see available tests"
+                        exit 1
+                    fi
+                    run_single_test "beta" "$4"
+                else
+                    run_tests "beta"
+                fi
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
@@ -739,7 +910,19 @@ case "$ENVIRONMENT" in
     "prod")
         case "$ACTION" in
             "test")
-                run_tests "prod"
+                if [ "$CONTAINER" = "--ls" ]; then
+                    list_tests
+                elif [ "$CONTAINER" = "--t" ]; then
+                    if [ -z "$4" ]; then
+                        echo -e "${RED}Error: Test name required for --t option${NC}"
+                        echo "Usage: ./exec.sh prod test --t <test_name>"
+                        echo "Use --ls to see available tests"
+                        exit 1
+                    fi
+                    run_single_test "prod" "$4"
+                else
+                    run_tests "prod"
+                fi
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
@@ -778,7 +961,19 @@ case "$ENVIRONMENT" in
                 local_status
                 ;;
             "test")
-                local_test
+                if [ "$CONTAINER" = "--ls" ]; then
+                    list_tests
+                elif [ "$CONTAINER" = "--t" ]; then
+                    if [ -z "$4" ]; then
+                        echo -e "${RED}Error: Test name required for --t option${NC}"
+                        echo "Usage: ./exec.sh local test --t <test_name>"
+                        echo "Use --ls to see available tests"
+                        exit 1
+                    fi
+                    run_single_test "local" "$4"
+                else
+                    local_test
+                fi
                 ;;
             "mock")
                 local_mock
