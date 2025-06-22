@@ -8,6 +8,7 @@ import {
     Box,
     Button,
     Checkbox,
+    CircularProgress,
     FormControl,
     FormControlLabel,
     FormHelperText,
@@ -40,7 +41,8 @@ const RestRegister = ({ ...others }) => {
     const [formValues, setFormValues] = useState({
         username: '',
         email: '',
-        password: ''
+        password: '',
+        invite_code: ''
     });
     const [formErrors, setFormErrors] = useState({});
     const [touched, setTouched] = useState({});
@@ -49,6 +51,8 @@ const RestRegister = ({ ...others }) => {
 
     const [strength, setStrength] = useState(0);
     const [level, setLevel] = useState('');
+    const [inviteCodeValid, setInviteCodeValid] = useState(null); // null, true, or false
+    const [checkingInviteCode, setCheckingInviteCode] = useState(false);
 
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
@@ -62,6 +66,24 @@ const RestRegister = ({ ...others }) => {
         const temp = strengthIndicator(value);
         setStrength(temp);
         setLevel(strengthColor(temp));
+    };
+
+    const checkInviteCode = async (code) => {
+        if (!code || code.length !== 6) {
+            setInviteCodeValid(null);
+            return;
+        }
+        
+        setCheckingInviteCode(true);
+        try {
+            const response = await axios.get(configData.API_SERVER + `v1/is_active/${code.toUpperCase()}`);
+            setInviteCodeValid(response.data.active);
+        } catch (error) {
+            console.error('Error checking invite code:', error);
+            setInviteCodeValid(false);
+        } finally {
+            setCheckingInviteCode(false);
+        }
     };
 
     const validateField = (name, value) => {
@@ -92,10 +114,23 @@ const RestRegister = ({ ...others }) => {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setFormValues(prev => ({ ...prev, [name]: value }));
+        
+        // For invite code, convert to uppercase and limit to 6 chars
+        let processedValue = value;
+        if (name === 'invite_code') {
+            processedValue = value.toUpperCase().slice(0, 6);
+        }
+        
+        setFormValues(prev => ({ ...prev, [name]: processedValue }));
         
         if (name === 'password') {
             changePassword(value);
+        }
+        
+        if (name === 'invite_code' && processedValue.length === 6) {
+            checkInviteCode(processedValue);
+        } else if (name === 'invite_code') {
+            setInviteCodeValid(null);
         }
         
         // Clear error when user starts typing
@@ -135,7 +170,8 @@ const RestRegister = ({ ...others }) => {
             const response = await axios.post(configData.API_SERVER + 'users/register', {
                 username: formValues.username,
                 password: formValues.password,
-                email: formValues.email
+                email: formValues.email,
+                invite_code: formValues.invite_code
             });
             
             if (response.data.success) {
@@ -205,6 +241,42 @@ const RestRegister = ({ ...others }) => {
                     </FormHelperText>
                 )}
             </FormControl>
+            
+            <FormControl 
+                fullWidth 
+                sx={{ mb: 2 }}
+            >
+                <TextField
+                    name="invite_code"
+                    id="invite_code"
+                    type="text"
+                    value={formValues.invite_code}
+                    onBlur={handleBlur}
+                    placeholder="Invite Code (optional)"
+                    onChange={handleChange}
+                    inputProps={{ maxLength: 6 }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                {checkingInviteCode && <CircularProgress size={20} />}
+                                {!checkingInviteCode && inviteCodeValid === true && (
+                                    <Typography variant="body2" color="success.main">✓ Valid</Typography>
+                                )}
+                                {!checkingInviteCode && inviteCodeValid === false && (
+                                    <Typography variant="body2" color="error">✗ Invalid</Typography>
+                                )}
+                            </InputAdornment>
+                        )
+                    }}
+                />
+                <FormHelperText>
+                    {formValues.invite_code.length === 0 && "Enter a 6-letter invite code for a $5 reward"}
+                    {formValues.invite_code.length > 0 && formValues.invite_code.length < 6 && 
+                        `${6 - formValues.invite_code.length} more letters needed`}
+                    {inviteCodeValid === true && "You'll receive $5 after registration!"}
+                </FormHelperText>
+            </FormControl>
+            
             <FormControl fullWidth error={Boolean(touched.password && formErrors.password)}>
                 <TextField
                     id="outlined-adornment-password-register"

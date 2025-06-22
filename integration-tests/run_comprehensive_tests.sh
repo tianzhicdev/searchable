@@ -127,6 +127,7 @@ test_files=(
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
     "test_social_media_profiles.py"         # Social media profile functionality
     "test_my_downloads.py"                  # My Downloads functionality
+    "test_invite_codes.py"                  # Invite code functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_ratings.py"                       # Rating system
     "test_file_management.py"               # File CRUD operations

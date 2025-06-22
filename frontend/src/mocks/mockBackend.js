@@ -44,9 +44,18 @@ const mockHandlers = {
   'users/register': (url, config) => {
     const data = JSON.parse(config.data);
     console.log('[MOCK] Register attempt with:', data);
+    
+    let msg = 'User registered successfully';
+    if (data.invite_code) {
+      const validCodes = ['ABCDEF', 'TESTME', 'MOCK01', 'REWARD'];
+      if (validCodes.includes(data.invite_code)) {
+        msg = 'User registered successfully with invite code reward!';
+      }
+    }
+    
     return createMockResponse({
       success: true,
-      msg: 'User registered successfully'
+      msg: msg
     });
   },
   
@@ -755,6 +764,18 @@ const mockHandlers = {
       profile: profileData,
       downloadables: downloadables
     });
+  },
+  
+  // Invite code validation endpoint
+  'v1/is_active/': (url) => {
+    const code = url.split('v1/is_active/')[1];
+    console.log('[MOCK] Checking invite code:', code);
+    
+    // Mock some valid codes
+    const validCodes = ['ABCDEF', 'TESTME', 'MOCK01', 'REWARD'];
+    const isActive = validCodes.includes(code);
+    
+    return createMockResponse({ active: isActive });
   },
   
   // Search/listing endpoints  
