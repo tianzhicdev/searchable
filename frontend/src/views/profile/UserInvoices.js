@@ -14,10 +14,12 @@ import { useTheme } from '@material-ui/core/styles';
 import { 
   TrendingUp,
   TrendingDown,
-  AccountBalanceWallet
+  AccountBalanceWallet,
+  CardGiftcard
 } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
+import RewardComponent from '../../components/Reward/RewardComponent';
 import useComponentStyles from '../../themes/componentStyles';
 
 const UserInvoices = () => {
@@ -27,6 +29,7 @@ const UserInvoices = () => {
   const [purchases, setPurchases] = useState([]);
   const [sales, setSales] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [rewards, setRewards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -34,14 +37,17 @@ const UserInvoices = () => {
     totalSpent: 0,
     totalEarned: 0,
     totalWithdrawn: 0,
+    totalRewards: 0,
     purchasesCount: 0,
     salesCount: 0,
-    withdrawalsCount: 0
+    withdrawalsCount: 0,
+    rewardsCount: 0
   });
 
   useEffect(() => {
     fetchUserInvoices();
     fetchUserWithdrawals();
+    fetchUserRewards();
   }, []);
 
   const fetchUserInvoices = async () => {
@@ -99,6 +105,28 @@ const UserInvoices = () => {
       setLoading(false);
     }
   };
+  
+  const fetchUserRewards = async () => {
+    try {
+      const response = await Backend.get('v1/rewards');
+      const data = response.data;
+      
+      setRewards(data.rewards || []);
+      
+      // Calculate reward statistics
+      const totalRewards = data.total_amount || 0;
+      
+      setStats(prevStats => ({
+        ...prevStats,
+        totalRewards,
+        rewardsCount: data.count || 0
+      }));
+      
+    } catch (err) {
+      console.error('Error fetching user rewards:', err);
+      // Don't set error state for rewards as it's not critical
+    }
+  };
 
   const handleRatingSubmitted = () => {
     // Refresh invoices to get updated rating status
@@ -132,6 +160,7 @@ const UserInvoices = () => {
           onClick={() => {
             fetchUserInvoices();
             fetchUserWithdrawals();
+            fetchUserRewards();
           }} 
           style={{ marginTop: 16 }}
           variant="outlined"
@@ -208,6 +237,29 @@ const UserInvoices = () => {
             </Box>
           </Box>
         </Button>
+        
+        {stats.totalRewards > 0 && (
+          <Button
+            style={{ 
+              flex: 1, 
+            }}
+
+            variant='contained'
+            onClick={() => setActiveTab(3)}
+          >
+            <Box display="flex" alignItems="center" gap={1} width="100%">
+              <CardGiftcard color="primary" />
+              <Box textAlign="left" flex={1}>
+                <Typography variant="h6" className={classes.staticText}>
+                  {formatCurrency(stats.totalRewards)}
+                </Typography>
+                <Typography className={classes.staticText}>
+                  Total Rewards ({stats.rewardsCount})
+                </Typography>
+              </Box>
+            </Box>
+          </Button>
+        )}
       </Box>
 
         <Box p={2}>
@@ -356,6 +408,35 @@ const UserInvoices = () => {
                         </Box>
                       </Box>
                     </Paper>
+                  ))}
+                </>
+              )}
+            </Box>
+          )}
+
+          {/* Total Rewards Tab */}
+          {activeTab === 3 && (
+            <Box>
+              {rewards.length === 0 ? (
+                <Box textAlign="center" py={4}>
+                  <CardGiftcard style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                  <Typography variant="h6" className={classes.staticText}>
+                    No rewards yet
+                  </Typography>
+                  <Typography variant="body2" className={classes.staticText}>
+                    Your rewards history will appear here
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Total Rewards History ({rewards.length})
+                  </Typography>
+                  {rewards.map((reward) => (
+                    <RewardComponent
+                      key={reward.id}
+                      reward={reward}
+                    />
                   ))}
                 </>
               )}

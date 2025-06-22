@@ -639,6 +639,12 @@ const mockHandlers = {
     return createMockResponse(mockData.mockWithdrawals);
   },
   
+  // User rewards endpoint
+  'v1/rewards': () => {
+    console.log('[MOCK] Fetching user rewards');
+    return createMockResponse(mockData.mockRewards);
+  },
+  
   
   'v1/profile/': (url) => {
     const identifier = url.split('/').pop();
