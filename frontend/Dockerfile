@@ -2,7 +2,7 @@
 FROM node:22.11.0-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm cache clean --force && npm install --legacy-peer-deps --force
 COPY . .
 
 # Conditionally run different build commands based on REACT_APP_BRANDING
