@@ -30,10 +30,10 @@ const Footer = () => {
             Contact Information
           </Link>
           {' | '}
-          <Link color="inherit" href="/getting-started" underline="hover">
+          {/* <Link color="inherit" href="/getting-started" underline="hover">
             Getting Started
           </Link>
-          {' | '}
+          {' | '} */}
           <span style={{ fontSize: '0.875rem', opacity: 0.8 }}>
             {APP_VERSION}
           </span>
