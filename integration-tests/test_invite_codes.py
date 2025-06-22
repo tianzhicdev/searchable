@@ -5,7 +5,7 @@ import requests
 import time
 from config import API_BASE_URL, TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
 from api_client import APIClient
-from db_helpers import insert_invite_code, check_reward_exists, check_invite_code_used
+from db_helpers import insert_invite_code, check_reward_exists, check_invite_code_used, check_tables_exist
 
 class TestInviteCodes:
     """Test suite for invite code functionality"""
@@ -17,6 +17,7 @@ class TestInviteCodes:
         self.test_username = f"{TEST_USER_PREFIX}invite_{self.timestamp}"
         self.test_email = f"{self.test_username}@{TEST_EMAIL_DOMAIN}"
         self.test_password = DEFAULT_PASSWORD
+        
         
     def test_check_invite_code_invalid_format(self):
         """Test checking invite code with invalid format"""
@@ -150,7 +151,7 @@ class TestInviteCodes:
         assert response1.status_code == 200
         data1 = response1.json()
         assert data1['success'] == True
-        assert 'reward' in data1['msg'].lower()
+        assert 'reward' in data1['msg'].lower(), f"Expected 'reward' in message but got: {data1['msg']}"
         
         # Try to register second user with the same (now used) invite code
         username2 = f"{TEST_USER_PREFIX}used2_{self.timestamp}"
@@ -202,7 +203,7 @@ class TestInviteCodes:
         assert response.status_code == 200
         data = response.json()
         assert data['success'] == True
-        assert 'reward' in data['msg'].lower()
+        assert 'reward' in data['msg'].lower(), f"Expected 'reward' in message but got: {data['msg']}"
         
         user_id = data['userID']
         
