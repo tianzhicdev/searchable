@@ -1,14 +1,8 @@
 # Stage 1: Build the React app
 FROM node:22.11.0-alpine as build-stage
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Clean install with cache disabled to avoid corruption issues
-RUN rm -rf node_modules package-lock.json && \
-    npm cache clean --force && \
-    npm install --legacy-peer-deps --no-cache --prefer-online
+RUN npm install --legacy-peer-deps
 COPY . .
 
 # Conditionally run different build commands based on REACT_APP_BRANDING
