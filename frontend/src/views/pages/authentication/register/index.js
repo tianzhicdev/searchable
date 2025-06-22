@@ -41,7 +41,7 @@ const Register = () => {
                         variant="subtitle1"
                         className={classes.textLink}
                     >
-                        Have an account?
+                        Login with an account?
                     </Typography>
                 </Grid>
             </Grid>
