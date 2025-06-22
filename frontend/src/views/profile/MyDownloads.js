@@ -107,9 +107,6 @@ const MyDownloads = () => {
           >
             <ArrowBack />
           </Button>
-          <Typography variant="h5">
-            My Downloads
-          </Typography>
         </Box>
       </Grid>
 
@@ -145,9 +142,6 @@ const MyDownloads = () => {
           </Paper>
         ) : (
           <Box>
-            <Typography variant="h6" gutterBottom style={{ marginBottom: '16px' }}>
-              Downloads ({downloadableItems.length})
-            </Typography>
             {downloadableItems.map((item, index) => (
               <DownloadableProfile
                 key={`${item.invoice_id}-${index}`}
