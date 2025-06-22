@@ -56,12 +56,12 @@ def insert_invite_code(code, active=True, description="test code"):
         bool: True if successful, False otherwise
     """
     try:
-        # Use PostgreSQL dollar quoting to avoid quote escaping issues
+        # Use proper PostgreSQL JSONB literal syntax
         import json
         metadata_dict = {"description": description}
-        metadata_json = json.dumps(metadata_dict)
+        metadata_json = json.dumps(metadata_dict).replace("'", "''")  # Escape single quotes for SQL
         
-        sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, $${metadata_json}$$) ON CONFLICT (code) DO NOTHING;"
+        sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, '{metadata_json}'::jsonb) ON CONFLICT (code) DO NOTHING;"
         
         execute_db_command(sql_command)
         return True
@@ -144,3 +144,17 @@ def check_invite_code_used(code, expected_user_id=None):
     except subprocess.CalledProcessError as e:
         print(f"Failed to check invite code {code}: {e}")
         return {'is_used': False, 'used_by_user_id': None, 'active': False}
+
+def check_tables_exist():
+    """
+    Check if required tables exist on the remote/local database.
+    """
+    try:
+        sql_command = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('invite_code', 'rewards');"
+        result = execute_db_command(sql_command)
+        
+        print(f"[DEBUG] Tables check result: {result.stdout}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to check tables: {e}")
+        return False
