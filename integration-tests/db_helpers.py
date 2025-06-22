@@ -29,9 +29,9 @@ def execute_db_command(sql_command):
         if SSH_PORT != '22':
             ssh_cmd_parts.extend(['-p', SSH_PORT])
             
-        # Add host and docker command
-        docker_cmd = f'docker exec {DB_CONTAINER_NAME} psql -U searchable -d searchable -c "{sql_command}"'
-        ssh_cmd_parts.extend([SSH_HOST, docker_cmd])
+        # Add host and use here-document to avoid all escaping issues
+        remote_cmd = f'docker exec -i {DB_CONTAINER_NAME} psql -U searchable -d searchable << EOF\n{sql_command}\nEOF'
+        ssh_cmd_parts.extend([SSH_HOST, remote_cmd])
         
         return subprocess.run(ssh_cmd_parts, check=True, capture_output=True, text=True)
     else:
@@ -56,12 +56,12 @@ def insert_invite_code(code, active=True, description="test code"):
         bool: True if successful, False otherwise
     """
     try:
-        # Use proper JSON escaping for PostgreSQL
+        # Use PostgreSQL dollar quoting to avoid quote escaping issues
         import json
         metadata_dict = {"description": description}
-        metadata_json = json.dumps(metadata_dict)  # No need to escape quotes now
+        metadata_json = json.dumps(metadata_dict)
         
-        sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, '{metadata_json}') ON CONFLICT (code) DO NOTHING;"
+        sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, $${metadata_json}$$) ON CONFLICT (code) DO NOTHING;"
         
         execute_db_command(sql_command)
         return True
