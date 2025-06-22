@@ -259,6 +259,26 @@ CREATE INDEX IF NOT EXISTS idx_metrics_tag2 ON metrics(tag2) WHERE tag2 IS NOT N
 CREATE INDEX IF NOT EXISTS idx_metrics_tag3 ON metrics(tag3) WHERE tag3 IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_metrics_created_at ON metrics(created_at DESC);
 
+-- Invite codes table for registration rewards
+CREATE TABLE IF NOT EXISTS invite_code (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(6) NOT NULL UNIQUE CHECK (code ~ '^[A-Z]{6}$'), -- 6 uppercase letters
+    active BOOLEAN NOT NULL DEFAULT true,
+    used_by_user_id INTEGER, -- References users.id when used
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Index on code for faster lookups
+CREATE INDEX IF NOT EXISTS idx_invite_code_code ON invite_code(code);
+
+-- Index on active for faster active code queries
+CREATE INDEX IF NOT EXISTS idx_invite_code_active ON invite_code(active) WHERE active = true;
+
+-- Index on used_by_user_id for tracking usage
+CREATE INDEX IF NOT EXISTS idx_invite_code_used_by ON invite_code(used_by_user_id) WHERE used_by_user_id IS NOT NULL;
+
 
 
 

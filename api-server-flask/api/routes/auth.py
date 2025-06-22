@@ -27,7 +27,8 @@ DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
 
 signup_model = rest_api.model('SignUpModel', {"username": fields.String(required=True, min_length=2, max_length=32),
                                               "email": fields.String(required=True, min_length=4, max_length=64),
-                                              "password": fields.String(required=True, min_length=4, max_length=16)
+                                              "password": fields.String(required=True, min_length=4, max_length=16),
+                                              "invite_code": fields.String(required=False, min_length=6, max_length=6)
                                               })
 
 login_model = rest_api.model('LoginModel', {"email": fields.String(required=True, min_length=4, max_length=64),
@@ -142,6 +143,7 @@ class Register(Resource):
         _username = req_data.get("username")
         _email = req_data.get("email")
         _password = req_data.get("password")
+        _invite_code = req_data.get("invite_code", "").strip().upper()
 
         user_exists = Users.get_by_email(_email)
         if user_exists:
@@ -162,9 +164,78 @@ class Register(Resource):
         except Exception as e:
             logger.warning(f"Failed to track signup metric: {e}")
 
+        # Handle invite code if provided
+        invite_code_used = False
+        if _invite_code and len(_invite_code) == 6 and _invite_code.isalpha():
+            try:
+                conn = get_db_connection()
+                cur = conn.cursor()
+                
+                # Check if code exists and is active
+                execute_sql(cur,
+                    "SELECT id, active FROM invite_code WHERE code = %s",
+                    params=(_invite_code,)
+                )
+                
+                result = cur.fetchone()
+                if result and result[1]:  # result[1] is the active boolean
+                    invite_code_id = result[0]
+                    
+                    # Mark the invite code as used
+                    execute_sql(cur,
+                        "UPDATE invite_code SET active = false, used_by_user_id = %s, used_at = NOW() WHERE id = %s",
+                        params=(new_user.id, invite_code_id)
+                    )
+                    
+                    # Create a reward invoice and payment
+                    # First create an invoice from system (user_id 1) to new user
+                    execute_sql(cur,
+                        """INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata) 
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                        params=(
+                            1,  # System user as buyer
+                            new_user.id,  # New user as seller (receiving the reward)
+                            1,  # System searchable ID (or any valid ID)
+                            5.0,  # $5 USD reward
+                            0.0,  # No fee
+                            'usd',
+                            'stripe',
+                            f'invite_code_reward_{invite_code_id}_{new_user.id}',  # Unique external ID
+                            Json({"type": "invite_code_reward", "invite_code": _invite_code})
+                        )
+                    )
+                    
+                    invoice_id = cur.fetchone()[0]
+                    
+                    # Create completed payment
+                    execute_sql(cur,
+                        """INSERT INTO payment (invoice_id, amount, fee, currency, type, status, metadata) 
+                           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                        params=(
+                            invoice_id,
+                            5.0,  # $5 USD reward
+                            0.0,  # No fee
+                            'usd',
+                            'stripe',
+                            'complete',  # Completed payment
+                            Json({"type": "invite_code_reward", "invite_code": _invite_code})
+                        )
+                    )
+                    
+                    conn.commit()
+                    invite_code_used = True
+                    logger.info(f"Invite code {_invite_code} used by user {new_user.id}, $5 reward credited")
+                
+                cur.close()
+                conn.close()
+                    
+            except Exception as e:
+                logger.error(f"Error processing invite code: {e}")
+                # Don't fail registration if invite code processing fails
+
         return {"success": True,
                 "userID": new_user.id,
-                "msg": "The user was successfully registered"}, 200
+                "msg": "The user was successfully registered" + (" with invite code reward!" if invite_code_used else "")}, 200
 
 
 @rest_api.route('/api/users/login')
@@ -302,6 +373,41 @@ class GitHubLogin(Resource):
                     "username": user_json['username'],
                     "token": token,
                 }}, 200
+
+
+@rest_api.route('/api/v1/is_active/<string:invite_code>')
+class CheckInviteCode(Resource):
+    """
+    Check if an invite code is active
+    """
+    def get(self, invite_code):
+        # Validate format: 6 uppercase letters
+        if not invite_code or len(invite_code) != 6 or not invite_code.isupper() or not invite_code.isalpha():
+            return {"active": False}, 200
+        
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Check if code exists and is active
+            execute_sql(cur,
+                "SELECT active FROM invite_code WHERE code = %s",
+                params=(invite_code,)
+            )
+            
+            result = cur.fetchone()
+            cur.close()
+            conn.close()
+            
+            if result and result[0]:  # result[0] is the active boolean
+                return {"active": True}, 200
+            else:
+                return {"active": False}, 200
+                
+        except Exception as e:
+            logger.error(f"Error checking invite code: {e}")
+            return {"active": False}, 200
+
 
 # Export decorators for use in other route modules
 __all__ = ['token_required']
