@@ -404,3 +404,34 @@ export const mockUserSearchables = {
     totalPages: 1
   }
 };
+
+// Mock rewards data
+export const mockRewards = {
+  rewards: [
+    {
+      id: 1,
+      amount: 5.0,
+      currency: "usd",
+      user_id: "mock-user-1",
+      created_at: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+      metadata: {
+        type: "invite_code_reward",
+        invite_code: "ABCDEF",
+        invite_code_id: 1
+      }
+    },
+    {
+      id: 2,
+      amount: 10.0,
+      currency: "usd", 
+      user_id: "mock-user-1",
+      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      metadata: {
+        type: "signup_bonus",
+        description: "Welcome bonus for new users"
+      }
+    }
+  ],
+  total_amount: 15.0,
+  count: 2
+};

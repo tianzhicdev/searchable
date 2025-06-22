@@ -187,38 +187,19 @@ class Register(Resource):
                         params=(new_user.id, invite_code_id)
                     )
                     
-                    # Create a reward invoice and payment
-                    # First create an invoice from system (user_id 1) to new user
+                    # Create a reward record
                     execute_sql(cur,
-                        """INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                        """INSERT INTO rewards (amount, currency, user_id, metadata) 
+                           VALUES (%s, %s, %s, %s)""",
                         params=(
-                            1,  # System user as buyer
-                            new_user.id,  # New user as seller (receiving the reward)
-                            1,  # System searchable ID (or any valid ID)
                             5.0,  # $5 USD reward
-                            0.0,  # No fee
                             'usd',
-                            'stripe',
-                            f'invite_code_reward_{invite_code_id}_{new_user.id}',  # Unique external ID
-                            Json({"type": "invite_code_reward", "invite_code": _invite_code})
-                        )
-                    )
-                    
-                    invoice_id = cur.fetchone()[0]
-                    
-                    # Create completed payment
-                    execute_sql(cur,
-                        """INSERT INTO payment (invoice_id, amount, fee, currency, type, status, metadata) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                        params=(
-                            invoice_id,
-                            5.0,  # $5 USD reward
-                            0.0,  # No fee
-                            'usd',
-                            'stripe',
-                            'complete',  # Completed payment
-                            Json({"type": "invite_code_reward", "invite_code": _invite_code})
+                            new_user.id,  # User receiving the reward
+                            Json({
+                                "type": "invite_code_reward", 
+                                "invite_code": _invite_code,
+                                "invite_code_id": invite_code_id
+                            })
                         )
                     )
                     

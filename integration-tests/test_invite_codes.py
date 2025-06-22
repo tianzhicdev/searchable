@@ -129,13 +129,14 @@ class TestInviteCodes:
         # For now, we'll just test the structure
         pass
     
-    def test_reward_payment_created(self):
-        """Test that reward payment is created when using valid invite code"""
+    def test_reward_created_with_valid_invite_code(self):
+        """Test that reward is created when using valid invite code"""
         # This test would require:
         # 1. Having a known valid invite code in the test database
-        # 2. Registering with it
-        # 3. Checking the user's balance shows $5
-        # For now, we'll just test the registration flow
+        # 2. Registering with it  
+        # 3. Checking that a reward record was created
+        # 4. Checking the user's balance includes the $5 reward
+        # For now, we'll just test the registration flow structure
         pass
     
     def teardown_method(self):

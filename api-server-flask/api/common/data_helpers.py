@@ -799,6 +799,27 @@ def get_balance_by_currency(user_id):
                 logger.error(f"KeyError processing searchable {searchable_id}: {str(ke)}")
                 continue
         
+        # Add rewards
+        execute_sql(cur, f"""
+            SELECT amount, currency
+            FROM rewards 
+            WHERE user_id = {user_id}
+        """)
+        
+        reward_results = cur.fetchall()
+        
+        for reward in reward_results:
+            amount, currency = reward
+            
+            if amount is not None and currency is not None:
+                try:
+                    amount_float = float(amount)
+                    if currency.lower() in ['usdt', 'usd']:
+                        balance_by_currency['usd'] += amount_float
+                        logger.debug(f"Added ${amount_float} USD from rewards")
+                except ValueError:
+                    logger.error(f"Invalid amount format in reward: {amount}")
+        
         # Subtract withdrawals
         execute_sql(cur, f"""
             SELECT amount, currency
@@ -1385,6 +1406,49 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
         logger.error(f"Error updating user profile: {str(e)}")
         return None
 
+def get_rewards(user_id=None):
+    """
+    Retrieves rewards from the rewards table
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        conditions = []
+        if user_id is not None:
+            conditions.append(f"user_id = {user_id}")
+        
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+        
+        query = f"""
+            SELECT id, amount, currency, user_id, created_at, metadata
+            FROM rewards
+            WHERE {where_clause}
+            ORDER BY created_at DESC
+        """
+        
+        execute_sql(cur, query)
+        
+        results = []
+        for row in cur.fetchall():
+            reward = {
+                'id': row[0],
+                'amount': float(row[1]),
+                'currency': row[2],
+                'user_id': row[3],
+                'created_at': row[4].isoformat() if row[4] else None,
+                'metadata': row[5]
+            }
+            results.append(reward)
+        
+        cur.close()
+        conn.close()
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error retrieving rewards: {str(e)}")
+        return []
+
 def get_downloadable_items_by_user_id(user_id):
     """
     Get all downloadable items purchased by a user
@@ -1516,5 +1580,6 @@ __all__ = [
     'get_user_profile',
     'create_user_profile',
     'update_user_profile',
+    'get_rewards',
     'get_downloadable_items_by_user_id'
 ] 

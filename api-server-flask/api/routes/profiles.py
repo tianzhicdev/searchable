@@ -17,6 +17,7 @@ from ..common.data_helpers import (
     get_searchableIds_by_user,
     get_searchable,
     get_downloadable_items_by_user_id,
+    get_rewards,
 )
 from ..common.logging_config import setup_logger
 
@@ -313,4 +314,31 @@ class GetDownloadableItemsByUser(Resource):
             
         except Exception as e:
             logger.error(f"Error getting downloadable items for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/rewards', methods=['GET'])
+class GetUserRewards(Resource):
+    """
+    Get all rewards for the current user
+    """
+    @token_required
+    @track_metrics('get_user_rewards')
+    def get(self, current_user, request_origin='unknown'):
+        try:
+            user_id = current_user.id
+            
+            # Get rewards for the user
+            rewards = get_rewards(user_id=user_id)
+            
+            # Calculate total reward amount
+            total_rewards = sum(reward['amount'] for reward in rewards)
+            
+            return {
+                "rewards": rewards,
+                "total_amount": total_rewards,
+                "count": len(rewards)
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error getting rewards for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500

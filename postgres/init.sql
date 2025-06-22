@@ -279,6 +279,25 @@ CREATE INDEX IF NOT EXISTS idx_invite_code_active ON invite_code(active) WHERE a
 -- Index on used_by_user_id for tracking usage
 CREATE INDEX IF NOT EXISTS idx_invite_code_used_by ON invite_code(used_by_user_id) WHERE used_by_user_id IS NOT NULL;
 
+-- Rewards table for promotional credits and bonuses
+CREATE TABLE IF NOT EXISTS rewards (
+    id SERIAL PRIMARY KEY,
+    amount DECIMAL(20,8) NOT NULL CHECK (amount > 0),
+    currency TEXT NOT NULL CHECK (currency = 'usd') DEFAULT 'usd',
+    user_id INTEGER NOT NULL, -- References users.id
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Index on user_id for faster balance calculations
+CREATE INDEX IF NOT EXISTS idx_rewards_user_id ON rewards(user_id);
+
+-- Index on created_at for date-based queries
+CREATE INDEX IF NOT EXISTS idx_rewards_created_at ON rewards(created_at);
+
+-- Index on amount for aggregation queries
+CREATE INDEX IF NOT EXISTS idx_rewards_amount ON rewards(amount);
+
 
 
 
