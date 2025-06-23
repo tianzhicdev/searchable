@@ -228,6 +228,42 @@ class TestInviteCodes:
         usd_balance = balance_data.get('balance', {}).get('usd', 0)
         assert usd_balance == 5.0, f"User balance should be $5.00 from invite reward, but got ${usd_balance}"
     
+    def test_get_active_invite_code_endpoint(self):
+        """Test the get active invite code endpoint"""
+        response = requests.get(f"{API_BASE_URL}/v1/get-active-invite-code")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should return success and invite code data
+        assert 'success' in data
+        if data.get('success'):
+            assert 'invite_code' in data
+            assert 'description' in data
+            assert isinstance(data['invite_code'], str)
+            assert len(data['invite_code']) == 6
+            assert data['invite_code'].isupper()
+            assert data['invite_code'].isalpha()
+            print(f"Got active invite code: {data['invite_code']} - {data['description']}")
+        else:
+            # If no active codes, should have message
+            assert 'message' in data
+            print(f"No active invite codes: {data['message']}")
+
+    def test_get_active_invite_code_multiple_calls(self):
+        """Test that multiple calls to get active invite code work consistently"""
+        for i in range(3):
+            response = requests.get(f"{API_BASE_URL}/v1/get-active-invite-code")
+            assert response.status_code == 200
+            data = response.json()
+            
+            if data.get('success'):
+                assert 'invite_code' in data
+                assert len(data['invite_code']) == 6
+                print(f"Call {i+1}: Got invite code {data['invite_code']}")
+            else:
+                print(f"Call {i+1}: No active codes available")
+
     def teardown_method(self):
         """Cleanup test data"""
         # Logout if logged in
