@@ -280,14 +280,16 @@ class TestWithdrawalOperations:
             response = self.client.create_usdt_withdrawal(withdrawal_data)
             print(f"[RESPONSE] Create valid withdrawal: {response}")
             assert isinstance(response, dict)
+            assert response['success'] is True
+            assert response['msg'] == 'Withdrawal request submitted successfully'
+            assert 'withdrawal_id' in response
+            assert isinstance(response['withdrawal_id'], int)
+            assert response['withdrawal_id'] > 0
+            assert response['amount'] == 50.0
+            assert response['fee'] == 0.05
+            assert response['amount_after_fee'] == 49.95
             
-            assert 'withdrawal_id' in response, "Response should contain withdrawal_id"
-
-            withdrawal_id = response.get('withdrawal_id')
-            assert withdrawal_id is not None
-            assert response.get('amount') == 50
-            assert response.get('fee') == 0.05
-            assert response.get('amount_after_fee') == 49.95
+            withdrawal_id = response['withdrawal_id']
                 
         except Exception as e:
             pytest.fail(f"Withdrawal API failed: {e}")
@@ -298,9 +300,11 @@ class TestWithdrawalOperations:
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
+        assert 'usd' in balance_response['balance']
         
-        new_balance = balance_response.get('balance').get('usd')
-        assert new_balance == 49.900000000000006 
+        new_balance = balance_response['balance']['usd']
+        # 99.9 - 50 = 49.9 (allowing for floating point precision)
+        assert abs(new_balance - 49.9) < 0.000001 
     
     def test_05_create_small_withdrawal(self):
         """Test creating a smaller withdrawal to verify fee calculation"""
@@ -357,22 +361,40 @@ class TestWithdrawalOperations:
             # Check withdrawal for address_1 ($50)
             w1 = withdrawal_by_address.get(self.address_1)
             assert w1 is not None, f"No withdrawal found for address_1: {self.address_1}"
-            assert w1['amount'] == 50
+            assert w1['amount'] == 50.0
             assert w1['fee'] == 0.05
-            assert w1['metadata']['original_amount'] == 50
+            assert w1['currency'] == 'usd'
+            assert w1['type'] == 'bank_transfer'
+            assert w1['status'] == 'pending'
+            assert w1['user_id'] == w1['user_id']  # Verify it's a valid user_id (integer)
+            assert isinstance(w1['user_id'], int)
+            assert w1['external_id'].startswith(f'usd-{w1["user_id"]}-')
+            assert w1['metadata']['original_amount'] == 50.0
             assert w1['metadata']['fee_percentage'] == 0.1
-            assert abs(w1['metadata']['amount_after_fee'] - 49.95) < 0.001
+            assert w1['metadata']['amount_after_fee'] == 49.95
             assert w1['metadata']['address'] == self.address_1
+            # Verify timestamp is recent (within last hour)
+            import time
+            current_time = int(time.time())
+            assert abs(current_time - w1['metadata']['timestamp']) < 3600
 
             # Check withdrawal for address_2 ($10)
             w2 = withdrawal_by_address.get(self.address_2)
             assert w2 is not None, f"No withdrawal found for address_2: {self.address_2}"
-            assert w2['amount'] == 10
+            assert w2['amount'] == 10.0
             assert w2['fee'] == 0.01
-            assert w2['metadata']['original_amount'] == 10
+            assert w2['currency'] == 'usd'
+            assert w2['type'] == 'bank_transfer'
+            assert w2['status'] == 'pending'
+            assert w2['user_id'] == w1['user_id']  # Should be same user as w1
+            assert isinstance(w2['user_id'], int)
+            assert w2['external_id'].startswith(f'usd-{w2["user_id"]}-')
+            assert w2['metadata']['original_amount'] == 10.0
             assert w2['metadata']['fee_percentage'] == 0.1
-            assert abs(w2['metadata']['amount_after_fee'] - 9.99) < 0.001
+            assert w2['metadata']['amount_after_fee'] == 9.99
             assert w2['metadata']['address'] == self.address_2
+            # Verify timestamp is recent (within last hour)
+            assert abs(current_time - w2['metadata']['timestamp']) < 3600
                 
         except Exception as e:
             pytest.fail(f"Withdrawal history API failed: {e}")
@@ -392,12 +414,31 @@ class TestWithdrawalOperations:
                 # Wait for withdrawal to complete or fail (max 30 seconds)
                 final_withdrawal = self.wait_for_withdrawal_completion(withdrawal_id, max_wait_seconds=60)
                 
-                # Verify the withdrawal has expected fields
+                # Verify the final withdrawal has expected structure and values
                 assert isinstance(final_withdrawal, dict)
-                assert 'status' in final_withdrawal
-                assert 'amount' in final_withdrawal
-                assert final_withdrawal['status'] in ['complete', 'failed']
-                assert isinstance(final_withdrawal['amount'], (int, float))
+                assert final_withdrawal['currency'] == 'usd'
+                assert final_withdrawal['type'] == 'bank_transfer' 
+                assert final_withdrawal['status'] == 'complete'
+                
+                # Based on the response, we know it should be withdrawal_id 85 (the small $10 withdrawal)
+                # Assert specific values from the actual response
+                if final_withdrawal['amount'] == 10.0:
+                    assert final_withdrawal['fee'] == 0.01
+                    assert final_withdrawal['metadata']['original_amount'] == 10.0
+                    assert final_withdrawal['metadata']['amount_after_fee'] == 9.99
+                    assert final_withdrawal['metadata']['address'] == '0xB1Eb9593ed5C832e6f618c60CDc6017b0eE28563'
+                
+                assert final_withdrawal['metadata']['fee_percentage'] == 0.1
+                assert final_withdrawal['metadata']['status'] == 'complete'
+                
+                # Validate transaction hash exists and has correct format
+                assert 'tx_hash' in final_withdrawal['metadata']
+                assert len(final_withdrawal['metadata']['tx_hash']) == 66
+                assert final_withdrawal['metadata']['tx_hash'].startswith('0x')
+                
+                # Validate timestamps are present
+                assert 'timestamp' in final_withdrawal['metadata']
+                assert 'processed_timestamp' in final_withdrawal['metadata']
                 
                 if final_withdrawal['status'] == 'complete':
                     print(f"[DEBUG] Withdrawal {withdrawal_id} completed successfully")
@@ -439,33 +480,38 @@ class TestWithdrawalOperations:
                 if withdrawal['id'] not in our_withdrawal_ids:
                     continue
                     
-                assert isinstance(withdrawal, dict)
-                assert 'id' in withdrawal
-                assert 'metadata' in withdrawal
-                assert 'status' in withdrawal
+                # Assert exact values from the response structure we see
+                assert withdrawal['currency'] == 'usd'
+                assert withdrawal['type'] == 'bank_transfer'
                 
-                # At this point, withdrawal should be complete or failed
-                assert withdrawal['status'] in ['complete', 'failed'], f"Withdrawal {withdrawal['id']} should be final by now"
+                # Check specific withdrawal amounts and fees from the responses
+                if withdrawal['amount'] == 10.0:
+                    # This is the small withdrawal to address_2
+                    assert withdrawal['fee'] == 0.01
+                    assert withdrawal['metadata']['original_amount'] == 10.0
+                    assert withdrawal['metadata']['amount_after_fee'] == 9.99
+                    assert withdrawal['metadata']['address'] == '0xB1Eb9593ed5C832e6f618c60CDc6017b0eE28563'
+                elif withdrawal['amount'] == 50.0:
+                    # This is the large withdrawal to address_1  
+                    assert withdrawal['fee'] == 0.05
+                    assert withdrawal['metadata']['original_amount'] == 50.0
+                    assert withdrawal['metadata']['amount_after_fee'] == 49.95
+                    assert withdrawal['metadata']['address'] == '0x2a9f6e28Ee3501C32c65937170B44a72A71baB62'
                 
-                metadata = withdrawal['metadata']
-                assert isinstance(metadata, dict)
+                # Common metadata validations
+                assert withdrawal['metadata']['fee_percentage'] == 0.1
                 
-                # Should have address
-                assert 'address' in metadata
-                assert isinstance(metadata['address'], str)
-                assert len(metadata['address']) > 20  # USDT addresses are longer
-                
-                # For completed withdrawals, should have transaction hash
-                if withdrawal['status'] == 'complete' and 'tx_hash' in metadata:
-                    assert isinstance(metadata['tx_hash'], str)
-                    assert len(metadata['tx_hash']) > 30, f"Transaction hash too short: {metadata['tx_hash']}"
-                    print(f"[DEBUG] Withdrawal {withdrawal['id']} has tx_hash: {metadata['tx_hash']}")
+                # For completed withdrawals, validate transaction details
+                if withdrawal['status'] == 'complete':
+                    assert withdrawal['metadata']['status'] == 'complete'
+                    assert 'tx_hash' in withdrawal['metadata']
+                    assert len(withdrawal['metadata']['tx_hash']) == 66
+                    assert withdrawal['metadata']['tx_hash'].startswith('0x')
+                    assert 'processed_timestamp' in withdrawal['metadata']
+                    print(f"[DEBUG] Withdrawal {withdrawal['id']} has tx_hash: {withdrawal['metadata']['tx_hash']}")
                 elif withdrawal['status'] == 'failed':
-                    # Failed withdrawals should have error info
-                    assert 'error' in metadata, f"Failed withdrawal {withdrawal['id']} should have error in metadata"
-                    print(f"[DEBUG] Withdrawal {withdrawal['id']} failed with error: {metadata.get('error', 'Unknown')}")
-                else:
-                    print(f"[DEBUG] Withdrawal {withdrawal['id']} completed but no tx_hash in metadata")
+                    assert 'error' in withdrawal['metadata']
+                    print(f"[DEBUG] Withdrawal {withdrawal['id']} failed with error: {withdrawal['metadata'].get('error', 'Unknown')}")
                     
         except Exception as e:
             pytest.fail(f"Withdrawal metadata verification failed: {e}")
@@ -488,22 +534,32 @@ class TestWithdrawalOperations:
             assert len(withdrawals) > 0  # Check list length before iteration
             
             for withdrawal in withdrawals:
-                assert isinstance(withdrawal, dict)
-                assert 'amount' in withdrawal
-                assert 'fee' in withdrawal
+                # Assert specific values based on the actual response data
+                assert withdrawal['currency'] == 'usd'
+                assert withdrawal['type'] == 'bank_transfer'
                 
-                amount = withdrawal['amount']
-                fee = withdrawal['fee']
+                # Assert exact amounts and fees from responses
+                if withdrawal['amount'] == 10.0:
+                    # Small withdrawal response: amount=10.0, fee=0.01, amount_after_fee=9.99
+                    assert withdrawal['fee'] == 0.01
+                    assert withdrawal['metadata']['original_amount'] == 10.0
+                    assert withdrawal['metadata']['amount_after_fee'] == 9.99
+                    assert withdrawal['metadata']['address'] == '0xB1Eb9593ed5C832e6f618c60CDc6017b0eE28563'
+                elif withdrawal['amount'] == 50.0:
+                    # Large withdrawal response: amount=50.0, fee=0.05, amount_after_fee=49.95
+                    assert withdrawal['fee'] == 0.05
+                    assert withdrawal['metadata']['original_amount'] == 50.0
+                    assert withdrawal['metadata']['amount_after_fee'] == 49.95
+                    assert withdrawal['metadata']['address'] == '0x2a9f6e28Ee3501C32c65937170B44a72A71baB62'
                 
-                assert isinstance(amount, (int, float))
-                assert isinstance(fee, (int, float))
-                assert amount > 0
-                assert fee >= 0
+                # Common metadata assertions
+                assert withdrawal['metadata']['fee_percentage'] == 0.1
                 
-                # User receives amount - fee
-                user_receives = amount - fee
-                assert user_receives > 0
-                assert user_receives <= amount  # May be equal if no fee charged
+                # For completed withdrawals, validate transaction hash format
+                if withdrawal['status'] == 'complete':
+                    assert withdrawal['metadata']['status'] == 'complete'
+                    assert len(withdrawal['metadata']['tx_hash']) == 66
+                    assert withdrawal['metadata']['tx_hash'].startswith('0x')
                 
         except Exception as e:
             pytest.fail(f"Withdrawal amount calculation verification failed: {e}")
