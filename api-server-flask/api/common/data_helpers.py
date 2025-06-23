@@ -777,7 +777,7 @@ def get_balance_by_currency(user_id):
                 
                 # Get paid invoices for this searchable (seller earnings)
                 execute_sql(cur, f"""
-                    SELECT i.amount, i.currency, i.metadata
+                    SELECT i.amount, i.fee, i.currency, i.metadata
                     FROM invoice i
                     JOIN payment p ON i.id = p.invoice_id
                     WHERE i.searchable_id = {searchable_id} 
@@ -788,12 +788,13 @@ def get_balance_by_currency(user_id):
                 paid_invoices = cur.fetchall()
                 
                 for invoice_result in paid_invoices:
-                    amount, currency, metadata = invoice_result
+                    amount, fee, currency, metadata = invoice_result
                     
                     # All payments are in USD
                     if currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usd'] += float(amount)
-                        logger.debug(f"Added ${amount} USD from searchable {searchable_id}")
+                        net_amount = float(amount) - float(fee)
+                        balance_by_currency['usd'] += net_amount
+                        logger.debug(f"Added ${net_amount} USD (amount {amount} - fee {fee}) from searchable {searchable_id}")
                         
             except KeyError as ke:
                 logger.error(f"KeyError processing searchable {searchable_id}: {str(ke)}")
@@ -1582,4 +1583,4 @@ __all__ = [
     'update_user_profile',
     'get_rewards',
     'get_downloadable_items_by_user_id'
-] 
+]
