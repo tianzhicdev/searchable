@@ -462,33 +462,34 @@ const mockHandlers = {
   // Create invoice (simulate Stripe redirect)
   'v1/create-invoice': (url, config) => {
     const payload = JSON.parse(config.data);
-    if (payload.invoice_type === 'stripe') {
+    console.log('[MOCK] Creating invoice:', payload);
+    
+    // Handle direct payments
+    if (payload.selections && payload.selections.some(s => s.type === 'direct')) {
+      const directSelection = payload.selections.find(s => s.type === 'direct');
+      const amount = directSelection.amount;
+      return createMockResponse({
+        url: `${window.location.origin}${window.location.pathname}?payment=success&amount=${amount}`,
+        session_id: 'mock-direct-session-' + Date.now(),
+        invoice_id: Math.floor(Math.random() * 1000) + 1,
+        amount: amount,
+        platform_fee: amount * 0.001,
+        stripe_fee: amount * 0.035,
+        total_charged: amount * 1.035
+      });
+    }
+    
+    // Handle regular invoice creation
+    if (payload.invoice_type === 'stripe' || payload.type === 'stripe') {
       return createMockResponse({
         url: `${window.location.origin}${window.location.pathname}?payment=success`,
         session_id: 'mock-session-123'
       });
     }
+    
     return createMockResponse({ success: true });
   },
 
-  // Create payment invoice for direct payments
-  'v1/payment/create_invoice': (url, config) => {
-    const payload = JSON.parse(config.data);
-    console.log('[MOCK] Creating payment invoice:', payload);
-    
-    // Check if it's a direct payment
-    if (payload.selections && payload.selections.some(s => s.type === 'direct')) {
-      return createMockResponse({
-        url: `${window.location.origin}${window.location.pathname}?payment=success&amount=${payload.selections[0].amount}`,
-        session_id: 'mock-direct-session-' + Date.now()
-      });
-    }
-    
-    return createMockResponse({
-      url: `${window.location.origin}${window.location.pathname}?payment=success`,
-      session_id: 'mock-session-' + Date.now()
-    });
-  },
   
   // Refresh payment status
   'v1/refresh-payment': () => createMockResponse({ status: 'complete' }),

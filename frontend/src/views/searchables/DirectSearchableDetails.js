@@ -127,7 +127,7 @@ const DirectSearchableDetails = () => {
         }]
       };
 
-      const response = await backend.post('v1/payment/create_invoice', invoiceData);
+      const response = await backend.post('v1/create-invoice', invoiceData);
 
       // Redirect to Stripe checkout
       if (response.data.url) {
