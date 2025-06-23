@@ -820,12 +820,12 @@ def get_balance_by_currency(user_id):
                 except ValueError:
                     logger.error(f"Invalid amount format in reward: {amount}")
         
-        # Subtract withdrawals
+        # Subtract withdrawals (both completed and pending to prevent double-spending)
         execute_sql(cur, f"""
             SELECT amount, currency
             FROM withdrawal 
             WHERE user_id = {user_id}
-            AND status = '{PaymentStatus.COMPLETE.value}'
+            AND status IN ('{PaymentStatus.COMPLETE.value}', '{PaymentStatus.PENDING.value}')
         """)
         
         withdrawal_results = cur.fetchall()
@@ -838,7 +838,7 @@ def get_balance_by_currency(user_id):
                     amount_float = float(amount)
                     if currency.lower() in ['usdt', 'usd']:
                         balance_by_currency['usd'] -= amount_float
-                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal")
+                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal (completed or pending)")
                 except ValueError:
                     logger.error(f"Invalid amount format in withdrawal: {amount}")
         
