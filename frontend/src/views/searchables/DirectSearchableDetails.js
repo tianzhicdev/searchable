@@ -124,8 +124,17 @@ const DirectSearchableDetails = () => {
         selections: [{
           amount: paymentAmount,
           type: 'direct'
-        }]
+        }],
+        total_price: paymentAmount,
+        success_url: `${window.location.origin}${window.location.pathname}`,
+        cancel_url: `${window.location.origin}${window.location.pathname}`
       };
+
+      // Add address and tel for logged-in users
+      if (account?.user) {
+        invoiceData.address = account.user.address || '';
+        invoiceData.tel = account.user.tel || '';
+      }
 
       const response = await backend.post('v1/create-invoice', invoiceData);
 
