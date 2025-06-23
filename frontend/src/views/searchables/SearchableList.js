@@ -167,6 +167,8 @@ const SearchableList = ({ criteria }) => {
     const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
       navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/searchables');
+    } else if (itemType === 'direct') {
+      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/searchables');
     } else {
       navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/searchables');
     }

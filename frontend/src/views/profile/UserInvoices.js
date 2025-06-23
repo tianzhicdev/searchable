@@ -182,17 +182,9 @@ const UserInvoices = () => {
           }}
           onClick={() => setActiveTab(0)}
         >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <TrendingDown/>
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalSpent)}
-              </Typography>
-              <Typography className={classes.staticText}>
-                Total Spent ({stats.purchasesCount})
-              </Typography>
-            </Box>
-          </Box>
+          <Typography variant="h6">
+              PURCHASES
+          </Typography>
         </Button>
         
         <Button
@@ -203,17 +195,9 @@ const UserInvoices = () => {
           variant='contained'
           onClick={() => setActiveTab(1)}
         >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <TrendingUp color="primary" />
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalEarned)}
-              </Typography>
-              <Typography className={classes.staticText}>
-                Total Earned ({stats.salesCount})
-              </Typography>
-            </Box>
-          </Box>
+          <Typography variant="h6">
+              SALES
+          </Typography>
         </Button>
         
         <Button
@@ -224,18 +208,9 @@ const UserInvoices = () => {
           variant='contained'
           onClick={() => setActiveTab(2)}
         >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <AccountBalanceWallet color="action" />
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalWithdrawn)}
-              </Typography>
-              <Typography className={classes.staticText} 
-                              style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}>
-                Total Withdrawn ({stats.withdrawalsCount})
-              </Typography>
-            </Box>
-          </Box>
+          <Typography variant="h6">
+              WITHDRAWALS
+          </Typography>
         </Button>
         
         {stats.totalRewards > 0 && (
@@ -247,17 +222,9 @@ const UserInvoices = () => {
             variant='contained'
             onClick={() => setActiveTab(3)}
           >
-            <Box display="flex" alignItems="center" gap={1} width="100%">
-              <CardGiftcard color="primary" />
-              <Box textAlign="left" flex={1}>
-                <Typography variant="h6" className={classes.staticText}>
-                  {formatCurrency(stats.totalRewards)}
-                </Typography>
-                <Typography className={classes.staticText}>
-                  Total Rewards ({stats.rewardsCount})
-                </Typography>
-              </Box>
-            </Box>
+            <Typography variant="h6">
+                    REWARDS
+            </Typography>
           </Button>
         )}
       </Box>

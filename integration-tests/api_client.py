@@ -111,6 +111,14 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
+    def delete_searchable(self, searchable_id: int) -> Dict[str, Any]:
+        """Delete (soft delete) a searchable item"""
+        url = f"{self.base_url}/v1/searchable/remove/{searchable_id}"
+        
+        response = self.session.put(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
     def get_user_profile(self) -> Dict[str, Any]:
         """Get current user's profile"""
         url = f"{self.base_url}/v1/profile"

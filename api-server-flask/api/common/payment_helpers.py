@@ -11,6 +11,7 @@ def calc_invoice(searchable_data, selections):
     Args:
         searchable_data: Dictionary containing searchable item data
         selections: List of selected items/files (each with an 'id' field and optional 'count' field)
+                   For 'direct' type, selection items should have 'amount' and 'type' fields
 
     Returns:
         dict: Invoice calculation results with amount_usd and description
@@ -22,8 +23,35 @@ def calc_invoice(searchable_data, selections):
 
         payloads = searchable_data.get('payloads', {})
         public_data = payloads.get('public', {})
+        searchable_type = public_data.get('type', 'downloadable')
         
-        # Handle both downloadable and offline items
+        # Handle direct payment type with runtime amount
+        if searchable_type == 'direct':
+            total_amount_usd = 0.0
+            total_item_count = 0
+            
+            for item in selections:
+                if item.get('type') == 'direct' and item.get('amount'):
+                    amount = float(item.get('amount'))
+                    count = item.get('count', 1)
+                    total_amount_usd += amount * count
+                    total_item_count += count
+            
+            total_amount_usd = round(total_amount_usd, 2)
+            
+            # Generate description for direct payment
+            title = public_data.get('title', 'Direct Payment Item')
+            description = f"{title} - Direct Payment"
+            
+            return {
+                "amount_usd": total_amount_usd,
+                "total_amount_usd": total_amount_usd,
+                "description": description,
+                "currency": Currency.USD.value,
+                "total_item_count": total_item_count
+            }
+        
+        # Handle downloadable and offline items with predefined prices
         downloadable_files = public_data.get('downloadableFiles', [])
         offline_items = public_data.get('offlineItems', [])
         

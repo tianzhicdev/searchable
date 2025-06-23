@@ -17,9 +17,9 @@ import InvoiceList from '../payments/InvoiceList';
 import { useDispatch } from 'react-redux';
 import { SET_USER } from '../../store/actions';
 import backend from '../utilities/Backend';
-import ZoomableImage from '../../components/ZoomableImage';
+import SearchableDetailsTop from '../../components/SearchableDetailsTop';
+import SearchableDetailsPriceDisplay from '../../components/SearchableDetailsPriceDisplay';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
-import PostedBy from '../../components/PostedBy';
 import useComponentStyles from '../../themes/componentStyles';
 import { navigateBack, getBackButtonText } from '../../utils/navigationUtils';
 
@@ -553,116 +553,30 @@ const DownloadableSearchableDetails = () => {
       {!loading && SearchableItem && (
         <Grid item xs={12}>
           <Paper>
-            {/* Title and Rating Summary */}
-            <Typography variant="h3" className={classes.userText}>
-              {SearchableItem.payloads.public.title || `Downloads #${SearchableItem.searchable_id}`}
-            </Typography>
-            <Divider />
-            
-            {!loadingRatings && searchableRating && (
-              <Box>
-                <Typography variant="body1" className={classes.staticText}>
-                  Rating: {searchableRating.average_rating?.toFixed(1)}/5 ({searchableRating.total_ratings} reviews)
-                </Typography>
-              </Box>
-            )}            
-            {/* Posted by section */}
-            <PostedBy 
-              username={SearchableItem.username} 
-              terminalId={SearchableItem.terminal_id} 
-              maxLength={30}
+            {/* Top section: Title, ratings, description, images */}
+            <SearchableDetailsTop
+              searchableItem={SearchableItem}
+              searchableRating={searchableRating}
+              loadingRatings={loadingRatings}
+              searchableId={id}
             />
-
-
-            <Divider />
-            
-            {/* Description */}
-            {SearchableItem.payloads.public.description && (
-              <Box >
-                <Typography variant="body1" className={classes.userText}>
-                  {SearchableItem.payloads.public.description}
-                </Typography>
-              </Box>
-            )}
-
-            <Divider />
-
-            {/* Images */}
-            {SearchableItem.payloads.public.images && SearchableItem.payloads.public.images.length > 0 && (
-              <>
-              <div  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {SearchableItem.payloads.public.images.map((image, index) => {
-                  // Check if it's a URL (mock mode) or base64
-                  const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
-                  const imageSrc = isUrl ? image : `data:image/jpeg;base64,${image}`;
-                  
-                  // console.log(`[DEBUG] Image ${index}: isUrl=${isUrl}, src=${imageSrc?.substring(0, 50)}...`);
-                  
-                  return (
-                    <ZoomableImage 
-                      key={index}
-                      src={imageSrc} 
-                      alt={`${SearchableItem.payloads.public.title} - image ${index + 1}`} 
-                      style={{ maxWidth: '300px'}}
-                    />
-                  );
-                })}
-
-              </div>
-            <Divider />
-              </>
-
-            )}
 
             
             {/* Files Section */}
             {renderDownloadableFiles()}
             
-            {/* Payment Summary and Button */}
-            {totalPrice > 0 && (
-              <Box mt={2} p={2} bgcolor="background.paper">
-                <Typography variant="subtitle2" className={classes.staticText}>
-                  Payment Summary:
-                </Typography>
-                <Typography variant="body2" className={classes.userText}>
-                  Subtotal: {formatCurrency(totalPrice)}
-                </Typography>
-                <Typography variant="body2" className={classes.userText}>
-                  Stripe Fee (3.5%): {formatCurrency(totalPrice * 0.035)}
-                </Typography>
-                <Divider style={{ margin: '8px 0' }} />
-                <Typography variant="body1" className={classes.userText} style={{ fontWeight: 'bold' }}>
-                  Total to Pay: {formatCurrency(totalPrice * 1.035)}
-                </Typography>
-              </Box>
-            )}
-            
-            {/* Payment Button */}
-            <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
-              <Button
-                variant="outlined"
-                onClick={handleStripePayButtonClick}
-                disabled={creatingInvoice || totalPrice === 0}
-              >
-                <Typography variant="body2" className={classes.staticText}>
-                  Pay {formatCurrency(totalPrice * 1.035)}
-                </Typography>
-              </Button>
-            </div>
-            
-            {/* Remove Button for Owner */}
-            {isOwner && (
-              <div style={{ margin: '4px', display: 'flex', justifyContent: 'center' }}>
-                <Button
-                  variant="contained"
-                  onClick={handleRemoveItem}
-                  disabled={isRemoving}
-                  fullWidth
-                >
-                  Remove Item
-                </Button>
-              </div>
-            )}
+            {/* Payment display and button */}
+            <SearchableDetailsPriceDisplay
+              totalPrice={totalPrice * 1.035}
+              processing={creatingInvoice}
+              onPayButtonClick={handleStripePayButtonClick}
+              isOwner={isOwner}
+              onRemoveItem={handleRemoveItem}
+              isRemoving={isRemoving}
+              payButtonText={`Pay ${formatCurrency(totalPrice * 1.035)}`}
+              showPaymentSummary={true}
+              disabled={totalPrice === 0}
+            />
           </Paper>
           
           {/* Collapsible Reviews Section */}

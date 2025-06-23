@@ -110,6 +110,40 @@ const mockHandlers = {
           username: 'designer_pro'
         },
         {
+          _id: 'mock-direct-item-1',
+          searchable_id: 'mock-direct-item-1',
+          terminal_id: 'mock-terminal-1',
+          payloads: {
+            public: {
+              title: 'Support My Creative Work',
+              description: 'Thank you for supporting my creative journey! Your contribution helps me continue creating awesome content and tutorials.',
+              type: 'direct',
+              currency: 'usd',
+              images: [mockData.mockImage1, mockData.mockImage2],
+              defaultAmount: 9.99
+            }
+          },
+          created_at: new Date(Date.now() - 43200000).toISOString(),
+          username: 'DirectPaymentMerchant'
+        },
+        {
+          _id: 'mock-direct-item-2',
+          searchable_id: 'mock-direct-item-2',
+          terminal_id: 'mock-terminal-2',
+          payloads: {
+            public: {
+              title: 'Community Tip Jar',
+              description: 'Help us build an amazing community! Your tip goes directly towards hosting community events.',
+              type: 'direct',
+              currency: 'usd',
+              images: [mockData.mockImage2],
+              defaultAmount: 4.99
+            }
+          },
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          username: 'CommunityBuilder'
+        },
+        {
           _id: 'mock-offline-1',
           searchable_id: 'mock-offline-1',
           terminal_id: 'mock-terminal-3',
@@ -159,7 +193,7 @@ const mockHandlers = {
       pagination: {
         current_page: 1,
         page_size: 10,
-        total_count: 4,
+        total_count: 6,
         total_pages: 1
       }
     });
@@ -230,6 +264,46 @@ const mockHandlers = {
           },
           created_at: new Date(Date.now() - 345600000).toISOString(),
           username: 'artisan_maker'
+        });
+      }
+      
+      // Handle direct payment items
+      if (searchableId === 'mock-direct-item-1') {
+        return createMockResponse({
+          ...mockData.mockDirectSearchableItem,
+          payloads: {
+            ...mockData.mockDirectSearchableItem.payloads,
+            public: {
+              ...mockData.mockDirectSearchableItem.payloads.public,
+              images: mockData.mockDirectSearchableItem.payloads.public.imageUrls || mockData.mockDirectSearchableItem.payloads.public.images || []
+            }
+          }
+        });
+      }
+      
+      if (searchableId === 'mock-direct-item-2') {
+        return createMockResponse({
+          ...mockData.mockDirectSearchableItem2,
+          payloads: {
+            ...mockData.mockDirectSearchableItem2.payloads,
+            public: {
+              ...mockData.mockDirectSearchableItem2.payloads.public,
+              images: mockData.mockDirectSearchableItem2.payloads.public.imageUrls || mockData.mockDirectSearchableItem2.payloads.public.images || []
+            }
+          }
+        });
+      }
+      
+      if (searchableId === 'mock-direct-item-3') {
+        return createMockResponse({
+          ...mockData.mockDirectSearchableItem3,
+          payloads: {
+            ...mockData.mockDirectSearchableItem3.payloads,
+            public: {
+              ...mockData.mockDirectSearchableItem3.payloads.public,
+              images: mockData.mockDirectSearchableItem3.payloads.public.imageUrls || mockData.mockDirectSearchableItem3.payloads.public.images || []
+            }
+          }
         });
       }
       
@@ -395,6 +469,25 @@ const mockHandlers = {
       });
     }
     return createMockResponse({ success: true });
+  },
+
+  // Create payment invoice for direct payments
+  'v1/payment/create_invoice': (url, config) => {
+    const payload = JSON.parse(config.data);
+    console.log('[MOCK] Creating payment invoice:', payload);
+    
+    // Check if it's a direct payment
+    if (payload.selections && payload.selections.some(s => s.type === 'direct')) {
+      return createMockResponse({
+        url: `${window.location.origin}${window.location.pathname}?payment=success&amount=${payload.selections[0].amount}`,
+        session_id: 'mock-direct-session-' + Date.now()
+      });
+    }
+    
+    return createMockResponse({
+      url: `${window.location.origin}${window.location.pathname}?payment=success`,
+      session_id: 'mock-session-' + Date.now()
+    });
   },
   
   // Refresh payment status
