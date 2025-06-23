@@ -19,12 +19,56 @@ class TestWithdrawalOperations:
         cls.client = SearchableAPIClient()
         cls.user_id = None
         cls.created_withdrawals = []
+        cls.address_1 = "0x2a9f6e28Ee3501C32c65937170B44a72A71baB62"
+        cls.address_2 = "0xB1Eb9593ed5C832e6f618c60CDc6017b0eE28563"
+        cls.address_3 = "0xa2Aa1cb3DF3913aa0DC3D2C7278446d2B055F9E4"
     
     @classmethod
     def teardown_class(cls):
         """Clean up after tests"""
         if cls.client.token:
             cls.client.logout()
+    
+    def wait_for_withdrawal_completion(self, withdrawal_id, max_wait_seconds=60):
+        """
+        Wait for a withdrawal to complete (status changes from pending to complete or failed)
+        Returns the final withdrawal status
+        """
+        import time
+        
+        start_time = time.time()
+        while time.time() - start_time < max_wait_seconds:
+            try:
+                response = self.client.get_withdrawal_status(withdrawal_id)
+                print(f"[RESPONSE] Withdrawal status check: {response}")
+                if 'withdrawal' in response:
+                    withdrawal = response['withdrawal']
+                    status = withdrawal.get('status', 'unknown')
+                    
+                    print(f"[DEBUG] Withdrawal {withdrawal_id} status: {status}")
+                    
+                    if status == 'complete':
+                        return withdrawal
+                    elif status == 'failed':
+                        # Return the failed withdrawal for analysis
+                        print(f"[DEBUG] Withdrawal {withdrawal_id} failed: {withdrawal.get('metadata', {}).get('error', 'Unknown error')}")
+                        return withdrawal
+                    elif status == 'pending':
+                        # Still pending, wait a bit more
+                        time.sleep(2)
+                        continue
+                    else:
+                        pytest.fail(f"Unknown withdrawal status: {status}")
+                else:
+                    pytest.fail(f"Invalid response from withdrawal status API: {response}")
+                    
+            except Exception as e:
+                print(f"[DEBUG] Error checking withdrawal status: {e}")
+                time.sleep(2)
+                continue
+        
+        # If we get here, we timed out
+        pytest.fail(f"Withdrawal {withdrawal_id} did not complete within {max_wait_seconds} seconds")
     
     def test_01_setup_user_with_balance(self):
         """Register user and simulate having balance through sales"""
@@ -35,11 +79,13 @@ class TestWithdrawalOperations:
             email=self.email,
             password=self.password
         )
+        print(f"[RESPONSE] Register user: {response}")
         assert isinstance(response, dict)
         assert 'success' in response
         assert response['success'] is True
         
         login_response = self.client.login_user(self.email, self.password)
+        print(f"[RESPONSE] Login user: {login_response}")
         assert isinstance(login_response, dict)
         assert 'token' in login_response
         assert isinstance(login_response['token'], str)
@@ -51,6 +97,7 @@ class TestWithdrawalOperations:
         
         # Check initial balance
         balance_response = self.client.get_balance()
+        print(f"[RESPONSE] Initial balance: {balance_response}")
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
@@ -87,6 +134,7 @@ class TestWithdrawalOperations:
         }
         
         searchable_response = self.client.create_searchable(searchable_data)
+        print(f"[RESPONSE] Create searchable: {searchable_response}")
         assert isinstance(searchable_response, dict)
         assert 'searchable_id' in searchable_response
         assert searchable_response['searchable_id'] is not None
@@ -103,12 +151,14 @@ class TestWithdrawalOperations:
             email=buyer_email,
             password=self.password
         )
+        print(f"[RESPONSE] Register buyer: {buyer_response}")
         assert isinstance(buyer_response, dict)
         assert 'success' in buyer_response
         assert buyer_response['success'] is True
         
         # Login buyer
         buyer_login = buyer_client.login_user(buyer_email, self.password)
+        print(f"[RESPONSE] Login buyer: {buyer_login}")
         assert isinstance(buyer_login, dict)
         assert 'token' in buyer_login
         assert isinstance(buyer_login['token'], str)
@@ -116,6 +166,7 @@ class TestWithdrawalOperations:
         
         # Buyer creates invoice - use proper API format
         searchable_info = self.client.get_searchable(searchable_id)
+        print(f"[RESPONSE] Get searchable: {searchable_info}")
         assert isinstance(searchable_info, dict)
         assert 'payloads' in searchable_info
         assert 'public' in searchable_info['payloads']
@@ -123,22 +174,14 @@ class TestWithdrawalOperations:
         public_data = searchable_info['payloads']['public']
         assert isinstance(public_data, dict)
         
-        if 'selectables' in public_data and public_data['selectables']:
-            assert isinstance(public_data['selectables'], list)
-            assert len(public_data['selectables']) > 0
-            selections = [public_data['selectables'][0]]  # Use first selectable
-        else:
-            # Fallback selection
-            selections = [{'id': 'test-file-id', 'type': 'downloadable', 'name': 'Test File', 'price': 100.00}]
-        
-        assert selections is not None
-        assert len(selections) > 0
-        
+        selections = [{'id': 'test-file-id', 'type': 'downloadable', 'name': 'Test File', 'price': 100.00}]
+
         invoice_response = buyer_client.create_invoice(
             searchable_id,
             selections,
             "stripe"
         )
+        print(f"[RESPONSE] Create invoice: {invoice_response}")
         assert isinstance(invoice_response, dict)
         has_session_id = 'session_id' in invoice_response
         has_url = 'url' in invoice_response
@@ -151,6 +194,7 @@ class TestWithdrawalOperations:
         else:
             payment_response = {'success': False, 'message': 'No session_id found'}
         
+        print(f"[RESPONSE] Complete payment: {payment_response}")
         assert isinstance(payment_response, dict)
         assert 'success' in payment_response
         assert payment_response['success'] is True
@@ -158,13 +202,13 @@ class TestWithdrawalOperations:
         # Check seller's balance after sale
         time.sleep(2)  # Allow time for payment processing
         balance_response = self.client.get_balance()
+        print(f"[RESPONSE] Balance after sale: {balance_response}")
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
         
-        new_balance = balance_response.get('balance', {}).get('usd', 0)
-        assert isinstance(new_balance, (int, float))
-        assert new_balance > 90  # Should have ~$99.90 after platform fee (0.1%)
+        new_balance = balance_response.get('balance').get('usd')
+        assert new_balance == 99.9  # Should have ~$99.90 after platform fee (0.1%)
         
         self.available_balance = new_balance
         
@@ -177,17 +221,18 @@ class TestWithdrawalOperations:
         # Try to withdraw more than available balance
         # Get current balance first
         balance_response = self.client.get_balance()
+        print(f"[RESPONSE] Current balance check: {balance_response}")
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
         
-        current_balance = balance_response.get('balance', {}).get('usd', 0)
-        assert isinstance(current_balance, (int, float))
+        current_balance = balance_response.get('balance').get('usd')
         excessive_amount = current_balance + 50.00
+        print(f"[DEBUG] Current balance: {current_balance}, Excessive amount: {excessive_amount}")
         assert excessive_amount > current_balance
         
         withdrawal_data = {
-            'address': '0x742E96Ac4fF1234A3b8DcE9B7B5678901234567F',  # Test USDT address
+            'address': self.address_1,  # Test USDT address
             'amount': excessive_amount
         }
         
@@ -196,15 +241,23 @@ class TestWithdrawalOperations:
         assert 'amount' in withdrawal_data
         assert len(withdrawal_data['address']) > 20
         
+        # This should return a 400 error for insufficient funds
         try:
             response = self.client.create_usdt_withdrawal(withdrawal_data)
-            # Should fail or return error
-            assert isinstance(response, dict)
-            if 'success' in response:
-                assert response['success'] is False
-        except Exception:
-            # Expected to fail for excessive amount
-            pass
+            print(f"[RESPONSE] Excessive withdrawal attempt: {response}")
+            # If we get a response, it should be an error
+            if isinstance(response, dict) and 'error' in response:
+                # This is expected - insufficient funds error
+                print(f"[DEBUG] Expected error response: {response}")
+            else:
+                pytest.fail(f"Expected error response for excessive withdrawal, got: {response}")
+        except Exception as e:
+            # Check if it's a 400 HTTP error as expected
+            error_msg = str(e).lower()
+            if '400' in error_msg or 'insufficient' in error_msg or 'balance' in error_msg:
+                print(f"[DEBUG] Expected 400 error for excessive withdrawal: {e}")
+            else:
+                pytest.fail(f"Expected 400 error for excessive withdrawal, got: {e}")
     
     def test_04_create_valid_usdt_withdrawal(self):
         """Test creating a valid USD withdrawal as USDT"""
@@ -214,7 +267,7 @@ class TestWithdrawalOperations:
         assert withdrawal_amount > 0
         
         withdrawal_data = {
-            'address': '0x742E96Ac4fF1234A3b8DcE9B7B5678901234567F',
+            'address': self.address_1,
             'amount': withdrawal_amount
         }
         
@@ -225,57 +278,58 @@ class TestWithdrawalOperations:
         
         try:
             response = self.client.create_usdt_withdrawal(withdrawal_data)
+            print(f"[RESPONSE] Create valid withdrawal: {response}")
             assert isinstance(response, dict)
             
-            # Verify withdrawal was created
-            has_withdrawal_id = 'withdrawal_id' in response
-            has_id = 'id' in response
-            
-            if has_withdrawal_id or has_id:
-                withdrawal_id = response.get('withdrawal_id') or response.get('id')
-                assert withdrawal_id is not None
-                self.created_withdrawals.append(withdrawal_id)
+            assert 'withdrawal_id' in response, "Response should contain withdrawal_id"
+
+            withdrawal_id = response.get('withdrawal_id')
+            assert withdrawal_id is not None
+            assert response.get('amount') == 50
+            assert response.get('fee') == 0.05
+            assert response.get('amount_after_fee') == 49.95
                 
         except Exception as e:
             pytest.fail(f"Withdrawal API failed: {e}")
         
         # Verify balance was deducted
         balance_response = self.client.get_balance()
+        print(f"[RESPONSE] Balance after withdrawal: {balance_response}")
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
         
-        updated_balance = balance_response.get('balance', {}).get('usd', 0)
-        assert isinstance(updated_balance, (int, float))
+        new_balance = balance_response.get('balance').get('usd')
+        assert new_balance == 49.900000000000006 
     
     def test_05_create_small_withdrawal(self):
         """Test creating a smaller withdrawal to verify fee calculation"""
         
         withdrawal_amount = 10.00  # Withdraw $10
-        assert isinstance(withdrawal_amount, (int, float))
-        assert withdrawal_amount > 0
-        
+
         withdrawal_data = {
-            'address': '0x123ABC456DEF789GHI012JKL345MNO678PQR901S',
+            'address': self.address_2,  # Another USDT address
             'amount': withdrawal_amount
         }
         
-        assert isinstance(withdrawal_data, dict)
-        assert 'address' in withdrawal_data
-        assert 'amount' in withdrawal_data
-        assert len(withdrawal_data['address']) > 20
-        
         try:
             response = self.client.create_usdt_withdrawal(withdrawal_data)
+            print(f"[RESPONSE] Small withdrawal response: {response}")
             assert isinstance(response, dict)
             
-            has_withdrawal_id = 'withdrawal_id' in response
-            has_id = 'id' in response
+            assert 'withdrawal_id' in response, "Response should contain withdrawal_id"
+
+            withdrawal_id = response.get('withdrawal_id')
+            assert withdrawal_id is not None
+            assert response.get('amount') == 10
+            assert response.get('fee') == 0.01
+            assert response.get('amount_after_fee') == 9.99
+            self.created_withdrawals.append(withdrawal_id)
             
-            if has_withdrawal_id or has_id:
-                withdrawal_id = response.get('withdrawal_id') or response.get('id')
-                assert withdrawal_id is not None
-                self.created_withdrawals.append(withdrawal_id)
+            balance_response = self.client.get_balance()
+            print(f"[RESPONSE] Balance after small withdrawal: {balance_response}")
+            new_balance = balance_response.get('balance').get('usd')
+            assert new_balance == 39.900000000000006 
                 
         except Exception as e:
             pytest.fail(f"Small withdrawal API failed: {e}")
@@ -285,6 +339,7 @@ class TestWithdrawalOperations:
         
         try:
             response = self.client.get_withdrawal_history()
+            print(f"[RESPONSE] Withdrawal history: {response}")
             assert isinstance(response, dict)
             assert 'withdrawals' in response
             
@@ -296,27 +351,34 @@ class TestWithdrawalOperations:
             
             assert len(withdrawals) > 0  # Check list length before iteration
             
-            for withdrawal in withdrawals:
-                assert isinstance(withdrawal, dict)
-                assert 'id' in withdrawal
-                assert 'amount' in withdrawal
-                assert 'status' in withdrawal
-                assert 'type' in withdrawal
-                assert 'created_at' in withdrawal
-                assert 'fee' in withdrawal
-                
-                assert withdrawal['id'] is not None
-                assert isinstance(withdrawal['amount'], (int, float))
-                assert isinstance(withdrawal['status'], str)
-                assert isinstance(withdrawal['type'], str)
-                assert isinstance(withdrawal['created_at'], str)
-                assert isinstance(withdrawal['fee'], (int, float))
+            # Find withdrawals by address
+            withdrawal_by_address = {w['metadata']['address']: w for w in withdrawals if 'metadata' in w and 'address' in w['metadata']}
+            
+            # Check withdrawal for address_1 ($50)
+            w1 = withdrawal_by_address.get(self.address_1)
+            assert w1 is not None, f"No withdrawal found for address_1: {self.address_1}"
+            assert w1['amount'] == 50
+            assert w1['fee'] == 0.05
+            assert w1['metadata']['original_amount'] == 50
+            assert w1['metadata']['fee_percentage'] == 0.1
+            assert abs(w1['metadata']['amount_after_fee'] - 49.95) < 0.001
+            assert w1['metadata']['address'] == self.address_1
+
+            # Check withdrawal for address_2 ($10)
+            w2 = withdrawal_by_address.get(self.address_2)
+            assert w2 is not None, f"No withdrawal found for address_2: {self.address_2}"
+            assert w2['amount'] == 10
+            assert w2['fee'] == 0.01
+            assert w2['metadata']['original_amount'] == 10
+            assert w2['metadata']['fee_percentage'] == 0.1
+            assert abs(w2['metadata']['amount_after_fee'] - 9.99) < 0.001
+            assert w2['metadata']['address'] == self.address_2
                 
         except Exception as e:
             pytest.fail(f"Withdrawal history API failed: {e}")
     
     def test_07_check_withdrawal_status(self):
-        """Test checking individual withdrawal status"""
+        """Test checking individual withdrawal status and wait for completion"""
         
         if len(self.created_withdrawals) == 0:
             pytest.fail("No withdrawals created to check status - withdrawal creation failed")
@@ -327,31 +389,37 @@ class TestWithdrawalOperations:
             assert withdrawal_id is not None
             
             try:
-                response = self.client.get_withdrawal_status(withdrawal_id)
-                assert isinstance(response, dict)
+                # Wait for withdrawal to complete or fail (max 30 seconds)
+                final_withdrawal = self.wait_for_withdrawal_completion(withdrawal_id, max_wait_seconds=60)
                 
-                has_withdrawal = 'withdrawal' in response
-                has_status = 'status' in response
-                assert has_withdrawal or has_status
+                # Verify the withdrawal has expected fields
+                assert isinstance(final_withdrawal, dict)
+                assert 'status' in final_withdrawal
+                assert 'amount' in final_withdrawal
+                assert final_withdrawal['status'] in ['complete', 'failed']
+                assert isinstance(final_withdrawal['amount'], (int, float))
                 
-                if 'withdrawal' in response:
-                    withdrawal = response['withdrawal']
-                    assert isinstance(withdrawal, dict)
-                    assert 'status' in withdrawal
-                    assert 'amount' in withdrawal
-                    assert isinstance(withdrawal['status'], str)
-                    assert isinstance(withdrawal['amount'], (int, float))
+                if final_withdrawal['status'] == 'complete':
+                    print(f"[DEBUG] Withdrawal {withdrawal_id} completed successfully")
                 else:
-                    assert isinstance(response['status'], str)
+                    print(f"[DEBUG] Withdrawal {withdrawal_id} failed as expected (likely invalid address)")
                     
             except Exception as e:
                 pytest.fail(f"Withdrawal status check failed for {withdrawal_id}: {e}")
     
     def test_08_withdrawal_metadata_verification(self):
-        """Verify withdrawal metadata includes proper address and transaction details"""
+        """Verify withdrawal metadata includes proper address and transaction details after completion"""
         
         try:
+            # Wait for all withdrawals to complete or fail first
+            final_withdrawals = []
+            for withdrawal_id in self.created_withdrawals:
+                final_withdrawal = self.wait_for_withdrawal_completion(withdrawal_id, max_wait_seconds=60)
+                final_withdrawals.append(final_withdrawal)
+            
+            # Now get fresh withdrawal history to verify metadata
             history_response = self.client.get_withdrawal_history()
+            print(f"[RESPONSE] Fresh withdrawal history: {history_response}")
             assert isinstance(history_response, dict)
             assert 'withdrawals' in history_response
             
@@ -363,10 +431,21 @@ class TestWithdrawalOperations:
             
             assert len(withdrawals) > 0  # Check list length before iteration
             
+            # Find our withdrawals in the history
+            our_withdrawal_ids = set(self.created_withdrawals)
+            
             for withdrawal in withdrawals:
+                # Only check withdrawals we created
+                if withdrawal['id'] not in our_withdrawal_ids:
+                    continue
+                    
                 assert isinstance(withdrawal, dict)
                 assert 'id' in withdrawal
                 assert 'metadata' in withdrawal
+                assert 'status' in withdrawal
+                
+                # At this point, withdrawal should be complete or failed
+                assert withdrawal['status'] in ['complete', 'failed'], f"Withdrawal {withdrawal['id']} should be final by now"
                 
                 metadata = withdrawal['metadata']
                 assert isinstance(metadata, dict)
@@ -376,10 +455,17 @@ class TestWithdrawalOperations:
                 assert isinstance(metadata['address'], str)
                 assert len(metadata['address']) > 20  # USDT addresses are longer
                 
-                # If completed, might have transaction hash
-                if withdrawal['status'] == 'complete' and 'transaction_hash' in metadata:
-                    assert isinstance(metadata['transaction_hash'], str)
-                    assert len(metadata['transaction_hash']) > 30
+                # For completed withdrawals, should have transaction hash
+                if withdrawal['status'] == 'complete' and 'tx_hash' in metadata:
+                    assert isinstance(metadata['tx_hash'], str)
+                    assert len(metadata['tx_hash']) > 30, f"Transaction hash too short: {metadata['tx_hash']}"
+                    print(f"[DEBUG] Withdrawal {withdrawal['id']} has tx_hash: {metadata['tx_hash']}")
+                elif withdrawal['status'] == 'failed':
+                    # Failed withdrawals should have error info
+                    assert 'error' in metadata, f"Failed withdrawal {withdrawal['id']} should have error in metadata"
+                    print(f"[DEBUG] Withdrawal {withdrawal['id']} failed with error: {metadata.get('error', 'Unknown')}")
+                else:
+                    print(f"[DEBUG] Withdrawal {withdrawal['id']} completed but no tx_hash in metadata")
                     
         except Exception as e:
             pytest.fail(f"Withdrawal metadata verification failed: {e}")
@@ -389,6 +475,7 @@ class TestWithdrawalOperations:
         
         try:
             history_response = self.client.get_withdrawal_history()
+            print(f"[RESPONSE] Withdrawal history for calculations: {history_response}")
             assert isinstance(history_response, dict)
             assert 'withdrawals' in history_response
             
@@ -426,6 +513,7 @@ class TestWithdrawalOperations:
         
         # Get current balance
         balance_response = self.client.get_balance()
+        print(f"[RESPONSE] Initial balance for pending test: {balance_response}")
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         initial_balance = balance_response['balance'].get('usd', 0)
@@ -438,13 +526,14 @@ class TestWithdrawalOperations:
         # Create a withdrawal that should succeed
         withdrawal_amount = min(10.0, initial_balance - 5)  # Leave some buffer
         withdrawal_data = {
-            'address': '0xPENDINGTEST123ABC456DEF789GHI012JKL345MN',
+            'address': self.address_3,
             'amount': withdrawal_amount
         }
         
         try:
             # Create first withdrawal
             response1 = self.client.create_usdt_withdrawal(withdrawal_data)
+            print(f"[RESPONSE] First pending withdrawal: {response1}")
             assert isinstance(response1, dict)
             assert 'withdrawal_id' in response1 or 'id' in response1
             
@@ -452,7 +541,9 @@ class TestWithdrawalOperations:
             self.created_withdrawals.append(withdrawal_id)
             
             # Get balance after first withdrawal - it should be reduced
-            balance_after_first = self.client.get_balance()['balance'].get('usd', 0)
+            balance_response_after = self.client.get_balance()
+            print(f"[RESPONSE] Balance after pending withdrawal: {balance_response_after}")
+            balance_after_first = balance_response_after['balance'].get('usd', 0)
             expected_balance = initial_balance - withdrawal_amount
             
             # Allow for small floating point differences
@@ -463,13 +554,14 @@ class TestWithdrawalOperations:
             # This should fail due to insufficient funds
             excessive_amount = balance_after_first + 1.0
             withdrawal_data_excessive = {
-                'address': '0xSHOULDFAIL123ABC456DEF789GHI012JKL345MN',
+                'address': self.address_3,
                 'amount': excessive_amount
             }
             
             # This withdrawal should fail
             try:
                 response2 = self.client.create_usdt_withdrawal(withdrawal_data_excessive)
+                print(f"[RESPONSE] Excessive withdrawal after pending: {response2}")
                 # If we get here, the withdrawal shouldn't have succeeded
                 if 'error' not in response2 and 'withdrawal_id' in response2:
                     pytest.fail(f"Excessive withdrawal should have failed but succeeded: {response2}")
