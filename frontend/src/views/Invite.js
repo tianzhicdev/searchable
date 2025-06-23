@@ -62,7 +62,7 @@ const Invite = () => {
 
             {/* Main Heading */}
             <Typography variant="h3" className={classes.staticText} gutterBottom>
-              Art Martket on Stablecoins
+              Sell Digital Content for Stablecoins
             </Typography>
             {/* QR Code Section */}
             <Box mb={4}>
@@ -92,9 +92,14 @@ const Invite = () => {
                   <Typography variant="h1"  style={{ marginBottom: '16px' }}>
                     {inviteCode}
                   </Typography>
-                  <Typography variant="body2" className={classes.staticText}>
+                  <Typography variant="body2" style={{ marginBottom: '16px' }}>
                     use this invite code to get 5 USDT bonus when signing up
                   </Typography>
+                  
+                  <Typography variant="body2" className={classes.staticText}>
+                    Contact: info@eccentricprotocol.com
+                  </Typography>
+                  
                 </Box>
               )}
             
