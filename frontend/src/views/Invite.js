@@ -30,8 +30,8 @@ const Invite = () => {
   const fetchActiveInviteCode = async () => {
     try {
       const response = await backend.get('v1/get-active-invite-code');
-      if (response.success) {
-        setInviteCode(response.invite_code);
+      if (response.data.success) {
+        setInviteCode(response.data.invite_code);
       } else {
         setError('No active invite codes available');
       }
