@@ -783,6 +783,26 @@ const mockHandlers = {
     
     return createMockResponse({ active: isActive });
   },
+
+  // Get active invite code endpoint
+  'v1/get-active-invite-code': () => {
+    console.log('[MOCK] Getting active invite code');
+    
+    // Return a random active invite code
+    const activeCodes = [
+      { code: 'TESTME', description: 'Test invite code for demo purposes' },
+      { code: 'MOCK01', description: 'Mock invite code - Get $5 bonus!' },
+      { code: 'REWARD', description: 'Special reward code for new users' }
+    ];
+    
+    const randomCode = activeCodes[Math.floor(Math.random() * activeCodes.length)];
+    
+    return createMockResponse({
+      success: true,
+      invite_code: randomCode.code,
+      description: randomCode.description
+    });
+  },
   
   // Search/listing endpoints  
   'v1/searchables': (url) => {
