@@ -195,7 +195,7 @@ class TestDirectSearchables:
         
         invoice_data = {
             "searchable_id": int(searchable_id),
-            "type": "stripe",
+            "invoice_type": "stripe",
             "currency": "usd",
             "selections": [{
                 "amount": custom_amount,
@@ -229,7 +229,7 @@ class TestDirectSearchables:
         
         invoice_data = {
             "searchable_id": int(searchable_id),
-            "type": "stripe",
+            "invoice_type": "stripe",
             "currency": "usd",
             "selections": [{
                 "amount": default_amount,
@@ -314,7 +314,7 @@ class TestDirectSearchables:
         for amount in test_amounts:
             invoice_data = {
                 "searchable_id": int(searchable_id),
-                "type": "stripe", 
+                "invoice_type": "stripe", 
                 "currency": "usd",
                 "selections": [{
                     "amount": amount,
