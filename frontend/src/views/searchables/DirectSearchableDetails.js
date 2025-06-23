@@ -119,7 +119,7 @@ const DirectSearchableDetails = () => {
       // Create invoice with the selected amount
       const invoiceData = {
         searchable_id: parseInt(id),
-        type: 'stripe',
+        invoice_type: 'stripe',
         currency: 'usd',
         selections: [{
           amount: paymentAmount,

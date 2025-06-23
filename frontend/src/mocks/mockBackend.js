@@ -479,7 +479,7 @@ const mockHandlers = {
       });
     }
     
-    // Handle regular invoice creation
+    // Handle regular invoice creation  
     if (payload.invoice_type === 'stripe' || payload.type === 'stripe') {
       return createMockResponse({
         url: `${window.location.origin}${window.location.pathname}?payment=success`,
