@@ -50,46 +50,33 @@ const Invite = () => {
   };
 
   return (
-    <Box className={classes.mainContent}>
-      <Grid container spacing={4} justifyContent="center" alignItems="center" style={{ minHeight: '100vh', padding: '20px' }}>
-        <Grid item xs={12} style={{ maxWidth: '600px', margin: '0 auto' }}>
+    <Box>
+      <Grid containerjustifyContent="center" alignItems="center">
+        <Grid item xs={12}>
           <Box display="flex" flexDirection="column" alignItems="center" textAlign="center">
             
             {/* Logo Section */}
-            <Box mb={4}>
+            <Box maxHeight={'200px'} maxWidth={'200px'}>
               <Logo />
             </Box>
 
             {/* Main Heading */}
             <Typography variant="h3" className={classes.staticText} gutterBottom>
-              Sell Your Art for Stablecoins
+              Art Martket on Stablecoins
             </Typography>
-
-            {/* Subheading */}
-            <Typography variant="h5" className={classes.userText} gutterBottom style={{ marginBottom: '32px' }}>
-              Setup your store in 2 minutes
-            </Typography>
-
             {/* QR Code Section */}
             <Box mb={4}>
               <ZoomableImage
                 src={qrCodeImage}
                 alt="QR Code to our site"
-                style={{
-                  maxWidth: '200px',
-                  maxHeight: '200px'
-                }}
+                // style={{
+                //   maxWidth: '200px',
+                //   maxHeight: '200px'
+                // }}
               />
-              <Typography variant="body2" className={classes.staticText} style={{ marginTop: '8px' }}>
-                Scan to visit our site
-              </Typography>
             </Box>
 
             {/* Invite Code Section */}
-            <Paper className={classes.paper} style={{ padding: '20px', width: '100%', maxWidth: '400px' }}>
-              <Typography variant="h6" className={classes.staticText} gutterBottom>
-                Active Invite Code
-              </Typography>
               
               {loading ? (
                 <Box display="flex" justifyContent="center" alignItems="center" minHeight="60px">
@@ -101,39 +88,15 @@ const Invite = () => {
                 </Typography>
               ) : (
                 <Box>
-                  <TextField
-                    value={inviteCode}
-                    variant="outlined"
-                    fullWidth
-                    InputProps={{
-                      readOnly: true,
-                      style: {
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        textAlign: 'center'
-                      },
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <Button
-                            onClick={copyToClipboard}
-                            variant="contained"
-                            size="small"
-                            startIcon={<ContentCopy />}
-                            style={{ minWidth: 'auto' }}
-                          >
-                            {copied ? 'Copied!' : 'Copy'}
-                          </Button>
-                        </InputAdornment>
-                      )
-                    }}
-                    style={{ marginBottom: '16px' }}
-                  />
+
+                  <Typography variant="h1"  style={{ marginBottom: '16px' }}>
+                    {inviteCode}
+                  </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    Use this code to get $5 bonus when signing up
+                    use this invite code to get 5 USDT bonus when signing up
                   </Typography>
                 </Box>
               )}
-            </Paper>
             
           </Box>
         </Grid>
