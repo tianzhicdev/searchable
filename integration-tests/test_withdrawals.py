@@ -54,7 +54,7 @@ class TestWithdrawalOperations:
         assert isinstance(balance_response, dict)
         assert 'balance' in balance_response
         assert isinstance(balance_response['balance'], dict)
-        initial_balance = balance_response.get('balance', {}).get('usd', 0)
+        initial_balance = balance_response.get('balance').get('usd', 0)
         assert isinstance(initial_balance, (int, float))
     
     def test_02_create_earnings_simulation(self):
@@ -420,6 +420,67 @@ class TestWithdrawalOperations:
                 
         except Exception as e:
             pytest.fail(f"Withdrawal amount calculation verification failed: {e}")
+    
+    def test_10_pending_withdrawal_balance_deduction(self):
+        """Test that pending withdrawals are deducted from available balance to prevent double-spending"""
+        
+        # Get current balance
+        balance_response = self.client.get_balance()
+        assert isinstance(balance_response, dict)
+        assert 'balance' in balance_response
+        initial_balance = balance_response['balance'].get('usd', 0)
+        assert isinstance(initial_balance, (int, float))
+        
+        # Skip test if balance is too low
+        if initial_balance < 20:
+            pytest.skip(f"Insufficient balance ({initial_balance}) for pending withdrawal test")
+        
+        # Create a withdrawal that should succeed
+        withdrawal_amount = min(10.0, initial_balance - 5)  # Leave some buffer
+        withdrawal_data = {
+            'address': '0xPENDINGTEST123ABC456DEF789GHI012JKL345MN',
+            'amount': withdrawal_amount
+        }
+        
+        try:
+            # Create first withdrawal
+            response1 = self.client.create_usdt_withdrawal(withdrawal_data)
+            assert isinstance(response1, dict)
+            assert 'withdrawal_id' in response1 or 'id' in response1
+            
+            withdrawal_id = response1.get('withdrawal_id') or response1.get('id')
+            self.created_withdrawals.append(withdrawal_id)
+            
+            # Get balance after first withdrawal - it should be reduced
+            balance_after_first = self.client.get_balance()['balance'].get('usd', 0)
+            expected_balance = initial_balance - withdrawal_amount
+            
+            # Allow for small floating point differences
+            assert abs(balance_after_first - expected_balance) < 0.01, \
+                f"Balance should be reduced by withdrawal amount. Expected ~{expected_balance}, got {balance_after_first}"
+            
+            # Try to create another withdrawal for the remaining balance + $1
+            # This should fail due to insufficient funds
+            excessive_amount = balance_after_first + 1.0
+            withdrawal_data_excessive = {
+                'address': '0xSHOULDFAIL123ABC456DEF789GHI012JKL345MN',
+                'amount': excessive_amount
+            }
+            
+            # This withdrawal should fail
+            try:
+                response2 = self.client.create_usdt_withdrawal(withdrawal_data_excessive)
+                # If we get here, the withdrawal shouldn't have succeeded
+                if 'error' not in response2 and 'withdrawal_id' in response2:
+                    pytest.fail(f"Excessive withdrawal should have failed but succeeded: {response2}")
+            except Exception as e:
+                # This is expected - withdrawal should fail due to insufficient funds
+                error_msg = str(e).lower()
+                assert 'insufficient' in error_msg or 'balance' in error_msg or '400' in error_msg, \
+                    f"Expected insufficient funds error, got: {e}"
+                
+        except Exception as e:
+            pytest.fail(f"Pending withdrawal balance test failed: {e}")
 
 
 if __name__ == "__main__":
