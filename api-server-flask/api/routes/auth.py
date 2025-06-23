@@ -28,7 +28,7 @@ DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
 signup_model = rest_api.model('SignUpModel', {"username": fields.String(required=True, min_length=2, max_length=32),
                                               "email": fields.String(required=True, min_length=4, max_length=64),
                                               "password": fields.String(required=True, min_length=4, max_length=16),
-                                              "invite_code": fields.String(required=False, min_length=6, max_length=6)
+                                              "invite_code": fields.String(required=False, min_length=0, max_length=6)
                                               })
 
 login_model = rest_api.model('LoginModel', {"email": fields.String(required=True, min_length=4, max_length=64),
@@ -388,6 +388,49 @@ class CheckInviteCode(Resource):
         except Exception as e:
             logger.error(f"Error checking invite code: {e}")
             return {"active": False}, 200
+
+
+@rest_api.route('/api/v1/get-active-invite-code')
+class GetActiveInviteCode(Resource):
+    """
+    Get an active invite code
+    """
+    def get(self):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get a random active invite code
+            execute_sql(cur,
+                "SELECT code, metadata FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
+            )
+            
+            result = cur.fetchone()
+            cur.close()
+            conn.close()
+            
+            if result:
+                code = result[0]
+                metadata = result[1] if result[1] else {}
+                description = metadata.get('description', 'Join our platform with this invite code')
+                
+                return {
+                    "success": True,
+                    "invite_code": code,
+                    "description": description
+                }, 200
+            else:
+                return {
+                    "success": False,
+                    "message": "No active invite codes available"
+                }, 200
+                
+        except Exception as e:
+            logger.error(f"Error getting active invite code: {e}")
+            return {
+                "success": False,
+                "message": "Error retrieving invite code"
+            }, 500
 
 
 # Export decorators for use in other route modules
