@@ -777,7 +777,7 @@ def get_balance_by_currency(user_id):
                 
                 # Get paid invoices for this searchable (seller earnings)
                 execute_sql(cur, f"""
-                    SELECT i.amount, i.currency, i.metadata
+                    SELECT i.amount, i.fee, i.currency, i.metadata
                     FROM invoice i
                     JOIN payment p ON i.id = p.invoice_id
                     WHERE i.searchable_id = {searchable_id} 
@@ -788,12 +788,13 @@ def get_balance_by_currency(user_id):
                 paid_invoices = cur.fetchall()
                 
                 for invoice_result in paid_invoices:
-                    amount, currency, metadata = invoice_result
+                    amount, fee, currency, metadata = invoice_result
                     
                     # All payments are in USD
                     if currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usd'] += float(amount)
-                        logger.debug(f"Added ${amount} USD from searchable {searchable_id}")
+                        net_amount = float(amount) - float(fee)
+                        balance_by_currency['usd'] += net_amount
+                        logger.debug(f"Added ${net_amount} USD (amount {amount} - fee {fee}) from searchable {searchable_id}")
                         
             except KeyError as ke:
                 logger.error(f"KeyError processing searchable {searchable_id}: {str(ke)}")
@@ -820,12 +821,12 @@ def get_balance_by_currency(user_id):
                 except ValueError:
                     logger.error(f"Invalid amount format in reward: {amount}")
         
-        # Subtract withdrawals
+        # Subtract withdrawals (both completed and pending to prevent double-spending)
         execute_sql(cur, f"""
             SELECT amount, currency
             FROM withdrawal 
             WHERE user_id = {user_id}
-            AND status = '{PaymentStatus.COMPLETE.value}'
+            AND status IN ('{PaymentStatus.COMPLETE.value}', '{PaymentStatus.PENDING.value}')
         """)
         
         withdrawal_results = cur.fetchall()
@@ -838,7 +839,7 @@ def get_balance_by_currency(user_id):
                     amount_float = float(amount)
                     if currency.lower() in ['usdt', 'usd']:
                         balance_by_currency['usd'] -= amount_float
-                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal")
+                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal (completed or pending)")
                 except ValueError:
                     logger.error(f"Invalid amount format in withdrawal: {amount}")
         
@@ -1582,4 +1583,4 @@ __all__ = [
     'update_user_profile',
     'get_rewards',
     'get_downloadable_items_by_user_id'
-] 
+]
