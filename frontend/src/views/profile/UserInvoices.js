@@ -8,14 +8,17 @@ import {
   Tabs,
   Tab,
   Chip,
-  Button
+  Button,
+  Menu,
+  MenuItem
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { 
   TrendingUp,
   TrendingDown,
   AccountBalanceWallet,
-  CardGiftcard
+  CardGiftcard,
+  MoreVert
 } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
@@ -33,6 +36,7 @@ const UserInvoices = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [stats, setStats] = useState({
     totalSpent: 0,
     totalEarned: 0,
@@ -137,6 +141,29 @@ const UserInvoices = () => {
     setActiveTab(newValue);
   };
 
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuItemClick = (tabIndex) => {
+    setActiveTab(tabIndex);
+    handleMenuClose();
+  };
+
+  const getActiveTabName = () => {
+    switch (activeTab) {
+      case 0: return 'Purchases';
+      case 1: return 'Sales';
+      case 2: return 'Withdrawals';
+      case 3: return 'Gifts';
+      default: return 'Purchases';
+    }
+  };
+
   const formatCurrency = (amount) => {
     return `$${amount.toFixed(2)}`;
   };
@@ -173,93 +200,53 @@ const UserInvoices = () => {
 
   return (
       <Paper>
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} p={2}>
+        <Typography variant="h6">
+          {getActiveTabName()}
+        </Typography>
         <Button
-
-          variant='contained'
-          style={{ 
-            flex: 1, 
-          }}
-          onClick={() => setActiveTab(0)}
+          variant="contained"
+          onClick={handleMenuOpen}
+          endIcon={<MoreVert />}
         >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <TrendingDown/>
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalSpent)}
-              </Typography>
-              <Typography className={classes.staticText}>
-                Total Spent ({stats.purchasesCount})
-              </Typography>
-            </Box>
-          </Box>
+          Select View
         </Button>
-        
-        <Button
-          style={{ 
-            flex: 1, 
-          }}
-
-          variant='contained'
-          onClick={() => setActiveTab(1)}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
         >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <TrendingUp color="primary" />
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalEarned)}
-              </Typography>
-              <Typography className={classes.staticText}>
-                Total Earned ({stats.salesCount})
-              </Typography>
-            </Box>
-          </Box>
-        </Button>
-        
-        <Button
-          style={{ 
-            flex: 1, 
-          }}
-
-          variant='contained'
-          onClick={() => setActiveTab(2)}
-        >
-          <Box display="flex" alignItems="center" gap={1} width="100%">
-            <AccountBalanceWallet color="action" />
-            <Box textAlign="left" flex={1}>
-              <Typography variant="h6" className={classes.staticText}>
-                {formatCurrency(stats.totalWithdrawn)}
-              </Typography>
-              <Typography className={classes.staticText} 
-                              style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}>
-                Total Withdrawn ({stats.withdrawalsCount})
-              </Typography>
-            </Box>
-          </Box>
-        </Button>
-        
-        {stats.totalRewards > 0 && (
-          <Button
-            style={{ 
-              flex: 1, 
-            }}
-
-            variant='contained'
-            onClick={() => setActiveTab(3)}
+          <MenuItem 
+            onClick={() => handleMenuItemClick(0)}
+            selected={activeTab === 0}
           >
-            <Box display="flex" alignItems="center" gap={1} width="100%">
-              <CardGiftcard color="primary" />
-              <Box textAlign="left" flex={1}>
-                <Typography variant="h6" className={classes.staticText}>
-                  {formatCurrency(stats.totalRewards)}
-                </Typography>
-                <Typography className={classes.staticText}>
-                  Total Rewards ({stats.rewardsCount})
-                </Typography>
-              </Box>
-            </Box>
-          </Button>
-        )}
+            <TrendingDown style={{ marginRight: 8 }} />
+            Purchases ({stats.purchasesCount})
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleMenuItemClick(1)}
+            selected={activeTab === 1}
+          >
+            <TrendingUp style={{ marginRight: 8 }} />
+            Sales ({stats.salesCount})
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleMenuItemClick(2)}
+            selected={activeTab === 2}
+          >
+            <AccountBalanceWallet style={{ marginRight: 8 }} />
+            Withdrawals ({stats.withdrawalsCount})
+          </MenuItem>
+          {stats.totalRewards > 0 && (
+            <MenuItem 
+              onClick={() => handleMenuItemClick(3)}
+              selected={activeTab === 3}
+            >
+              <CardGiftcard style={{ marginRight: 8 }} />
+              Gifts ({stats.rewardsCount})
+            </MenuItem>
+          )}
+        </Menu>
       </Box>
 
         <Box p={2}>
