@@ -402,7 +402,7 @@ class GetActiveInviteCode(Resource):
             
             # Get a random active invite code
             execute_sql(cur,
-                "SELECT code, description FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
+                "SELECT code, metadata FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
             )
             
             result = cur.fetchone()
@@ -410,10 +410,14 @@ class GetActiveInviteCode(Resource):
             conn.close()
             
             if result:
+                code = result[0]
+                metadata = result[1] if result[1] else {}
+                description = metadata.get('description', 'Join our platform with this invite code')
+                
                 return {
                     "success": True,
-                    "invite_code": result[0],
-                    "description": result[1] if result[1] else "Join our platform with this invite code"
+                    "invite_code": code,
+                    "description": description
                 }, 200
             else:
                 return {
