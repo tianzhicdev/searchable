@@ -5,7 +5,7 @@ import base64
 import os
 import json
 from api_client import SearchableAPIClient
-from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR
+from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR, BASE_URL, IS_REMOTE
 
 
 class TestComprehensiveScenarios:
@@ -56,12 +56,23 @@ class TestComprehensiveScenarios:
             email=self.user1_email,
             password=self.password
         )
-        assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
+        print(f"[RESPONSE] Register User 1: {response}")
+        assert response['success'] is True
+        assert 'userID' in response
+        assert isinstance(response['userID'], int)
+        assert response['msg'] == 'The user was successfully registered'
         
         # Login User 1
         login_response = self.user1_client.login_user(self.user1_email, self.password)
+        print(f"[RESPONSE] Login User 1: {login_response}")
+        assert login_response['success'] is True
         assert 'token' in login_response
+        assert isinstance(login_response['token'], str)
+        assert len(login_response['token']) > 50  # JWT tokens are long
         assert 'user' in login_response
+        assert login_response['user']['username'] == self.user1_username
+        assert login_response['user']['email'] == self.user1_email
+        assert isinstance(login_response['user']['_id'], int)
         self.__class__.user1_id = login_response['user']['_id']
         
         # Register User 2 (Buyer)
@@ -70,12 +81,23 @@ class TestComprehensiveScenarios:
             email=self.user2_email,
             password=self.password
         )
-        assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
+        print(f"[RESPONSE] Register User 2: {response}")
+        assert response['success'] is True
+        assert 'userID' in response
+        assert isinstance(response['userID'], int)
+        assert response['msg'] == 'The user was successfully registered'
         
         # Login User 2
         login_response = self.user2_client.login_user(self.user2_email, self.password)
+        print(f"[RESPONSE] Login User 2: {login_response}")
+        assert login_response['success'] is True
         assert 'token' in login_response
+        assert isinstance(login_response['token'], str)
+        assert len(login_response['token']) > 50  # JWT tokens are long
         assert 'user' in login_response
+        assert login_response['user']['username'] == self.user2_username
+        assert login_response['user']['email'] == self.user2_email
+        assert isinstance(login_response['user']['_id'], int)
         self.__class__.user2_id = login_response['user']['_id']
         
         # Register User 3 (Pending)
@@ -84,12 +106,23 @@ class TestComprehensiveScenarios:
             email=self.user3_email,
             password=self.password
         )
-        assert 'success' in response or 'user' in response or 'id' in response or 'userID' in response
+        print(f"[RESPONSE] Register User 3: {response}")
+        assert response['success'] is True
+        assert 'userID' in response
+        assert isinstance(response['userID'], int)
+        assert response['msg'] == 'The user was successfully registered'
         
         # Login User 3
         login_response = self.user3_client.login_user(self.user3_email, self.password)
+        print(f"[RESPONSE] Login User 3: {login_response}")
+        assert login_response['success'] is True
         assert 'token' in login_response
+        assert isinstance(login_response['token'], str)
+        assert len(login_response['token']) > 50  # JWT tokens are long
         assert 'user' in login_response
+        assert login_response['user']['username'] == self.user3_username
+        assert login_response['user']['email'] == self.user3_email
+        assert isinstance(login_response['user']['_id'], int)
         self.__class__.user3_id = login_response['user']['_id']
         
         # Verify all three users are successfully set up
@@ -120,12 +153,22 @@ class TestComprehensiveScenarios:
             
             # Upload image to media endpoint
             media_response = self.user1_client.upload_media(image_path)
-            assert 'success' in media_response and media_response['success']
+            print(f"[RESPONSE] Upload media {i+1}: {media_response}")
+            assert media_response['success'] is True
             assert 'media_id' in media_response
             assert 'media_uri' in media_response
-            assert media_response['media_id'] is not None
-            assert media_response['media_uri'] is not None
-            assert len(media_response['media_uri']) > 0
+            assert 'file_id' in media_response
+            assert 'filename' in media_response
+            assert 'size' in media_response
+            assert isinstance(media_response['media_id'], str)
+            # Check media URI starts with correct base URL
+            if IS_REMOTE:
+                expected_media_prefix = f"{BASE_URL}/api/v1/media/"
+            else:
+                expected_media_prefix = 'http://localhost/api/v1/media/'
+            assert media_response['media_uri'].startswith(expected_media_prefix)
+            assert media_response['media_id'] == media_response['file_id']
+            assert media_response['size'] == 580  # Our test JPEG is 580 bytes
             
             test_images.append({
                 'media_id': media_response['media_id'],
@@ -159,10 +202,20 @@ class TestComprehensiveScenarios:
                 'description': f'Digital Asset {i+1}',
                 'type': 'downloadable_content'
             })
+            print(f"[RESPONSE] Upload file {i+1}: {upload_response}")
             
-            assert 'success' in upload_response and upload_response['success']
+            assert upload_response['success'] is True
             assert 'file_id' in upload_response
-            assert upload_response['file_id'] is not None
+            assert 'uuid' in upload_response
+            assert 'uri' in upload_response
+            assert isinstance(upload_response['file_id'], int)
+            assert isinstance(upload_response['uuid'], str)
+            # Check file URI starts with correct base URL
+            if IS_REMOTE:
+                expected_file_prefix = f"{BASE_URL}/api/file/download?file_id="
+            else:
+                expected_file_prefix = 'http://localhost:5006/api/file/download?file_id='
+            assert upload_response['uri'].startswith(expected_file_prefix)
             test_files.append(upload_response['file_id'])
         
         # Verify all files were uploaded
@@ -251,8 +304,10 @@ class TestComprehensiveScenarios:
             }
             
             response = self.user1_client.create_searchable(searchable_data)
+            print(f"[RESPONSE] Create searchable {i+1}: {response}")
             assert 'searchable_id' in response
-            assert response['searchable_id'] is not None
+            assert isinstance(response['searchable_id'], int)
+            assert response['searchable_id'] > 0
             
             searchable_id = response['searchable_id']
             self.__class__.user1_searchables.append({
@@ -273,9 +328,18 @@ class TestComprehensiveScenarios:
         for i, searchable in enumerate(self.user1_searchables):
             # Retrieve the searchable item
             response = self.user1_client.get_searchable(searchable['id'])
+            print(f"[RESPONSE] Get searchable {i+1}: {response}")
             # Response directly contains the data, not wrapped in 'searchable'
             assert 'payloads' in response
             assert 'public' in response['payloads']
+            assert 'terminal_id' in response
+            assert 'searchable_id' in response
+            assert 'type' in response
+            assert 'username' in response
+            assert response['terminal_id'] == str(self.user1_id)
+            assert response['searchable_id'] == searchable['id']
+            assert response['type'] == 'downloadable'
+            assert response['username'] == self.user1_username
             
             public_data = response['payloads']['public']
             
@@ -322,6 +386,7 @@ class TestComprehensiveScenarios:
         
         # Use the correct API format
         searchable_info = self.user1_client.get_searchable(searchable_1['id'])
+        print(f"[RESPONSE] Get searchable info for payment 1: {searchable_info}")
         public_data = searchable_info['payloads']['public']
         if 'selectables' in public_data and len(public_data['selectables']) >= 2:
             selections_1 = public_data['selectables'][:2]  # Take first 2 selectables
@@ -344,15 +409,35 @@ class TestComprehensiveScenarios:
             selections_1,
             "stripe"
         )
-        assert 'session_id' in invoice_response_1 or 'url' in invoice_response_1
+        print(f"[RESPONSE] Create invoice 1: {invoice_response_1}")
+        assert 'url' in invoice_response_1
+        assert 'session_id' in invoice_response_1
+        assert 'invoice_id' in invoice_response_1
+        assert 'amount' in invoice_response_1
+        assert 'platform_fee' in invoice_response_1
+        assert 'stripe_fee' in invoice_response_1
+        assert 'total_charged' in invoice_response_1
+        assert invoice_response_1['url'].startswith('https://checkout.stripe.com/')
+        assert invoice_response_1['session_id'].startswith('cs_test_')
+        assert isinstance(invoice_response_1['invoice_id'], int)
+        assert invoice_response_1['amount'] == 49.98  # 29.99 + 19.99
+        assert abs(invoice_response_1['platform_fee'] - 0.04998) < 0.00001  # 0.1% of 49.98
+        assert abs(invoice_response_1['stripe_fee'] - 1.7493) < 0.0001
         
         # Complete payment for first purchase
         session_id_1 = invoice_response_1.get('session_id')
         assert session_id_1 is not None  # Require session_id for test
         
         payment_response_1 = self.user2_client.complete_payment_directly(session_id_1)
-        assert 'success' in payment_response_1
+        print(f"[RESPONSE] Complete payment 1: {payment_response_1}")
         assert payment_response_1['success'] is True
+        assert payment_response_1['message'] == 'Payment marked as complete'
+        assert 'invoice_id' in payment_response_1
+        assert 'payment_id' in payment_response_1
+        assert 'session_id' in payment_response_1
+        assert isinstance(payment_response_1['invoice_id'], int)
+        assert isinstance(payment_response_1['payment_id'], int)
+        assert payment_response_1['session_id'] == session_id_1
         
         self.__class__.user2_invoices.append({
             'session_id': session_id_1,
@@ -382,6 +467,7 @@ class TestComprehensiveScenarios:
         
         # Use the correct API format for second invoice too
         searchable_info_2 = self.user1_client.get_searchable(searchable_2['id'])
+        print(f"[RESPONSE] Get searchable info for payment 2: {searchable_info_2}")
         public_data_2 = searchable_info_2['payloads']['public']
         if 'selectables' in public_data_2 and len(public_data_2['selectables']) >= 1:
             selections_2 = [public_data_2['selectables'][0]]  # Take first selectable
@@ -403,15 +489,35 @@ class TestComprehensiveScenarios:
             selections_2,
             "stripe"
         )
-        assert 'session_id' in invoice_response_2 or 'url' in invoice_response_2
+        print(f"[RESPONSE] Create invoice 2: {invoice_response_2}")
+        assert 'url' in invoice_response_2
+        assert 'session_id' in invoice_response_2
+        assert 'invoice_id' in invoice_response_2
+        assert 'amount' in invoice_response_2
+        assert 'platform_fee' in invoice_response_2
+        assert 'stripe_fee' in invoice_response_2
+        assert 'total_charged' in invoice_response_2
+        assert invoice_response_2['url'].startswith('https://checkout.stripe.com/')
+        assert invoice_response_2['session_id'].startswith('cs_test_')
+        assert isinstance(invoice_response_2['invoice_id'], int)
+        assert invoice_response_2['amount'] == 39.99  # First file from second searchable
+        assert abs(invoice_response_2['platform_fee'] - 0.039990000000000005) < 0.00001  # 0.1% of 39.99
+        assert abs(invoice_response_2['stripe_fee'] - 1.3996500000000003) < 0.0001
         
         # Complete payment for second purchase
         session_id_2 = invoice_response_2.get('session_id')
         assert session_id_2 is not None  # Require session_id for test
         
         payment_response_2 = self.user2_client.complete_payment_directly(session_id_2)
-        assert 'success' in payment_response_2
+        print(f"[RESPONSE] Complete payment 2: {payment_response_2}")
         assert payment_response_2['success'] is True
+        assert payment_response_2['message'] == 'Payment marked as complete'
+        assert 'invoice_id' in payment_response_2
+        assert 'payment_id' in payment_response_2
+        assert 'session_id' in payment_response_2
+        assert isinstance(payment_response_2['invoice_id'], int)
+        assert isinstance(payment_response_2['payment_id'], int)
+        assert payment_response_2['session_id'] == session_id_2
         
         self.__class__.user2_invoices.append({
             'session_id': session_id_2,
@@ -450,6 +556,7 @@ class TestComprehensiveScenarios:
         
         # Use the correct API format for third invoice too
         searchable_info_3 = self.user1_client.get_searchable(searchable_3['id'])
+        print(f"[RESPONSE] Get searchable info for pending invoice: {searchable_info_3}")
         public_data_3 = searchable_info_3['payloads']['public']
         if 'selectables' in public_data_3 and len(public_data_3['selectables']) >= 1:
             selections_3 = [public_data_3['selectables'][0]]  # Take first selectable
@@ -471,9 +578,20 @@ class TestComprehensiveScenarios:
             selections_3,
             "stripe"
         )
-        print(f"[DEBUG] Invoice response for User 3: {json.dumps(invoice_response, indent=2)}")
-        assert 'session_id' in invoice_response or 'url' in invoice_response
-        assert invoice_response.get('session_id') is not None
+        print(f"[RESPONSE] Create pending invoice: {invoice_response}")
+        assert 'url' in invoice_response
+        assert 'session_id' in invoice_response
+        assert 'invoice_id' in invoice_response
+        assert 'amount' in invoice_response
+        assert 'platform_fee' in invoice_response
+        assert 'stripe_fee' in invoice_response
+        assert 'total_charged' in invoice_response
+        assert invoice_response['url'].startswith('https://checkout.stripe.com/')
+        assert invoice_response['session_id'].startswith('cs_test_')
+        assert isinstance(invoice_response['invoice_id'], int)
+        assert invoice_response['amount'] == 15.99  # First file from third searchable
+        assert abs(invoice_response['platform_fee'] - 0.01599) < 0.00001  # 0.1% of 15.99
+        assert abs(invoice_response['stripe_fee'] - 0.5596500000000001) < 0.0001
         
         # Don't complete payment - leave as pending
         self.__class__.user3_invoices.append({
@@ -498,8 +616,14 @@ class TestComprehensiveScenarios:
             assert invoice_info.get('session_id') is not None  # Require session_id
             
             payment_status = self.user2_client.check_payment_status(invoice_info['session_id'])
-            assert 'status' in payment_status
+            print(f"[RESPONSE] User 2 payment status: {payment_status}")
             assert payment_status['status'] == 'complete'
+            assert 'amount_total' in payment_status
+            assert 'currency' in payment_status
+            assert 'session_id' in payment_status
+            assert payment_status['currency'] == 'usd'
+            assert payment_status['session_id'] == invoice_info['session_id']
+            assert isinstance(payment_status['amount_total'], int)  # Stripe returns amounts in cents
         
         # Check User 3's pending invoice
         assert len(self.user3_invoices) > 0
@@ -508,15 +632,21 @@ class TestComprehensiveScenarios:
             assert invoice_info.get('session_id') is not None  # Require session_id
             
             payment_status = self.user3_client.check_payment_status(invoice_info['session_id'])
-            assert 'status' in payment_status
-            # Pending invoices might show as 'incomplete' or 'pending'
-            assert payment_status['status'] in ['pending', 'incomplete']
+            print(f"[RESPONSE] User 3 payment status: {payment_status}")
+            assert payment_status['status'] == 'incomplete'  # Unpaid invoices show as incomplete
+            assert 'amount_total' in payment_status
+            assert 'currency' in payment_status
+            assert 'session_id' in payment_status
+            assert payment_status['currency'] == 'usd'
+            assert payment_status['session_id'] == invoice_info['session_id']
+            assert payment_status['amount_total'] == 0  # Incomplete payments show 0
         
         # Check invoices by searchable for User 1 (seller perspective)
         assert len(self.user1_searchables) > 0
         
         for searchable in self.user1_searchables:
             invoices_response = self.user1_client.get_invoices_by_searchable(searchable['id'])
+            print(f"[RESPONSE] Invoices by searchable {searchable['id']}: {invoices_response}")
             invoices_data = invoices_response.json()
             assert 'invoices' in invoices_data
             
@@ -551,12 +681,14 @@ class TestComprehensiveScenarios:
         
         # Upload profile image
         profile_media = self.user1_client.upload_media(profile_image_path)
+        print(f"[RESPONSE] Upload profile media: {profile_media}")
         assert profile_media['success']
         
         # Upload additional gallery images
         gallery_images = []
         for i in range(3):
             gallery_media = self.user1_client.upload_media(profile_image_path)  # Reuse same image
+            print(f"[RESPONSE] Upload gallery media {i+1}: {gallery_media}")
             assert gallery_media['success']
             gallery_images.append(gallery_media['media_uri'])
         
@@ -571,7 +703,18 @@ class TestComprehensiveScenarios:
         }
         
         profile_response = self.user1_client.update_profile(profile_data)
-        assert 'message' in profile_response or 'success' in profile_response
+        print(f"[RESPONSE] Update User 1 profile: {profile_response}")
+        assert profile_response['message'] == 'Profile updated successfully'
+        assert 'profile' in profile_response
+        assert profile_response['profile']['username'] == self.user1_username
+        assert profile_response['profile']['introduction'] == profile_data['introduction']
+        assert profile_response['profile']['profile_image_url'] == profile_media['media_uri']
+        assert 'metadata' in profile_response['profile']
+        assert 'additional_images' in profile_response['profile']['metadata']
+        assert len(profile_response['profile']['metadata']['additional_images']) == 3
+        assert isinstance(profile_response['profile']['id'], int)
+        assert isinstance(profile_response['profile']['user_id'], int)
+        assert profile_response['profile']['user_id'] == self.user1_id
         
         # Verify response indicates success
         if 'success' in profile_response:
@@ -581,10 +724,23 @@ class TestComprehensiveScenarios:
         
         # Retrieve User 1 profile (current user)
         current_profile = self.user1_client.get_current_profile()
+        print(f"[RESPONSE] Get User 1 current profile: {current_profile}")
         assert 'profile' in current_profile
+        assert 'downloadables' in current_profile
         assert current_profile['profile']['username'] == self.user1_username
         assert current_profile['profile']['introduction'] == profile_data['introduction']
         assert current_profile['profile']['profile_image_url'] == profile_media['media_uri']
+        assert len(current_profile['downloadables']) == 4  # Should show 4 searchables created
+        assert isinstance(current_profile['profile']['id'], int)
+        assert isinstance(current_profile['profile']['user_id'], int)
+        # Verify all searchables are present
+        for downloadable in current_profile['downloadables']:
+            assert 'searchable_id' in downloadable
+            assert 'title' in downloadable
+            assert 'description' in downloadable
+            assert 'type' in downloadable
+            assert downloadable['type'] == 'downloadable'
+            assert downloadable['currency'] == 'usd'
         
         # Verify profile data is not empty
         assert len(current_profile['profile']['username']) > 0
@@ -593,9 +749,16 @@ class TestComprehensiveScenarios:
         
         # Retrieve User 1 profile by ID (public view)
         public_profile = self.user2_client.get_profile_by_id(self.user1_id)
+        print(f"[RESPONSE] Get User 1 public profile: {public_profile}")
         assert 'profile' in public_profile
+        assert 'downloadables' in public_profile
         assert public_profile['profile']['username'] == self.user1_username
         assert public_profile['profile']['introduction'] == profile_data['introduction']
+        assert public_profile['profile']['profile_image_url'] == profile_media['media_uri']
+        assert len(public_profile['downloadables']) == 4  # Should show 4 searchables created
+        assert isinstance(public_profile['profile']['id'], int)
+        assert isinstance(public_profile['profile']['user_id'], int)
+        assert public_profile['profile']['user_id'] == self.user1_id
         
         # Verify public profile data
         assert len(public_profile['profile']['username']) > 0
@@ -608,7 +771,16 @@ class TestComprehensiveScenarios:
         }
         
         user2_profile_response = self.user2_client.update_profile(simple_profile)
-        assert 'message' in user2_profile_response or 'success' in user2_profile_response
+        print(f"[RESPONSE] Update User 2 profile: {user2_profile_response}")
+        assert user2_profile_response['message'] == 'Profile updated successfully'
+        assert 'profile' in user2_profile_response
+        assert user2_profile_response['profile']['username'] == self.user2_username
+        assert user2_profile_response['profile']['introduction'] == simple_profile['introduction']
+        assert user2_profile_response['profile']['profile_image_url'] is None
+        assert user2_profile_response['profile']['metadata'] == {}
+        assert isinstance(user2_profile_response['profile']['id'], int)
+        assert isinstance(user2_profile_response['profile']['user_id'], int)
+        assert user2_profile_response['profile']['user_id'] == self.user2_id
         
         # Verify User 2 profile response indicates success
         if 'success' in user2_profile_response:
@@ -621,34 +793,63 @@ class TestComprehensiveScenarios:
         
         print("\n[DEBUG] Retrieving User 2 invoices (should have 2 complete)...")
         user2_invoices = self.user2_client.get_user_invoices()
-        print(f"[DEBUG] User 2 invoices response: {json.dumps(user2_invoices, indent=2)}")
+        print(f"[RESPONSE] User 2 invoices: {user2_invoices}")
         
-        # Verify response structure
+        # Verify response structure with exact keys
         assert isinstance(user2_invoices, dict)
+        assert 'invoices' in user2_invoices
+        assert 'purchases' in user2_invoices
+        assert 'sales' in user2_invoices
+        assert 'total_count' in user2_invoices
+        assert 'purchases_count' in user2_invoices
+        assert 'sales_count' in user2_invoices
         
-        # Check for expected keys - at least one should be present
-        expected_keys = ['purchases', 'sales', 'invoices']
-        found_keys = [key for key in expected_keys if key in user2_invoices]
-        print(f"[DEBUG] Found keys in User 2 invoices: {found_keys}")
-        assert len(found_keys) > 0  # At least one key should be present
+        # Verify counts match expectations
+        assert user2_invoices['total_count'] == 2
+        assert user2_invoices['purchases_count'] == 2
+        assert user2_invoices['sales_count'] == 0
         
-        purchases = user2_invoices.get('purchases', [])
-        print(f"[DEBUG] User 2 purchases count: {len(purchases)}")
+        purchases = user2_invoices['purchases']
+        sales = user2_invoices['sales']
+        invoices = user2_invoices['invoices']
         
-        # Check list length before iterating
-        if len(purchases) > 0:
-            for i, purchase in enumerate(purchases):
-                print(f"[DEBUG] User 2 purchase #{i}: {json.dumps(purchase, indent=2)}")
-                assert 'payment_status' in purchase
-                assert purchase['payment_status'] == 'complete'
-                assert 'amount' in purchase
-                assert 'created_at' in purchase
-                assert 'metadata' in purchase
-                assert 'selections' in purchase['metadata']
+        assert len(purchases) == 2
+        assert len(sales) == 0
+        assert len(invoices) == 2
         
-        # Should have at least some purchases based on previous tests
-        # User 2 made purchases in test_05, so we should have data
-        assert len(purchases) > 0, f"Expected purchases from previous tests, got {len(purchases)}"
+        # Verify first purchase (Stock Photo Collection - 39.99)
+        purchase_1 = purchases[0]
+        assert purchase_1['amount'] == 39.99
+        assert purchase_1['fee'] == 0.03999
+        assert purchase_1['currency'] == 'usd'
+        assert purchase_1['type'] == 'stripe'
+        assert purchase_1['payment_status'] == 'complete'
+        assert purchase_1['other_party_username'] == self.user1_username
+        assert purchase_1['item_title'] == 'Stock Photo Collection'
+        assert purchase_1['user_role'] == 'buyer'
+        assert purchase_1['buyer_id'] == self.user2_id
+        assert purchase_1['seller_id'] == self.user1_id
+        assert len(purchase_1['metadata']['selections']) == 1
+        assert purchase_1['metadata']['selections'][0]['name'] == 'Nature Photos'
+        assert purchase_1['metadata']['selections'][0]['price'] == 39.99
+        
+        # Verify second purchase (Premium Design Templates Bundle - 49.98)
+        purchase_2 = purchases[1]
+        assert purchase_2['amount'] == 49.98
+        assert purchase_2['fee'] == 0.04998
+        assert purchase_2['currency'] == 'usd'
+        assert purchase_2['type'] == 'stripe'
+        assert purchase_2['payment_status'] == 'complete'
+        assert purchase_2['other_party_username'] == self.user1_username
+        assert purchase_2['item_title'] == 'Premium Design Templates Bundle'
+        assert purchase_2['user_role'] == 'buyer'
+        assert purchase_2['buyer_id'] == self.user2_id
+        assert purchase_2['seller_id'] == self.user1_id
+        assert len(purchase_2['metadata']['selections']) == 2
+        # Verify both selections in bundle
+        selection_names = [s['name'] for s in purchase_2['metadata']['selections']]
+        assert 'Web Templates' in selection_names
+        assert 'Print Templates' in selection_names
         
         print("\n[DEBUG] Retrieving User 1 sales (should have sales from User 2's purchases)...")
         # User 1 - Check sales (should have sales from User 2's purchases)
@@ -659,7 +860,7 @@ class TestComprehensiveScenarios:
         
         while time.time() - start_time < timeout:
             user1_invoices = self.user1_client.get_user_invoices()
-            print(f"[DEBUG] User 1 invoices response: {json.dumps(user1_invoices, indent=2)}")
+            print(f"[RESPONSE] User 1 invoices: {user1_invoices}")
             assert 'sales' in user1_invoices
             sales = user1_invoices['sales']
             
@@ -672,13 +873,48 @@ class TestComprehensiveScenarios:
         # We should have at least one sale since User 2 made purchases
         assert len(sales) > 0, f"Expected sales from User 2's purchases after {timeout}s, but found {len(sales)} sales"
         
-        # Check list length before iterating
-        for i, sale in enumerate(sales):
-            print(f"[DEBUG] User 1 sale #{i}: {json.dumps(sale, indent=2)}")
-            assert 'payment_status' in sale
-            assert sale['payment_status'] == 'complete'
-            assert 'amount' in sale
-            assert 'fee' in sale  # Platform fee
+        # Verify User 1 response structure
+        assert isinstance(user1_invoices, dict)
+        assert 'invoices' in user1_invoices
+        assert 'purchases' in user1_invoices
+        assert 'sales' in user1_invoices
+        assert 'total_count' in user1_invoices
+        assert 'purchases_count' in user1_invoices
+        assert 'sales_count' in user1_invoices
+        
+        # User 1 should have 2 sales, 0 purchases
+        assert user1_invoices['total_count'] == 2
+        assert user1_invoices['purchases_count'] == 0
+        assert user1_invoices['sales_count'] == 2
+        assert len(user1_invoices['purchases']) == 0
+        assert len(user1_invoices['sales']) == 2
+        assert len(user1_invoices['invoices']) == 2
+        
+        # Verify first sale (Stock Photo Collection - 39.99)
+        sale_1 = sales[0]
+        assert sale_1['amount'] == 39.99
+        assert sale_1['fee'] == 0.03999
+        assert sale_1['currency'] == 'usd'
+        assert sale_1['type'] == 'stripe'
+        assert sale_1['payment_status'] == 'complete'
+        assert sale_1['other_party_username'] == self.user2_username
+        assert sale_1['item_title'] == 'Stock Photo Collection'
+        assert sale_1['user_role'] == 'seller'
+        assert sale_1['buyer_id'] == self.user2_id
+        assert sale_1['seller_id'] == self.user1_id
+        
+        # Verify second sale (Premium Design Templates Bundle - 49.98)
+        sale_2 = sales[1]
+        assert sale_2['amount'] == 49.98
+        assert sale_2['fee'] == 0.04998
+        assert sale_2['currency'] == 'usd'
+        assert sale_2['type'] == 'stripe'
+        assert sale_2['payment_status'] == 'complete'
+        assert sale_2['other_party_username'] == self.user2_username
+        assert sale_2['item_title'] == 'Premium Design Templates Bundle'
+        assert sale_2['user_role'] == 'seller'
+        assert sale_2['buyer_id'] == self.user2_id
+        assert sale_2['seller_id'] == self.user1_id
         
         print("\n[DEBUG] Checking for pending sales using invoices-by-searchable endpoint...")
         # User 3 created a pending invoice for searchable_3 (User 1's 3rd searchable)
@@ -701,8 +937,9 @@ class TestComprehensiveScenarios:
                     # Use the invoices-by-searchable endpoint to get ALL invoices (including pending)
                     invoices_response = self.user3_client.get_invoices_by_searchable(searchable_id)
                     invoices_data = invoices_response.json()
-                    print(f"[DEBUG] Invoices response for searchable #{i+1}: {json.dumps(invoices_data, indent=2)}")
+                    print(f"[RESPONSE] Invoices for searchable {searchable_id}: {invoices_data}")
                     assert 'invoices' in invoices_data
+                    assert isinstance(invoices_data['invoices'], list)
                     
                     searchable_invoices = invoices_data['invoices']
                     pending_for_this_searchable = [inv for inv in searchable_invoices if inv.get('payment_status') == 'pending']
@@ -743,7 +980,9 @@ class TestComprehensiveScenarios:
             
             # Get user's paid files for this searchable
             paid_files = self.user2_client.get_user_paid_files(searchable_id)
+            print(f"[RESPONSE] User 2 paid files for searchable {searchable_id}: {paid_files}")
             assert 'paid_file_ids' in paid_files
+            assert isinstance(paid_files['paid_file_ids'], list)
             
             paid_file_ids = paid_files['paid_file_ids']
             
@@ -755,6 +994,7 @@ class TestComprehensiveScenarios:
                 
                 try:
                     download_response = self.user2_client.download_file(searchable_id, file_id)
+                    print(f"[RESPONSE] Download file {file_id}: {download_response}")
                     # Should succeed or return proper response
                     assert download_response is not None
                 except Exception:
@@ -774,8 +1014,10 @@ class TestComprehensiveScenarios:
             
             try:
                 paid_files = self.user3_client.get_user_paid_files(searchable_id)
+                print(f"[RESPONSE] User 3 paid files for searchable {searchable_id}: {paid_files}")
                 assert 'paid_file_ids' in paid_files
-                assert len(paid_file_ids['paid_file_ids']) == 0  # Should have no paid files
+                assert isinstance(paid_files['paid_file_ids'], list)
+                assert len(paid_files['paid_file_ids']) == 0  # Should have no paid files
             except Exception:
                 # This might fail with 403/404 which is also correct behavior
                 # for unauthorized access
