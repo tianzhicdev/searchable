@@ -413,7 +413,7 @@ const Profile = () => {
             type="text"
             value={usdtWithdrawalAddress}
             onChange={handleUsdtAddressChange}
-            placeholder="Enter USDT wallet address"
+            placeholder="Enter Ethereum wallet address to receive USDT"
             variant="outlined"
             fullWidth
             margin="normal"
