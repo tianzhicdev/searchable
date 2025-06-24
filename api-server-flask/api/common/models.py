@@ -9,6 +9,7 @@ logger = setup_logger(__name__, 'models.log')
 
 class PaymentStatus(Enum):
     PENDING = 'pending'
+    DELAYED = 'delayed'
     COMPLETE = 'complete'
     FAILED = 'failed'
 
