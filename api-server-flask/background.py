@@ -169,7 +169,7 @@ def process_pending_withdrawals():
             except Exception as e:
                 logger.error(f"Error processing withdrawal {withdrawal_id}: {str(e)}")
                 
-                # Update status to failed
+                # Update status to delayed
                 try:
                     conn = get_db_connection()
                     cur = conn.cursor()
@@ -177,20 +177,21 @@ def process_pending_withdrawals():
                     updated_metadata = {
                         **metadata,
                         'error': str(e),
-                        'timestamp': int(time.time())
+                        'delayed_timestamp': int(time.time())
                     }
                     
                     execute_sql(cur, """
                         UPDATE withdrawal 
-                        SET status = %s, metadata = %s
-                        WHERE id = %s
-                    """, params=(PaymentStatus.FAILED.value, json.dumps(updated_metadata), withdrawal_id))
+                        SET status = '{PaymentStatus.DELAYED.value}', metadata = '{json.dumps(updated_metadata)}'
+                        WHERE id = '{withdrawal_id}'
+                    """)
                     
                     conn.commit()
                     cur.close()
                     conn.close()
+                    logger.warning(f"Marked withdrawal {withdrawal_id} as delayed due to: {str(e)}")
                 except Exception as e2:
-                    logger.error(f"Error updating failed withdrawal status: {str(e2)}")
+                    logger.error(f"Error updating delayed withdrawal status: {str(e2)}")
         
         logger.info(f"Completed withdrawal processing: processed {processed_count} withdrawals")
         
