@@ -193,33 +193,53 @@ def process_pending_withdrawals():
                     if response.status_code == 200 and response_data.get('success'):
                         # Get transaction ID from response
                         tx_hash = response_data.get('txHash')
+                        response_status = response_data.get('status', 'processing')
                         
-                        # Update the withdrawal record with successful status
+                        # Update the withdrawal record with processing status (since USDT service now returns immediately)
                         conn = get_db_connection()
                         cur = conn.cursor()
                         
-                        updated_metadata = {
-                            **metadata,
-                            'tx_hash': tx_hash,
-                            'processed_timestamp': int(time.time()),
-                            'status': PaymentStatus.COMPLETE.value,
-                            'block_number': response_data.get('blockNumber'),
-                            'gas_used': response_data.get('gasUsed')
-                        }
-                        
-                        execute_sql(cur, """
-                            UPDATE withdrawal 
-                            SET status = '{PaymentStatus.COMPLETE.value}', 
-                                external_id = '{tx_hash}',
-                                metadata = '{json.dumps(updated_metadata)}'
-                            WHERE id = '{withdrawal_id}'
-                        """)
+                        if response_status == 'processing':
+                            # Transaction was signed and broadcasted but not yet confirmed
+                            updated_metadata = {
+                                **metadata,
+                                'tx_hash': tx_hash,
+                                'processing_timestamp': int(time.time())
+                            }
+                            
+                            execute_sql(cur, f"""
+                                UPDATE withdrawal 
+                                SET status = '{PaymentStatus.PROCESSING.value}', 
+                                    external_id = '{tx_hash}',
+                                    metadata = '{json.dumps(updated_metadata)}'
+                                WHERE id = '{withdrawal_id}'
+                            """)
+                            
+                            logger.info(f"USDT withdrawal {withdrawal_id} processing - tx_hash: {tx_hash}")
+                        else:
+                            # Legacy: transaction was confirmed (old behavior)
+                            updated_metadata = {
+                                **metadata,
+                                'tx_hash': tx_hash,
+                                'processed_timestamp': int(time.time()),
+                                'status': PaymentStatus.COMPLETE.value,
+                                'block_number': response_data.get('blockNumber'),
+                                'gas_used': response_data.get('gasUsed')
+                            }
+                            
+                            execute_sql(cur, f"""
+                                UPDATE withdrawal 
+                                SET status = '{PaymentStatus.COMPLETE.value}', 
+                                    external_id = '{tx_hash}',
+                                    metadata = '{json.dumps(updated_metadata)}'
+                                WHERE id = '{withdrawal_id}'
+                            """)
+                            
+                            logger.info(f"Completed USDT withdrawal {withdrawal_id} to {address} for ${amount} USD, tx_hash: {tx_hash}")
                         
                         conn.commit()
                         cur.close()
                         conn.close()
-                        
-                        logger.info(f"Completed USDT withdrawal {withdrawal_id} to {address} for ${amount} USD, tx_hash: {tx_hash}")
                     else:
                         # Got error response but might have tx hash
                         tx_hash = response_data.get('txHash')
@@ -336,41 +356,41 @@ def invoice_check_thread():
 
 def check_delayed_withdrawals():
     """
-    Checks delayed withdrawals by querying their transaction status on blockchain
+    Checks delayed and processing withdrawals by querying their transaction status on blockchain
     """
-    logger.info("Starting delayed withdrawal check")
+    logger.info("Starting delayed and processing withdrawal check")
     try:
-        # Get delayed withdrawals that have a tx_hash
+        # Get delayed and processing withdrawals that have a tx_hash
         conn = get_db_connection()
         cur = conn.cursor()
         
         execute_sql(cur, f"""
-            SELECT id, user_id, amount, currency, metadata, external_id
+            SELECT id, user_id, amount, currency, metadata, external_id, status
             FROM withdrawal 
-            WHERE status = '{PaymentStatus.DELAYED.value}'
+            WHERE status IN ('{PaymentStatus.DELAYED.value}', '{PaymentStatus.PROCESSING.value}')
             AND (external_id IS NOT NULL OR metadata->>'tx_hash' IS NOT NULL)
             ORDER BY created_at ASC
-            LIMIT 10
+            LIMIT 20
         """)
         
-        delayed_withdrawals = cur.fetchall()
+        withdrawals_to_check = cur.fetchall()
         cur.close()
         conn.close()
         
         checked_count = 0
         
-        for withdrawal_row in delayed_withdrawals:
-            withdrawal_id, user_id, amount, currency, metadata, external_id = withdrawal_row
+        for withdrawal_row in withdrawals_to_check:
+            withdrawal_id, user_id, amount, currency, metadata, external_id, current_status = withdrawal_row
             
             # Get tx_hash from external_id or metadata
             tx_hash = external_id or (metadata and metadata.get('tx_hash'))
             
             if not tx_hash:
-                logger.warning(f"Delayed withdrawal {withdrawal_id} has no tx_hash to check")
+                logger.warning(f"{current_status.title()} withdrawal {withdrawal_id} has no tx_hash to check")
                 continue
             
             try:
-                logger.info(f"Checking status of delayed withdrawal {withdrawal_id} with tx_hash: {tx_hash}")
+                logger.info(f"Checking status of {current_status} withdrawal {withdrawal_id} with tx_hash: {tx_hash}")
                 
                 # Query transaction status from USDT service
                 response = requests.get(f'http://usdt-api:3100/tx-status/{tx_hash}', timeout=10)
@@ -389,7 +409,9 @@ def check_delayed_withdrawals():
                             'tx_status_check': tx_status,
                             'confirmed_timestamp': int(time.time()),
                             'confirmations': tx_status['confirmations'],
-                            'block_number': tx_status['blockNumber']
+                            'block_number': tx_status['blockNumber'],
+                            'gas_used': tx_status.get('gasUsed'),
+                            'receipt_info': tx_status.get('receiptInfo', {})
                         }
                         
                         execute_sql(cur, f"""
@@ -399,7 +421,7 @@ def check_delayed_withdrawals():
                             WHERE id = '{withdrawal_id}'
                         """)
                         
-                        logger.info(f"Delayed withdrawal {withdrawal_id} confirmed as complete with {tx_status['confirmations']} confirmations")
+                        logger.info(f"{current_status.title()} withdrawal {withdrawal_id} confirmed as complete with {tx_status['confirmations']} confirmations")
                         
                     elif tx_status['status'] == 'confirmed' and not tx_status['success']:
                         # Transaction confirmed but reverted/failed
@@ -417,7 +439,7 @@ def check_delayed_withdrawals():
                             WHERE id = '{withdrawal_id}'
                         """)
                         
-                        logger.error(f"Delayed withdrawal {withdrawal_id} failed - transaction reverted")
+                        logger.error(f"{current_status.title()} withdrawal {withdrawal_id} failed - transaction reverted")
                         
                     elif tx_status['status'] == 'not_found':
                         # Transaction not found - mark as failed immediately
@@ -435,23 +457,33 @@ def check_delayed_withdrawals():
                             WHERE id = '{withdrawal_id}'
                         """)
                         
-                        logger.error(f"Delayed withdrawal {withdrawal_id} failed - transaction not found (likely rejected by network)")
+                        logger.error(f"{current_status.title()} withdrawal {withdrawal_id} failed - transaction not found (likely rejected by network)")
                     
                     # If status is 'pending', we leave it as delayed and check again later
                     
                     conn.commit()
                     cur.close()
                     conn.close()
+                elif response.status_code == 503:
+                    # Network connectivity issue - should retry
+                    try:
+                        error_data = response.json()
+                        if error_data.get('retryable'):
+                            logger.warning(f"Network error checking {current_status} withdrawal {withdrawal_id}: {error_data.get('error')}, will retry later")
+                        else:
+                            logger.error(f"Non-retryable error checking {current_status} withdrawal {withdrawal_id}: {error_data.get('error')}")
+                    except:
+                        logger.warning(f"Network error checking {current_status} withdrawal {withdrawal_id}, will retry later")
                 else:
-                    # If we can't reach the USDT service, the response will have error status
-                    logger.warning(f"Failed to get transaction status for withdrawal {withdrawal_id}, will retry later")
+                    # Other error status codes
+                    logger.warning(f"Failed to get transaction status for {current_status} withdrawal {withdrawal_id} (HTTP {response.status_code}), will retry later")
                     
                 checked_count += 1
                     
             except Exception as e:
-                logger.error(f"Error checking delayed withdrawal {withdrawal_id}: {str(e)}")
+                logger.error(f"Error checking {current_status} withdrawal {withdrawal_id}: {str(e)}")
         
-        logger.info(f"Completed delayed withdrawal check: checked {checked_count} withdrawals")
+        logger.info(f"Completed delayed and processing withdrawal check: checked {checked_count} withdrawals")
         
     except Exception as e:
         logger.error(f"Error in check_delayed_withdrawals: {str(e)}")
@@ -465,9 +497,9 @@ def withdrawal_processing_thread():
             # Process pending withdrawals
             process_pending_withdrawals()
             
-            # Check delayed withdrawals every 12 iterations (60 seconds)
+            # Check delayed and processing withdrawals every 3 iterations (15 seconds)
             check_counter += 1
-            if check_counter >= 12:
+            if check_counter >= 3:
                 check_delayed_withdrawals()
                 check_counter = 0
                 

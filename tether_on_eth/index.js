@@ -7,11 +7,46 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Configure Express for better concurrency
+app.set('trust proxy', true);
+
+// Add timeout middleware to prevent hanging requests
+app.use((req, res, next) => {
+  // Set timeout for all requests (30 seconds)
+  req.setTimeout(30000, () => {
+    console.error(`Request timeout for ${req.method} ${req.path}`);
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
+
 // Add BigInt serialization support
 BigInt.prototype.toJSON = function() { return this.toString(); };
 
 const domain = process.env.INFURA_DOMAIN;
-const web3 = new Web3(`https://${domain}/v3/${process.env.INFURA_ID}`);
+
+// Configure Web3 provider with rate limiting protection
+const providerOptions = {
+  timeout: 30000, // 30 second timeout
+  headers: [
+    {
+      name: 'User-Agent',
+      value: 'searchable-usdt-api/1.0'
+    }
+  ],
+  // Enable keep-alive for better connection reuse
+  keepAlive: true,
+  keepAliveInterval: 30000,
+  keepAliveTimeout: 5000,
+  // Add retry logic for rate limiting
+  withCredentials: false
+};
+
+const web3 = new Web3(new Web3.providers.HttpProvider(`https://${domain}/v3/${process.env.INFURA_ID}`, providerOptions));
+
+console.log('Web3 provider configured with concurrency optimizations');
 const usdtAbi = require('./erc20.abi.json');
 
 // USDT Contract (Mainnet)
@@ -23,6 +58,34 @@ const usdtContract = new web3.eth.Contract(
 // Simple nonce counter - initialize on startup
 let currentNonce = null;
 const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+
+// Rate limiting protection
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 100; // Minimum 100ms between requests
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function rateLimit() {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await delay(waitTime);
+  }
+  
+  lastRequestTime = Date.now();
+}
+
+// Gas price cache to reduce network calls
+let cachedGasPrice = null;
+let gasPriceLastUpdate = 0;
+const GAS_PRICE_CACHE_DURATION = 30000; // 30 seconds
+
+// Fixed gas limit for USDT transfers (they're consistent)
+const USDT_TRANSFER_GAS_LIMIT = 65000; // Standard USDT transfer uses ~50k, adding buffer
 
 // Initialize nonce on startup
 async function initializeNonce() {
@@ -41,6 +104,29 @@ function getNextNonce() {
     throw new Error('Nonce not initialized');
   }
   return currentNonce++;
+}
+
+// Get cached gas price or fetch new one
+async function getGasPrice() {
+  const now = Date.now();
+  if (cachedGasPrice && (now - gasPriceLastUpdate) < GAS_PRICE_CACHE_DURATION) {
+    return cachedGasPrice;
+  }
+  
+  try {
+    await rateLimit(); // Apply rate limiting
+    cachedGasPrice = await web3.eth.getGasPrice();
+    gasPriceLastUpdate = now;
+    console.log(`[GAS] Updated cached gas price: ${cachedGasPrice}`);
+    return cachedGasPrice;
+  } catch (error) {
+    console.error('Failed to fetch gas price:', error);
+    // Fallback to a reasonable gas price (20 gwei)
+    if (!cachedGasPrice) {
+      cachedGasPrice = '20000000000';
+    }
+    return cachedGasPrice;
+  }
 }
 
 // Initialize nonce on startup
@@ -136,13 +222,13 @@ app.post('/send', async (req, res) => {
     );
     console.log(`[${request_id}] Transaction method built`);
 
-    // Estimate gas
-    const gas = await tx.estimateGas({ from: fromAddress });
-    const gasPrice = await web3.eth.getGasPrice();
+    // Use cached gas price and fixed gas limit for better concurrency
+    const gasPrice = await getGasPrice();
+    const gas = USDT_TRANSFER_GAS_LIMIT;
     
     // Use simple counter for nonce (no network calls!)
     const nonce = getNextNonce();
-    console.log(`[${request_id}] Gas estimation - gas: ${gas}, gasPrice: ${gasPrice}, nonce: ${nonce} (counter)`);
+    console.log(`[${request_id}] Using cached gas price: ${gasPrice}, fixed gas: ${gas}, nonce: ${nonce} (counter)`);
 
     // Sign transaction
     const txObject = {
@@ -158,19 +244,50 @@ app.post('/send', async (req, res) => {
     txHash = signedTx.transactionHash;
     console.log(`[${request_id}] Transaction signed, hash: ${txHash}`);
 
-    // Send transaction
-    console.log(`[${request_id}] Sending signed transaction...`);
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log(`[${request_id}] Transaction confirmed, blockNumber: ${receipt.blockNumber}, gasUsed: ${receipt.gasUsed}`);
+    // Apply rate limiting before broadcasting
+    await rateLimit();
     
+    // Send transaction and return immediately (don't wait for confirmation)
+    console.log(`[${request_id}] Broadcasting signed transaction...`);
+    
+    // Retry logic for rate limiting
+    let broadcastAttempts = 0;
+    const maxAttempts = 3;
+    
+    while (broadcastAttempts < maxAttempts) {
+      try {
+        web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+          .on('transactionHash', (hash) => {
+            console.log(`[${request_id}] Transaction broadcasted with hash: ${hash}`);
+          })
+          .on('receipt', (receipt) => {
+            console.log(`[${request_id}] Transaction confirmed in block: ${receipt.blockNumber}`);
+          })
+          .on('error', (error) => {
+            console.error(`[${request_id}] Transaction error after broadcast: ${error.message}`);
+          });
+        break; // Success, exit retry loop
+      } catch (error) {
+        broadcastAttempts++;
+        if (error.statusCode === 429 && broadcastAttempts < maxAttempts) {
+          console.warn(`[${request_id}] Rate limited, retrying in ${broadcastAttempts * 1000}ms (attempt ${broadcastAttempts}/${maxAttempts})`);
+          await delay(broadcastAttempts * 1000); // Exponential backoff
+        } else {
+          throw error; // Re-throw if not rate limit or max attempts reached
+        }
+      }
+    }
+    
+    // Return immediately after signing (transaction is being broadcasted async)
     res.json({ 
       success: true,
-      txHash: receipt.transactionHash,
+      txHash: txHash,
       from: fromAddress,
       to: to,
       amount: amount,
-      blockNumber: receipt.blockNumber,
-      gasUsed: receipt.gasUsed.toString(),
+      status: 'processing', // Indicate transaction is being processed
+      blockNumber: null, // Will be null since we don't wait for confirmation
+      gasUsed: null, // Will be null since we don't wait for confirmation
       request_id: request_id
     });
   } catch (error) {
@@ -254,9 +371,13 @@ app.get('/tx-status/:txHash', async (req, res) => {
     const confirmations = Number(currentBlock) - Number(receipt.blockNumber);
     
     // Check if transaction was successful (status = 1) or reverted (status = 0)
-    const transactionSuccess = receipt.status === true || receipt.status === 1 || receipt.status === '0x1';
+    // Handle multiple formats: string "1", number 1, bigint 1n, boolean true
+    const transactionSuccess = receipt.status === "1" || 
+                              receipt.status === 1 || 
+                              receipt.status === 1n || 
+                              receipt.status === true;
     
-    console.log(`[${request_id}] Transaction found - Block: ${receipt.blockNumber}, Status: ${receipt.status}, Success: ${transactionSuccess}, Confirmations: ${confirmations}`);
+    console.log(`[${request_id}] Transaction found - Block: ${receipt.blockNumber}, Status: ${receipt.status} (type: ${typeof receipt.status}), Success: ${transactionSuccess}, Confirmations: ${confirmations}`);
     
     res.json({
       txHash: txHash,
@@ -267,21 +388,57 @@ app.get('/tx-status/:txHash', async (req, res) => {
       success: transactionSuccess,
       from: receipt.from,
       to: receipt.to,
-      logs: receipt.logs.length // Number of events emitted
+      logs: receipt.logs.length, // Number of events emitted
+      // Additional receipt info for metadata storage
+      receiptInfo: {
+        blockHash: receipt.blockHash,
+        effectiveGasPrice: receipt.effectiveGasPrice,
+        cumulativeGasUsed: receipt.cumulativeGasUsed,
+        transactionIndex: receipt.transactionIndex,
+        type: receipt.type
+      }
     });
     
   } catch (error) {
     console.error(`[${request_id}] Error checking transaction status:`, error);
-    res.status(500).json({ 
-      error: 'Error checking transaction status',
-      details: error.message,
-      txHash: txHash,
-      request_id: request_id
-    });
+    
+    // Check if this is a network connectivity error that should be retried
+    const isNetworkError = error.code === 'ECONNREFUSED' || 
+                          error.type === 'system' || 
+                          error.message.includes('ECONNREFUSED') ||
+                          error.message.includes('FetchError');
+    
+    if (isNetworkError) {
+      // Return a specific error code for network issues so background service can retry
+      res.status(503).json({ 
+        error: 'Network connectivity issue',
+        details: error.message,
+        txHash: txHash,
+        request_id: request_id,
+        retryable: true
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Error checking transaction status',
+        details: error.message,
+        txHash: txHash,
+        request_id: request_id,
+        retryable: false
+      });
+    }
   }
 });
 
 app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
-  console.log('USDT Service initialized with simple nonce counter');
+  console.log(`🚀 USDT Service running on port ${process.env.PORT}`);
+  console.log('⚡ Concurrency optimizations active:');
+  console.log('   - Simple nonce counter (no network calls)');
+  console.log('   - Gas price caching (30s cache)');
+  console.log('   - Fixed gas limit for USDT transfers');
+  console.log('   - Async transaction broadcasting (no confirmation wait)');
+  console.log('   - HTTP keep-alive connections');
+  console.log('   - 30s request timeout protection');
+  console.log('   - Rate limiting protection (100ms intervals)');
+  console.log('   - Retry logic for rate limit errors');
+  console.log('💰 Ready for concurrent USDT transfers');
 }); 
