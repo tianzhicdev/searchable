@@ -420,30 +420,31 @@ def check_delayed_withdrawals():
                         logger.error(f"Delayed withdrawal {withdrawal_id} failed - transaction reverted")
                         
                     elif tx_status['status'] == 'not_found':
-                        # Check if withdrawal is old enough to consider failed
-                        delayed_timestamp = metadata.get('delayed_timestamp', 0)
-                        if int(time.time()) - delayed_timestamp > 3600:  # 1 hour
-                            updated_metadata = {
-                                **metadata,
-                                'tx_status_check': tx_status,
-                                'failed_timestamp': int(time.time()),
-                                'failure_reason': 'Transaction not found on blockchain after 1 hour'
-                            }
-                            
-                            execute_sql(cur, f"""
-                                UPDATE withdrawal 
-                                SET status = '{PaymentStatus.FAILED.value}',
-                                    metadata = '{json.dumps(updated_metadata)}'
-                                WHERE id = '{withdrawal_id}'
-                            """)
-                            
-                            logger.error(f"Delayed withdrawal {withdrawal_id} failed - tx not found after 1 hour")
+                        # Transaction not found - mark as failed immediately
+                        updated_metadata = {
+                            **metadata,
+                            'tx_status_check': tx_status,
+                            'failed_timestamp': int(time.time()),
+                            'failure_reason': 'Transaction not found on blockchain - likely rejected by network'
+                        }
+                        
+                        execute_sql(cur, f"""
+                            UPDATE withdrawal 
+                            SET status = '{PaymentStatus.FAILED.value}',
+                                metadata = '{json.dumps(updated_metadata)}'
+                            WHERE id = '{withdrawal_id}'
+                        """)
+                        
+                        logger.error(f"Delayed withdrawal {withdrawal_id} failed - transaction not found (likely rejected by network)")
                     
                     # If status is 'pending', we leave it as delayed and check again later
                     
                     conn.commit()
                     cur.close()
                     conn.close()
+                else:
+                    # If we can't reach the USDT service, the response will have error status
+                    logger.warning(f"Failed to get transaction status for withdrawal {withdrawal_id}, will retry later")
                     
                 checked_count += 1
                     

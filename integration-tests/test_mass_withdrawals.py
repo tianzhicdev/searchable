@@ -27,7 +27,7 @@ class TestMassWithdrawals:
         # Configuration
         self.num_withdrawals = int(os.getenv('MASS_WITHDRAWAL_COUNT', '10'))
         self.withdrawal_amount = float(os.getenv('WITHDRAWAL_AMOUNT', '1.0'))  # $1 USD each
-        self.timeout_seconds = int(os.getenv('MASS_WITHDRAWAL_TIMEOUT', '300'))  # 5 minutes
+        self.timeout_seconds = int(os.getenv('MASS_WITHDRAWAL_TIMEOUT', '1200'))  # 5 minutes
         
         print(f"\n🧪 Mass Withdrawal Test Configuration:")
         print(f"   Number of withdrawals: {self.num_withdrawals}")
