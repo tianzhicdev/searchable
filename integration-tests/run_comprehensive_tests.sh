@@ -49,21 +49,19 @@ run_test_file() {
     print_color $BLUE "Running: $test_name"
     print_color $BLUE "=========================================="
     
-    # Check if this is a standalone script (has if __name__ == "__main__")
-    if grep -q "if __name__ == [\"']__main__[\"']:" "$test_file"; then
-        # Run as standalone Python script
-        if [ -n "$CICD_REPORT" ]; then
-            python "$test_file" 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
-        else
-            python "$test_file" 2>&1 | tee "$log_file"
-        fi
+    # Handle special test parameters
+    local test_env=""
+    if [ "$test_name" = "test_mass_withdrawals" ]; then
+        local withdrawal_count=${MASS_WITHDRAWAL_COUNT:-10}
+        test_env="MASS_WITHDRAWAL_COUNT=$withdrawal_count"
+        print_color $YELLOW "  Configuration: $withdrawal_count withdrawals"
+    fi
+    
+    # Run pytest and capture the exit code properly
+    if [ -n "$test_env" ]; then
+        env $test_env python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
     else
-        # Run with pytest
-        if [ -n "$CICD_REPORT" ]; then
-            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
-        else
-            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
-        fi
+        python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
     fi
     local exit_code=${PIPESTATUS[0]}
     
@@ -147,6 +145,7 @@ test_files=(
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
     "test_withdrawals.py"                   # Withdrawal operations
+    "test_mass_withdrawals.py"              # Mass withdrawal stress testing
     "test_ratings.py"                       # Rating system
     "test_file_management.py"               # File CRUD operations
     "test_invoice_notes.py"                 # Invoice notes functionality

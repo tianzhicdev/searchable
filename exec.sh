@@ -33,6 +33,7 @@ show_usage() {
     echo "  ./exec.sh beta test                         - Run tests against beta (silkroadonlightning.com)"
     echo "  ./exec.sh beta test --ls                    - List all available individual tests"
     echo "  ./exec.sh beta test --t <test_name>         - Run specific test file against beta"
+    echo "  ./exec.sh beta test --t <test_name> -n <num> - Run specific test with parameter against beta"
     echo ""
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
@@ -46,6 +47,7 @@ show_usage() {
     echo "  ./exec.sh local test                        - Run tests against local (localhost:5005)"
     echo "  ./exec.sh local test --ls                   - List all available individual tests"
     echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
+    echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
     echo ""
@@ -75,6 +77,7 @@ show_usage() {
     echo "  ./exec.sh local test --t invite_codes"
     echo "  ./exec.sh beta test --t integration"
     echo "  ./exec.sh prod test --t invite_codes"
+    echo "  ./exec.sh local test --t mass_withdrawals -n 10"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
     echo "  ./exec.sh release"
@@ -312,6 +315,7 @@ list_tests() {
 run_single_test() {
     local environment=$1
     local test_name=$2
+    local test_parameter=$3  # Optional parameter (e.g., number for mass tests)
     local api_url
     local site_name
     local test_prefix
@@ -362,6 +366,9 @@ run_single_test() {
     echo -e "${BLUE}🧪 Running test '$test_name' against $site_name${NC}"
     echo "API URL: $api_url/api"
     echo "Test file: $test_file"
+    if [ -n "$test_parameter" ]; then
+        echo "Test parameter: $test_parameter"
+    fi
     echo ""
     
     # Set URLs based on environment
@@ -379,16 +386,32 @@ run_single_test() {
     
     # Run specific test with environment variables
     echo -e "${YELLOW}Running $test_file...${NC}"
-    BASE_URL="$api_url" \
-    METRICS_URL="$metrics_url" \
-    GRAFANA_URL="$grafana_url" \
-    GRAFANA_PROXY_URL="$grafana_proxy_url" \
-    TEST_USER_PREFIX="${test_prefix}" \
-    TEST_EMAIL_DOMAIN="${environment}.test" \
-    DEFAULT_PASSWORD="TestPass123!" \
-    REQUEST_TIMEOUT=30 \
-    UPLOAD_TIMEOUT=60 \
-    python "$test_file"
+    
+    # Build environment variables
+    test_env="BASE_URL=\"$api_url\" \
+METRICS_URL=\"$metrics_url\" \
+GRAFANA_URL=\"$grafana_url\" \
+GRAFANA_PROXY_URL=\"$grafana_proxy_url\" \
+TEST_USER_PREFIX=\"${test_prefix}\" \
+TEST_EMAIL_DOMAIN=\"${environment}.test\" \
+DEFAULT_PASSWORD=\"TestPass123!\" \
+REQUEST_TIMEOUT=30 \
+UPLOAD_TIMEOUT=60"
+    
+    # Add test-specific parameters
+    if [ -n "$test_parameter" ]; then
+        case "$test_name" in
+            "mass_withdrawals")
+                test_env="$test_env MASS_WITHDRAWAL_COUNT=\"$test_parameter\""
+                ;;
+            *)
+                test_env="$test_env TEST_PARAMETER=\"$test_parameter\""
+                ;;
+        esac
+    fi
+    
+    # Execute test
+    eval "$test_env python \"$test_file\""
     
     TEST_RESULT=$?
     
@@ -935,11 +958,16 @@ case "$ENVIRONMENT" in
                 elif [ "$CONTAINER" = "--t" ]; then
                     if [ -z "$4" ]; then
                         echo -e "${RED}Error: Test name required for --t option${NC}"
-                        echo "Usage: ./exec.sh beta test --t <test_name>"
+                        echo "Usage: ./exec.sh beta test --t <test_name> [-n <number>]"
                         echo "Use --ls to see available tests"
                         exit 1
                     fi
-                    run_single_test "beta" "$4"
+                    # Check for -n parameter
+                    if [ "$5" = "-n" ] && [ -n "$6" ]; then
+                        run_single_test "beta" "$4" "$6"
+                    else
+                        run_single_test "beta" "$4"
+                    fi
                 else
                     run_tests "beta"
                 fi
@@ -960,11 +988,16 @@ case "$ENVIRONMENT" in
                 elif [ "$CONTAINER" = "--t" ]; then
                     if [ -z "$4" ]; then
                         echo -e "${RED}Error: Test name required for --t option${NC}"
-                        echo "Usage: ./exec.sh prod test --t <test_name>"
+                        echo "Usage: ./exec.sh prod test --t <test_name> [-n <number>]"
                         echo "Use --ls to see available tests"
                         exit 1
                     fi
-                    run_single_test "prod" "$4"
+                    # Check for -n parameter
+                    if [ "$5" = "-n" ] && [ -n "$6" ]; then
+                        run_single_test "prod" "$4" "$6"
+                    else
+                        run_single_test "prod" "$4"
+                    fi
                 else
                     run_tests "prod"
                 fi
@@ -1011,11 +1044,16 @@ case "$ENVIRONMENT" in
                 elif [ "$CONTAINER" = "--t" ]; then
                     if [ -z "$4" ]; then
                         echo -e "${RED}Error: Test name required for --t option${NC}"
-                        echo "Usage: ./exec.sh local test --t <test_name>"
+                        echo "Usage: ./exec.sh local test --t <test_name> [-n <number>]"
                         echo "Use --ls to see available tests"
                         exit 1
                     fi
-                    run_single_test "local" "$4"
+                    # Check for -n parameter
+                    if [ "$5" = "-n" ] && [ -n "$6" ]; then
+                        run_single_test "local" "$4" "$6"
+                    else
+                        run_single_test "local" "$4"
+                    fi
                 else
                     local_test
                 fi
