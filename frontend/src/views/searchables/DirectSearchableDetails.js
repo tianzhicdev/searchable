@@ -43,10 +43,10 @@ const DirectSearchableDetails = () => {
       const fixedAmount = parseFloat(amountParam);
       setPaymentAmount(fixedAmount);
       setIsAmountFixed(true); // Amount is fixed from URL
-
     } else if (publicData?.defaultAmount) {
+      // Flavour 2: Default amount from searchable data
       setPaymentAmount(publicData.defaultAmount);
-      setIsAmountFixed(false); // Amount can be modified
+      setIsAmountFixed(true); // Amount is fixed from default
     } else {
       // Flavour 3: No fixed amount, use middle option as default
       setPaymentAmount(9.99); // Default to middle option
@@ -84,12 +84,17 @@ const DirectSearchableDetails = () => {
     !isOwner && (
       <Box>
         {isAmountFixed ? (
-          <Box>
-            <Typography variant="h4" color="primary">
+          // For fixed amounts (from URL param or default amount), just show the amount
+          <Box textAlign="center" my={3}>
+            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+              Payment Amount
+            </Typography>
+            <Typography variant="h3" color="primary">
               ${paymentAmount.toFixed(2)}
             </Typography>
           </Box>
         ) : (
+          // For flexible amounts, show the selection UI
           <Box>
             <Typography variant="h6" gutterBottom>
               Choose Payment Amount
