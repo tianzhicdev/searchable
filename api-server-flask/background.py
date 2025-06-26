@@ -223,7 +223,7 @@ def process_pending_withdrawals():
                     response_data = response.json()
                     logger.info(f"USDT API response for withdrawal {withdrawal_id}: {response_data}")
                     
-                    if txHash in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                    if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
                         # Success - got txHash, mark as 'sent'
                         tx_hash = response_data.get('txHash')
                         
@@ -385,7 +385,7 @@ def check_sent_withdrawals():
                                 WHERE id = %s
                             """, (PaymentStatus.COMPLETE.value, safe_json_dumps(updated_metadata), withdrawal_id))
                             
-                            logger.info(f"✅ Withdrawal {withdrawal_id} confirmed as complete with {tx_status['confirmations']} confirmations")
+                            logger.info(f"✅ Withdrawal {withdrawal_id} confirmed as complete ")
                             
                         elif tx_status['status'] == 'failed':
                             # Transaction confirmed but reverted/failed - keep only essential fields

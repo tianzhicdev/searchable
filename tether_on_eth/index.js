@@ -247,7 +247,7 @@ app.post('/send', async (req, res) => {
     // let gasPrice, gas, nonce;
 
     gasPrice = await getGasPrice();
-    gas = USDT_TRANSFER_GAS_LIMIT;
+    gas = await tx.estimateGas({ from: fromAddress });
     nonce = getNextNonce();
     console.log(`[${request_id}] Using cached gas price: ${gasPrice}, fixed gas: ${gas}, nonce: ${nonce} (counter)`);
 
@@ -272,7 +272,7 @@ app.post('/send', async (req, res) => {
     // Fire-and-forget transaction broadcasting with comprehensive error handling
     // Use setImmediate to avoid blocking the response and handle errors asynchronously
     setImmediate(async () => {
-      // try {
+      try {
         console.log(`[${request_id}] Starting async broadcast for tx: ${txHash}`);
         const txPromise = web3.eth.sendSignedTransaction(signedTx.rawTransaction);
         
@@ -294,41 +294,30 @@ app.post('/send', async (req, res) => {
             }
           });
           
-        // // Wait for the promise and log the final result
-        // try {
-        //   const receipt = await txPromise;
-        //   console.log(`[${request_id}] ✅ Async broadcast completed successfully:`, {
-        //     txHash: receipt.transactionHash,
-        //     blockNumber: receipt.blockNumber,
-        //     status: receipt.status,
-        //     gasUsed: receipt.gasUsed
-        //   });
-        // } catch (error) {
-        //   if (error.statusCode === 429 || error.code === 429) {
-        //     console.warn(`[${request_id}] ⚠️  Rate limited during broadcast promise: ${error.message}. Transaction may still succeed.`);
-        //   } else {
-        //     console.error(`[${request_id}] ❌ Async broadcast failed:`, {
-        //       error: error.message,
-        //       code: error.code,
-        //       txHash: txHash
-        //     });
-        //   }
-        // }
+        // Wait for the promise and log the final result
+        try {
+          const receipt = await txPromise;
+          console.log(`[${request_id}] ✅ Async broadcast completed successfully:`, {
+            txHash: receipt.transactionHash,
+            blockNumber: receipt.blockNumber,
+            status: receipt.status,
+            gasUsed: receipt.gasUsed
+          });
+        } catch (error) {
+          if (error.statusCode === 429 || error.code === 429) {
+            console.warn(`[${request_id}] ⚠️  Rate limited during broadcast promise: ${error.message}. Transaction may still succeed.`);
+          } else {
+            console.error(`[${request_id}] ❌ Async broadcast failed:`, {
+              error: error.message,
+              code: error.code,
+              txHash: txHash
+            });
+          }
+        }
 
-      // } catch (error) {
-      //   console.error(`[${request_id}] Unexpected error in async broadcast:`, error);
-      //   res.json({
-      //     success: false,
-      //     txHash: txHash,
-      //     from: fromAddress,
-      //     to: to,
-      //     amount: amount,
-      //     status: 'sent', // Indicate transaction is being processed
-      //     blockNumber: null, // Will be null since we don't wait for confirmation
-      //     gasUsed: null, // Will be null since we don't wait for confirmation
-      //     request_id: request_id
-      //   });
-      // }
+      } catch (error) {
+        console.error(`[${request_id}] Unexpected error in async broadcast:`, error);
+      }
     });
     
     // // Validate we have a txHash before returning success
@@ -409,7 +398,7 @@ app.get('/tx-status/:txHash', async (req, res) => {
                               receipt.status === 1n || 
                               receipt.status === true;
     
-    console.log(`[${request_id}] Transaction found - Block: ${receipt.blockNumber}, Status: ${receipt.status} (type: ${typeof receipt.status}), Success: ${transactionSuccess}, Confirmations: ${confirmations}`);
+    console.log(`[${request_id}] Transaction found - Block: ${receipt.blockNumber}, Status: ${receipt.status} (type: ${typeof receipt.status}), Success: ${transactionSuccess}`);
     
     res.json({
       txHash: txHash,
@@ -432,6 +421,8 @@ app.get('/tx-status/:txHash', async (req, res) => {
     });
     
   } catch (error) {
+
+    console.log(`[${request_id}] Error checking transaction status: ${error.message}`);
     res.json({ 
         error: 'Error checking transaction status',
         details: error.message,
