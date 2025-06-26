@@ -124,6 +124,7 @@ failed_test_names=()
 test_files=(
     "test_integration.py"                    # Core functionality (existing)
     "test_offline_searchables.py"           # Offline searchable functionality
+    "test_direct_searchables.py"            # Direct payment searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
     "test_social_media_profiles.py"         # Social media profile functionality
     "test_my_downloads.py"                  # My Downloads functionality
@@ -135,7 +136,7 @@ test_files=(
     "test_payment_refresh.py"               # Payment refresh operations
     "test_metrics.py"                       # Metrics collection and analytics
     "test_grafana.py"                       # Grafana integration and dashboards
-    "test_metrics_workflows.py"             # End-to-end metrics workflows
+    "test_metrics_workflows.py"             # End-to-End metrics workflows
 )
 
 print_color $YELLOW "Test execution order:"
@@ -251,8 +252,9 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "=============================="
     echo "The comprehensive test suite covers:"
     echo "✅ User Authentication (register, login, logout)"
-    echo "✅ Searchable CRUD Operations (downloadable and offline types)"
+    echo "✅ Searchable CRUD Operations (downloadable, offline, and direct types)"
     echo "✅ Offline Searchables (menu items, quantity handling)"
+    echo "✅ Direct Payment Searchables (dynamic pricing, runtime amounts)"
     echo "✅ Payment Processing (invoice creation, completion, count field)"
     echo "✅ File Management (upload, metadata, listing)"
     echo "✅ Media Management (upload, retrieval)"

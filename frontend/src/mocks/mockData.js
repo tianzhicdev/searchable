@@ -435,3 +435,76 @@ export const mockRewards = {
   total_amount: 15.0,
   count: 2
 };
+
+// Mock direct searchable items
+export const mockDirectSearchableItem = {
+  _id: "mock-direct-item-1",
+  searchable_id: "mock-direct-item-1",
+  terminal_id: "mock-terminal-1",
+  username: "DirectPaymentMerchant",
+  payloads: {
+    public: {
+      type: "direct",
+      title: "Support My Creative Work",
+      description: "Thank you for supporting my creative journey! Your contribution helps me continue creating awesome content and tutorials. You can choose any amount that feels right to you - every bit of support is deeply appreciated.\n\nWith your support, I can:\n• Create more free tutorials and guides\n• Invest in better equipment and tools\n• Dedicate more time to community projects\n• Keep sharing knowledge with everyone\n\nYour generosity makes a real difference!",
+      images: [mockImage1, mockImage2],
+      imageUrls: [mockImage1, mockImage2],
+      currency: "usd",
+      defaultAmount: 9.99,
+      visibility: {
+        udf: "always_true",
+        data: {}
+      }
+    }
+  },
+  created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+  updated_at: new Date(Date.now() - 86400000).toISOString()
+};
+
+export const mockDirectSearchableItem2 = {
+  _id: "mock-direct-item-2",
+  searchable_id: "mock-direct-item-2",
+  terminal_id: "mock-terminal-2",
+  username: "CommunityBuilder",
+  payloads: {
+    public: {
+      type: "direct",
+      title: "Community Tip Jar",
+      description: "Help us build an amazing community! Your tip goes directly towards hosting community events, maintaining our Discord server, and creating valuable resources for everyone.\n\nWhat your tips support:\n• Monthly community events and contests\n• Server hosting and maintenance\n• Free resources and templates\n• Moderator appreciation gifts\n• Special guest speakers and workshops",
+      images: [mockImage2],
+      imageUrls: [mockImage2],
+      currency: "usd",
+      defaultAmount: 4.99,
+      visibility: {
+        udf: "always_true",
+        data: {}
+      }
+    }
+  },
+  created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+  updated_at: new Date(Date.now() - 172800000).toISOString()
+};
+
+export const mockDirectSearchableItem3 = {
+  _id: "mock-direct-item-3",
+  searchable_id: "mock-direct-item-3",
+  terminal_id: "mock-terminal-1",
+  username: "DirectPaymentMerchant",
+  payloads: {
+    public: {
+      type: "direct",
+      title: "Coffee Fund - Fuel My Coding Sessions",
+      description: "Want to buy me a coffee (or three)? Your support keeps me caffeinated and coding through those late-night sessions when I'm working on open source projects and free tutorials.\n\nEvery coffee donation helps me:\n• Stay focused during long coding sessions\n• Work on passion projects after hours\n• Create better content for the community\n• Fix bugs and add features to my open source libraries\n\nCoffee is the fuel of programmers! ☕",
+      images: [mockImage1],
+      imageUrls: [mockImage1],
+      currency: "usd",
+      defaultAmount: 19.99,
+      visibility: {
+        udf: "always_true",
+        data: {}
+      }
+    }
+  },
+  created_at: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
+  updated_at: new Date(Date.now() - 43200000).toISOString()
+};
