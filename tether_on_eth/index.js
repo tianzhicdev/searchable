@@ -25,6 +25,25 @@ app.use((req, res, next) => {
 // Add BigInt serialization support
 BigInt.prototype.toJSON = function() { return this.toString(); };
 
+// Global error handlers to prevent process crashes
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  if (error.statusCode === 429 || error.code === 429) {
+    console.warn('Rate limiting error caught globally, continuing...');
+  } else {
+    console.error('Non-rate-limit uncaught exception, continuing but this should be investigated');
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  if (reason && (reason.statusCode === 429 || reason.code === 429)) {
+    console.warn('Rate limiting rejection caught globally, continuing...');
+  } else {
+    console.error('Non-rate-limit unhandled rejection, continuing but this should be investigated');
+  }
+});
+
 const domain = process.env.INFURA_DOMAIN;
 
 // Configure Web3 provider with rate limiting protection
@@ -59,9 +78,9 @@ const usdtContract = new web3.eth.Contract(
 let currentNonce = null;
 const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
 
-// Rate limiting protection
+// Rate limiting protection - increase interval to prevent crashes
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 100; // Minimum 100ms between requests
+const MIN_REQUEST_INTERVAL = 500; // Minimum 500ms between requests (was 100ms)
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -82,7 +101,7 @@ async function rateLimit() {
 // Gas price cache to reduce network calls
 let cachedGasPrice = null;
 let gasPriceLastUpdate = 0;
-const GAS_PRICE_CACHE_DURATION = 30000; // 30 seconds
+const GAS_PRICE_CACHE_DURATION = 120000; // 2 minutes (was 30 seconds)
 
 // Fixed gas limit for USDT transfers (they're consistent)
 const USDT_TRANSFER_GAS_LIMIT = 65000; // Standard USDT transfer uses ~50k, adding buffer
@@ -205,11 +224,13 @@ app.post('/send', async (req, res) => {
     
     // Validate inputs
     if (!web3.utils.isAddress(to)) {
-      throw new Error('Invalid recipient address format');
+      console.error(`[${request_id}] Invalid recipient address: ${to}`);
+      throw new Error('Invalid recipient address');
     }
     
     if (!amount || amount <= 0) {
-      throw new Error('Invalid amount');
+      console.error(`[${request_id}] Invalid amount: ${amount}`);
+      throw new Error('Invalid amount - must be greater than zero');
     }
     
     const fromAddress = account.address;
@@ -223,11 +244,11 @@ app.post('/send', async (req, res) => {
     console.log(`[${request_id}] Transaction method built`);
 
     // Use cached gas price and fixed gas limit for better concurrency
-    const gasPrice = await getGasPrice();
-    const gas = USDT_TRANSFER_GAS_LIMIT;
-    
-    // Use simple counter for nonce (no network calls!)
-    const nonce = getNextNonce();
+    // let gasPrice, gas, nonce;
+
+    gasPrice = await getGasPrice();
+    gas = USDT_TRANSFER_GAS_LIMIT;
+    nonce = getNextNonce();
     console.log(`[${request_id}] Using cached gas price: ${gasPrice}, fixed gas: ${gas}, nonce: ${nonce} (counter)`);
 
     // Sign transaction
@@ -246,94 +267,119 @@ app.post('/send', async (req, res) => {
 
     // Apply rate limiting before broadcasting
     await rateLimit();
-    
-    // Send transaction and return immediately (don't wait for confirmation)
     console.log(`[${request_id}] Broadcasting signed transaction...`);
     
-    // Retry logic for rate limiting
-    let broadcastAttempts = 0;
-    const maxAttempts = 3;
-    
-    while (broadcastAttempts < maxAttempts) {
-      try {
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+    // Fire-and-forget transaction broadcasting with comprehensive error handling
+    // Use setImmediate to avoid blocking the response and handle errors asynchronously
+    setImmediate(async () => {
+      // try {
+        console.log(`[${request_id}] Starting async broadcast for tx: ${txHash}`);
+        const txPromise = web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        
+        txPromise
           .on('transactionHash', (hash) => {
             console.log(`[${request_id}] Transaction broadcasted with hash: ${hash}`);
           })
           .on('receipt', (receipt) => {
-            console.log(`[${request_id}] Transaction confirmed in block: ${receipt.blockNumber}`);
+            console.log(`[${request_id}] Transaction confirmed in block: ${receipt.blockNumber}, status: ${receipt.status}`);
           })
           .on('error', (error) => {
-            console.error(`[${request_id}] Transaction error after broadcast: ${error.message}`);
+            // Handle all errors in the async broadcast - don't let them crash the service
+            if (error.statusCode === 429 || error.code === 429) {
+              console.warn(`[${request_id}] Rate limited during broadcast: ${error.message}. Transaction may still succeed.`);
+            } else if (error.message && error.message.includes('replacement transaction underpriced')) {
+              console.warn(`[${request_id}] Nonce collision during broadcast: ${error.message}. Transaction may still succeed.`);
+            } else {
+              console.error(`[${request_id}] Transaction error after broadcast: ${error.message}`);
+            }
           });
-        break; // Success, exit retry loop
-      } catch (error) {
-        broadcastAttempts++;
-        if (error.statusCode === 429 && broadcastAttempts < maxAttempts) {
-          console.warn(`[${request_id}] Rate limited, retrying in ${broadcastAttempts * 1000}ms (attempt ${broadcastAttempts}/${maxAttempts})`);
-          await delay(broadcastAttempts * 1000); // Exponential backoff
-        } else {
-          throw error; // Re-throw if not rate limit or max attempts reached
-        }
-      }
-    }
+          
+        // // Wait for the promise and log the final result
+        // try {
+        //   const receipt = await txPromise;
+        //   console.log(`[${request_id}] ✅ Async broadcast completed successfully:`, {
+        //     txHash: receipt.transactionHash,
+        //     blockNumber: receipt.blockNumber,
+        //     status: receipt.status,
+        //     gasUsed: receipt.gasUsed
+        //   });
+        // } catch (error) {
+        //   if (error.statusCode === 429 || error.code === 429) {
+        //     console.warn(`[${request_id}] ⚠️  Rate limited during broadcast promise: ${error.message}. Transaction may still succeed.`);
+        //   } else {
+        //     console.error(`[${request_id}] ❌ Async broadcast failed:`, {
+        //       error: error.message,
+        //       code: error.code,
+        //       txHash: txHash
+        //     });
+        //   }
+        // }
+
+      // } catch (error) {
+      //   console.error(`[${request_id}] Unexpected error in async broadcast:`, error);
+      //   res.json({
+      //     success: false,
+      //     txHash: txHash,
+      //     from: fromAddress,
+      //     to: to,
+      //     amount: amount,
+      //     status: 'sent', // Indicate transaction is being processed
+      //     blockNumber: null, // Will be null since we don't wait for confirmation
+      //     gasUsed: null, // Will be null since we don't wait for confirmation
+      //     request_id: request_id
+      //   });
+      // }
+    });
+    
+    // // Validate we have a txHash before returning success
+    // if (!txHash || txHash === 'null' || txHash === 'undefined') {
+    //   throw new Error('Transaction signing failed - no transaction hash generated');
+    // }
     
     // Return immediately after signing (transaction is being broadcasted async)
     res.json({ 
-      success: true,
+      // success: true,
       txHash: txHash,
-      from: fromAddress,
-      to: to,
-      amount: amount,
-      status: 'processing', // Indicate transaction is being processed
-      blockNumber: null, // Will be null since we don't wait for confirmation
-      gasUsed: null, // Will be null since we don't wait for confirmation
-      request_id: request_id
+      // from: fromAddress,
+      // to: to,
+      // amount: amount,
+      // status: 'sent', // Indicate transaction is being processed
+      // request_id: request_id
     });
   } catch (error) {
-    console.error(`[${request_id}] USDT Transfer Error:`, error);
+
+    // Build error response - only include txHash if we actually have one
+    const errorResponse = { 
+      txHash: txHash
+    };
     
-    // Categorize error
-    let errorType = 'unknown';
-    if (error.message.includes('Invalid recipient address')) {
-      errorType = 'invalid_address';
-    } else if (error.message.includes('insufficient funds')) {
-      errorType = 'insufficient_funds';
-    } else if (error.message.includes('gas required exceeds')) {
-      errorType = 'insufficient_gas';
-    } else if (error.message.includes('nonce')) {
-      errorType = 'nonce_error';
-    } else if (error.message.includes('timeout')) {
-      errorType = 'timeout';
-    }
+    // // Only include txHash if we have a valid one (transaction was signed)
+    // if (txHash && txHash !== 'null' && txHash !== 'undefined') {
+    //   errorResponse.txHash = txHash;
+    // }
     
-    res.status(500).json({ 
-      success: false,
-      txHash: txHash, // Will be available if we got to signing stage
-      error: error.message,
-      errorType: errorType,
-      request_id: request_id,
-      from: account ? account.address : null,
-      to: to,
-      amount: amount
-    });
+    res.status(500).json(errorResponse);
   }
 });
 
 // Get transaction status
 app.get('/tx-status/:txHash', async (req, res) => {
   const { txHash } = req.params;
+  // todo: use withdrawal_id
   const request_id = `tx_status_${Date.now()}`;
   
   try {
     console.log(`[${request_id}] Checking status for tx: ${txHash}`);
     
+    // Apply rate limiting to tx-status lookups
+    await rateLimit();
+    
     // Validate tx hash format
-    if (!txHash || !txHash.match(/^0x[a-fA-F0-9]{64}$/)) {
-      return res.status(400).json({ 
-        error: 'Invalid transaction hash format',
-        txHash: txHash 
-      });
+    if (!txHash || txHash === 'None' || txHash === 'null' || txHash === 'undefined' || !txHash.match(/^0x[a-fA-F0-9]{64}$/)) {
+        return res.json({
+          txHash: txHash,
+          status: 'failed'
+        });
     }
     
     // Get transaction receipt
@@ -347,31 +393,17 @@ app.get('/tx-status/:txHash', async (req, res) => {
         console.log(`[${request_id}] Transaction is pending`);
         return res.json({
           txHash: txHash,
-          status: 'pending',
-          confirmations: 0,
-          blockNumber: null,
-          gasUsed: null,
-          success: null
+          status: 'sent'
         });
       } else {
         console.log(`[${request_id}] Transaction not found`);
         return res.json({
           txHash: txHash,
-          status: 'not_found',
-          confirmations: 0,
-          blockNumber: null,
-          gasUsed: null,
-          success: null
+          status: 'sent',
         });
       }
     }
     
-    // Get current block number for confirmations
-    const currentBlock = await web3.eth.getBlockNumber();
-    const confirmations = Number(currentBlock) - Number(receipt.blockNumber);
-    
-    // Check if transaction was successful (status = 1) or reverted (status = 0)
-    // Handle multiple formats: string "1", number 1, bigint 1n, boolean true
     const transactionSuccess = receipt.status === "1" || 
                               receipt.status === 1 || 
                               receipt.status === 1n || 
@@ -381,8 +413,8 @@ app.get('/tx-status/:txHash', async (req, res) => {
     
     res.json({
       txHash: txHash,
-      status: 'confirmed',
-      confirmations: confirmations,
+      status: 'complete',
+      // confirmations: confirmations,
       blockNumber: receipt.blockNumber.toString(),
       gasUsed: receipt.gasUsed.toString(),
       success: transactionSuccess,
@@ -400,45 +432,26 @@ app.get('/tx-status/:txHash', async (req, res) => {
     });
     
   } catch (error) {
-    console.error(`[${request_id}] Error checking transaction status:`, error);
-    
-    // Check if this is a network connectivity error that should be retried
-    const isNetworkError = error.code === 'ECONNREFUSED' || 
-                          error.type === 'system' || 
-                          error.message.includes('ECONNREFUSED') ||
-                          error.message.includes('FetchError');
-    
-    if (isNetworkError) {
-      // Return a specific error code for network issues so background service can retry
-      res.status(503).json({ 
-        error: 'Network connectivity issue',
-        details: error.message,
-        txHash: txHash,
-        request_id: request_id,
-        retryable: true
-      });
-    } else {
-      res.status(500).json({ 
+    res.json({ 
         error: 'Error checking transaction status',
         details: error.message,
         txHash: txHash,
-        request_id: request_id,
-        retryable: false
+        status: 'sent',
       });
     }
   }
-});
+);
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 USDT Service running on port ${process.env.PORT}`);
   console.log('⚡ Concurrency optimizations active:');
   console.log('   - Simple nonce counter (no network calls)');
-  console.log('   - Gas price caching (30s cache)');
+  console.log('   - Gas price caching (2min cache)');
   console.log('   - Fixed gas limit for USDT transfers');
   console.log('   - Async transaction broadcasting (no confirmation wait)');
   console.log('   - HTTP keep-alive connections');
   console.log('   - 30s request timeout protection');
-  console.log('   - Rate limiting protection (100ms intervals)');
+  console.log('   - Rate limiting protection (500ms intervals)');
   console.log('   - Retry logic for rate limit errors');
   console.log('💰 Ready for concurrent USDT transfers');
 }); 

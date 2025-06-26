@@ -87,6 +87,7 @@ services:
     
   
   usdt-api:
+    restart: always
     build: 
       context: ./tether_on_eth
     ports:
