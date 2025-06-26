@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS withdrawal (
     currency TEXT NOT NULL CHECK (currency = 'usd'),
     type TEXT NOT NULL CHECK (type = 'bank_transfer'),
     external_id TEXT, -- Transaction ID
-    status TEXT NOT NULL CHECK (status IN ('pending', 'delayed', 'complete', 'failed', 'processing')) DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending', 'sending', 'sent', 'complete', 'failed', 'delayed', 'processing')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -136,7 +136,7 @@ DROP CONSTRAINT IF EXISTS withdrawal_status_check;
 
 ALTER TABLE withdrawal 
 ADD CONSTRAINT withdrawal_status_check 
-CHECK (status IN ('pending', 'delayed', 'complete', 'failed', 'processing'));
+CHECK (status IN ('pending', 'sending', 'sent', 'complete', 'failed', 'delayed', 'processing'));
 
 -- Invoice notes table for communication between buyer and seller
 CREATE TABLE IF NOT EXISTS invoice_note (
