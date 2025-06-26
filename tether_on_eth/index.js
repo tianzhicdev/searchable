@@ -109,11 +109,25 @@ const USDT_TRANSFER_GAS_LIMIT = 65000; // Standard USDT transfer uses ~50k, addi
 // Initialize nonce on startup
 async function initializeNonce() {
   try {
+    console.log(`Initializing nonce counter... ${account.address}`);
     currentNonce = await web3.eth.getTransactionCount(account.address, 'pending');
     console.log(`[NONCE] Initialized with nonce: ${currentNonce}`);
   } catch (error) {
     console.error('Failed to initialize nonce:', error);
-    process.exit(1);
+    
+    // Check if this is an Infura quota/payment issue
+    if (error.statusCode === 402) {
+      console.error('❌ INFURA ERROR: Payment required (402) - Account may have exceeded quota or needs payment');
+      console.error('   Please check your Infura account at https://infura.io/dashboard');
+      console.error('   Using fallback nonce value of 0 for development');
+      
+      // Use fallback nonce for development/testing
+      currentNonce = 0;
+      console.warn(`[NONCE] Using fallback nonce: ${currentNonce}`);
+    } else {
+      console.error('   Non-payment related error, cannot continue');
+      process.exit(1);
+    }
   }
 }
 
@@ -140,9 +154,17 @@ async function getGasPrice() {
     return cachedGasPrice;
   } catch (error) {
     console.error('Failed to fetch gas price:', error);
-    // Fallback to a reasonable gas price (20 gwei)
+    
+    // Check for Infura payment issues
+    if (error.statusCode === 402) {
+      console.warn('❌ INFURA ERROR: Cannot fetch gas price - using fallback value');
+    }
+    
+    // Fallback to a reasonable gas price (20 gwei for mainnet, 2 gwei for testnet)
     if (!cachedGasPrice) {
-      cachedGasPrice = '20000000000';
+      const isTestnet = domain.includes('sepolia') || domain.includes('goerli');
+      cachedGasPrice = isTestnet ? '2000000000' : '20000000000'; // 2 gwei vs 20 gwei
+      console.warn(`[GAS] Using fallback gas price: ${cachedGasPrice} (${isTestnet ? 'testnet' : 'mainnet'})`);
     }
     return cachedGasPrice;
   }
@@ -265,91 +287,29 @@ app.post('/send', async (req, res) => {
     txHash = signedTx.transactionHash;
     console.log(`[${request_id}] Transaction signed, hash: ${txHash}`);
 
-    // Apply rate limiting before broadcasting
+    
     await rateLimit();
     console.log(`[${request_id}] Broadcasting signed transaction...`);
-    
-    // Fire-and-forget transaction broadcasting with comprehensive error handling
-    // Use setImmediate to avoid blocking the response and handle errors asynchronously
-    setImmediate(async () => {
-      try {
-        console.log(`[${request_id}] Starting async broadcast for tx: ${txHash}`);
-        const txPromise = web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        
-        txPromise
-          .on('transactionHash', (hash) => {
-            console.log(`[${request_id}] Transaction broadcasted with hash: ${hash}`);
-          })
-          .on('receipt', (receipt) => {
-            console.log(`[${request_id}] Transaction confirmed in block: ${receipt.blockNumber}, status: ${receipt.status}`);
-          })
-          .on('error', (error) => {
-            // Handle all errors in the async broadcast - don't let them crash the service
-            if (error.statusCode === 429 || error.code === 429) {
-              console.warn(`[${request_id}] Rate limited during broadcast: ${error.message}. Transaction may still succeed.`);
-            } else if (error.message && error.message.includes('replacement transaction underpriced')) {
-              console.warn(`[${request_id}] Nonce collision during broadcast: ${error.message}. Transaction may still succeed.`);
-            } else {
-              console.error(`[${request_id}] Transaction error after broadcast: ${error.message}`);
-            }
-          });
-          
-        // Wait for the promise and log the final result
-        try {
-          const receipt = await txPromise;
-          console.log(`[${request_id}] ✅ Async broadcast completed successfully:`, {
-            txHash: receipt.transactionHash,
-            blockNumber: receipt.blockNumber,
-            status: receipt.status,
-            gasUsed: receipt.gasUsed
-          });
-        } catch (error) {
-          if (error.statusCode === 429 || error.code === 429) {
-            console.warn(`[${request_id}] ⚠️  Rate limited during broadcast promise: ${error.message}. Transaction may still succeed.`);
-          } else {
-            console.error(`[${request_id}] ❌ Async broadcast failed:`, {
-              error: error.message,
-              code: error.code,
-              txHash: txHash
-            });
-          }
-        }
-
-      } catch (error) {
-        console.error(`[${request_id}] Unexpected error in async broadcast:`, error);
-      }
-    });
-    
-    // // Validate we have a txHash before returning success
-    // if (!txHash || txHash === 'null' || txHash === 'undefined') {
-    //   throw new Error('Transaction signing failed - no transaction hash generated');
-    // }
-    
-    // Return immediately after signing (transaction is being broadcasted async)
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
     res.json({ 
-      // success: true,
-      txHash: txHash,
-      // from: fromAddress,
-      // to: to,
-      // amount: amount,
-      // status: 'sent', // Indicate transaction is being processed
-      // request_id: request_id
+      status: 'complete',
+      txHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed:receipt.gasUsed,
+      ReceiptStatus: receipt.status,
     });
-  } catch (error) {
-
-    // Build error response - only include txHash if we actually have one
-    const errorResponse = { 
-      txHash: txHash
-    };
+    } catch (error) {
+      console.error(`[${request_id}] USDT Transfer Error:`, error);
+      res.status(500).json({ 
+        error: error.message,
+        stack: error.stack,
+        request_id: request_id,
+        txHash: txHash
+      });
+    }
+  });
     
-    // // Only include txHash if we have a valid one (transaction was signed)
-    // if (txHash && txHash !== 'null' && txHash !== 'undefined') {
-    //   errorResponse.txHash = txHash;
-    // }
     
-    res.status(500).json(errorResponse);
-  }
-});
 
 // Get transaction status
 app.get('/tx-status/:txHash', async (req, res) => {
