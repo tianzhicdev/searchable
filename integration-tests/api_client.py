@@ -126,7 +126,7 @@ class APIClient:
         response = self.session.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
-    
+
     def get_user_profile(self) -> Dict[str, Any]:
         """Get current user's profile"""
         url = f"{self.base_url}/v1/profile"

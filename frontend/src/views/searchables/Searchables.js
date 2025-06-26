@@ -11,6 +11,7 @@ import AddIcon from '@material-ui/icons/Add';
 import SearchIcon from '@material-ui/icons/Search';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import StorefrontIcon from '@material-ui/icons/Storefront';
+import PaymentIcon from '@material-ui/icons/Payment';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import { useLogout } from '../../components/LogoutHandler';
 import useComponentStyles from '../../themes/componentStyles';
@@ -77,6 +78,11 @@ const Searchables = () => {
 
   const handlePublishOffline = () => {
     history.push('/publish-offline-searchables');
+    handleMenuClose();
+  };
+
+  const handlePublishDirect = () => {
+    history.push('/publish-direct-searchables');
     handleMenuClose();
   };
 
@@ -150,6 +156,12 @@ const Searchables = () => {
                     <StorefrontIcon />
                   </ListItemIcon>
                   <ListItemText primary="Sell Offline Products" />
+                </MenuItem>
+                <MenuItem onClick={handlePublishDirect}>
+                  <ListItemIcon>
+                    <PaymentIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Direct Payment Item" />
                 </MenuItem>
               </Menu>
             </>
