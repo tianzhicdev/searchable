@@ -151,19 +151,19 @@ def process_pending_withdrawals():
         cur = conn.cursor()
         
         # Handle timeout for stuck 'sending' withdrawals
-        sending_timeout = int(time.time()) - (SENDING_TIMEOUT_MINUTES * 60)
+        # sending_timeout = int(time.time()) - (SENDING_TIMEOUT_MINUTES * 60)
         
-        # Reset stuck 'sending' withdrawals directly
-        execute_sql(cur, f"""
-            UPDATE withdrawal 
-            SET status = '{PaymentStatus.PENDING.value}'
-            WHERE status = '{PaymentStatus.SENDING.value}'
-            AND CAST(metadata->>'sending_timestamp' AS INTEGER) < {sending_timeout}
-        """)
+        # # Reset stuck 'sending' withdrawals directly
+        # execute_sql(cur, f"""
+        #     UPDATE withdrawal 
+        #     SET status = '{PaymentStatus.PENDING.value}'
+        #     WHERE status = '{PaymentStatus.SENDING.value}'
+        #     AND CAST(metadata->>'sending_timestamp' AS INTEGER) < {sending_timeout}
+        # """)
         
-        timeout_resets = cur.rowcount
-        if timeout_resets > 0:
-            logger.warning(f"Reset {timeout_resets} stuck 'sending' withdrawals back to 'pending' due to timeout")
+        # timeout_resets = cur.rowcount
+        # if timeout_resets > 0:
+        #     logger.warning(f"Reset {timeout_resets} stuck 'sending' withdrawals back to 'pending' due to timeout")
         
         # Get pending withdrawals with SELECT FOR UPDATE to prevent race conditions
         execute_sql(cur, f"""
@@ -171,9 +171,8 @@ def process_pending_withdrawals():
             FROM withdrawal 
             WHERE status = '{PaymentStatus.PENDING.value}'
             ORDER BY created_at ASC
-            LIMIT 10
-            FOR UPDATE
-        """)
+            LIMIT 1
+        """) # do we need "FOR UPDATE" 
         
         pending_withdrawals = cur.fetchall()
         
@@ -188,29 +187,14 @@ def process_pending_withdrawals():
             try:
                 logger.info(f"Processing pending withdrawal {withdrawal_id} for ${amount} {currency}")
                 
-                # Mark as 'sending' before attempting API call
-                # Only keep essential fields to avoid Decimal serialization issues
-                updated_metadata = {
-                    'address': metadata.get('address'),
-                    'sending_timestamp': int(time.time()),
-                    'send_attempts': metadata.get('send_attempts', 0) + 1
-                }
-                
-                cur.execute("""
-                    UPDATE withdrawal 
-                    SET status = %s,
-                        metadata = %s
-                    WHERE id = %s
-                """, (PaymentStatus.SENDING.value, safe_json_dumps(updated_metadata), withdrawal_id))
-                conn.commit()
-                
-                logger.info(f"Marked withdrawal {withdrawal_id} as 'sending', attempting USDT API call")
                 
                 if currency.lower() == 'usd':
                     # Process USDT withdrawal
                     address = metadata.get('address')
                     if not address:
-                        raise Exception("USDT withdrawal missing address")
+                        pass
+                        # todo: mark as failed
+                        # raise Exception("USDT withdrawal missing address")
                     
                     # Call USDT service (convert Decimal amount to float for JSON serialization)
                     usdt_amount = float(amount) * 10 ** USDT_DECIMALS
@@ -218,12 +202,15 @@ def process_pending_withdrawals():
                         'to': address,
                         'amount': usdt_amount,
                         'request_id': f'withdrawal_{withdrawal_id}'
-                    }, timeout=30)
+                    }, timeout=60)
                     
                     response_data = response.json()
                     logger.info(f"USDT API response for withdrawal {withdrawal_id}: {response_data}")
                     
-                    if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                    if 'txHash' in response_data 
+                    and is_valid_tx_hash(response_data.get('txHash')) 
+                    and 'status' in response_data
+                    and response_data.get('status') == 'complete':
                         # Success - got txHash, mark as 'sent'
                         tx_hash = response_data.get('txHash')
                         
@@ -232,9 +219,26 @@ def process_pending_withdrawals():
                         # if not tx_hash or tx_hash in ['None', 'null', 'undefined']:
                         #     raise Exception("USDT service returned success but no valid txHash")
                         
+                        complete_metadata = {
+                            'tx_hash': tx_hash,
+                            'complete_timestamp': int(time.time()),
+                        }
+                        
+                        cur.execute("""
+                            UPDATE withdrawal 
+                            SET status = %s,
+                                external_id = %s,
+                                metadata = %s
+                            WHERE id = %s
+                        """, (PaymentStatus.COMPLETE.value, tx_hash, safe_json_dumps(complete_metadata), withdrawal_id))
+                        
+                        logger.info(f"✅ Withdrawal {withdrawal_id} sent successfully - txHash: {tx_hash}")
+                        
+                    else if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                        tx_hash = response_data.get('txHash')
                         sent_metadata = {
                             'tx_hash': tx_hash,
-                            'sent_timestamp': int(time.time()),
+                            'complete_timestamp': int(time.time()),
                         }
                         
                         cur.execute("""
@@ -244,39 +248,17 @@ def process_pending_withdrawals():
                                 metadata = %s
                             WHERE id = %s
                         """, (PaymentStatus.SENT.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
-                        
-                        logger.info(f"✅ Withdrawal {withdrawal_id} sent successfully - txHash: {tx_hash}")
-                        
                     else:
-                        pass
-                        # # Error response - check if we have txHash anyway
-                        # tx_hash = response_data.get('txHash') if response_data else None
-                        # error_msg = response_data.get('error', 'Unknown error') if response_data else f"HTTP {response.status_code}"
+                        error_metadata = {
+                            'error_timestamp': int(time.time()),
+                        }
                         
-                        # if tx_hash and tx_hash not in ['None', 'null', 'undefined']:
-                        #     # We have a txHash despite error - transaction might have been sent
-                        #     logger.warning(f"USDT service error but got txHash {tx_hash} for withdrawal {withdrawal_id}: {error_msg}")
-                            
-                        #     sent_metadata = {
-                        #         'address': metadata.get('address'),
-                        #         'tx_hash': tx_hash,
-                        #         'sent_timestamp': int(time.time()),
-                        #         'send_attempts': updated_metadata.get('send_attempts', 1),
-                        #         'api_error': error_msg
-                        #     }
-                            
-                        #     cur.execute("""
-                        #         UPDATE withdrawal 
-                        #         SET status = %s,
-                        #             external_id = %s,
-                        #             metadata = %s
-                        #         WHERE id = %s
-                        #     """, (PaymentStatus.SENT.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
-                            
-                        #     logger.warning(f"⚠️  Withdrawal {withdrawal_id} marked as 'sent' despite API error - will check status later")
-                        # else:
-                        #     # No txHash - transaction was not sent, reset to pending
-                        #     raise Exception(f"USDT service error (no txHash): {error_msg}")
+                        cur.execute("""
+                            UPDATE withdrawal 
+                            SET status = %s,
+                                metadata = %s
+                            WHERE id = %s
+                        """, (PaymentStatus.ERROR.value, safe_json_dumps(error_metadata), withdrawal_id))
                         
                 else:
                     raise Exception(f"Unsupported currency for withdrawal: {currency}")
@@ -284,23 +266,6 @@ def process_pending_withdrawals():
             except Exception as e:
                 logger.error(f"Error processing withdrawal {withdrawal_id}: {str(e)}")
                 
-                # # Reset to 'pending' for retry
-                # error_metadata = {
-                #     'address': metadata.get('address'),
-                #     'last_error': str(e),
-                #     'error_timestamp': int(time.time()),
-                #     'send_attempts': metadata.get('send_attempts', 0) + 1
-                # }
-                
-                # # Use parameterized query to avoid SQL injection from error messages
-                # cur.execute("""
-                #     UPDATE withdrawal 
-                #     SET status = %s,
-                #         metadata = %s
-                #     WHERE id = %s
-                # """, (PaymentStatus.PENDING.value, safe_json_dumps(error_metadata), withdrawal_id))
-                
-                # logger.warning(f"❌ Reset withdrawal {withdrawal_id} back to 'pending' due to error: {str(e)}")
             
             conn.commit()
         
@@ -323,21 +288,7 @@ def check_sent_withdrawals():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        
-        # Handle timeout for stuck 'sent' withdrawals - just update status
-        # sent_timeout = int(time.time()) - (SENT_TIMEOUT_HOURS * 60 * 60)
-        # execute_sql(cur, f"""
-        #     UPDATE withdrawal 
-        #     SET status = '{PaymentStatus.FAILED.value}'
-        #     WHERE status = '{PaymentStatus.SENT.value}'
-        #     AND CAST(metadata->>'sent_timestamp' AS INTEGER) < {sent_timeout}
-        # """)
-        
-        # timeout_failures = cur.rowcount
-        # if timeout_failures > 0:
-        #     logger.warning(f"Marked {timeout_failures} stuck 'sent' withdrawals as 'failed' due to 24h timeout")
-        
-        # Get sent withdrawals
+
         execute_sql(cur, f"""
             SELECT id, user_id, amount, currency, metadata, external_id, status
             FROM withdrawal 
@@ -356,9 +307,9 @@ def check_sent_withdrawals():
             tx_hash = external_id
             
             if not tx_hash or tx_hash in ['None', 'null', 'undefined']:
+                # todo: it should not happen
                 logger.warning(f"Sent withdrawal {withdrawal_id} has invalid tx_hash: '{tx_hash}', marking as failed")
                 raise Exception(f"Invalid tx_hash for withdrawal {withdrawal_id}")
-            
             else:
                 try:
                     logger.info(f"Checking status of sent withdrawal {withdrawal_id} with tx_hash: {tx_hash}")
@@ -373,7 +324,6 @@ def check_sent_withdrawals():
                         if tx_status['status'] == 'complete':
                             # Transaction confirmed and successful - keep only essential fields
                             updated_metadata = {
-                                'address': metadata.get('address'),
                                 'tx_hash': tx_hash,
                                 'confirmed_timestamp': int(time.time()),
                             }
@@ -405,29 +355,7 @@ def check_sent_withdrawals():
                         else:
                             # Transaction is still pending - leave as 'sent' for now
                             logger.info(f"⏳ Withdrawal {withdrawal_id} still pending on blockchain, will check again later")
-                            
-                        # elif tx_status['status'] == 'not_found':
-                        #     # Transaction not found - mark as failed - keep only essential fields
-                        #     updated_metadata = {
-                        #         'address': metadata.get('address'),
-                        #         'tx_hash': tx_hash,
-                        #         'failed_timestamp': int(time.time()),
-                        #         'failure_reason': 'Transaction not found on blockchain'
-                        #     }
-                            
-                        #     cur.execute("""
-                        #         UPDATE withdrawal 
-                        #         SET status = %s,
-                        #             metadata = %s
-                        #         WHERE id = %s
-                        #     """, (PaymentStatus.FAILED.value, safe_json_dumps(updated_metadata), withdrawal_id))
-                            
-                        #     logger.error(f"❌ Withdrawal {withdrawal_id} failed - transaction not found on blockchain")
-                        
-                        # # If status is 'pending', we leave it as 'sent' and check again later
-                        # elif tx_status['status'] == 'pending':
-                        #     logger.info(f"⏳ Withdrawal {withdrawal_id} still pending on blockchain, will check again later")
-                        
+
                         conn.commit()
 
                     else:
@@ -466,6 +394,8 @@ def withdrawal_sender_thread():
     """Thread function that periodically processes pending withdrawals"""
     while True:
         try:
+
+            check_sent_withdrawals()
             process_pending_withdrawals()
         except Exception as e:
             logger.error(f"Error in withdrawal sender thread: {str(e)}")
@@ -507,12 +437,12 @@ def start_background_threads():
     sender_thread.start()
     
     # Start status checker thread (Job 2)
-    checker_thread = threading.Thread(
-        target=status_checker_thread,
-        daemon=True,
-        name="status-checker"
-    )
-    checker_thread.start()
+    # checker_thread = threading.Thread(
+    #     target=status_checker_thread,
+    #     daemon=True,
+    #     name="status-checker"
+    # )
+    # checker_thread.start()
     
     logger.info("Background threads started:")
     logger.info(f"  - Invoice checker: every {CHECK_INVOICE_INTERVAL}s")

@@ -15,6 +15,7 @@ class PaymentStatus(Enum):
     DELAYED = 'delayed'        # Legacy status, will be phased out
     COMPLETE = 'complete'
     FAILED = 'failed'
+    ERROR = 'error'
 
 class PaymentType(Enum):
     STRIPE = 'stripe'
