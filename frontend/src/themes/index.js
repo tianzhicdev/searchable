@@ -22,7 +22,7 @@ export function theme(customization) {
         appColors: {
             userText: colors.primary,       // User provided data/text
             staticText: colors.secondary,   // Static/system texts
-            iconColor: colors.highlight,    // Icons and interactive elements
+            iconColor: colors.highlight1,    // Icons and interactive elements
             alerting: colors.alerting,      // Error states
             warning: colors.warning         // Warning states
         }

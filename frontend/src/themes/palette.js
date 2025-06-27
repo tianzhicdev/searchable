@@ -29,9 +29,9 @@ export function themePalette(theme) {
             dark: theme.colors.warning
         },
         success: {
-            light: theme.colors.highlight,
-            main: theme.colors.highlight,
-            dark: theme.colors.highlight
+            light: theme.colors.highlight3,
+            main: theme.colors.highlight3,
+            dark: theme.colors.highlight3
         },
         grey: {
             50: theme.colors.background,

@@ -1,31 +1,53 @@
-// CENTRALIZED COLOR SYSTEM - Only 5 colors allowed
 // Primary: Main brand color for primary actions and emphasis
-$primary: #ff4d3a;
+$primary: #ff518e;
 
-// Secondary: Supporting color for secondary actions and elements
-$secondary: #3899ef;
+// Secondary: For text colors and secondary elements
+$secondary: #0000ff;
 
-// Alerting: For error states, critical alerts, and danger actions
-$alerting: #d32f2f;
+// Highlight colors for hover/active effects
+$highlight-1: #9828b1;          // Primary highlight for hover states
+$highlight-2: #00f5ff;          // Secondary highlight for special effects
+$highlight-3: #010101;          // Tertiary highlight for accents
 
-// Warning: For warning states and cautionary messages
-$warning: #ff9800;
+// Background colors for smaller components
+$background-small-1: rgba(255, 33, 110, 0.1);   // Primary tinted background
+$background-small-2: rgba(0, 245, 255, 0.1);    // Secondary tinted background
 
-// Highlight: For success states, confirmations, and positive feedback
-$highlight: #4caf50;
+// Background colors for larger areas/page backgrounds
+$background-large-1: #413646;   // Main dark background
+$background-large-2: #750000;   // Alternative dark background
 
-// Background: Pure black theme background
-$background: #000000;
+// Border colors for component outlines
+$border-1: #ff216e;             // Primary border color
+$border-2: #0000ff;             // Secondary border color
+
+// Status colors (unchanged)
+$alerting: #ff3864;             // For error states, critical alerts
+$warning: #ffb700;              // For warning states and cautionary messages
 
 //-----------------------|| JAVASCRIPT ||-----------------------//
 
 :export {
-    // CENTRALIZED COLORS - Only 5 main colors
-    primary: $primary;           // Main brand color
-    secondary: $secondary;       // Supporting color
-    alerting: $alerting;         // Error/danger states
-    warning: $warning;           // Warning states
-    highlight: $highlight;       // Success/positive states
-    background: $background;     // Pure black background
+    // Core colors
+    primary: $primary;                      // Main brand color
+    secondary: $secondary;                  // Text colors and secondary elements
     
+    // Highlight colors for interactive states
+    highlight1: $highlight-1;               // Primary highlight
+    highlight2: $highlight-2;               // Secondary highlight
+    highlight3: $highlight-3;               // Tertiary highlight
+    
+    // Background colors
+    backgroundSmall1: $background-small-1;  // Small component backgrounds
+    backgroundSmall2: $background-small-2;  // Alternative small backgrounds
+    backgroundLarge1: $background-large-1;  // Main page background
+    backgroundLarge2: $background-large-2;  // Alternative page background
+    
+    // Border colors
+    border1: $border-1;                     // Primary borders
+    border2: $border-2;                     // Secondary borders
+    
+    // Status colors (unchanged)
+    alerting: $alerting;                    // Error states
+    warning: $warning;                      // Warning states
 }
