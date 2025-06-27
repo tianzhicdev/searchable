@@ -6,7 +6,7 @@ import {
   Grid, Typography, Paper, Box, CircularProgress
 } from '@material-ui/core';
 
-import MiniSearchableProfile from '../../components/Profiles/MiniSearchableProfile';
+import MiniProfile from '../../components/Profiles/MiniProfile';
 import Pagination from '../../components/Pagination/Pagination';
 import backend from '../utilities/Backend';
 import { navigateWithReferrer } from '../../utils/navigationUtils';
@@ -165,8 +165,9 @@ const SearchableList = ({ criteria }) => {
         <>
           {searchResults.map((item) => (
             <Grid item xs={12} key={`${item.searchable_id}-${pagination.page}`}>
-              <MiniSearchableProfile 
-                item={item}
+              <MiniProfile 
+                type="searchable"
+                data={item}
                 onClick={() => handleItemClick(item)} 
               />
             </Grid>

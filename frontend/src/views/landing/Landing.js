@@ -4,7 +4,7 @@ import {
   Grid, Box
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import Searchables from '../searchables/Searchables';
+import SearchByContent from '../search/SearchByContent';
 import SearchByUser from '../search/SearchByUser';
 
 const useStyles = makeStyles((theme) => ({
@@ -29,7 +29,7 @@ const Landing = () => {
         {showCreators ? (
           <SearchByUser />
         ) : (
-          <Searchables />
+          <SearchByContent />
         )}
       </Grid>
     </Grid>

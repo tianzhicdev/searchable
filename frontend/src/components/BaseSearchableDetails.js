@@ -15,6 +15,9 @@ const BaseSearchableDetails = ({
   // Type-specific content
   renderTypeSpecificContent,
   
+  // Type-specific receipts content (rendered outside main Paper)
+  renderReceiptsContent,
+  
   // Type-specific handlers
   onPayment,
   
@@ -134,6 +137,19 @@ const BaseSearchableDetails = ({
           />
         </Paper>
       </Grid>
+
+      {/* Receipts section - rendered outside main Paper */}
+      {renderReceiptsContent && (
+        <Grid item xs={12}>
+          {renderReceiptsContent({
+            SearchableItem,
+            isOwner,
+            searchableRating,
+            loadingRatings,
+            id
+          })}
+        </Grid>
+      )}
     </Grid>
   );
 };

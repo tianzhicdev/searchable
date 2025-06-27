@@ -1,0 +1,205 @@
+import React from 'react';
+import { 
+  Typography, Paper, Box, Divider
+} from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
+import PostedBy from '../PostedBy';
+import TagsOnProfile from '../Tags/TagsOnProfile';
+import { useHistory } from 'react-router-dom';
+
+const useStyles = makeStyles((theme) => ({
+  profileCard: {
+    cursor: 'pointer',
+    transition: 'box-shadow 0.3s ease',
+    width: '100%',
+    marginBottom: theme.spacing(2),
+    padding: theme.spacing(2),
+    '&:hover': {
+      boxShadow: theme.shadows[4]
+    }
+  },
+  title: {
+    fontWeight: 'bold',
+    marginBottom: theme.spacing(1)
+  },
+  description: {
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
+    marginTop: theme.spacing(1),
+    color: theme.palette.text.secondary
+  },
+  imageContainer: {
+    marginLeft: theme.spacing(2),
+    flex: '0 0 auto'
+  },
+  image: {
+    maxWidth: '120px',
+    maxHeight: '120px',
+    objectFit: 'cover',
+    borderRadius: theme.shape.borderRadius
+  },
+  tagsSection: {
+    marginTop: theme.spacing(1.5)
+  },
+  metaInfo: {
+    marginTop: theme.spacing(0.5),
+    color: theme.palette.text.secondary,
+    fontSize: '0.875rem'
+  }
+}));
+
+const MiniProfile = ({ 
+  type = 'searchable', // 'searchable' or 'user'
+  data,
+  onClick
+}) => {
+  const classes = useStyles();
+  const history = useHistory();
+  
+  if (!data) return null;
+  
+  // Helper function to truncate text
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+  
+  // Extract common data based on type
+  let title, description, imageUrl, tags, metaInfo, clickPath;
+  
+  if (type === 'searchable') {
+    const publicData = data.payloads?.public || {};
+    title = publicData.title;
+    description = publicData.description;
+    imageUrl = publicData.images?.[0];
+    tags = data.tags || [];
+    metaInfo = {
+      username: data.username,
+      terminalId: data.terminal_id,
+      price: publicData.price,
+      category: publicData.category
+    };
+    
+    // Determine click path based on searchable type
+    if (data.type === 'downloadable') {
+      clickPath = `/searchable-item/${data.searchable_id}`;
+    } else if (data.type === 'offline') {
+      clickPath = `/offline-item/${data.searchable_id}`;
+    } else if (data.type === 'direct') {
+      clickPath = `/direct-item/${data.searchable_id}`;
+    }
+  } else if (type === 'user') {
+    title = data.displayName || data.username;
+    description = data.introduction;
+    imageUrl = data.profile_image_url;
+    tags = data.tags || [];
+    metaInfo = {
+      username: data.username,
+      searchableCount: data.searchableCount,
+      rating: data.rating,
+      totalRatings: data.totalRatings
+    };
+    clickPath = `/profile/${data.username || data.id}`;
+  }
+  
+  const handleClick = () => {
+    if (onClick) {
+      onClick(data);
+    } else if (clickPath) {
+      history.push(clickPath);
+    }
+  };
+  
+  return (
+    <Paper className={classes.profileCard} onClick={handleClick}>
+      <Box display="flex" flexDirection="row">
+        <Box flex="1 1 auto">
+          <Typography variant="h4" className={classes.title}>
+            {truncateText(title, 50)}
+          </Typography>
+
+          <Divider />
+          
+          <Box>
+            {/* Meta information based on type */}
+            {type === 'searchable' && metaInfo.username && (
+              <Box className={classes.metaInfo}>
+                <PostedBy 
+                  username={metaInfo.username} 
+                  terminalId={metaInfo.terminalId} 
+                  maxLength={30}
+                />
+                
+                {metaInfo.price && (
+                  <Typography variant="body2">
+                    Price: ${metaInfo.price}
+                  </Typography>
+                )}
+                
+                {metaInfo.category && (
+                  <Typography variant="body2">
+                    Category: {truncateText(metaInfo.category, 30)}
+                  </Typography>
+                )}
+              </Box>
+            )}
+            
+            {type === 'user' && (
+              <Box className={classes.metaInfo}>
+                {metaInfo.username && title !== metaInfo.username && (
+                  <Typography variant="body2">
+                    @{metaInfo.username}
+                  </Typography>
+                )}
+                
+                {typeof metaInfo.searchableCount === 'number' && (
+                  <Typography variant="body2">
+                    Items: {metaInfo.searchableCount}
+                  </Typography>
+                )}
+                
+                {typeof metaInfo.rating === 'number' && (
+                  <Typography variant="body2">
+                    Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings || 0} reviews)
+                  </Typography>
+                )}
+              </Box>
+            )}
+            
+            {/* Description */}
+            {description && (
+              <Typography variant="body2" className={classes.description}>
+                {type === 'searchable' ? 'Description: ' : ''}
+                {truncateText(description, 150)}
+              </Typography>
+            )}
+            
+            {/* Tags Section */}
+            {tags && tags.length > 0 && (
+              <Box className={classes.tagsSection}>
+                <TagsOnProfile tags={tags} />
+              </Box>
+            )}
+          </Box>
+        </Box>
+        
+        {/* Image */}
+        {imageUrl && (
+          <Box className={classes.imageContainer}>
+            <Paper elevation={1}>
+              <Box display="flex" justifyContent="center" p={0.5}>
+                <img 
+                  src={imageUrl} 
+                  alt={title}
+                  className={classes.image}
+                />
+              </Box>
+            </Paper>
+          </Box>
+        )}
+      </Box>
+    </Paper>
+  );
+};
+
+export default MiniProfile;
