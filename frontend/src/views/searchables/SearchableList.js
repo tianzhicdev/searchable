@@ -90,7 +90,7 @@ const SearchableList = ({ criteria }) => {
           page_size: pageSize,
           q: criteria.searchTerm || '',
           filters: JSON.stringify(criteria.filters || {}),
-          tags: criteria.filters?.tags ? criteria.filters.tags.map(tag => typeof tag === 'object' ? tag.name : tag).join(',') : ''
+          tags: criteria.filters?.tags ? criteria.filters.tags.join(',') : ''
         }
       });
 

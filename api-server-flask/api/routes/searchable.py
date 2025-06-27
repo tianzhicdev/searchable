@@ -152,7 +152,8 @@ class SearchSearchables(Resource):
             # Query database for results
             results, total_count = self._query_database(
                 params['query_term'],
-                params.get('filters', {})
+                params.get('filters', {}),
+                params.get('tag_ids', [])
             )
             
             # Apply pagination
@@ -178,6 +179,7 @@ class SearchSearchables(Resource):
             page_number = int(request.args.get('page', 1))
             page_size = int(request.args.get('page_size', 20))
             filters_param = request.args.get('filters', '{}')
+            tags_param = request.args.get('tags', '')
             
             # Location is no longer used
             lat = lng = None
@@ -188,6 +190,23 @@ class SearchSearchables(Resource):
                 filters = json.loads(filters_param)
             except json.JSONDecodeError:
                 filters = {}
+            
+            # Parse tags from comma-separated string
+            tag_ids = []
+            if tags_param:
+                try:
+                    # Split by comma and convert to integers
+                    tag_ids = [int(tag_id.strip()) for tag_id in tags_param.split(',') if tag_id.strip()]
+                except ValueError:
+                    # If conversion fails, try to get tags from filters
+                    pass
+            
+            # Also check if tags are in filters (for backward compatibility)
+            if 'tags' in filters and isinstance(filters['tags'], list):
+                tag_ids.extend(filters['tags'])
+            
+            # Remove duplicates
+            tag_ids = list(set(tag_ids))
             
             # Validate pagination
             if page_number < 1:
@@ -201,7 +220,8 @@ class SearchSearchables(Resource):
                 'query_term': query_term,
                 'page_number': page_number,
                 'page_size': page_size,
-                'filters': filters
+                'filters': filters,
+                'tag_ids': tag_ids
             }
         except Exception as e:
             return {"error": f"Parameter parsing error: {str(e)}"}
@@ -249,20 +269,36 @@ class SearchSearchables(Resource):
         
         return score
 
-    def _query_database(self, query_term, filters={}):
+    def _query_database(self, query_term, filters={}, tag_ids=[]):
         """Query database for searchable items"""
         conn = get_db_connection()
         cur = conn.cursor()
         
         try:
-            # Query all searchables including type field
-            execute_sql(cur, """
-                SELECT s.searchable_id, s.type, s.searchable_data
-                FROM searchables s
-                WHERE s.searchable_data->>'removed' IS NULL 
-                OR s.searchable_data->>'removed' != 'true'
-                ORDER BY s.searchable_id DESC
-            """)
+            # Build the query based on whether we need to filter by tags
+            if tag_ids:
+                # Query with tag filtering using OR logic (any matching tag)
+                tag_ids_str = ','.join(str(tag_id) for tag_id in tag_ids)
+                query = f"""
+                    SELECT DISTINCT s.searchable_id, s.type, s.searchable_data
+                    FROM searchables s
+                    INNER JOIN searchable_tags st ON s.searchable_id = st.searchable_id
+                    WHERE st.tag_id IN ({tag_ids_str})
+                    AND (s.searchable_data->>'removed' IS NULL 
+                    OR s.searchable_data->>'removed' != 'true')
+                    ORDER BY s.searchable_id DESC
+                """
+            else:
+                # Query all searchables without tag filtering
+                query = """
+                    SELECT s.searchable_id, s.type, s.searchable_data
+                    FROM searchables s
+                    WHERE s.searchable_data->>'removed' IS NULL 
+                    OR s.searchable_data->>'removed' != 'true'
+                    ORDER BY s.searchable_id DESC
+                """
+            
+            execute_sql(cur, query)
             results = cur.fetchall()
             
             # Convert to list format and apply text filtering

@@ -44,7 +44,8 @@ const SearchByContent = () => {
 
   // Handle search
   const handleSearch = () => {
-    const tagFilters = selectedTags.length > 0 ? { tags: selectedTags } : {};
+    // Only store tag IDs, not the entire tag objects
+    const tagFilters = selectedTags.length > 0 ? { tags: selectedTags.map(tag => tag.id) } : {};
     const updatedFilters = { ...filters, ...tagFilters };
     
     localStorage.setItem('searchTerm', searchTerm);

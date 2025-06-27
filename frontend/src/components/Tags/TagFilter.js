@@ -23,10 +23,6 @@ const useStyles = makeStyles((theme) => ({
   filterHeader: {
     marginBottom: theme.spacing(2)
   },
-  searchField: {
-    marginBottom: theme.spacing(2),
-    width: '100%'
-  },
   tagGroup: {
     maxHeight: '200px',
     overflowY: 'auto',
@@ -52,7 +48,6 @@ const TagFilter = ({
   const classes = useStyles();
   const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   
   // Auto-generate title if not provided
   const displayTitle = title || `Filter by ${tagType === 'user' ? 'User' : 'Content'} Tags`;
@@ -75,12 +70,6 @@ const TagFilter = ({
       setLoading(false);
     }
   };
-  
-  // Filter tags based on search term
-  const filteredTags = availableTags.filter(tag =>
-    tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (tag.description && tag.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
   
   const handleTagToggle = (tag) => {
     const isSelected = selectedTags.find(selected => selected.id === tag.id);
@@ -117,17 +106,6 @@ const TagFilter = ({
       </Typography>
       
       <Box>
-        {/* Search within tags */}
-        <TextField
-          className={classes.searchField}
-          placeholder="Search tags..."
-          variant="outlined"
-          size="small"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          disabled={loading}
-        />
-        
         {/* Selected tags display */}
         {selectedTags.length > 0 && (
           <Box className={classes.selectedTagsContainer}>
@@ -145,7 +123,7 @@ const TagFilter = ({
         
         {/* Available tags checkboxes */}
         <FormGroup className={classes.tagGroup}>
-          {filteredTags.map((tag) => {
+          {availableTags.map((tag) => {
             const isSelected = selectedTags.find(selected => selected.id === tag.id);
             
             return (
@@ -180,9 +158,9 @@ const TagFilter = ({
           </Typography>
         )}
         
-        {!loading && filteredTags.length === 0 && searchTerm && (
+        {!loading && availableTags.length === 0 && (
           <Typography variant="body2" color="textSecondary">
-            No tags found matching "{searchTerm}"
+            No tags available
           </Typography>
         )}
         
