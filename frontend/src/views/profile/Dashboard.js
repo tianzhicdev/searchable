@@ -284,6 +284,16 @@ const Dashboard = () => {
               >
                 {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
               </Avatar>
+              <Typography variant="body1"  className={classes.userText}>
+              {account.user.username}
+             </Typography>
+                          {/* Display tags below username */}
+             {userProfile?.tags && userProfile.tags.length > 0 && (
+              <Box style={{ marginTop: 8 }}>
+                <TagsOnProfile tags={userProfile.tags} />
+              </Box>
+            )}
+
               {userProfile.introduction && (
                 <Typography variant="body2" align="center" style={{ marginTop: 8, fontStyle: 'italic' }}>
                   "{userProfile.introduction}"
@@ -319,20 +329,6 @@ const Dashboard = () => {
             </Box>
           )}
 
-          <Box >
-            <Typography variant="body2"  className={classes.staticText}>
-              Username:
-            </Typography>
-            <Typography variant="body1"  className={classes.userText}>
-              {account.user.username}
-            </Typography>
-            {/* Display tags below username */}
-            {userProfile?.tags && userProfile.tags.length > 0 && (
-              <Box style={{ marginTop: 8 }}>
-                <TagsOnProfile tags={userProfile.tags} />
-              </Box>
-            )}
-          </Box>
           <Box>
             <Typography variant="body2"  className={classes.staticText}>
               Email:
