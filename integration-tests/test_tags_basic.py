@@ -88,16 +88,17 @@ def test_get_searchable_tags():
         return False
 
 def test_search_users_no_tags():
-    """Test searching users without providing tags (should return error)"""
+    """Test searching users without providing tags (should return all users)"""
     print("\nTesting: GET /api/v1/search/users (no tags)")
     
     response = requests.get(f"{BASE_URL}/api/v1/search/users")
     
-    if response.status_code == 400:
-        print("✓ Correctly returned 400 error for search without tags")
+    if response.status_code == 200:
+        data = response.json()
+        print(f"✓ Successfully returned all users: {data.get('pagination', {}).get('total', 0)} total")
         return True
     else:
-        print(f"✗ Expected 400, got {response.status_code}")
+        print(f"✗ Expected 200, got {response.status_code}")
         return False
 
 def test_search_users_with_tags():

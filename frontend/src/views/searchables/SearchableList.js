@@ -84,13 +84,16 @@ const SearchableList = ({ criteria }) => {
       console.log('[SEARCHABLE LIST] Requesting page:', page, 'pageSize:', pageSize);
       console.log('[SEARCHABLE LIST] Criteria:', criteria);
       
+      // Extract tags from filters to send as separate parameter
+      const { tags, ...otherFilters } = criteria.filters || {};
+      
       const response = await backend.get('v1/searchable/search', {
         params: {
           page: page,
           page_size: pageSize,
           q: criteria.searchTerm || '',
-          filters: JSON.stringify(criteria.filters || {}),
-          tags: criteria.filters?.tags ? criteria.filters.tags.join(',') : ''
+          filters: JSON.stringify(otherFilters),
+          tags: tags ? tags.join(',') : ''
         }
       });
 
