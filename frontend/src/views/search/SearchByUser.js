@@ -60,7 +60,7 @@ const SearchByUser = () => {
   };
   
   const handleUserClick = (user) => {
-    history.push(`/profile/${user.username || user.id}`);
+    history.push(`/profile/${user.id}`);
   };
   
   return (

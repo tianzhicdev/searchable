@@ -19,6 +19,7 @@ from ..common.data_helpers import (
     get_downloadable_items_by_user_id,
     get_rewards,
 )
+from ..common.tag_helpers import get_user_tags
 from ..common.logging_config import setup_logger
 
 # Set up the logger
@@ -97,6 +98,12 @@ class GetUserProfile(Resource):
             if not profile:
                 return {"error": "Profile not found"}, 404
             
+            # Get user's tags
+            user_tags = get_user_tags(user_id)
+            
+            # Add tags to profile
+            profile['tags'] = user_tags
+            
             # Get user's searchables/downloadables
             searchable_ids = get_searchableIds_by_user(user_id)
             downloadables = []
@@ -114,7 +121,7 @@ class GetUserProfile(Resource):
                         'currency': public_data.get('currency', 'USD')
                     })
             
-            # Return profile with downloadables
+            # Return profile with downloadables and tags
             return {
                 "profile": profile,
                 "downloadables": downloadables
@@ -148,6 +155,12 @@ class GetMyProfile(Resource):
                 if not profile:
                     return {"error": "Failed to create profile"}, 500
             
+            # Get user's tags
+            user_tags = get_user_tags(user_id)
+            
+            # Add tags to profile
+            profile['tags'] = user_tags
+            
             # Get user's searchables/downloadables
             searchable_ids = get_searchableIds_by_user(user_id)
             downloadables = []
@@ -165,7 +178,7 @@ class GetMyProfile(Resource):
                         'currency': public_data.get('currency', 'USD')
                     })
             
-            # Return profile with downloadables
+            # Return profile with downloadables and tags
             return {
                 "profile": profile,
                 "downloadables": downloadables
@@ -234,6 +247,12 @@ class UpdateMyProfile(Resource):
             if not profile:
                 return {"error": "Failed to update profile"}, 500
             
+            # Get user's tags
+            user_tags = get_user_tags(user_id)
+            
+            # Add tags to profile
+            profile['tags'] = user_tags
+            
             return {
                 "message": "Profile updated successfully",
                 "profile": profile
@@ -283,6 +302,12 @@ class CreateMyProfile(Resource):
             
             if not profile:
                 return {"error": "Failed to create profile"}, 500
+            
+            # Get user's tags (will be empty for new profile)
+            user_tags = get_user_tags(user_id)
+            
+            # Add tags to profile
+            profile['tags'] = user_tags
             
             return {
                 "message": "Profile created successfully",

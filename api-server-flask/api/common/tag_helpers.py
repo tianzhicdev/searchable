@@ -604,3 +604,120 @@ def search_searchables_by_tags(tag_names, page=1, limit=20):
     except Exception as e:
         logger.error(f"Error searching searchables by tags: {str(e)}")
         return {'searchables': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
+
+def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
+    """
+    Search users by tag IDs and/or username (OR logic for tags, substring match for username)
+    
+    Args:
+        tag_ids (list): List of tag IDs to search for (optional)
+        username_search (str): Username substring to search for (optional)
+        page (int): Page number (1-based)
+        limit (int): Number of results per page
+    
+    Returns:
+        dict: {'users': [], 'total': int, 'page': int, 'limit': int, 'pages': int}
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Build query conditions
+        where_conditions = []
+        params = []
+        
+        # Username filter
+        if username_search:
+            where_conditions.append("LOWER(u.username) LIKE LOWER(%s)")
+            params.append(f"%{username_search}%")
+        
+        # Tag filter
+        if tag_ids:
+            # If tags specified, only return users with those tags
+            tag_placeholders = ','.join(['%s'] * len(tag_ids))
+            
+            # Get count with filters
+            count_query = f"""
+                SELECT COUNT(DISTINCT u.id)
+                FROM users u
+                {'JOIN user_tags ut ON u.id = ut.user_id' if tag_ids else ''}
+                WHERE 1=1
+                {' AND ut.tag_id IN (' + tag_placeholders + ')' if tag_ids else ''}
+                {' AND ' + ' AND '.join(where_conditions) if where_conditions else ''}
+            """
+            
+            count_params = (tag_ids if tag_ids else []) + params
+            execute_sql(cur, count_query, count_params)
+            total = cur.fetchone()[0]
+            
+            # Get users with filters
+            offset = (page - 1) * limit
+            user_query = f"""
+                SELECT DISTINCT u.id, u.username
+                FROM users u
+                {'JOIN user_tags ut ON u.id = ut.user_id' if tag_ids else ''}
+                WHERE 1=1
+                {' AND ut.tag_id IN (' + tag_placeholders + ')' if tag_ids else ''}
+                {' AND ' + ' AND '.join(where_conditions) if where_conditions else ''}
+                ORDER BY u.id
+                LIMIT %s OFFSET %s
+            """
+            
+            query_params = (tag_ids if tag_ids else []) + params + [limit, offset]
+            execute_sql(cur, user_query, query_params)
+        else:
+            # No tags specified - search all users
+            # Get count with username filter only
+            count_query = """
+                SELECT COUNT(*) FROM users u
+                WHERE 1=1
+            """
+            if where_conditions:
+                count_query += ' AND ' + ' AND '.join(where_conditions)
+            
+            execute_sql(cur, count_query, params)
+            total = cur.fetchone()[0]
+            
+            # Get users with username filter only
+            offset = (page - 1) * limit
+            user_query = """
+                SELECT u.id, u.username
+                FROM users u
+                WHERE 1=1
+            """
+            if where_conditions:
+                user_query += ' AND ' + ' AND '.join(where_conditions)
+            user_query += " ORDER BY u.id LIMIT %s OFFSET %s"
+            
+            query_params = params + [limit, offset]
+            execute_sql(cur, user_query, query_params)
+        
+        user_result = cur.fetchall()
+        
+        # Get tags for each user
+        users = []
+        for user_id, username in user_result:
+            user_tags = get_user_tags(user_id)
+            users.append({
+                'id': user_id,
+                'username': username,
+                'tags': user_tags
+            })
+        
+        # Calculate pagination
+        total_pages = (total + limit - 1) // limit if limit > 0 else 0
+        
+        cur.close()
+        conn.close()
+        
+        return {
+            'users': users,
+            'total': total,
+            'page': page,
+            'limit': limit,
+            'pages': total_pages
+        }
+        
+    except Exception as e:
+        logger.error(f"Error searching users by tag IDs: {str(e)}")
+        return {'users': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
