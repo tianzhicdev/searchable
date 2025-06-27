@@ -444,19 +444,19 @@ class TestRatingSystem:
                     for rating in individual_ratings:
                         assert isinstance(rating, dict)
     
-    def test_08_retrieve_terminal_ratings(self):
-        """Test retrieving overall ratings for the seller (terminal)"""
+    def test_08_retrieve_user_ratings(self):
+        """Test retrieving overall ratings for the seller (user)"""
         
         # Check if we have seller_id
         if not hasattr(self, 'seller_id') or self.seller_id is None:
             pytest.fail("No seller_id available - user setup failed")
         
-        terminal_ratings = self.seller_client.get_terminal_ratings(self.seller_id)
-        assert isinstance(terminal_ratings, dict)
+        user_ratings = self.seller_client.get_user_ratings(self.seller_id)
+        assert isinstance(user_ratings, dict)
         
-        if 'average_rating' in terminal_ratings and 'total_ratings' in terminal_ratings:
-            average_rating = terminal_ratings['average_rating']
-            total_ratings = terminal_ratings['total_ratings']
+        if 'average_rating' in user_ratings and 'total_ratings' in user_ratings:
+            average_rating = user_ratings['average_rating']
+            total_ratings = user_ratings['total_ratings']
             
             assert isinstance(average_rating, (int, float))
             assert isinstance(total_ratings, int)

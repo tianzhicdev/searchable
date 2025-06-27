@@ -16,7 +16,6 @@ from ..common.data_helpers import (
     Json,
     get_searchable,
     get_searchableIds_by_user,
-    get_terminal,
     get_ratings,
     get_balance_by_currency,
     get_withdrawals,
@@ -58,16 +57,16 @@ class GetSearchableItem(Resource):
     def _enrich_searchable_with_username(self, searchable_data):
         """Add username information to a single searchable item"""
         try:
-            terminal_id = searchable_data.get('terminal_id')
-            if not terminal_id:
+            user_id = searchable_data.get('user_id')
+            if not user_id:
                 return
             
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Query username for this terminal_id
+            # Query username for this user_id
             execute_sql(cur, f"""
-                SELECT username FROM users WHERE id = '{terminal_id}'
+                SELECT username FROM users WHERE id = '{user_id}'
             """)
             
             result = cur.fetchone()
@@ -100,15 +99,15 @@ class CreateSearchable(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Add terminal info to the searchable data
-            data['terminal_id'] = str(current_user.id)
+            # Add user info to the searchable data
+            data['user_id'] = str(current_user.id)
             
             # Extract type from payload, default to 'downloadable' for backward compatibility
             searchable_type = data.get('payloads', {}).get('public', {}).get('type', 'downloadable')
             
             # Insert into searchables table with type field
             logger.info("Executing database insert...")
-            sql = f"INSERT INTO searchables (terminal_id, type, searchable_data) VALUES ('{current_user.id}', '{searchable_type}', {Json(data)}) RETURNING searchable_id;"
+            sql = f"INSERT INTO searchables (user_id, type, searchable_data) VALUES ('{current_user.id}', '{searchable_type}', {Json(data)}) RETURNING searchable_id;"
             execute_sql(cur, sql)
             searchable_id = cur.fetchone()[0]
             
@@ -333,20 +332,20 @@ class SearchSearchables(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Get unique terminal_ids from results
-            terminal_ids = set()
+            # Get unique user_ids from results
+            user_ids = set()
             for item in results:
-                terminal_id = item.get('terminal_id')
-                if terminal_id:
-                    terminal_ids.add(terminal_id)
+                user_id = item.get('user_id')
+                if user_id:
+                    user_ids.add(user_id)
             
-            if not terminal_ids:
+            if not user_ids:
                 return
             
-            # Query usernames for all terminal_ids
-            terminal_ids_str = "', '".join(str(tid) for tid in terminal_ids)
+            # Query usernames for all user_ids
+            user_ids_str = "', '".join(str(uid) for uid in user_ids)
             execute_sql(cur, f"""
-                SELECT id, username FROM users WHERE id IN ('{terminal_ids_str}')
+                SELECT id, username FROM users WHERE id IN ('{user_ids_str}')
             """)
             
             # Create mapping
@@ -357,9 +356,9 @@ class SearchSearchables(Resource):
             
             # Add usernames to results
             for item in results:
-                terminal_id = item.get('terminal_id')
-                if terminal_id and str(terminal_id) in username_map:
-                    item['username'] = username_map[str(terminal_id)]
+                user_id = item.get('user_id')
+                if user_id and str(user_id) in username_map:
+                    item['username'] = username_map[str(user_id)]
             
             cur.close()
             conn.close()
@@ -384,7 +383,7 @@ class RemoveSearchableItem(Resource):
             execute_sql(cur, f"""
                 SELECT searchable_data FROM searchables 
                 WHERE searchable_id = {searchable_id} 
-                AND terminal_id = {current_user.id}
+                AND user_id = {current_user.id}
             """)
             
             result = cur.fetchone()
@@ -412,86 +411,6 @@ class RemoveSearchableItem(Resource):
             logger.error(f"Error removing searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/terminal/<int:terminal_id>', methods=['GET'])
-class GetUserTerminal(Resource):
-    """
-    Retrieves terminal information for a specific user
-    """
-    @token_required
-    @track_metrics('get_terminal')
-    def get(self, current_user, terminal_id, request_origin='unknown'):
-        try:
-            terminal_data = get_terminal(terminal_id)
-            
-            if not terminal_data:
-                return {"error": "Terminal not found"}, 404
-            
-            return terminal_data, 200
-            
-        except Exception as e:
-            logger.error(f"Error retrieving terminal {terminal_id}: {str(e)}")
-            return {"error": str(e)}, 500
-
-@rest_api.route('/api/v1/terminal', methods=['GET', 'PUT'])
-class UserTerminal(Resource):
-    """
-    Get or update user terminal information
-    """
-    @token_required
-    @track_metrics('get_terminal_v1')
-    def get(self, current_user, request_origin='unknown'):
-        try:
-            terminal_data = get_terminal(current_user.id)
-            
-            if not terminal_data:
-                return {"message": "Terminal not found", "terminal_id": current_user.id}, 404
-            
-            return terminal_data, 200
-            
-        except Exception as e:
-            logger.error(f"Error retrieving terminal for user {current_user.id}: {str(e)}")
-            return {"error": str(e)}, 500
-
-    @token_required
-    @track_metrics('update_terminal')
-    def put(self, current_user, request_origin='unknown'):
-        try:
-            data = request.get_json()
-            if not data:
-                return {"error": "Invalid input"}, 400
-
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Check if terminal exists
-            execute_sql(cur, f"""
-                SELECT terminal_id FROM terminal WHERE terminal_id = '{current_user.id}'
-            """)
-            
-            if cur.fetchone():
-                # Update existing terminal
-                execute_sql(cur, f"""
-                    UPDATE terminal 
-                    SET terminal_data = {Json(data)}
-                    WHERE terminal_id = '{current_user.id}'
-                """, commit=True, connection=conn)
-                message = "Terminal updated successfully"
-            else:
-                # Create new terminal
-                execute_sql(cur, f"""
-                    INSERT INTO terminal (terminal_id, terminal_data) 
-                    VALUES ('{current_user.id}', {Json(data)})
-                """, commit=True, connection=conn)
-                message = "Terminal created successfully"
-            
-            cur.close()
-            conn.close()
-            
-            return {"success": True, "message": message}, 200
-            
-        except Exception as e:
-            logger.error(f"Error updating terminal for user {current_user.id}: {str(e)}")
-            return {"error": str(e)}, 500
 
 
 @rest_api.route('/api/v1/invoices-by-searchable/<string:searchable_id>', methods=['GET'])
@@ -508,7 +427,7 @@ class InvoicesBySearchable(Resource):
             if not searchable:
                 return {"error": "Searchable item not found"}, 404
             
-            user_role = 'seller' if str(searchable.get('terminal_id')) == str(current_user.id) else 'buyer'
+            user_role = 'seller' if str(searchable.get('user_id')) == str(current_user.id) else 'buyer'
             
             invoices = get_invoices_for_searchable(searchable_id, current_user.id, user_role)
             return {"invoices": invoices, "user_role": user_role}, 200
@@ -584,14 +503,14 @@ class SearchableRating(Resource):
             logger.error(f"Error retrieving ratings for searchable {searchable_id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/rating/terminal/<int:terminal_id>', methods=['GET'])
-class TerminalRating(Resource):
+@rest_api.route('/api/v1/rating/user/<int:user_id>', methods=['GET'])
+class UserRating(Resource):
     """
-    Retrieves rating information for a terminal (user)
+    Retrieves rating information for a user
     """
     @token_required
-    @track_metrics('terminal_rating')
-    def get(self, current_user, terminal_id, request_origin='unknown'):
+    @track_metrics('user_rating')
+    def get(self, current_user, user_id, request_origin='unknown'):
         try:
             conn = get_db_connection()
             cur = conn.cursor()
@@ -601,7 +520,7 @@ class TerminalRating(Resource):
                 SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
-                WHERE i.seller_id = {terminal_id}
+                WHERE i.seller_id = {user_id}
             """
             
             execute_sql(cur, sql)
@@ -621,7 +540,7 @@ class TerminalRating(Resource):
                 JOIN invoice i ON r.invoice_id = i.id
                 JOIN searchables s ON i.searchable_id = s.searchable_id
                 LEFT JOIN users u ON r.user_id = u.id
-                WHERE i.seller_id = {terminal_id}
+                WHERE i.seller_id = {user_id}
                 ORDER BY r.created_at DESC
                 LIMIT 10
             """
@@ -643,14 +562,14 @@ class TerminalRating(Resource):
             conn.close()
             
             return {
-                "terminal_id": terminal_id,
+                "user_id": user_id,
                 "average_rating": round(avg_rating, 2),
                 "total_ratings": total_ratings,
                 "individual_ratings": individual_ratings
             }, 200
             
         except Exception as e:
-            logger.error(f"Error retrieving ratings for terminal {terminal_id}: {str(e)}")
+            logger.error(f"Error retrieving ratings for user {user_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/rating/submit', methods=['POST'])
@@ -1030,13 +949,8 @@ class ProfileResource(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Update or create terminal record
-            execute_sql(cur, f"""
-                INSERT INTO terminal (terminal_id, terminal_data) 
-                VALUES ('{current_user.id}', {Json(data)})
-                ON CONFLICT (terminal_id) 
-                DO UPDATE SET terminal_data = {Json(data)}
-            """, commit=True, connection=conn)
+            # Terminal table removed - no operation needed
+            # Profile data should be stored in user_profile table instead
             
             cur.close()
             conn.close()

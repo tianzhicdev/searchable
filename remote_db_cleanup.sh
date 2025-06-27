@@ -44,8 +44,6 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
     docker exec searchable-db-1 psql -U searchable -d searchable -c "
         SELECT 'searchables' as table_name, COUNT(*) as count FROM searchables
         UNION ALL
-        SELECT 'terminal', COUNT(*) FROM terminal
-        UNION ALL
         SELECT 'files', COUNT(*) FROM files
         UNION ALL
         SELECT 'purchases', COUNT(*) FROM purchases
@@ -61,8 +59,6 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         SELECT 'rating', COUNT(*) FROM rating
         UNION ALL
         SELECT 'user_profile', COUNT(*) FROM user_profile
-        UNION ALL
-        SELECT 'kv', COUNT(*) FROM kv
         ORDER BY table_name;
     "
     
@@ -83,9 +79,7 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         DELETE FROM purchases;
         DELETE FROM user_profile;
         DELETE FROM files;
-        DELETE FROM terminal;
         DELETE FROM searchables;
-        DELETE FROM kv;
         
         COMMIT;
     "
@@ -110,8 +104,6 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
     docker exec searchable-db-1 psql -U searchable -d searchable -c "
         SELECT 'searchables' as table_name, COUNT(*) as count FROM searchables
         UNION ALL
-        SELECT 'terminal', COUNT(*) FROM terminal
-        UNION ALL
         SELECT 'files', COUNT(*) FROM files
         UNION ALL
         SELECT 'purchases', COUNT(*) FROM purchases
@@ -127,8 +119,6 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         SELECT 'rating', COUNT(*) FROM rating
         UNION ALL
         SELECT 'user_profile', COUNT(*) FROM user_profile
-        UNION ALL
-        SELECT 'kv', COUNT(*) FROM kv
         ORDER BY table_name;
     "
     

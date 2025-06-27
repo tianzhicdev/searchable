@@ -59,8 +59,6 @@ ssh $REMOTE_USER@$REMOTE_HOST << 'EOF'
         SELECT 'rating', COUNT(*) FROM rating
         UNION ALL
         SELECT 'user_profile', COUNT(*) FROM user_profile
-        UNION ALL
-        SELECT 'kv', COUNT(*) FROM kv
         ORDER BY table_name;
     "
     
