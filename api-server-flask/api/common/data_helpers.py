@@ -14,23 +14,23 @@ stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
 def get_terminal(terminal_id):
     """
-    Retrieve a terminal by terminal_id
+    Retrieve a user by user_id (compatibility function for tag system)
     
     Args:
-        terminal_id: The terminal ID (user ID) to retrieve the profile for
+        terminal_id: The user ID to retrieve
         
     Returns:
-        dict: The terminal data or None if not found
+        dict: The user data or None if not found
     """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Query to get the profile data for the specified terminal_id
-        execute_sql(cur, f"""
-            SELECT terminal_data FROM terminal
-            WHERE terminal_id = '{terminal_id}'
-        """)
+        # Query to get the user data for the specified user_id
+        execute_sql(cur, """
+            SELECT id, username, email FROM users
+            WHERE id = %s
+        """, [terminal_id])
         
         result = cur.fetchone()
         
@@ -40,9 +40,14 @@ def get_terminal(terminal_id):
         if not result:
             return None
             
-        return result[0]
+        # Return user data in a dict format
+        return {
+            'id': result[0],
+            'username': result[1],
+            'email': result[2]
+        }
     except Exception as e:
-        logger.error(f"Error retrieving profile for terminal_id {terminal_id}: {str(e)}")
+        logger.error(f"Error retrieving user for user_id {terminal_id}: {str(e)}")
         return None
 
 def get_searchableIds_by_user(user_id):
