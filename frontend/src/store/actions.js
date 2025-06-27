@@ -11,5 +11,3 @@ export const SET_BORDER_RADIUS = '@customization/SET_BORDER_RADIUS';
 
 // User profile update
 export const SET_USER = 'SET_USER';
-
-// Terminal update

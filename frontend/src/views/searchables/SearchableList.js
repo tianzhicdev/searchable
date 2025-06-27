@@ -3,12 +3,11 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
-  Grid, Typography, Button, Paper, Box, CircularProgress
+  Grid, Typography, Paper, Box, CircularProgress
 } from '@material-ui/core';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import SearchablesProfile from './SearchablesProfile';
+import MiniProfile from '../../components/Profiles/MiniProfile';
+import Pagination from '../../components/Pagination/Pagination';
 import backend from '../utilities/Backend';
 import { navigateWithReferrer } from '../../utils/navigationUtils';
 
@@ -60,14 +59,20 @@ const SearchableList = ({ criteria }) => {
     setPagination(prev => ({...prev, pageSize: newPageSize}));
   }, [viewportHeight]);
 
-  // Load initial items
+  // Load initial items on mount
   useEffect(() => {
-    if (localStorage.getItem('searchablesPage')) {
-      handleSearch(parseInt(localStorage.getItem('searchablesPage')));
-    } else {
-      handleSearch(1)
+    const savedPage = localStorage.getItem('searchablesPage');
+    const pageToLoad = savedPage ? parseInt(savedPage) : 1;
+    console.log('[SEARCHABLE LIST] Initial load - loading page:', pageToLoad);
+    handleSearch(pageToLoad);
+  }, []);
+
+  // Handle search trigger from parent
+  useEffect(() => {
+    if (criteria.searchTrigger && criteria.searchTrigger > 0) {
+      handleSearch(1); // Always start from page 1 on new search
     }
-  }, [criteria.searchTerm, criteria.filters]);
+  }, [criteria.searchTrigger]);
 
   // Function to handle search
   const handleSearch = async (page = 1) => {
@@ -75,12 +80,20 @@ const SearchableList = ({ criteria }) => {
     setError(null);
 
     try {
+      const pageSize = calculateOptimalPageSize();
+      console.log('[SEARCHABLE LIST] Requesting page:', page, 'pageSize:', pageSize);
+      console.log('[SEARCHABLE LIST] Criteria:', criteria);
+      
+      // Extract tags from filters to send as separate parameter
+      const { tags, ...otherFilters } = criteria.filters || {};
+      
       const response = await backend.get('v1/searchable/search', {
         params: {
           page: page,
-          page_size: calculateOptimalPageSize(),
+          page_size: pageSize,
           q: criteria.searchTerm || '',
-          filters: JSON.stringify(criteria.filters || {})
+          filters: JSON.stringify(otherFilters),
+          tags: tags ? tags.join(',') : ''
         }
       });
 
@@ -88,6 +101,7 @@ const SearchableList = ({ criteria }) => {
       
       // Ensure results is always an array
       const results = response.data.results || [];
+      console.log('[SEARCHABLE LIST] Setting search results:', results.length, 'items');
       setSearchResults(results);
       
       // Ensure pagination exists
@@ -101,7 +115,7 @@ const SearchableList = ({ criteria }) => {
       setInitialItemsLoaded(true);
       
       // Save current search state to localStorage
-      localStorage.setItem('searchablesPage', response.data.pagination.current_page);
+      localStorage.setItem('searchablesPage', pagination.current_page || page);
       localStorage.setItem('searchablesTerm', criteria.searchTerm);
     } catch (err) {
       console.error("Error searching:", err);
@@ -113,64 +127,22 @@ const SearchableList = ({ criteria }) => {
 
   // Function to handle page change
   const handlePageChange = (newPage) => {
+    console.log('[SEARCHABLE LIST] Page change requested:', newPage);
     handleSearch(newPage);
   };
 
 
-  // Generate pagination buttons
-  const renderPaginationButtons = () => {
-    const buttons = [];
-    const { page, totalPages } = pagination;
-
-    // Previous button - only show if not on first page
-    if (page > 1) {
-      buttons.push(
-        <Button 
-          key="prev" 
-          onClick={() => handlePageChange(page - 1)}
-          size="small"
-        >
-          <ChevronLeftIcon />
-        </Button>
-      );
-    }
-
-    // Current page button
-    buttons.push(
-      <Button 
-        key={page} 
-        size="small"
-      >
-        {page}
-      </Button>
-    );
-
-    // Next button - only show if not on last page
-    if (page < totalPages) {
-      buttons.push(
-        <Button 
-          key="next" 
-          onClick={() => handlePageChange(page + 1)}
-          size="small"
-        >
-          <ChevronRightIcon />
-        </Button>
-      );
-    }
-
-    return buttons;
-  };
 
   // Handle clicking on an item
   const handleItemClick = (item) => {
     // Use the type field from the backend if available, fallback to payload type
     const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
-      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/searchables');
+      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/landing');
     } else if (itemType === 'direct') {
-      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/searchables');
+      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/landing');
     } else {
-      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/searchables');
+      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/landing');
     }
   };
 
@@ -192,27 +164,31 @@ const SearchableList = ({ criteria }) => {
         </Grid>
       )}
 
-      {searchResults && searchResults.length > 0 && (
+      {searchResults.length > 0 && (
         <>
-          <Grid item xs={12} >
-            {searchResults && searchResults.map((item) => (
-              <SearchablesProfile 
-                key={item.searchable_id}
-                item={item}
+          {searchResults.map((item) => (
+            <Grid item xs={12} key={`${item.searchable_id}-${pagination.page}`}>
+              <MiniProfile 
+                type="searchable"
+                data={item}
                 onClick={() => handleItemClick(item)} 
               />
-            ))}
-          </Grid>
+            </Grid>
+          ))}
 
           <Grid item xs={12}>
-            <Box mt={2} mb={3} display="flex" justifyContent="center">
-              {renderPaginationButtons()}
-            </Box>
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              totalItems={pagination.totalCount}
+              onPageChange={handlePageChange}
+              disabled={loading}
+            />
           </Grid>
         </>
       )}
 
-      {!loading && searchResults && searchResults.length === 0 && !initialItemsLoaded && (
+      {!loading && searchResults.length === 0 && initialItemsLoaded && (
         <Grid item xs={12}>
           <Paper elevation={2}>
             <Typography variant="body1">

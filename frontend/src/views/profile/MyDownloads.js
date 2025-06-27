@@ -133,7 +133,7 @@ const MyDownloads = () => {
               <Box mt={2}>
                 <Button
                   variant="contained"
-                  onClick={() => navigateWithStack(history, '/searchables', { replaceStack: true })}
+                  onClick={() => navigateWithStack(history, '/landing', { replaceStack: true })}
                 >
                   Browse Items
                 </Button>

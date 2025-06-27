@@ -11,7 +11,6 @@ import theme from './themes';
 
 // project imports
 import StateDebugger from './components/StateDebugger';
-import Terminal from './views/utilities/Terminal';
 import Footer from './components/Footer';
 import MockModeIndicator from './components/MockModeIndicator';
 import './mocks/mockAuth'; // Setup mock auth if in mock mode
@@ -28,7 +27,6 @@ const App = () => {
                 <MockModeIndicator />
                 {/* <Box display="flex" justifyContent="center" width="100%"> */}
                     <Container maxWidth="md" style={{ margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Terminal />
                         <Routes />
 
                         <Footer  />

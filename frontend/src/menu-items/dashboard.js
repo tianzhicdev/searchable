@@ -1,8 +1,8 @@
 // assets
-import { IconDashboard } from '@tabler/icons';
+import { IconDashboard, IconUsers } from '@tabler/icons';
 
 // constant
-const icons = { IconDashboard };
+const icons = { IconDashboard, IconUsers };
 
 // ===========================|| DASHBOARD MENU ITEMS ||=========================== //
 
@@ -12,10 +12,10 @@ const dashboard = {
     type: 'group',
     children: [
         {
-            id: 'searchables',
-            title: 'Searchables',
+            id: 'landing',
+            title: 'Search & Browse',
             type: 'item',
-            url: '/searchables',
+            url: '/landing',
             icon: icons.IconDashboard,
             breadcrumbs: false
         }

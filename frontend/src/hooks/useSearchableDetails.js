@@ -32,7 +32,7 @@ const useSearchableDetails = () => {
       setSearchableItem(response.data);
       
       // Check if current user is the owner
-      if (account && account.user && account.user._id === response.data.terminal_id) {
+      if (account && account.user && account.user._id === response.data.user_id) {
         setIsOwner(true);
       }
     } catch (err) {
@@ -74,7 +74,7 @@ const useSearchableDetails = () => {
     setIsRemoving(true);
     try {
       await backend.put(`v1/searchable/remove/${id}`, {});
-      history.push('/searchables');
+      history.push('/landing');
     } catch (err) {
       setError(err.message || 'Failed to remove item');
     } finally {

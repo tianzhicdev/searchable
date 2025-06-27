@@ -282,7 +282,7 @@ const FirebaseRegister = ({ ...others }) => {
                                         mb: 2
                                     }}
                                 >
-                                    <Grid container spacing={2} alignItems="center">
+                                    <Grid spacing={2} alignItems="center">
                                         <Grid item>
                                             <Box
                                                 backgroundColor={level.color}
