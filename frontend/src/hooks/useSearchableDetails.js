@@ -32,7 +32,7 @@ const useSearchableDetails = () => {
       setSearchableItem(response.data);
       
       // Check if current user is the owner
-      if (account && account.user && account.user._id === response.data.terminal_id) {
+      if (account && account.user && account.user._id === response.data.user_id) {
         setIsOwner(true);
       }
     } catch (err) {

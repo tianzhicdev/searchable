@@ -212,7 +212,7 @@ const generateMockSearchables = () => {
     const searchable = {
       _id: `mock-item-${i + 1}`,
       searchable_id: `mock-item-${i + 1}`,
-      terminal_id: `mock-terminal-${(i % 10) + 1}`,
+      user_id: `${(i % 10) + 1}`,
       payloads: {
         public: {
           title: generateSearchableTitle(i, type),
@@ -598,7 +598,6 @@ const mockHandlers = {
   
   // Ratings
   'v1/rating/searchable/': () => createMockResponse(mockData.mockSearchableRating),
-  'v1/rating/terminal/': () => createMockResponse(mockData.mockTerminalRating),
   
   // User purchases and ratings
   'v1/user/purchases': () => {
@@ -697,7 +696,6 @@ const mockHandlers = {
     });
   },
   
-  'v1/terminal': () => createMockResponse(mockData.mockTerminal),
   'balance': () => createMockResponse(mockData.mockBalance),
   
   // Withdrawal endpoint
@@ -780,7 +778,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 3600000).toISOString(),
           fee: 0.03,  // Platform fee (0.1% of 29.99)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-1",
+          seller_id: "1",
           searchable_id: "mock-item-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -808,7 +806,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 7200000).toISOString(),
           fee: 0.08,  // Platform fee (0.1% of 79.98)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-1",
+          seller_id: "1",
           searchable_id: "mock-item-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -842,7 +840,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 2400000).toISOString(),
           fee: 0.02,  // Platform fee (0.1% of 16.50)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-3",
+          seller_id: "3",
           searchable_id: "mock-offline-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -885,7 +883,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 7800000).toISOString(),
           fee: 0.11,  // Platform fee (0.1% of 108.00)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-4",
+          seller_id: "4",
           searchable_id: "mock-offline-2",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -1174,7 +1172,7 @@ const mockHandlers = {
         {
           _id: 'mock-item-3',
           searchable_id: 'mock-item-3',
-          terminal_id: 'mock-terminal-2',
+          user_id: '2',
           payloads: {
             public: {
               title: 'Professional Design Kit',

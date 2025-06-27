@@ -40,7 +40,7 @@ const MiniSearchableProfile = ({ item, onClick }) => {
           <Box>
             <PostedBy 
               username={item.username} 
-              terminalId={item.terminal_id} 
+              userId={item.user_id} 
               maxLength={30}
             />
             

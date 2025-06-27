@@ -38,7 +38,7 @@ const SearchableDetailsTop = ({
       {/* Posted by section */}
       <PostedBy 
         username={searchableItem.username} 
-        userId={searchableItem.terminal_id} 
+        userId={searchableItem.user_id} 
         maxLength={30}
       />
 

@@ -157,17 +157,7 @@ export const mockUserProfile = {
       }
     },
     created_at: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago
-  },
-  terminals: [{
-    terminal_id: "mock-terminal-1",
-    username: "test_user"
-  }]
-};
-
-export const mockTerminal = {
-  user_id: "1",
-  address: "123 Mock Street, Test City",
-  tel: "+1234567890"
+  }
 };
 
 // Mock file download blob
