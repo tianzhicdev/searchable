@@ -21,6 +21,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const [balance, setBalance] = useState({ usd: null });
@@ -325,6 +326,12 @@ const Dashboard = () => {
             <Typography variant="body1"  className={classes.userText}>
               {account.user.username}
             </Typography>
+            {/* Display tags below username */}
+            {userProfile?.tags && userProfile.tags.length > 0 && (
+              <Box style={{ marginTop: 8 }}>
+                <TagsOnProfile tags={userProfile.tags} />
+              </Box>
+            )}
           </Box>
           <Box>
             <Typography variant="body2"  className={classes.staticText}>

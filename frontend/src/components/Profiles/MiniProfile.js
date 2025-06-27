@@ -12,7 +12,7 @@ const useStyles = makeStyles((theme) => ({
     cursor: 'pointer',
     transition: 'box-shadow 0.3s ease',
     width: '100%',
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(1),
     padding: theme.spacing(2),
     '&:hover': {
       boxShadow: theme.shadows[4]
@@ -53,6 +53,7 @@ const MiniProfile = ({
   data,
   onClick
 }) => {
+  console.log('MiniProfile data:', data);
   const classes = useStyles();
   const history = useHistory();
   
@@ -97,10 +98,13 @@ const MiniProfile = ({
       username: data.username,
       searchableCount: data.searchableCount,
       rating: data.rating,
-      totalRatings: data.totalRatings
+      totalRatings: data.totalRatings,
+      terminalId: data.terminal_id
     };
     clickPath = `/profile/${data.username || data.id}`;
   }
+
+  console.log('MiniProfile metaInfo:', metaInfo);
   
   const handleClick = () => {
     if (onClick) {
@@ -126,7 +130,7 @@ const MiniProfile = ({
               <Box className={classes.metaInfo}>
                 <PostedBy 
                   username={metaInfo.username} 
-                  terminalId={metaInfo.terminalId} 
+                  userId={metaInfo.terminalId} 
                   maxLength={30}
                 />
                 
