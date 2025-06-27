@@ -12,44 +12,6 @@ logger = setup_logger(__name__, 'data_helpers.log')
 
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
-def get_terminal(terminal_id):
-    """
-    Retrieve a user by user_id (compatibility function for tag system)
-    
-    Args:
-        terminal_id: The user ID to retrieve
-        
-    Returns:
-        dict: The user data or None if not found
-    """
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Query to get the user data for the specified user_id
-        execute_sql(cur, """
-            SELECT id, username, email FROM users
-            WHERE id = %s
-        """, [terminal_id])
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
-        
-        if not result:
-            return None
-            
-        # Return user data in a dict format
-        return {
-            'id': result[0],
-            'username': result[1],
-            'email': result[2]
-        }
-    except Exception as e:
-        logger.error(f"Error retrieving user for user_id {terminal_id}: {str(e)}")
-        return None
-
 def get_searchableIds_by_user(user_id):
     """
     Retrieves all searchable IDs for a specific user
@@ -64,11 +26,11 @@ def get_searchableIds_by_user(user_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Query searchables with terminal_id matching the user
+        # Query searchables with user_id matching the user
         execute_sql(cur, f"""
             SELECT searchable_id
             FROM searchables
-            WHERE searchable_data->>'terminal_id' = '{str(user_id)}'
+            WHERE searchable_data->>'user_id' = '{str(user_id)}'
         """)
         
         searchable_ids = [row[0] for row in cur.fetchall()]
@@ -766,7 +728,7 @@ def get_balance_by_currency(user_id):
         logger.info(f"Calculating balance for user_id: {user_id}")
         
         # Get all searchables published by this user
-        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.terminal_id = {user_id};""")
+        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.user_id = {user_id};""")
         searchable_results = cur.fetchall()
         
         for searchable in searchable_results:
@@ -1561,7 +1523,6 @@ def get_downloadable_items_by_user_id(user_id):
 
 
 __all__ = [
-    'get_terminal',
     'get_searchableIds_by_user', 
     'get_searchable',
     'get_invoices',
