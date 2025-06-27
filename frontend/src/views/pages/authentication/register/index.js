@@ -23,7 +23,7 @@ const Register = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-        <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
+        <Grid spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
             <Grid item sx={{ mb: 2 }}></Grid>
             <Grid item sx={{ mb: 3 }}>
                 <RouterLink to="#">

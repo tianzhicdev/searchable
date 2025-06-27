@@ -213,7 +213,7 @@ const Profile = () => {
             className={classes.iconButton}
             onClick={() => {
               debugNavigationStack(location, 'Profile Page Navigation');
-              navigateBack(history, '/searchables');
+              navigateBack(history, '/landing');
             }}
             title={getBackButtonText(location)}
           >

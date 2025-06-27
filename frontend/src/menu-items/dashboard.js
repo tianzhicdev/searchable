@@ -12,19 +12,11 @@ const dashboard = {
     type: 'group',
     children: [
         {
-            id: 'searchables',
-            title: 'Browse Content',
+            id: 'landing',
+            title: 'Search & Browse',
             type: 'item',
-            url: '/searchables',
+            url: '/landing',
             icon: icons.IconDashboard,
-            breadcrumbs: false
-        },
-        {
-            id: 'search-by-user',
-            title: 'Find Creators',
-            type: 'item',
-            url: '/search-by-user',
-            icon: icons.IconUsers,
             breadcrumbs: false
         }
     ]

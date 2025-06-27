@@ -19,7 +19,7 @@ const PublishSearchableActions = ({
         <Button 
           variant="contained"
           className={classes.button} 
-          onClick={() => history.push('/searchables')}
+          onClick={() => history.push('/landing')}
         >
           Cancel
         </Button>
