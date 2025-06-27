@@ -13,7 +13,6 @@ from ..common.data_helpers import (
     check_payment, 
     refresh_stripe_payment,
     get_searchable,
-    get_terminal,
     create_invoice,
     create_payment,
     update_payment_status,
@@ -224,18 +223,11 @@ class CreateInvoiceV1(Resource):
             # Get the searchable data
             searchable_data = get_searchable(searchable_id)
 
-            # No longer checking if address is required - always get delivery info for authenticated users
+            # Terminal table removed - delivery info no longer needed
             delivery_info = {}
-            if current_user:
-                terminal_info = get_terminal(current_user.id)
-                if terminal_info:
-                    delivery_info = {
-                        'address': terminal_info.get('address', ''),
-                        'tel': terminal_info.get('tel', '')
-                    }
             
             # Get seller_id from searchable data
-            seller_id = searchable_data.get('terminal_id')
+            seller_id = searchable_data.get('user_id')
             if not seller_id:
                 return {"error": "Invalid searchable item - missing seller information"}, 400
             

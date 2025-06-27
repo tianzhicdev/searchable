@@ -29,8 +29,6 @@ const ProfileEditor = () => {
     username: account.user?.username || '',
     introduction: '',
     profile_image_url: '',
-    address: account.user?.address || '',
-    tel: account.user?.tel || '',
     additional_images: [],
     socialMedia: {
       instagram: '',
@@ -76,8 +74,6 @@ const ProfileEditor = () => {
           username: profile.username || account.user.username || '',
           introduction: profile.introduction || '',
           profile_image_url: profile.profile_image_url || '',
-          address: account.user.address || '',
-          tel: account.user.tel || '',
           additional_images: profile.metadata?.additional_images || [],
           socialMedia: {
             instagram: profile.metadata?.socialMedia?.instagram || '',
@@ -101,42 +97,20 @@ const ProfileEditor = () => {
         }
         
       } catch (profileErr) {
-        // If profile doesn't exist, try to get terminal data for address/tel
+        // If profile doesn't exist, use defaults
         if (profileErr.response?.status === 404) {
-          console.log('User profile not found, trying terminal data...');
-          
-          try {
-            const terminalResponse = await Backend.get('v1/terminal');
-            
-            setProfileData({
-              username: account.user.username || '',
-              introduction: '',
-              profile_image_url: '',
-              address: terminalResponse.data.address || '',
-              tel: terminalResponse.data.tel || '',
-              additional_images: [],
-              socialMedia: {
-                instagram: '',
-                x: '',
-                youtube: ''
-              }
-            });
-          } catch (terminalErr) {
-            console.log('Terminal data not found, using defaults');
-            setProfileData({
-              username: account.user.username || '',
-              introduction: '',
-              profile_image_url: '',
-              address: '',
-              tel: '',
-              additional_images: [],
-              socialMedia: {
-                instagram: '',
-                x: '',
-                youtube: ''
-              }
-            });
-          }
+          console.log('User profile not found, using defaults');
+          setProfileData({
+            username: account.user.username || '',
+            introduction: '',
+            profile_image_url: '',
+            additional_images: [],
+            socialMedia: {
+              instagram: '',
+              x: '',
+              youtube: ''
+            }
+          });
         } else {
           throw profileErr;
         }
@@ -298,27 +272,13 @@ const ProfileEditor = () => {
         throw new Error('Failed to update profile. Server returned an invalid response.');
       }
       
-      // Update terminal data if address/tel changed
-      if (profileData.address !== account.user.address || profileData.tel !== account.user.tel) {
-        try {
-          await Backend.put('v1/terminal', {
-            address: profileData.address,
-            tel: profileData.tel
-          });
-        } catch (terminalErr) {
-          console.warn('Failed to update terminal data:', terminalErr);
-          // Don't fail the whole operation for this
-        }
-      }
       
       // Update Redux store with new profile data
       dispatch({
         type: SET_USER,
         payload: {
           ...account.user,
-          username: profileData.username,
-          address: profileData.address,
-          tel: profileData.tel
+          username: profileData.username
         }
       });
       

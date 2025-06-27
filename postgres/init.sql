@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS searchables (
     searchable_id SERIAL PRIMARY KEY,
-    terminal_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     type TEXT NOT NULL,
     searchable_data JSONB NOT NULL
 );
@@ -20,28 +20,6 @@ CREATE TABLE IF NOT EXISTS searchables (
 -- -- Index for coordinates to support direct lat/long queries
 -- CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
 
-CREATE TABLE IF NOT EXISTS kv (
-    type TEXT NOT NULL,
-    pkey TEXT NOT NULL,
-    fkey TEXT NOT NULL,
-    data JSONB NOT NULL,
-    PRIMARY KEY (type, pkey, fkey)
-);
--- Index on type for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_type ON kv(type);
-
-
--- Index on pkey for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_pkey ON kv(pkey);
-
--- Index on fkey for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_fkey ON kv(fkey);
-
-
-CREATE TABLE IF NOT EXISTS terminal (
-    terminal_id SERIAL PRIMARY KEY,
-    terminal_data JSONB NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS files (
     file_id SERIAL PRIMARY KEY,

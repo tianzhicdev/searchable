@@ -9,7 +9,7 @@ export { mockImage1, mockImage2 };
 export const mockSearchableItem = {
   _id: "mock-item-1",
   searchable_id: "mock-item-1",
-  terminal_id: "mock-terminal-1",
+  user_id: "1",
   username: "DigitalAssetStore",
   payloads: {
     public: {
@@ -152,7 +152,7 @@ export const mockUserProfile = {
 };
 
 export const mockTerminal = {
-  terminal_id: "mock-terminal-1",
+  user_id: "1",
   address: "123 Mock Street, Test City",
   tel: "+1234567890"
 };
@@ -174,7 +174,7 @@ export const mockInvoices = {
       created_at: new Date(Date.now() - 3600000).toISOString(),
       fee: 0.03,  // Platform fee (0.1% of 29.99)
       buyer_id: "mock-user-1",
-      seller_id: "mock-terminal-1",
+      seller_id: "1",
       searchable_id: "mock-item-1",
       metadata: {
         address: "123 Main St, City, State 12345",
@@ -202,7 +202,7 @@ export const mockInvoices = {
       created_at: new Date(Date.now() - 7200000).toISOString(),
       fee: 0.08,  // Platform fee (0.1% of 79.98)
       buyer_id: "mock-user-2",
-      seller_id: "mock-terminal-1",
+      seller_id: "1",
       searchable_id: "mock-item-1",
       metadata: {
         address: "456 Oak Ave, Another City, State 67890", 
@@ -236,7 +236,7 @@ export const mockInvoices = {
       created_at: new Date(Date.now() - 1800000).toISOString(),
       fee: 0.02,  // Platform fee (0.1% of 15.50)
       buyer_id: "mock-user-3",
-      seller_id: "mock-terminal-2",
+      seller_id: "2",
       searchable_id: "mock-item-2",
       metadata: {
         address: "",
@@ -264,7 +264,7 @@ export const mockInvoices = {
       created_at: new Date(Date.now() - 86400000).toISOString(),
       fee: 0.20,  // Platform fee (0.1% of 199.99)
       buyer_id: "mock-user-1",
-      seller_id: "mock-terminal-3",
+      seller_id: "3",
       searchable_id: "mock-item-3",
       metadata: {
         address: "789 Pine St, Metro City, State 11111",
@@ -292,7 +292,7 @@ export const mockInvoices = {
       created_at: new Date(Date.now() - 43200000).toISOString(),
       fee: 0.02,  // Platform fee (0.1% of 19.99)
       buyer_id: "mock-user-4",
-      seller_id: "mock-terminal-1",
+      seller_id: "1",
       searchable_id: "mock-item-1",
       metadata: {
         address: "321 Elm St, Small Town, State 22222",
@@ -359,7 +359,7 @@ export const mockUserSearchables = {
     {
       _id: "user-item-1",
       searchable_id: "user-item-1", 
-      terminal_id: "mock-terminal-1",
+      user_id: "1",
       payloads: {
         public: {
           title: "My First Digital Product",
@@ -379,7 +379,7 @@ export const mockUserSearchables = {
     {
       _id: "user-item-2",
       searchable_id: "user-item-2",
-      terminal_id: "mock-terminal-1", 
+      user_id: "1", 
       payloads: {
         public: {
           title: "Advanced Code Tutorials",
@@ -440,7 +440,7 @@ export const mockRewards = {
 export const mockDirectSearchableItem = {
   _id: "mock-direct-item-1",
   searchable_id: "mock-direct-item-1",
-  terminal_id: "mock-terminal-1",
+  user_id: "1",
   username: "DirectPaymentMerchant",
   payloads: {
     public: {
@@ -464,7 +464,7 @@ export const mockDirectSearchableItem = {
 export const mockDirectSearchableItem2 = {
   _id: "mock-direct-item-2",
   searchable_id: "mock-direct-item-2",
-  terminal_id: "mock-terminal-2",
+  user_id: "2",
   username: "CommunityBuilder",
   payloads: {
     public: {
@@ -488,7 +488,7 @@ export const mockDirectSearchableItem2 = {
 export const mockDirectSearchableItem3 = {
   _id: "mock-direct-item-3",
   searchable_id: "mock-direct-item-3",
-  terminal_id: "mock-terminal-1",
+  user_id: "1",
   username: "DirectPaymentMerchant",
   payloads: {
     public: {

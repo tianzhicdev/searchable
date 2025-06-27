@@ -81,13 +81,15 @@ const Profile = () => {
     setProfileLoading(true);
     
     try {
-      const response = await backend.get('v1/terminal');
+      // Terminal endpoint removed - profile data now comes from user_profile
+      const response = await backend.get('v1/profile');
       
       console.log("Profile data response:", response.data);
-      setProfileData(response.data);
+      setProfileData(response.data.profile || {});
     } catch (err) {
       console.error('Error fetching user profile data:', err);
       // We don't set global error here to avoid affecting other components
+      setProfileData({});
     } finally {
       setProfileLoading(false);
     }
@@ -337,22 +339,6 @@ const Profile = () => {
             <CircularProgress size={18} />
           ) : profileData && (
             <>
-              <Box>
-                <Typography variant="body2" className={classes.staticText}>
-                  Address:
-                </Typography>
-                <Typography variant="body1"  className={classes.userText}>
-                  {profileData.address || 'Not provided'}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body2"  className={classes.staticText}>
-                  Telephone:
-                </Typography>
-                <Typography variant="body1"  className={classes.userText}>
-                  {profileData.tel || 'Not provided'}
-                </Typography>
-              </Box>
             </>
           )}
           <Box>

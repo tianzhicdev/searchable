@@ -3,7 +3,7 @@ import { Typography, Link } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { navigateWithStack } from '../utils/navigationUtils';
 
-const PostedBy = ({ username, terminalId, maxLength = 30 }) => {
+const PostedBy = ({ username, userId, maxLength = 30 }) => {
   const history = useHistory();
 
   // Helper function to truncate text
@@ -15,13 +15,13 @@ const PostedBy = ({ username, terminalId, maxLength = 30 }) => {
   // Handle username click to navigate to user profile
   const handleUsernameClick = (e) => {
     e.stopPropagation(); // Prevent triggering any parent click handlers
-    if (terminalId) {
-      navigateWithStack(history, `/profile/${terminalId}`);
+    if (userId) {
+      navigateWithStack(history, `/profile/${userId}`);
     }
   };
 
-  // Don't render if no username or terminal_id
-  if (!username || !terminalId) {
+  // Don't render if no username or user_id
+  if (!username || !userId) {
     return null;
   }
 

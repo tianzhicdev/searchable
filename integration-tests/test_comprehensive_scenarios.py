@@ -332,11 +332,11 @@ class TestComprehensiveScenarios:
             # Response directly contains the data, not wrapped in 'searchable'
             assert 'payloads' in response
             assert 'public' in response['payloads']
-            assert 'terminal_id' in response
+            assert 'user_id' in response
             assert 'searchable_id' in response
             assert 'type' in response
             assert 'username' in response
-            assert response['terminal_id'] == str(self.user1_id)
+            assert response['user_id'] == str(self.user1_id)
             assert response['searchable_id'] == searchable['id']
             assert response['type'] == 'downloadable'
             assert response['username'] == self.user1_username
