@@ -44,9 +44,12 @@ const SearchByContent = () => {
 
   // Handle search
   const handleSearch = () => {
-    // Only store tag IDs, not the entire tag objects
+    // Create new filters object, removing tags from existing filters
+    const { tags, ...otherFilters } = filters;
+    
+    // Only add tags if there are selected tags
     const tagFilters = selectedTags.length > 0 ? { tags: selectedTags.map(tag => tag.id) } : {};
-    const updatedFilters = { ...filters, ...tagFilters };
+    const updatedFilters = { ...otherFilters, ...tagFilters };
     
     localStorage.setItem('searchTerm', searchTerm);
     localStorage.setItem('searchablesFilters', JSON.stringify(updatedFilters));
