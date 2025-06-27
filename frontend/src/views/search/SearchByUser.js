@@ -28,9 +28,9 @@ const SearchByUser = () => {
       }
       
       if (selectedTags.length > 0) {
-        selectedTags.forEach(tag => {
-          params.append('tags[]', tag.name);
-        });
+        // Send only tag IDs, not full tag objects
+        const tagIds = selectedTags.map(tag => tag.id).join(',');
+        params.append('tags', tagIds);
       }
       
       params.append('page', page);
