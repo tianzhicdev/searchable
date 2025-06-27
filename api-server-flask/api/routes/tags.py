@@ -11,7 +11,7 @@ from .. import rest_api
 from ..common.tag_helpers import (
     get_tags, get_tags_by_ids, get_user_tags, add_user_tags, remove_user_tag, get_user_tag_count,
     get_searchable_tags, add_searchable_tags, remove_searchable_tag, get_searchable_tag_count,
-    search_users_by_tags, search_searchables_by_tags, search_users_by_tag_ids
+    search_users_by_tags, search_searchables_by_tags, search_users_by_tag_ids, search_searchables_by_tag_ids
 )
 from ..common.data_helpers import get_db_connection, execute_sql, get_searchable
 from ..common.logging_config import setup_logger
@@ -466,18 +466,30 @@ class SearchSearchablesResource(Resource):
         """
         Search searchables by tags
         Query params:
-        - tags[]: array of tag names
+        - tags: comma-separated tag IDs (e.g., ?tags=1,2,3)
         - page: page number (default: 1)
         - limit: items per page (default: 20, max: 50)
         """
         try:
             # Get query parameters
-            tag_names = request.args.getlist('tags[]')
             page = int(request.args.get('page', 1))
             limit = min(int(request.args.get('limit', 20)), 50)
             
-            # Empty tag list is now allowed - returns all searchables
-            result = search_searchables_by_tags(tag_names, page, limit)
+            # Get tag IDs from comma-separated format (consistent with user search)
+            tag_ids = []
+            tags_param = request.args.get('tags', '')
+            if tags_param:
+                try:
+                    tag_ids = [int(tid.strip()) for tid in tags_param.split(',') if tid.strip()]
+                except ValueError:
+                    # Invalid tag IDs
+                    return {
+                        'success': False,
+                        'error': 'Invalid tag IDs format'
+                    }, 400
+            
+            # Call search function with tag IDs
+            result = search_searchables_by_tag_ids(tag_ids, page, limit)
             
             return {
                 'success': True,
