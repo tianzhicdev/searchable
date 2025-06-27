@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Autocomplete,
-  TextField,
-  Chip,
+  Select,
+  MenuItem,
   Box,
   Typography,
   FormControl,
   FormLabel,
-  Alert
+  Alert,
+  OutlinedInput
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import backend from '../../mocks/mockBackend';
+import Backend from '../../views/utilities/Backend';
 import TagChip from './TagChip';
 
 const useStyles = makeStyles((theme) => ({
   formControl: {
     marginBottom: theme.spacing(2),
     width: '100%'
+  },
+  select: {
+    width: '100%',
+    '& .MuiSelect-select': {
+      paddingTop: theme.spacing(1),
+      paddingBottom: theme.spacing(1)
+    }
   },
   selectedTagsContainer: {
     marginTop: theme.spacing(1),
@@ -53,6 +60,7 @@ const TagSelector = ({
   
   useEffect(() => {
     loadAvailableTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tagType]);
   
   const loadAvailableTags = async () => {
@@ -60,24 +68,36 @@ const TagSelector = ({
     setError(null);
     
     try {
-      const response = await backend.get(`/api/v1/tags?type=${tagType}&active=true`);
-      if (response.data && response.data.success) {
-        setAvailableTags(response.data.tags || []);
+      const response = await Backend.get(`v1/tags?type=${tagType}&active=true`);
+      
+      if (response.data && response.data.success && Array.isArray(response.data.tags)) {
+        // Ensure each tag has required properties
+        const validTags = response.data.tags.filter(tag => tag && tag.id && tag.name);
+        setAvailableTags(validTags);
       } else {
+        setAvailableTags([]);
         setError('Failed to load available tags');
       }
     } catch (err) {
       console.error('Error loading tags:', err);
+      setAvailableTags([]);
       setError('Failed to load available tags');
     } finally {
       setLoading(false);
     }
   };
   
-  const handleTagSelect = (event, newTags) => {
+  const handleTagSelect = (event) => {
+    const selectedIds = event.target.value;
+    
     // Limit the number of selected tags
-    if (newTags.length <= maxTags) {
-      onTagsChange(newTags);
+    if (selectedIds.length <= maxTags) {
+      // Convert selected IDs to tag objects
+      const newSelectedTags = selectedIds.map(id => 
+        availableTags.find(tag => tag.id === id)
+      ).filter(Boolean);
+      
+      onTagsChange(newSelectedTags);
     }
   };
   
@@ -86,12 +106,10 @@ const TagSelector = ({
     onTagsChange(newTags);
   };
   
-  // Filter out already selected tags from available options
-  const unselectedTags = availableTags.filter(
-    tag => !selectedTags.find(selected => selected.id === tag.id)
-  );
-  
   const isMaxReached = selectedTags.length >= maxTags;
+  
+  // Get array of selected tag IDs for the Select component
+  const selectedTagIds = selectedTags.map(tag => tag.id);
   
   return (
     <FormControl className={classes.formControl}>
@@ -101,38 +119,58 @@ const TagSelector = ({
         </FormLabel>
       )}
       
-      <Autocomplete
+      <Select
         multiple
-        options={unselectedTags}
-        getOptionLabel={(option) => option.name}
-        value={selectedTags}
+        value={selectedTagIds}
         onChange={handleTagSelect}
-        loading={loading}
-        disabled={disabled || isMaxReached}
-        renderTags={() => null} // We'll render tags separately below
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            variant="outlined"
-            placeholder={isMaxReached ? `Maximum ${maxTags} tags selected` : placeholder}
-            size="small"
-          />
+        input={<OutlinedInput />}
+        disabled={disabled || loading}
+        displayEmpty
+        className={classes.select}
+        size="small"
+        renderValue={(selected) => {
+          if (selected.length === 0) {
+            return <Typography color="textSecondary">{placeholder}</Typography>;
+          }
+          return `${selected.length} tag${selected.length > 1 ? 's' : ''} selected`;
+        }}
+      >
+        <MenuItem disabled value="">
+          <Typography color="textSecondary">
+            {isMaxReached ? `Maximum ${maxTags} tags selected` : placeholder}
+          </Typography>
+        </MenuItem>
+        {loading && (
+          <MenuItem disabled>
+            <Typography variant="body2">Loading tags...</Typography>
+          </MenuItem>
         )}
-        renderOption={(option) => (
-          <Box display="flex" alignItems="center">
-            <Typography variant="body2">{option.name}</Typography>
-            {option.description && (
-              <Typography 
-                variant="caption" 
-                color="textSecondary" 
-                style={{ marginLeft: 8 }}
-              >
-                - {option.description}
-              </Typography>
-            )}
-          </Box>
+        {!loading && availableTags.length === 0 && (
+          <MenuItem disabled>
+            <Typography variant="body2">No tags available</Typography>
+          </MenuItem>
         )}
-      />
+        {!loading && availableTags.map((tag) => (
+          <MenuItem 
+            key={tag.id} 
+            value={tag.id}
+            disabled={isMaxReached && !selectedTagIds.includes(tag.id)}
+          >
+            <Box display="flex" alignItems="center" width="100%">
+              <Typography variant="body2">{tag.name}</Typography>
+              {tag.description && (
+                <Typography 
+                  variant="caption" 
+                  color="textSecondary" 
+                  style={{ marginLeft: 8 }}
+                >
+                  - {tag.description}
+                </Typography>
+              )}
+            </Box>
+          </MenuItem>
+        ))}
+      </Select>
       
       {/* Display selected tags */}
       {selectedTags.length > 0 && (

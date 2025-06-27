@@ -7,7 +7,7 @@ import {
   Paper
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import MiniUserProfile from '../Profiles/MiniUserProfile';
+import MiniProfile from '../Profiles/MiniProfile';
 import Pagination from '../Pagination/Pagination';
 
 const useStyles = makeStyles((theme) => ({
@@ -79,9 +79,10 @@ const UserSearchResults = ({
     <>
       {/* Results */}
       {users.map((user) => (
-        <MiniUserProfile
+        <MiniProfile
           key={user.id}
-          user={user}
+          type="user"
+          data={user}
           onClick={onUserClick}
         />
       ))}

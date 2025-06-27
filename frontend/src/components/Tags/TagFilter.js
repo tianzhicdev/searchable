@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core';
 import { Clear as ClearIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
-import backend from '../../mocks/mockBackend';
+import Backend from '../../views/utilities/Backend';
 
 const useStyles = makeStyles((theme) => ({
   filterContainer: {
@@ -65,7 +65,7 @@ const TagFilter = ({
     setLoading(true);
     
     try {
-      const response = await backend.get(`/api/v1/tags?type=${tagType}&active=true`);
+      const response = await Backend.get(`v1/tags?type=${tagType}&active=true`);
       if (response.data && response.data.success) {
         setAvailableTags(response.data.tags || []);
       }

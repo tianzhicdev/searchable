@@ -297,18 +297,23 @@ const OfflineSearchableDetails = () => {
         </Accordion>
       )}
       
-      <InvoiceList 
-        searchableId={id} 
-        onRatingSubmitted={() => {
-          fetchRatings();
-        }}
-      />
     </Box>
+  );
+
+  // Render receipts content separately
+  const renderReceiptsContent = ({ id }) => (
+    <InvoiceList 
+      searchableId={id} 
+      onRatingSubmitted={() => {
+        fetchRatings();
+      }}
+    />
   );
 
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderOfflineContent}
+      renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
       totalPrice={totalPrice * 1.035}
       payButtonText={`Pay ${formatCurrency(totalPrice * 1.035)}`}

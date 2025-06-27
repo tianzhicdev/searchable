@@ -927,17 +927,17 @@ class BalanceResource(Resource):
             logger.error(f"Error retrieving balance for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/profile', methods=['GET', 'PUT'])
-class ProfileResource(Resource):
-    """User profile management"""
-    @token_required
-    def get(self, current_user):
-        try:
-            terminal_data = get_terminal(current_user.id)
-            return {"profile": terminal_data}, 200
-        except Exception as e:
-            logger.error(f"Error retrieving profile for user {current_user.id}: {str(e)}")
-            return {"error": str(e)}, 500
+# @rest_api.route('/api/profile', methods=['GET', 'PUT'])
+# class ProfileResource(Resource):
+#     """User profile management"""
+#     @token_required
+#     def get(self, current_user):
+#         try:
+#             terminal_data = get_terminal(current_user.id)
+#             return {"profile": terminal_data}, 200
+#         except Exception as e:
+#             logger.error(f"Error retrieving profile for user {current_user.id}: {str(e)}")
+#             return {"error": str(e)}, 500
 
     @token_required
     def put(self, current_user):

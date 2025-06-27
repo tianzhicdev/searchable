@@ -59,7 +59,7 @@ const DownloadableSearchableDetails = () => {
       let total = 0;
       Object.entries(selectedFiles).forEach(([id, isSelected]) => {
         const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
-          file => file.fileId.toString() === id
+          file => file.fileId && file.fileId.toString() === id
         );
         if (downloadable && isSelected) {
           total += downloadable.price;
@@ -74,7 +74,9 @@ const DownloadableSearchableDetails = () => {
     if (SearchableItem && SearchableItem.payloads.public.downloadableFiles) {
       const initialSelections = {};
       SearchableItem.payloads.public.downloadableFiles.forEach(file => {
-        initialSelections[file.fileId] = false;
+        if (file.fileId) {
+          initialSelections[file.fileId] = false;
+        }
       });
       setSelectedFiles(initialSelections);
     }
@@ -89,7 +91,9 @@ const DownloadableSearchableDetails = () => {
           // Use the selections data from the payment
           payment.public.selections.forEach(selection => {
             if (selection.type === 'downloadable') {
-              paidFileIds.add(selection.id.toString());
+              if (selection.id) {
+                paidFileIds.add(selection.id.toString());
+              }
             }
           });
         }
@@ -120,7 +124,7 @@ const DownloadableSearchableDetails = () => {
       Object.entries(selectedFiles).forEach(([id, isSelected]) => {
         if (isSelected) {
           const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
-            file => file.fileId.toString() === id
+            file => file.fileId && file.fileId.toString() === id
           );
           if (downloadable) {
             selections.push({
@@ -181,6 +185,11 @@ const DownloadableSearchableDetails = () => {
   
   // Download file function
   const downloadFile = async (fileId, fileName) => {
+    if (!fileId) {
+      showAlert("Invalid file ID", "error");
+      return;
+    }
+    
     // Check if user has paid for this specific file
     if (!userPaidFiles.has(fileId.toString())) {
       showAlert("You haven't paid for this file yet", "error");
@@ -229,8 +238,15 @@ const DownloadableSearchableDetails = () => {
     return (
       <Box>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
-          const isPaidByCurrentUser = userPaidFiles.has(file.fileId.toString());
-          const isPaidBySomeone = paidFiles.has(file.fileId.toString());
+          // Ensure fileId exists before using it
+          const fileIdStr = file.fileId ? file.fileId.toString() : '';
+          if (!file.fileId) {
+            console.error('File missing fileId:', file);
+            return null;
+          }
+          
+          const isPaidByCurrentUser = userPaidFiles.has(fileIdStr);
+          const isPaidBySomeone = paidFiles.has(fileIdStr);
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
@@ -343,18 +359,23 @@ const DownloadableSearchableDetails = () => {
         </Accordion>
       )}
       
-      <InvoiceList 
-        searchableId={id} 
-        onRatingSubmitted={() => {
-          fetchRatings();
-        }}
-      />
     </Box>
+  );
+
+  // Render receipts content separately
+  const renderReceiptsContent = ({ id }) => (
+    <InvoiceList 
+      searchableId={id} 
+      onRatingSubmitted={() => {
+        fetchRatings();
+      }}
+    />
   );
 
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderDownloadableContent}
+      renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
       totalPrice={totalPrice * 1.035}
       payButtonText={`Pay ${formatCurrency(totalPrice * 1.035)}`}

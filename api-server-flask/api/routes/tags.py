@@ -13,12 +13,24 @@ from ..common.tag_helpers import (
     get_searchable_tags, add_searchable_tags, remove_searchable_tag, get_searchable_tag_count,
     search_users_by_tags, search_searchables_by_tags
 )
-from ..common.data_helpers import get_terminal, get_searchable
+from ..common.data_helpers import get_db_connection, execute_sql, get_searchable
 from ..common.logging_config import setup_logger
 from .auth import token_required
 
 # Set up logger
 logger = setup_logger(__name__, 'tags.log')
+
+def user_exists(user_id):
+    """Check if a user exists in the users table"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        execute_sql(cur, f"SELECT 1 FROM users WHERE id = '{user_id}' LIMIT 1")
+        result = cur.fetchone()
+        return result is not None
+    finally:
+        cur.close()
+        conn.close()
 
 # Flask-RESTX models for request/response data
 tag_model = rest_api.model('Tag', {
@@ -69,8 +81,7 @@ class UserTagsResource(Resource):
         """Get all tags associated with a specific user"""
         try:
             # Verify user exists
-            user = get_terminal(user_id)
-            if not user:
+            if not user_exists(user_id):
                 return {
                     'success': False,
                     'error': 'User not found'
@@ -110,8 +121,7 @@ class UserTagsResource(Resource):
                 }, 403
             
             # Verify user exists
-            user = get_terminal(user_id)
-            if not user:
+            if not user_exists(user_id):
                 return {
                     'success': False,
                     'error': 'User not found'
@@ -197,8 +207,7 @@ class UserTagResource(Resource):
                 }, 403
             
             # Verify user exists
-            user = get_terminal(user_id)
-            if not user:
+            if not user_exists(user_id):
                 return {
                     'success': False,
                     'error': 'User not found'
@@ -278,8 +287,8 @@ class SearchableTagsResource(Resource):
                     'error': 'Searchable not found'
                 }, 404
             
-            # Check ownership (terminal_id is stored as string in JSON)
-            if int(searchable.get('terminal_id', 0)) != current_user_id:
+            # Check ownership (user_id is stored as string in JSON)
+            if int(searchable.get('user_id', 0)) != current_user_id:
                 return {
                     'success': False,
                     'error': 'Unauthorized: You can only modify your own searchables'
@@ -365,8 +374,8 @@ class SearchableTagResource(Resource):
                     'error': 'Searchable not found'
                 }, 404
             
-            # Check ownership (terminal_id is stored as string in JSON)
-            if int(searchable.get('terminal_id', 0)) != current_user_id:
+            # Check ownership (user_id is stored as string in JSON)
+            if int(searchable.get('user_id', 0)) != current_user_id:
                 return {
                     'success': False,
                     'error': 'Unauthorized: You can only modify your own searchables'
@@ -415,12 +424,7 @@ class SearchUsersResource(Resource):
             page = int(request.args.get('page', 1))
             limit = min(int(request.args.get('limit', 20)), 50)  # Max 50 items per page
             
-            if not tag_names:
-                return {
-                    'success': False,
-                    'error': 'At least one tag is required'
-                }, 400
-            
+            # Empty tag list is now allowed - returns all users
             result = search_users_by_tags(tag_names, page, limit)
             
             return {
@@ -458,12 +462,7 @@ class SearchSearchablesResource(Resource):
             page = int(request.args.get('page', 1))
             limit = min(int(request.args.get('limit', 20)), 50)
             
-            if not tag_names:
-                return {
-                    'success': False,
-                    'error': 'At least one tag is required'
-                }, 400
-            
+            # Empty tag list is now allowed - returns all searchables
             result = search_searchables_by_tags(tag_names, page, limit)
             
             return {

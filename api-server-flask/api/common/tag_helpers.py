@@ -354,10 +354,11 @@ def get_searchable_tag_count(searchable_id):
 
 def search_users_by_tags(tag_names, page=1, limit=20):
     """
-    Search users by tags (AND logic - users must have ALL specified tags)
+    Search users by tags (OR logic - users with ANY of the specified tags)
+    If no tags specified, returns all users
     
     Args:
-        tag_names (list): List of tag names to search for
+        tag_names (list): List of tag names to search for (optional)
         page (int): Page number (1-based)
         limit (int): Number of results per page
     
@@ -365,77 +366,97 @@ def search_users_by_tags(tag_names, page=1, limit=20):
         dict: {'users': [], 'total': int, 'page': int, 'limit': int, 'pages': int}
     """
     try:
-        if not tag_names:
-            return {'users': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
-        
-        # Get tag IDs from names
-        placeholders = ','.join(['%s'] * len(tag_names))
-        tag_query = f"""
-            SELECT id FROM tags 
-            WHERE name IN ({placeholders}) AND tag_type = 'user' AND is_active = true
-        """
-        
         conn = get_db_connection()
         cur = conn.cursor()
-        execute_sql(cur, tag_query, tag_names)
-        tag_result = cur.fetchall()
         
-        if not tag_result or len(tag_result) != len(tag_names):
-            # Not all tags found
-            cur.close()
-            conn.close()
-            return {'users': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
-        
-        tag_ids = [row[0] for row in tag_result]
-        
-        # Find users with ALL specified tags
-        tag_placeholders = ','.join(['%s'] * len(tag_ids))
-        user_query = f"""
-            SELECT user_id
-            FROM user_tags
-            WHERE tag_id IN ({tag_placeholders})
-            GROUP BY user_id
-            HAVING COUNT(DISTINCT tag_id) = %s
-            ORDER BY user_id
-        """
-        
-        # Get total count
-        count_query = f"""
-            SELECT COUNT(*) FROM (
-                SELECT user_id
-                FROM user_tags
-                WHERE tag_id IN ({tag_placeholders})
-                GROUP BY user_id
-                HAVING COUNT(DISTINCT tag_id) = %s
-            ) AS user_count
-        """
-        
-        count_params = tag_ids + [len(tag_ids)]
-        execute_sql(cur, count_query, count_params)
-        count_result = cur.fetchone()
-        total = count_result[0] if count_result else 0
-        
-        # Get paginated results
-        offset = (page - 1) * limit
-        paginated_query = user_query + f" LIMIT %s OFFSET %s"
-        user_params = tag_ids + [len(tag_ids), limit, offset]
-        
-        execute_sql(cur, paginated_query, user_params)
-        user_result = cur.fetchall()
-        user_ids = [row[0] for row in user_result] if user_result else []
-        
-        # Get user details (simplified - you'd join with terminal table for real data)
-        users = []
-        for user_id in user_ids:
-            user_tags = get_user_tags(user_id)
-            users.append({
-                'id': user_id,
-                'username': f'user_{user_id}',  # This would come from terminal table
-                'tags': user_tags
-            })
+        # If no tags specified, return all users
+        if not tag_names:
+            # Get total count of all users
+            count_query = "SELECT COUNT(*) FROM users"
+            execute_sql(cur, count_query)
+            count_result = cur.fetchone()
+            total = count_result[0] if count_result else 0
+            
+            # Get paginated users
+            offset = (page - 1) * limit
+            user_query = """
+                SELECT u.id, u.username 
+                FROM users u
+                ORDER BY u.id
+                LIMIT %s OFFSET %s
+            """
+            execute_sql(cur, user_query, [limit, offset])
+            user_result = cur.fetchall()
+            
+            users = []
+            for user_id, username in user_result:
+                user_tags = get_user_tags(user_id)
+                users.append({
+                    'id': user_id,
+                    'username': username,
+                    'tags': user_tags
+                })
+                
+        else:
+            # Get tag IDs from names (don't require all tags to exist)
+            placeholders = ','.join(['%s'] * len(tag_names))
+            tag_query = f"""
+                SELECT id FROM tags 
+                WHERE name IN ({placeholders}) AND tag_type = 'user' AND is_active = true
+            """
+            
+            execute_sql(cur, tag_query, tag_names)
+            tag_result = cur.fetchall()
+            
+            if not tag_result:
+                # No valid tags found
+                cur.close()
+                conn.close()
+                return {'users': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
+            
+            tag_ids = [row[0] for row in tag_result]
+            
+            # Find users with ANY of the specified tags
+            tag_placeholders = ','.join(['%s'] * len(tag_ids))
+            
+            # Get total count
+            count_query = f"""
+                SELECT COUNT(DISTINCT ut.user_id)
+                FROM user_tags ut
+                JOIN users u ON ut.user_id = u.id
+                WHERE ut.tag_id IN ({tag_placeholders})
+            """
+            
+            execute_sql(cur, count_query, tag_ids)
+            count_result = cur.fetchone()
+            total = count_result[0] if count_result else 0
+            
+            # Get paginated results with user details
+            offset = (page - 1) * limit
+            user_query = f"""
+                SELECT DISTINCT u.id, u.username
+                FROM users u
+                JOIN user_tags ut ON u.id = ut.user_id
+                WHERE ut.tag_id IN ({tag_placeholders})
+                ORDER BY u.id
+                LIMIT %s OFFSET %s
+            """
+            
+            user_params = tag_ids + [limit, offset]
+            execute_sql(cur, user_query, user_params)
+            user_result = cur.fetchall()
+            
+            users = []
+            for user_id, username in user_result:
+                user_tags = get_user_tags(user_id)
+                users.append({
+                    'id': user_id,
+                    'username': username,
+                    'tags': user_tags
+                })
         
         # Calculate pagination
-        total_pages = (total + limit - 1) // limit
+        total_pages = (total + limit - 1) // limit if limit > 0 else 0
         
         cur.close()
         conn.close()
@@ -454,10 +475,11 @@ def search_users_by_tags(tag_names, page=1, limit=20):
 
 def search_searchables_by_tags(tag_names, page=1, limit=20):
     """
-    Search searchables by tags (AND logic - searchables must have ALL specified tags)
+    Search searchables by tags (OR logic - searchables with ANY of the specified tags)
+    If no tags specified, returns all searchables
     
     Args:
-        tag_names (list): List of tag names to search for
+        tag_names (list): List of tag names to search for (optional)
         page (int): Page number (1-based)
         limit (int): Number of results per page
     
@@ -465,77 +487,108 @@ def search_searchables_by_tags(tag_names, page=1, limit=20):
         dict: {'searchables': [], 'total': int, 'page': int, 'limit': int, 'pages': int}
     """
     try:
-        if not tag_names:
-            return {'searchables': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
-        
-        # Get tag IDs from names
-        placeholders = ','.join(['%s'] * len(tag_names))
-        tag_query = f"""
-            SELECT id FROM tags 
-            WHERE name IN ({placeholders}) AND tag_type = 'searchable' AND is_active = true
-        """
-        
         conn = get_db_connection()
         cur = conn.cursor()
-        execute_sql(cur, tag_query, tag_names)
-        tag_result = cur.fetchall()
         
-        if not tag_result or len(tag_result) != len(tag_names):
-            # Not all tags found
-            cur.close()
-            conn.close()
-            return {'searchables': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
-        
-        tag_ids = [row[0] for row in tag_result]
-        
-        # Find searchables with ALL specified tags
-        tag_placeholders = ','.join(['%s'] * len(tag_ids))
-        searchable_query = f"""
-            SELECT searchable_id
-            FROM searchable_tags
-            WHERE tag_id IN ({tag_placeholders})
-            GROUP BY searchable_id
-            HAVING COUNT(DISTINCT tag_id) = %s
-            ORDER BY searchable_id
-        """
-        
-        # Get total count
-        count_query = f"""
-            SELECT COUNT(*) FROM (
-                SELECT searchable_id
-                FROM searchable_tags
-                WHERE tag_id IN ({tag_placeholders})
-                GROUP BY searchable_id
-                HAVING COUNT(DISTINCT tag_id) = %s
-            ) AS searchable_count
-        """
-        
-        count_params = tag_ids + [len(tag_ids)]
-        execute_sql(cur, count_query, count_params)
-        count_result = cur.fetchone()
-        total = count_result[0] if count_result else 0
-        
-        # Get paginated results
-        offset = (page - 1) * limit
-        paginated_query = searchable_query + f" LIMIT %s OFFSET %s"
-        searchable_params = tag_ids + [len(tag_ids), limit, offset]
-        
-        execute_sql(cur, paginated_query, searchable_params)
-        searchable_result = cur.fetchall()
-        searchable_ids = [row[0] for row in searchable_result] if searchable_result else []
-        
-        # Get searchable details (simplified - you'd get real data from searchables table)
-        searchables = []
-        for searchable_id in searchable_ids:
-            searchable_tags = get_searchable_tags(searchable_id)
-            searchables.append({
-                'id': searchable_id,
-                'title': f'Searchable {searchable_id}',  # This would come from searchables table
-                'tags': searchable_tags
-            })
+        # If no tags specified, return all searchables
+        if not tag_names:
+            # Get total count of all active searchables
+            count_query = """
+                SELECT COUNT(*) 
+                FROM searchables s
+                WHERE s.searchable_data->>'removed' IS NULL 
+                OR s.searchable_data->>'removed' != 'true'
+            """
+            execute_sql(cur, count_query)
+            count_result = cur.fetchone()
+            total = count_result[0] if count_result else 0
+            
+            # Get paginated searchables
+            offset = (page - 1) * limit
+            searchable_query = """
+                SELECT s.searchable_id, s.type, s.searchable_data
+                FROM searchables s
+                WHERE s.searchable_data->>'removed' IS NULL 
+                OR s.searchable_data->>'removed' != 'true'
+                ORDER BY s.searchable_id DESC
+                LIMIT %s OFFSET %s
+            """
+            execute_sql(cur, searchable_query, [limit, offset])
+            searchable_result = cur.fetchall()
+            
+            searchables = []
+            for searchable_id, searchable_type, searchable_data in searchable_result:
+                # Get tags for this searchable
+                searchable_tags = get_searchable_tags(searchable_id)
+                searchable_data['id'] = searchable_id
+                searchable_data['searchable_id'] = searchable_id
+                searchable_data['type'] = searchable_type
+                searchable_data['tags'] = searchable_tags
+                searchables.append(searchable_data)
+                
+        else:
+            # Get tag IDs from names (don't require all tags to exist)
+            placeholders = ','.join(['%s'] * len(tag_names))
+            tag_query = f"""
+                SELECT id FROM tags 
+                WHERE name IN ({placeholders}) AND tag_type = 'searchable' AND is_active = true
+            """
+            
+            execute_sql(cur, tag_query, tag_names)
+            tag_result = cur.fetchall()
+            
+            if not tag_result:
+                # No valid tags found
+                cur.close()
+                conn.close()
+                return {'searchables': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
+            
+            tag_ids = [row[0] for row in tag_result]
+            
+            # Find searchables with ANY of the specified tags
+            tag_placeholders = ','.join(['%s'] * len(tag_ids))
+            
+            # Get total count
+            count_query = f"""
+                SELECT COUNT(DISTINCT st.searchable_id)
+                FROM searchable_tags st
+                JOIN searchables s ON st.searchable_id = s.searchable_id
+                WHERE st.tag_id IN ({tag_placeholders})
+                AND (s.searchable_data->>'removed' IS NULL OR s.searchable_data->>'removed' != 'true')
+            """
+            
+            execute_sql(cur, count_query, tag_ids)
+            count_result = cur.fetchone()
+            total = count_result[0] if count_result else 0
+            
+            # Get paginated results
+            offset = (page - 1) * limit
+            searchable_query = f"""
+                SELECT DISTINCT s.searchable_id, s.type, s.searchable_data
+                FROM searchables s
+                JOIN searchable_tags st ON s.searchable_id = st.searchable_id
+                WHERE st.tag_id IN ({tag_placeholders})
+                AND (s.searchable_data->>'removed' IS NULL OR s.searchable_data->>'removed' != 'true')
+                ORDER BY s.searchable_id DESC
+                LIMIT %s OFFSET %s
+            """
+            
+            searchable_params = tag_ids + [limit, offset]
+            execute_sql(cur, searchable_query, searchable_params)
+            searchable_result = cur.fetchall()
+            
+            searchables = []
+            for searchable_id, searchable_type, searchable_data in searchable_result:
+                # Get tags for this searchable
+                searchable_tags = get_searchable_tags(searchable_id)
+                searchable_data['id'] = searchable_id
+                searchable_data['searchable_id'] = searchable_id
+                searchable_data['type'] = searchable_type
+                searchable_data['tags'] = searchable_tags
+                searchables.append(searchable_data)
         
         # Calculate pagination
-        total_pages = (total + limit - 1) // limit
+        total_pages = (total + limit - 1) // limit if limit > 0 else 0
         
         cur.close()
         conn.close()

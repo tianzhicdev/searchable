@@ -22,7 +22,7 @@ import useComponentStyles from '../../themes/componentStyles';
 import SearchableList from './SearchableList';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
-import backend from '../utilities/Backend';
+import Backend from '../utilities/Backend';
 import { isMockMode } from '../../mocks/mockBackend'; 
 const Searchables = () => {
   

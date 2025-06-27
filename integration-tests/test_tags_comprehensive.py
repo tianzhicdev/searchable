@@ -389,10 +389,10 @@ class TestTagOperations:
         assert TestTagOperations.artist_tag_id in user_tag_ids, "User should have artist tag in results"
     
     def test_08_search_users_by_multiple_tags(self):
-        """Test searching users by multiple tags (AND logic) - should find user 1"""
+        """Test searching users by multiple tags (OR logic) - should find users with ANY of the tags"""
         
         response = self.client.search_users_by_tags(['artist', 'designer'])
-        print(f"[RESPONSE] Search users by 'artist' AND 'designer' tags: {response}")
+        print(f"[RESPONSE] Search users by 'artist' OR 'designer' tags: {response}")
         
         # Validate response structure
         assert isinstance(response, dict)
@@ -402,13 +402,13 @@ class TestTagOperations:
         assert isinstance(response['users'], list)
         
         # Should find user 1 who has both tags
-        assert len(response['users']) >= 1, "Should find at least one user with both artist and designer tags"
+        assert len(response['users']) >= 1, "Should find at least one user with artist or designer tags"
         
-        # Verify we found our test user
+        # Verify we found our test user (who has both tags)
         user_ids_found = [user['id'] for user in response['users']]
-        assert TestTagOperations.user_id in user_ids_found, f"Test user {TestTagOperations.user_id} should be found with both tags"
+        assert TestTagOperations.user_id in user_ids_found, f"Test user {TestTagOperations.user_id} should be found with either tag"
         
-        # Verify the user has both tags
+        # Verify the user has both tags (in this case)
         test_user = next((user for user in response['users'] if user['id'] == TestTagOperations.user_id), None)
         assert test_user is not None
         user_tag_ids = [tag['id'] for tag in test_user['tags']]
@@ -514,15 +514,22 @@ class TestTagOperations:
     def test_13_verify_search_after_tag_removal(self):
         """Test that search results update after tag removal"""
         
-        # Search for users with both artist and designer tags
+        # Search for users with artist OR designer tags
         response = self.client.search_users_by_tags(['artist', 'designer'])
-        print(f"[RESPONSE] Search users by 'artist' AND 'designer' after removal: {response}")
+        print(f"[RESPONSE] Search users by 'artist' OR 'designer' after removal: {response}")
         
-        # Should not find user 1 anymore since we removed designer tag
+        # Should still find user 1 since they have the artist tag (OR logic)
+        user_ids_found = [user['id'] for user in response['users']]
+        assert TestTagOperations.user_id in user_ids_found, "User 1 should still be found since they have artist tag (OR logic)"
+        
+        # But searching for just designer should NOT find user 1
+        response = self.client.search_users_by_tags(['designer'])
+        print(f"[RESPONSE] Search users by 'designer' only after removal: {response}")
+        
         user_ids_found = [user['id'] for user in response['users']]
         assert TestTagOperations.user_id not in user_ids_found, "User 1 should not be found since designer tag was removed"
         
-        # But searching for just artist should still find user 1
+        # Searching for just artist should still find user 1
         response = self.client.search_users_by_tags(['artist'])
         print(f"[RESPONSE] Search users by 'artist' only after removal: {response}")
         
