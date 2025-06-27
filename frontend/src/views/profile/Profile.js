@@ -16,7 +16,6 @@ import axios from 'axios';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
-import { formatDate } from '../utilities/Date';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
