@@ -8,7 +8,7 @@ import {
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 
-import SearchablesProfile from './SearchablesProfile';
+import MiniSearchableProfile from '../../components/Profiles/MiniSearchableProfile';
 import backend from '../utilities/Backend';
 import { navigateWithReferrer } from '../../utils/navigationUtils';
 
@@ -80,7 +80,8 @@ const SearchableList = ({ criteria }) => {
           page: page,
           page_size: calculateOptimalPageSize(),
           q: criteria.searchTerm || '',
-          filters: JSON.stringify(criteria.filters || {})
+          filters: JSON.stringify(criteria.filters || {}),
+          tags: criteria.filters?.tags ? criteria.filters.tags.join(',') : ''
         }
       });
 
@@ -196,7 +197,7 @@ const SearchableList = ({ criteria }) => {
         <>
           <Grid item xs={12} >
             {searchResults && searchResults.map((item) => (
-              <SearchablesProfile 
+              <MiniSearchableProfile 
                 key={item.searchable_id}
                 item={item}
                 onClick={() => handleItemClick(item)} 

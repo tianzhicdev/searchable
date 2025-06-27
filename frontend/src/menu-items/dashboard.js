@@ -1,8 +1,8 @@
 // assets
-import { IconDashboard } from '@tabler/icons';
+import { IconDashboard, IconUsers } from '@tabler/icons';
 
 // constant
-const icons = { IconDashboard };
+const icons = { IconDashboard, IconUsers };
 
 // ===========================|| DASHBOARD MENU ITEMS ||=========================== //
 
@@ -13,10 +13,18 @@ const dashboard = {
     children: [
         {
             id: 'searchables',
-            title: 'Searchables',
+            title: 'Browse Content',
             type: 'item',
             url: '/searchables',
             icon: icons.IconDashboard,
+            breadcrumbs: false
+        },
+        {
+            id: 'search-by-user',
+            title: 'Find Creators',
+            type: 'item',
+            url: '/search-by-user',
+            icon: icons.IconUsers,
             breadcrumbs: false
         }
     ]
