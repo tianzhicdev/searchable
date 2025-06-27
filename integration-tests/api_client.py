@@ -320,9 +320,9 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def get_terminal_ratings(self, terminal_id: int) -> Dict[str, Any]:
-        """Get overall ratings for a terminal/user"""
-        url = f"{self.base_url}/v1/rating/terminal/{terminal_id}"
+    def get_user_ratings(self, user_id: int) -> Dict[str, Any]:
+        """Get overall ratings for a user"""
+        url = f"{self.base_url}/v1/rating/user/{user_id}"
         response = self.session.get(url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()
