@@ -24,6 +24,288 @@ const createMockResponse = (data, delay = 300) => {
   });
 };
 
+// Helper function to generate random usernames
+const generateUsername = (index) => {
+  const prefixes = ['creative', 'digital', 'tech', 'art', 'music', 'photo', 'design', 'dev', 'pro', 'master'];
+  const suffixes = ['studio', 'works', 'craft', 'shop', 'hub', 'lab', 'zone', 'space', 'corner', 'market'];
+  const numbers = ['', '2024', '99', '123', '_pro', '_official', '_x', '_one', '_plus', '007'];
+  
+  return `${prefixes[index % prefixes.length]}_${suffixes[Math.floor(index / 10) % suffixes.length]}${numbers[index % numbers.length]}`;
+};
+
+// Helper function to generate random display names
+const generateDisplayName = (index) => {
+  const adjectives = ['Creative', 'Professional', 'Amazing', 'Stellar', 'Premium', 'Elite', 'Supreme', 'Ultimate', 'Expert', 'Master'];
+  const nouns = ['Designer', 'Artist', 'Developer', 'Creator', 'Studio', 'Workshop', 'Academy', 'Gallery', 'Store', 'Hub'];
+  const extras = ['& Co.', 'Pro', 'Plus', 'Studio', 'Works', 'Solutions', 'Creations', 'Digital', 'Online', ''];
+  
+  return `${adjectives[index % adjectives.length]} ${nouns[Math.floor(index / 10) % nouns.length]} ${extras[index % extras.length]}`.trim();
+};
+
+// Helper function to generate diverse descriptions with edge cases
+const generateUserDescription = (index) => {
+  const descriptions = [
+    'Creating amazing digital content for professionals worldwide 🌟',
+    'Very long description that goes on and on and on... ' + 'x'.repeat(200) + ' ...and includes lots of text to test UI limits',
+    '🎨 Artist | 🎵 Musician | 📸 Photographer | Creating multi-disciplinary art',
+    'Special chars test: <script>alert("test")</script> & HTML entities © ® ™',
+    '한국어 테스트 | 日本語テスト | 中文测试 | Testing international characters',
+    'Simple and clean.',
+    '',  // Empty description
+    'UPPERCASE DESCRIPTION TO TEST STYLING AND READABILITY IN THE UI',
+    'Numbers everywhere! 123456789 0.99 $$$$ 100% #1 @2024',
+    'Emojis galore! 😀😃😄😁😆😅😂🤣😊😇🙂🙃😉😌😍🥰😘😗😙😚😋😛😝😜',
+    `Multi-line description
+    with line breaks
+    and formatting
+    to test display`,
+    'Professional • Reliable • Fast • Quality Work • 5 Stars ⭐⭐⭐⭐⭐',
+    '!!!Lots!!! of!!! punctuation!!! marks??? really... REALLY... --test--',
+    'Минималистичное описание на русском языке',
+    '🔥 HOT DEALS 🔥 LIMITED TIME OFFER 🔥 SAVE 50% NOW 🔥'
+  ];
+  
+  return descriptions[index % descriptions.length];
+};
+
+// Helper function to generate searchable titles with variety
+const generateSearchableTitle = (index, type) => {
+  const downloadableTitles = [
+    'Premium Digital Asset Bundle',
+    'Professional Design Kit Pro Max Ultra Deluxe Edition with Extra Long Title to Test UI Limits',
+    '🎨 Creative Assets Pack',
+    'Simple Pack',
+    'MEGA BUNDLE - 1000+ FILES',
+    'Test <script>alert("XSS")</script> Title',
+    '$$$ Money Maker Pack $$$',
+    'Multi-Language Pack 한국어 日本語 中文',
+    '',  // Empty title edge case
+    'Numbers Pack v2.0.1 (2024)',
+    'Special©️ Characters™️ Pack®️',
+    '⭐⭐⭐⭐⭐ Five Star Collection',
+    'Budget-Friendly Starter Kit',
+    'Ultra Premium Exclusive Limited Edition',
+    'Quick & Easy Templates'
+  ];
+  
+  const directTitles = [
+    'Support My Work',
+    'Buy Me a Coffee ☕',
+    'Tip Jar 💰',
+    'Help Fund My Projects',
+    'Support Creator',
+    'Donate to Keep Content Free',
+    'Artist Support Fund',
+    'Community Contribution',
+    'Patron Support',
+    'Creative Fund'
+  ];
+  
+  const offlineTitles = [
+    'Local Coffee Shop',
+    'Artisan Bakery 🥐',
+    'Handmade Crafts Store',
+    'Fresh Produce Market',
+    'Vintage Clothing Shop',
+    'Book Store & Café',
+    'Art Gallery & Studio',
+    'Music Store',
+    'Electronics Repair Shop',
+    'Pet Grooming Service'
+  ];
+  
+  if (type === 'direct') return directTitles[index % directTitles.length];
+  if (type === 'offline') return offlineTitles[index % offlineTitles.length];
+  return downloadableTitles[index % downloadableTitles.length];
+};
+
+// Helper function to generate searchable descriptions
+const generateSearchableDescription = (index) => {
+  const descriptions = [
+    'High-quality digital assets for your creative projects.',
+    'Super long description that contains a lot of text to test how the UI handles very lengthy content. ' + 'This goes on and on '.repeat(20),
+    'Short & sweet 🍭',
+    '',  // Empty description
+    'Special characters test: <>&"\'`{}[]()!@#$%^&*',
+    '🌟🎨🎵📸🎬🎮📚💻🏆🎯 Emoji overload test',
+    'SCREAMING DESCRIPTION IN ALL CAPS TO TEST READABILITY',
+    `Multiple
+    Line
+    Breaks
+    Test`,
+    '价格实惠 | お買い得 | выгодная цена | International descriptions',
+    'Numbers: 100% satisfaction, 24/7 support, 30-day guarantee, 5-star rated',
+    '...starts with ellipsis and ends with ellipsis...',
+    'Visit us at: https://example.com/very/long/url/that/might/break/layout',
+    '@mentions #hashtags $prices testing social media style content',
+    'Minimalist.',
+    'This product is amazing!!! Buy now!!! Limited time!!! Act fast!!! Don\'t miss out!!!'
+  ];
+  
+  return descriptions[index % descriptions.length];
+};
+
+// Generate mock users programmatically
+const generateMockUsers = () => {
+  const users = [];
+  const tagCombinations = [
+    [1, 5],      // artist, designer
+    [2, 7],      // musician, educator
+    [3, 8],      // writer, store
+    [4, 10],     // photographer, freelancer
+    [6, 7],      // developer, educator
+    [1, 4, 10],  // artist, photographer, freelancer
+    [8, 9],      // store, agency
+    [1],         // artist only
+    [6],         // developer only
+    [2, 3, 7],   // musician, writer, educator
+  ];
+  
+  for (let i = 0; i < 100; i++) {
+    const hasProfileImage = Math.random() > 0.2; // 80% have profile images
+    const tagIds = tagCombinations[i % tagCombinations.length];
+    
+    users.push({
+      id: i + 1,
+      username: generateUsername(i),
+      displayName: Math.random() > 0.3 ? generateDisplayName(i) : null, // 70% have display names
+      profile_image_url: hasProfileImage ? `/api/v1/media/profile-mock-${(i % 5) + 1}` : null,
+      introduction: generateUserDescription(i),
+      tags: tagIds.map(id => ({
+        id,
+        name: ['artist', 'musician', 'writer', 'photographer', 'designer', 'developer', 'educator', 'store', 'agency', 'freelancer'][id - 1],
+        tag_type: 'user'
+      })),
+      rating: 3.5 + (Math.random() * 1.5), // Random rating between 3.5 and 5.0
+      totalRatings: Math.floor(Math.random() * 500),
+      searchableCount: Math.floor(Math.random() * 200),
+      joinedDate: new Date(Date.now() - Math.random() * 365 * 86400000).toISOString() // Random date within last year
+    });
+  }
+  
+  return users;
+};
+
+// Generate mock searchables programmatically
+const generateMockSearchables = () => {
+  const searchables = [];
+  const types = ['downloadable', 'direct', 'offline'];
+  const tagCombinations = [
+    [21, 23],      // books, art
+    [22, 25],      // music, videos
+    [24, 23],      // photos, art
+    [26, 28],      // software, courses
+    [27, 29],      // games, templates
+    [30, 29],      // fonts, templates
+    [31, 28],      // business, courses
+    [32],          // support only
+    [33, 35],      // community, local
+    [34, 35, 36],  // food, local, handmade
+  ];
+  
+  for (let i = 0; i < 100; i++) {
+    const type = types[i % 3];
+    const hasImages = Math.random() > 0.15; // 85% have images
+    const imageCount = hasImages ? Math.floor(Math.random() * 4) + 1 : 0; // 1-4 images
+    const tagIds = tagCombinations[i % tagCombinations.length];
+    
+    const searchable = {
+      _id: `mock-item-${i + 1}`,
+      searchable_id: `mock-item-${i + 1}`,
+      user_id: `${(i % 10) + 1}`,
+      payloads: {
+        public: {
+          title: generateSearchableTitle(i, type),
+          description: generateSearchableDescription(i),
+          type: type,
+          currency: 'usd',
+          images: hasImages ? Array(imageCount).fill(null).map((_, idx) => 
+            idx % 2 === 0 ? mockData.mockImage1 : mockData.mockImage2
+          ) : []
+        }
+      },
+      tags: tagIds.map(id => {
+        const tagNames = ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 
+          'books', 'music', 'art', 'photos', 'videos', 'software', 'games', 'courses', 'templates', 'fonts',
+          'business', 'support', 'community', 'food', 'local', 'handmade'];
+        return {
+          id,
+          name: tagNames[id] || 'unknown',
+          tag_type: 'searchable'
+        };
+      }),
+      created_at: new Date(Date.now() - Math.random() * 30 * 86400000).toISOString(), // Random date within last 30 days
+      username: generateUsername(Math.floor(Math.random() * 50)) // Random username from first 50 users
+    };
+    
+    // Add type-specific data
+    if (type === 'downloadable') {
+      const fileCount = Math.floor(Math.random() * 5) + 1; // 1-5 files
+      const fileNames = [
+        'Design_Templates_Pack.zip', 'Stock_Photos_Collection.zip', 'Vector_Graphics_Bundle.ai',
+        'UI_Kit_Components.fig', 'Icon_Set_Premium.svg', 'Mockup_Templates.psd',
+        'Audio_Tracks_Collection.mp3', 'Video_Templates.mp4', 'Sound_Effects_Pack.wav',
+        'Ebook_Collection.pdf', 'Tutorial_Videos.mp4', 'Source_Code_Examples.zip',
+        'Font_Collection.ttf', 'Brush_Pack.abr', 'Pattern_Library.pat',
+        'Presentation_Templates.pptx', 'Spreadsheet_Templates.xlsx', 'Document_Templates.docx',
+        'Game_Assets_Bundle.unitypackage', '3D_Models_Pack.obj', 'Texture_Collection.png',
+        'Plugin_Collection.zip', 'Script_Library.js', 'CSS_Framework.css',
+        'Mobile_App_Template.apk', 'Website_Template.html', 'WordPress_Theme.zip',
+        'Lightroom_Presets.lrtemplate', 'Photoshop_Actions.atn', 'After_Effects_Templates.aep',
+        'Music_Loops_Pack.wav', 'Podcast_Intro_Outro.mp3', 'Voice_Over_Samples.mp3'
+      ];
+      
+      searchable.payloads.public.downloadableFiles = Array(fileCount).fill(null).map((_, idx) => {
+        const fileIndex = (i * 5 + idx) % fileNames.length;
+        return {
+          name: fileNames[fileIndex],
+          price: Math.floor(Math.random() * 100) + 0.99 // Random price from 0.99 to 100.99
+        };
+      });
+    } else if (type === 'direct') {
+      searchable.payloads.public.defaultAmount = Math.floor(Math.random() * 50) + 0.99; // Random amount from 0.99 to 50.99
+    } else if (type === 'offline') {
+      const itemCount = Math.floor(Math.random() * 10) + 1; // 1-10 items
+      const offlineProductNames = [
+        'Espresso', 'Cappuccino', 'Latte', 'Americano', 'Mocha',
+        'Croissant', 'Bagel', 'Muffin', 'Danish', 'Scone',
+        'T-Shirt', 'Jeans', 'Jacket', 'Dress', 'Shoes',
+        'Necklace', 'Bracelet', 'Ring', 'Earrings', 'Watch',
+        'Sandwich', 'Salad', 'Soup', 'Pizza Slice', 'Burger',
+        'Book', 'Magazine', 'Notebook', 'Pen Set', 'Bookmark',
+        'Painting', 'Sculpture', 'Photo Print', 'Poster', 'Sticker Pack',
+        'Guitar Pick', 'Sheet Music', 'CD Album', 'Vinyl Record', 'Music Lesson',
+        'Phone Case', 'Charger', 'Screen Protector', 'Cable', 'Adapter',
+        'Dog Grooming', 'Cat Grooming', 'Nail Trim', 'Bath Service', 'Hair Cut'
+      ];
+      
+      searchable.payloads.public.offlineItems = Array(itemCount).fill(null).map((_, idx) => {
+        const productIndex = (i * 10 + idx) % offlineProductNames.length;
+        return {
+          itemId: `item-${idx + 1}`,
+          name: offlineProductNames[productIndex],
+          price: Math.floor(Math.random() * 200) + 0.99 // Random price from 0.99 to 200.99
+        };
+      });
+    }
+    
+    searchables.push(searchable);
+  }
+  
+  return searchables;
+};
+
+// Initialize mock data
+let allMockUsers = [];
+let allMockSearchables = [];
+try {
+  allMockUsers = generateMockUsers();
+  allMockSearchables = generateMockSearchables();
+  console.log('[MOCK] Initialized mock data - Users:', allMockUsers.length, 'Searchables:', allMockSearchables.length);
+} catch (error) {
+  console.error('[MOCK] Error initializing mock data:', error);
+}
+
 // Mock API handlers
 const mockHandlers = {
   // Authentication endpoints
@@ -64,140 +346,159 @@ const mockHandlers = {
     return createMockResponse({ success: true });
   },
   
-  // Searchable endpoints - ORDER MATTERS! Most specific patterns first
-  'v1/searchable/search': (url) => {
-    console.log('[MOCK] Searching searchables');
+  // Tag endpoints
+  'v1/tags': (url) => {
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const tagType = urlParams.get('type');
+    const activeOnly = urlParams.get('active') !== 'false';
+    
+    console.log('[MOCK] Getting tags, type:', tagType, 'active:', activeOnly);
+    
+    const mockTags = [
+      // User tags
+      { id: 1, name: 'artist', tag_type: 'user', description: 'Visual artists, digital artists, painters, sculptors', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 2, name: 'musician', tag_type: 'user', description: 'Music creators, composers, performers', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 3, name: 'writer', tag_type: 'user', description: 'Authors, bloggers, content writers', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 4, name: 'photographer', tag_type: 'user', description: 'Professional and amateur photographers', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 5, name: 'designer', tag_type: 'user', description: 'Graphic designers, UI/UX designers, product designers', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 6, name: 'developer', tag_type: 'user', description: 'Software developers, web developers, app creators', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 7, name: 'educator', tag_type: 'user', description: 'Teachers, trainers, course creators', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 8, name: 'store', tag_type: 'user', description: 'Online stores, retail businesses', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 9, name: 'agency', tag_type: 'user', description: 'Marketing agencies, creative agencies', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 10, name: 'freelancer', tag_type: 'user', description: 'Independent contractors and freelancers', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      
+      // Searchable tags
+      { id: 21, name: 'books', tag_type: 'searchable', description: 'Books, ebooks, novels, textbooks', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 22, name: 'music', tag_type: 'searchable', description: 'Songs, albums, audio tracks, soundtracks', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 23, name: 'art', tag_type: 'searchable', description: 'Digital art, paintings, illustrations, graphics', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 24, name: 'photos', tag_type: 'searchable', description: 'Photography, stock photos, portraits', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 25, name: 'videos', tag_type: 'searchable', description: 'Video content, tutorials, entertainment', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 26, name: 'software', tag_type: 'searchable', description: 'Applications, tools, plugins, scripts', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 27, name: 'games', tag_type: 'searchable', description: 'Video games, mobile games, game assets', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 28, name: 'courses', tag_type: 'searchable', description: 'Educational content, tutorials, training materials', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 29, name: 'templates', tag_type: 'searchable', description: 'Design templates, document templates', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 30, name: 'fonts', tag_type: 'searchable', description: 'Typography, custom fonts, typefaces', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 31, name: 'business', tag_type: 'searchable', description: 'Business resources, professional content', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 32, name: 'support', tag_type: 'searchable', description: 'Support creators, donations, tips', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 33, name: 'community', tag_type: 'searchable', description: 'Community projects, collaborative content', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 34, name: 'food', tag_type: 'searchable', description: 'Food, beverages, culinary content', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 35, name: 'local', tag_type: 'searchable', description: 'Local businesses, local services', is_active: true, created_at: '2024-01-01T00:00:00Z' },
+      { id: 36, name: 'handmade', tag_type: 'searchable', description: 'Handcrafted items, artisan products', is_active: true, created_at: '2024-01-01T00:00:00Z' }
+    ];
+    
+    let filteredTags = mockTags;
+    
+    if (tagType) {
+      filteredTags = filteredTags.filter(tag => tag.tag_type === tagType);
+    }
+    
+    if (activeOnly) {
+      filteredTags = filteredTags.filter(tag => tag.is_active);
+    }
+    
     return createMockResponse({
-      results: [
-        {
-          _id: 'mock-item-1',
-          searchable_id: 'mock-item-1',
-          terminal_id: 'mock-terminal-1',
-          payloads: {
-            public: {
-              title: 'Premium Digital Asset Bundle',
-              description: 'A comprehensive collection of high-quality digital assets including templates, graphics, and source files',
-              type: 'downloadable',
-              currency: 'usd',
-              images: [mockData.mockImage1, mockData.mockImage2],
-              downloadableFiles: [
-                { name: 'Design Templates Pack', price: 29.99 },
-                { name: 'Stock Photos Collection', price: 49.99 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          username: 'test_user'
-        },
-        {
-          _id: 'mock-item-2',
-          searchable_id: 'mock-item-2',
-          terminal_id: 'mock-terminal-2',
-          payloads: {
-            public: {
-              title: 'Professional Design Kit',
-              description: 'High-quality design templates and resources for professional projects',
-              type: 'downloadable',
-              currency: 'usd',
-              images: [mockData.mockImage2, mockData.mockImage1],
-              downloadableFiles: [
-                { name: 'Logo Templates', price: 19.99 },
-                { name: 'Business Card Designs', price: 14.99 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          username: 'designer_pro'
-        },
-        {
-          _id: 'mock-direct-item-1',
-          searchable_id: 'mock-direct-item-1',
-          terminal_id: 'mock-terminal-1',
-          payloads: {
-            public: {
-              title: 'Support My Creative Work',
-              description: 'Thank you for supporting my creative journey! Your contribution helps me continue creating awesome content and tutorials.',
-              type: 'direct',
-              currency: 'usd',
-              images: [mockData.mockImage1, mockData.mockImage2],
-              defaultAmount: 9.99
-            }
-          },
-          created_at: new Date(Date.now() - 43200000).toISOString(),
-          username: 'DirectPaymentMerchant'
-        },
-        {
-          _id: 'mock-direct-item-2',
-          searchable_id: 'mock-direct-item-2',
-          terminal_id: 'mock-terminal-2',
-          payloads: {
-            public: {
-              title: 'Community Tip Jar',
-              description: 'Help us build an amazing community! Your tip goes directly towards hosting community events.',
-              type: 'direct',
-              currency: 'usd',
-              images: [mockData.mockImage2],
-              defaultAmount: 4.99
-            }
-          },
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          username: 'CommunityBuilder'
-        },
-        {
-          _id: 'mock-offline-1',
-          searchable_id: 'mock-offline-1',
-          terminal_id: 'mock-terminal-3',
-          payloads: {
-            public: {
-              title: 'Local Coffee Shop Menu',
-              description: 'Fresh handcrafted coffee, pastries, and light meals. Pickup available Monday-Friday 7AM-6PM',
-              type: 'offline',
-              currency: 'usd',
-              images: [mockData.mockImage1, mockData.mockImage2],
-              offlineItems: [
-                { itemId: 'coffee-1', name: 'Espresso', price: 3.50 },
-                { itemId: 'coffee-2', name: 'Cappuccino', price: 4.50 },
-                { itemId: 'coffee-3', name: 'Latte', price: 5.00 },
-                { itemId: 'pastry-1', name: 'Croissant', price: 2.50 },
-                { itemId: 'pastry-2', name: 'Muffin', price: 3.00 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          username: 'local_cafe'
-        },
-        {
-          _id: 'mock-offline-2',
-          searchable_id: 'mock-offline-2',
-          terminal_id: 'mock-terminal-4',
-          payloads: {
-            public: {
-              title: 'Handmade Crafts Store',
-              description: 'Beautiful handmade jewelry, pottery, and artwork. Custom orders welcome!',
-              type: 'offline',
-              currency: 'usd',
-              images: [mockData.mockImage2, mockData.mockImage1],
-              offlineItems: [
-                { itemId: 'jewelry-1', name: 'Silver Necklace', price: 45.00 },
-                { itemId: 'jewelry-2', name: 'Handmade Earrings', price: 25.00 },
-                { itemId: 'pottery-1', name: 'Ceramic Mug', price: 18.00 },
-                { itemId: 'pottery-2', name: 'Decorative Vase', price: 65.00 },
-                { itemId: 'art-1', name: 'Small Canvas Painting', price: 120.00 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          username: 'artisan_maker'
-        }
-      ],
+      success: true,
+      tags: filteredTags,
+      count: filteredTags.length
+    });
+  },
+  
+  // User search endpoint
+  'v1/search/users': (url, config) => {
+    // Get params from config object, not URL string
+    const params = config?.params || {};
+    const username = params.username;
+    const tagNames = params['tags[]'] || [];
+    const page = parseInt(params.page) || 1;
+    const limit = parseInt(params.limit) || 20;
+    
+    console.log('[MOCK] Searching users:', { username, tagNames, page, limit });
+    
+    let filteredUsers = [...allMockUsers];
+    
+    // Filter by username if provided
+    if (username) {
+      filteredUsers = filteredUsers.filter(user => 
+        user.username.toLowerCase().includes(username.toLowerCase()) ||
+        (user.displayName && user.displayName.toLowerCase().includes(username.toLowerCase()))
+      );
+    }
+    
+    // Filter by tags if provided
+    if (tagNames.length > 0) {
+      filteredUsers = filteredUsers.filter(user => {
+        const userTagNames = user.tags.map(tag => tag.name);
+        return tagNames.every(tagName => userTagNames.includes(tagName));
+      });
+    }
+    
+    const total = filteredUsers.length;
+    const pages = Math.ceil(total / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+    
+    return createMockResponse({
+      success: true,
+      users: paginatedUsers,
       pagination: {
-        current_page: 1,
-        page_size: 10,
-        total_count: 6,
-        total_pages: 1
+        page,
+        limit,
+        total,
+        pages
       }
     });
   },
+
+  // Searchable endpoints - ORDER MATTERS! Most specific patterns first
+  'v1/searchable/search': (url) => {
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const tags = urlParams.get('tags');
+    const searchTerm = urlParams.get('q') || '';
+    const page = parseInt(urlParams.get('page')) || 1;
+    const pageSize = parseInt(urlParams.get('page_size')) || 10;
+    
+    console.log('[MOCK] Searching searchables with tags:', tags, 'search term:', searchTerm, 'page:', page);
+    
+    let results = [...allMockSearchables];
+
+    // Filter by tags if provided
+    if (tags && tags.trim()) {
+      const tagList = tags.split(',').map(tag => tag.trim().toLowerCase());
+      results = results.filter(item => {
+        if (!item.tags) return false;
+        return item.tags.some(tag => tagList.includes(tag.name.toLowerCase()));
+      });
+    }
+
+    // Filter by search term if provided
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      results = results.filter(item => {
+        const title = item.payloads?.public?.title?.toLowerCase() || '';
+        const description = item.payloads?.public?.description?.toLowerCase() || '';
+        return title.includes(term) || description.includes(term);
+      });
+    }
+    
+    // Calculate pagination
+    const totalCount = results.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedResults = results.slice(startIndex, endIndex);
+    
+    return createMockResponse({
+      results: paginatedResults,
+      pagination: {
+        current_page: page,
+        page_size: pageSize,
+        total_count: totalCount,
+        total_pages: totalPages
+      }
+    });
+  },
+  
   
   'v1/searchable/create': (url, config) => {
     const data = JSON.parse(config.data);
@@ -214,60 +515,14 @@ const mockHandlers = {
       const searchableId = url.split('/').pop();
       console.log(`[MOCK] Fetching searchable: ${searchableId}`);
       
-      // Handle offline items
-      if (searchableId === 'mock-offline-1') {
-        return createMockResponse({
-          _id: 'mock-offline-1',
-          searchable_id: 'mock-offline-1',
-          terminal_id: 'mock-terminal-3',
-          payloads: {
-            public: {
-              title: 'Local Coffee Shop Menu',
-              description: 'Fresh handcrafted coffee, pastries, and light meals. Pickup available Monday-Friday 7AM-6PM. Located at 123 Main Street, Downtown.',
-              type: 'offline',
-              currency: 'usd',
-              images: [mockData.mockImage1, mockData.mockImage2],
-              offlineItems: [
-                { itemId: 'coffee-1', name: 'Espresso', price: 3.50 },
-                { itemId: 'coffee-2', name: 'Cappuccino', price: 4.50 },
-                { itemId: 'coffee-3', name: 'Latte', price: 5.00 },
-                { itemId: 'pastry-1', name: 'Croissant', price: 2.50 },
-                { itemId: 'pastry-2', name: 'Muffin', price: 3.00 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 259200000).toISOString(),
-          username: 'local_cafe'
-        });
+      // Try to find the searchable in our generated data
+      const foundSearchable = allMockSearchables.find(s => s.searchable_id === searchableId);
+      
+      if (foundSearchable) {
+        return createMockResponse(foundSearchable);
       }
       
-      if (searchableId === 'mock-offline-2') {
-        return createMockResponse({
-          _id: 'mock-offline-2',
-          searchable_id: 'mock-offline-2',
-          terminal_id: 'mock-terminal-4',
-          payloads: {
-            public: {
-              title: 'Handmade Crafts Store',
-              description: 'Beautiful handmade jewelry, pottery, and artwork. Custom orders welcome! Visit our studio at 456 Art Lane.',
-              type: 'offline',
-              currency: 'usd',
-              images: [mockData.mockImage2, mockData.mockImage1],
-              offlineItems: [
-                { itemId: 'jewelry-1', name: 'Silver Necklace', price: 45.00 },
-                { itemId: 'jewelry-2', name: 'Handmade Earrings', price: 25.00 },
-                { itemId: 'pottery-1', name: 'Ceramic Mug', price: 18.00 },
-                { itemId: 'pottery-2', name: 'Decorative Vase', price: 65.00 },
-                { itemId: 'art-1', name: 'Small Canvas Painting', price: 120.00 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 345600000).toISOString(),
-          username: 'artisan_maker'
-        });
-      }
-      
-      // Handle direct payment items
+      // Handle legacy direct payment items for backward compatibility
       if (searchableId === 'mock-direct-item-1') {
         return createMockResponse({
           ...mockData.mockDirectSearchableItem,
@@ -307,7 +562,7 @@ const mockHandlers = {
         });
       }
       
-      // Default to downloadable item for backwards compatibility
+      // Default to the original mock item for backwards compatibility
       const originalItem = mockData.mockSearchableItem;
       const mockItem = {
         ...originalItem,
@@ -343,7 +598,6 @@ const mockHandlers = {
   
   // Ratings
   'v1/rating/searchable/': () => createMockResponse(mockData.mockSearchableRating),
-  'v1/rating/terminal/': () => createMockResponse(mockData.mockTerminalRating),
   
   // User purchases and ratings
   'v1/user/purchases': () => {
@@ -442,7 +696,6 @@ const mockHandlers = {
     });
   },
   
-  'v1/terminal': () => createMockResponse(mockData.mockTerminal),
   'balance': () => createMockResponse(mockData.mockBalance),
   
   // Withdrawal endpoint
@@ -525,7 +778,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 3600000).toISOString(),
           fee: 0.03,  // Platform fee (0.1% of 29.99)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-1",
+          seller_id: "1",
           searchable_id: "mock-item-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -553,7 +806,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 7200000).toISOString(),
           fee: 0.08,  // Platform fee (0.1% of 79.98)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-1",
+          seller_id: "1",
           searchable_id: "mock-item-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -587,7 +840,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 2400000).toISOString(),
           fee: 0.02,  // Platform fee (0.1% of 16.50)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-3",
+          seller_id: "3",
           searchable_id: "mock-offline-1",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -630,7 +883,7 @@ const mockHandlers = {
           created_at: new Date(Date.now() - 7800000).toISOString(),
           fee: 0.11,  // Platform fee (0.1% of 108.00)
           buyer_id: "mock-user-1",
-          seller_id: "mock-terminal-4",
+          seller_id: "4",
           searchable_id: "mock-offline-2",
           metadata: {
             address: "123 Main St, City, State 12345",
@@ -919,7 +1172,7 @@ const mockHandlers = {
         {
           _id: 'mock-item-3',
           searchable_id: 'mock-item-3',
-          terminal_id: 'mock-terminal-2',
+          user_id: '2',
           payloads: {
             public: {
               title: 'Professional Design Kit',
@@ -1042,6 +1295,80 @@ const mockHandlers = {
     });
   },
   
+  // Searchable search endpoint
+  'v1/searchable/search': (url, config) => {
+    // Get params from config object, not URL string
+    const params = config?.params || {};
+    const page = parseInt(params.page || '1');
+    const pageSize = parseInt(params.page_size || '10');
+    const searchTerm = params.q || '';
+    const filters = typeof params.filters === 'string' ? JSON.parse(params.filters || '{}') : params.filters || {};
+    const tags = params.tags || '';
+    
+    console.log('[MOCK] Searchable search:', { page, pageSize, searchTerm, filters, tags });
+    console.log('[MOCK] Total mock searchables available:', allMockSearchables.length);
+    
+    // Filter searchables based on search criteria
+    let filteredSearchables = [...allMockSearchables];
+    
+    // Apply text search
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filteredSearchables = filteredSearchables.filter(item => {
+        const publicData = item.payloads?.public || {};
+        return (
+          publicData.title?.toLowerCase().includes(term) ||
+          publicData.description?.toLowerCase().includes(term) ||
+          publicData.category?.toLowerCase().includes(term) ||
+          item.username?.toLowerCase().includes(term)
+        );
+      });
+    }
+    
+    // Apply tag filter
+    if (tags) {
+      const tagList = tags.split(',').filter(t => t);
+      if (tagList.length > 0) {
+        filteredSearchables = filteredSearchables.filter(item => {
+          if (!item.tags || item.tags.length === 0) return false;
+          return tagList.some(tagName => 
+            item.tags.some(tag => tag.name === tagName)
+          );
+        });
+      }
+    }
+    
+    // Calculate pagination
+    const totalCount = filteredSearchables.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    // Get page of results
+    const results = filteredSearchables.slice(startIndex, endIndex);
+    
+    console.log('[MOCK] Search results:', { 
+      totalCount, 
+      totalPages, 
+      currentPage: page,
+      resultsCount: results.length,
+      startIndex,
+      endIndex,
+      firstItemId: results[0]?.searchable_id,
+      lastItemId: results[results.length - 1]?.searchable_id
+    });
+    
+    return createMockResponse({
+      results,
+      pagination: {
+        current_page: page,
+        page_size: pageSize,
+        total_count: totalCount,
+        total_pages: totalPages
+      }
+    });
+  },
+  
   // Default handler for unmatched routes
   default: (url) => {
     console.warn(`Mock handler not found for: ${url}`);
@@ -1058,6 +1385,7 @@ const mockBackend = {
     }
     
     console.log(`[MOCK] GET ${url}`, config);
+    console.log(`[MOCK] Config params:`, config?.params);
     
     // Find matching handler - sort patterns by length descending for more specific matches first
     const sortedPatterns = Object.entries(mockHandlers)

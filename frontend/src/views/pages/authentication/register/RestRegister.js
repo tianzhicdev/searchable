@@ -312,7 +312,7 @@ const RestRegister = ({ ...others }) => {
             {strength !== 0 && (
                 <FormControl fullWidth>
                     <Box>
-                        <Grid container spacing={2} alignItems="center">
+                        <Grid spacing={2} alignItems="center">
                             <Grid item>
                                 <Box
                                     backgroundColor={level.color}

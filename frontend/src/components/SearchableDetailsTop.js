@@ -16,6 +16,7 @@ const SearchableDetailsTop = ({
   if (!searchableItem) return null;
 
   const publicData = searchableItem.payloads?.public || {};
+  console.log('SearchableDetailsTop', searchableItem, searchableRating);
 
   return (
     <Box>
@@ -37,7 +38,7 @@ const SearchableDetailsTop = ({
       {/* Posted by section */}
       <PostedBy 
         username={searchableItem.username} 
-        terminalId={searchableItem.terminal_id} 
+        userId={searchableItem.user_id} 
         maxLength={30}
       />
 

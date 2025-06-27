@@ -6,7 +6,6 @@ from .models import db, Users, JWTTokenBlocklist
 from .metrics import track_metrics, searchable_requests, searchable_latency, search_results_count, generate_latest, REGISTRY
 from .payment_helpers import calc_invoice
 from .data_helpers import (
-    get_terminal,
     get_searchableIds_by_user, 
     get_searchable,
     get_invoices,
@@ -51,7 +50,6 @@ __all__ = [
     'calc_invoice',
     
     # Data helpers
-    'get_terminal',
     'get_searchableIds_by_user',
     'get_searchable',
     'get_invoices',

@@ -12,6 +12,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -61,7 +62,7 @@ const UserProfile = () => {
 
   const handleBackClick = () => {
     debugNavigationStack(location, 'UserProfile Back Click');
-    navigateBack(history, '/searchables');
+    navigateBack(history, '/landing');
   };
 
   if (loading) {
@@ -144,6 +145,13 @@ const UserProfile = () => {
             <Typography variant="h5" gutterBottom>
               {profileData.username}
             </Typography>
+
+            {/* Display tags below name */}
+            {profileData.tags && profileData.tags.length > 0 && (
+              <Box style={{ marginTop: 8, marginBottom: 16 }}>
+                <TagsOnProfile tags={profileData.tags} />
+              </Box>
+            )}
 
             {/* Introduction */}
             {profileData.introduction && (
@@ -229,7 +237,7 @@ const UserProfile = () => {
               This user hasn't published any items yet.
             </Typography>
           ) : (
-            <Grid container spacing={2}>
+            <Grid spacing={2}>
               {downloadables.map((item) => (
                 <Grid item xs={12} sm={6} md={4} key={item.searchable_id}>
                   <Paper 

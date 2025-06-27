@@ -13,10 +13,16 @@ import GetAppIcon from '@material-ui/icons/GetApp';
 import StorefrontIcon from '@material-ui/icons/Storefront';
 import PaymentIcon from '@material-ui/icons/Payment';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import FilterListIcon from '@material-ui/icons/FilterList';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+import GroupIcon from '@material-ui/icons/Group';
+import DashboardIcon from '@material-ui/icons/Dashboard';
 import { useLogout } from '../../components/LogoutHandler';
 import useComponentStyles from '../../themes/componentStyles';
 import SearchableList from './SearchableList';
-import backend from '../utilities/Backend';
+import TagFilter from '../../components/Tags/TagFilter';
+import SearchBar from '../../components/Search/SearchBar';
+import Backend from '../utilities/Backend';
 import { isMockMode } from '../../mocks/mockBackend'; 
 const Searchables = () => {
   
@@ -57,17 +63,32 @@ const Searchables = () => {
 
   const classes = useComponentStyles();
 
-  // State for dropdown menu
+  // State for dropdown menus
   const [anchorEl, setAnchorEl] = useState(null);
+  const [navigationAnchorEl, setNavigationAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const navigationOpen = Boolean(navigationAnchorEl);
 
-  // Handle dropdown menu
+  // State for tag filtering
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchTrigger, setSearchTrigger] = useState(0);
+
+  // Handle dropdown menus
   const handleAddNew = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleNavigationMenu = (event) => {
+    setNavigationAnchorEl(event.currentTarget);
+  };
+
+  const handleNavigationMenuClose = () => {
+    setNavigationAnchorEl(null);
   };
 
   // Handle navigation to publish pages
@@ -86,40 +107,100 @@ const Searchables = () => {
     handleMenuClose();
   };
 
-  // Handle navigation to profile page
+  // Handle navigation actions
   const handleProfileClick = () => {
+    handleNavigationMenuClose();
     history.push('/profile');
+  };
+
+  const handleFindCreators = () => {
+    handleNavigationMenuClose();
+    history.push('/landing?tab=creators');
+  };
+
+  const handleFindContent = () => {
+    handleNavigationMenuClose();
+    history.push('/landing?tab=content');
   };
 
 
   // Handle search button click
   const handleSearchButtonClick = () => {
+    const tagFilters = selectedTags.length > 0 ? { tags: selectedTags } : {};
+    const updatedFilters = { ...filters, ...tagFilters };
+    
     localStorage.setItem('searchTerm', searchTerm);
-    localStorage.setItem('searchablesFilters', JSON.stringify(filters));
-    // Force re-render of SearchableList by updating the search criteria
-    setSearchTerm(prevTerm => {
-      // This is a trick to force the re-render even if the term didn't change
-      const currentTerm = prevTerm;
-      return currentTerm;
-    });
+    localStorage.setItem('searchablesFilters', JSON.stringify(updatedFilters));
+    localStorage.removeItem('searchablesPage'); // Reset to page 1 on new search
+    
+    setFilters(updatedFilters);
+    setSearchTrigger(prev => prev + 1); // Trigger a new search
+  };
+
+  // Handle tag selection
+  const handleTagSelection = (tags) => {
+    setSelectedTags(tags);
+  };
+
+  // Toggle filters visibility
+  const handleToggleFilters = () => {
+    setShowFilters(!showFilters);
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <Box >
-            {/* Users must be logged in to access this page, so always show logged-in UI */}
-            <>
+    <Box>
+      <Grid container>
+        <Grid item xs={12}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+            {/* Navigation dropdown menu on the left */}
+            <Box>
               <Button 
                 variant="contained" 
-                onClick={handleProfileClick}
+                onClick={handleNavigationMenu}
               >
-                <PersonIcon />
+                <MoreVertIcon />
               </Button>
               
+              <Menu
+                anchorEl={navigationAnchorEl}
+                open={navigationOpen}
+                onClose={handleNavigationMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'left',
+                }}
+              >
+                <MenuItem onClick={handleProfileClick}>
+                  <ListItemIcon>
+                    <PersonIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="My Profile" />
+                </MenuItem>
+                <MenuItem onClick={handleFindCreators}>
+                  <ListItemIcon>
+                    <GroupIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Find Creators" />
+                </MenuItem>
+                <MenuItem onClick={handleFindContent}>
+                  <ListItemIcon>
+                    <DashboardIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Find Content" />
+                </MenuItem>
+              </Menu>
+            </Box>
+            
+            {/* Action buttons on the right */}
+            <Box>
               <Button 
                 variant="contained" 
                 onClick={handleLogout}
+                style={{ marginRight: 8 }}
               >
                 <ExitToAppIcon />
               </Button>
@@ -127,80 +208,85 @@ const Searchables = () => {
               <Button 
                 variant="contained" 
                 onClick={handleAddNew}
-                style={{ float: 'right' }}
               >
                 <AddIcon />
               </Button>
-              
-              <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-              >
-                <MenuItem onClick={handlePublishDigital}>
-                  <ListItemIcon>
-                    <GetAppIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Sell Digital Products" />
-                </MenuItem>
-                <MenuItem onClick={handlePublishOffline}>
-                  <ListItemIcon>
-                    <StorefrontIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Sell Offline Products" />
-                </MenuItem>
-                <MenuItem onClick={handlePublishDirect}>
-                  <ListItemIcon>
-                    <PaymentIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Direct Payment Item" />
-                </MenuItem>
-              </Menu>
-            </>
-        </Box>
+            </Box>
+          </Box>
+          
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={handlePublishDigital}>
+              <ListItemIcon>
+                <GetAppIcon />
+              </ListItemIcon>
+              <ListItemText primary="Sell Digital Products" />
+            </MenuItem>
+            <MenuItem onClick={handlePublishOffline}>
+              <ListItemIcon>
+                <StorefrontIcon />
+              </ListItemIcon>
+              <ListItemText primary="Sell Offline Products" />
+            </MenuItem>
+            <MenuItem onClick={handlePublishDirect}>
+              <ListItemIcon>
+                <PaymentIcon />
+              </ListItemIcon>
+              <ListItemText primary="Direct Payment Item" />
+            </MenuItem>
+          </Menu>
       </Grid>
       
-      <Grid item xs={12}>
-        <Box mb={1} display="flex" justifyContent="space-between" alignItems="center">
-          <TextField
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1 }}
-            InputProps={{
-              endAdornment: (
-                <Button 
-
-                  variant='contained'
-                  onClick={handleSearchButtonClick} 
-                  style={{ padding: '4px', minWidth: 'unset' }}
-                >
-                  <SearchIcon/>
-                </Button>
-              ),
-            }}
-          />
-          
-        </Box>
+      
+      <Grid item xs={12} style={{ marginTop: 16 }}>
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          onSearch={handleSearchButtonClick}
+          onToggleFilters={handleToggleFilters}
+          onClear={() => {
+            setSearchTerm('');
+            setSelectedTags([]);
+          }}
+          showFilters={showFilters}
+          filterCount={selectedTags.length}
+          placeholder="Search content..."
+          searchButtonText="Search Content"
+        />
       </Grid>
+
+      {showFilters && (
+        <Grid item xs={12} style={{ marginTop: 16 }}>
+          <TagFilter
+            selectedTags={selectedTags}
+            onTagsChange={handleTagSelection}
+            tagType="searchable"
+          />
+        </Grid>
+      )}
 
       <SearchableList 
         criteria={{
           searchTerm: searchTerm,
-          filters: filters
+          filters: filters,
+          searchTrigger: searchTrigger
         }}
       />
 
 
-    </Grid>
+      </Grid>
+    </Box>
   );
 };
 

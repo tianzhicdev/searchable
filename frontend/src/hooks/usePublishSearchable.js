@@ -30,6 +30,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
   // Common state across all PublishSearchable components
   const [formData, setFormData] = useState(defaultFormData);
   const [images, setImages] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -47,6 +48,10 @@ const usePublishSearchable = (searchableType, options = {}) => {
     // Extract URIs from the image data objects
     const imageUris = newImages.map(img => img.uri);
     setImages(imageUris);
+  };
+
+  const handleTagsChange = (newTags) => {
+    setSelectedTags(newTags);
   };
 
   // Common form validation
@@ -72,6 +77,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
   const resetForm = () => {
     setFormData(defaultFormData);
     setImages([]);
+    setSelectedTags([]);
     setError(null);
     setSuccess(false);
   };
@@ -109,6 +115,19 @@ const usePublishSearchable = (searchableType, options = {}) => {
 
       const response = await backend.post('v1/searchable/create', searchableData);
 
+      // Add tags if any were selected
+      if (selectedTags.length > 0 && response.data?.searchable_id) {
+        try {
+          const tagIds = selectedTags.map(tag => tag.id);
+          await backend.post(`v1/searchables/${response.data.searchable_id}/tags`, {
+            tag_ids: tagIds
+          });
+        } catch (tagError) {
+          console.error('Failed to add tags:', tagError);
+          // Don't fail the whole operation if tags fail
+        }
+      }
+
       setSuccess(true);
       
       // Call custom success handler if provided
@@ -120,7 +139,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
       resetForm();
 
       // Determine redirect path
-      let redirectPath = '/searchables';
+      let redirectPath = '/landing';
       if (customRedirectPath) {
         redirectPath = typeof customRedirectPath === 'function' 
           ? customRedirectPath(response) 
@@ -160,13 +179,14 @@ const usePublishSearchable = (searchableType, options = {}) => {
 
   // Navigation helper
   const navigateBack = () => {
-    history.push('/searchables');
+    history.push('/landing');
   };
 
   return {
     // State
     formData,
     images,
+    selectedTags,
     loading,
     error,
     success,
@@ -174,6 +194,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
     // Handlers
     handleInputChange,
     handleImagesChange,
+    handleTagsChange,
     handleSubmit,
     resetForm,
     validateForm,

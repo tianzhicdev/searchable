@@ -45,8 +45,10 @@ const BasePublishSearchable = ({
     loading,
     error,
     success,
+    selectedTags,
     handleInputChange,
     handleImagesChange,
+    handleTagsChange,
     handleSubmit,
     navigateBack,
     setError
@@ -123,12 +125,14 @@ const BasePublishSearchable = ({
                 )}
               </Grid>
 
-              {/* Common fields: title, description, images */}
+              {/* Common fields: title, description, tags, images */}
               <PublishSearchableCommon
                 formData={formData}
                 onInputChange={handleInputChange}
                 images={images}
                 onImagesChange={handleImagesChange}
+                selectedTags={selectedTags}
+                onTagsChange={handleTagsChange}
                 onError={setError}
                 imageDescription={imageDescription}
                 showCurrency={showCurrency}

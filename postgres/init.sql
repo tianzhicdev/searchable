@@ -1,47 +1,10 @@
 CREATE TABLE IF NOT EXISTS searchables (
     searchable_id SERIAL PRIMARY KEY,
-    terminal_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
     type TEXT NOT NULL,
     searchable_data JSONB NOT NULL
 );
 
--- CREATE TABLE IF NOT EXISTS searchable_geo (
---     searchable_id INTEGER NOT NULL,
---     latitude FLOAT NOT NULL,
---     longitude FLOAT NOT NULL,
---     geohash TEXT NOT NULL,
---     PRIMARY KEY (searchable_id),
---     FOREIGN KEY (searchable_id) REFERENCES searchables(searchable_id) ON DELETE CASCADE
--- );
-
--- -- Index for geohash to improve search performance
--- CREATE INDEX IF NOT EXISTS idx_searchable_geo_geohash ON searchable_geo(geohash);
-
--- -- Index for coordinates to support direct lat/long queries
--- CREATE INDEX IF NOT EXISTS idx_searchable_geo_coords ON searchable_geo(latitude, longitude);
-
-CREATE TABLE IF NOT EXISTS kv (
-    type TEXT NOT NULL,
-    pkey TEXT NOT NULL,
-    fkey TEXT NOT NULL,
-    data JSONB NOT NULL,
-    PRIMARY KEY (type, pkey, fkey)
-);
--- Index on type for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_type ON kv(type);
-
-
--- Index on pkey for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_pkey ON kv(pkey);
-
--- Index on fkey for faster lookups
-CREATE INDEX IF NOT EXISTS idx_kv_fkey ON kv(fkey);
-
-
-CREATE TABLE IF NOT EXISTS terminal (
-    terminal_id SERIAL PRIMARY KEY,
-    terminal_data JSONB NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS files (
     file_id SERIAL PRIMARY KEY,
@@ -297,6 +260,139 @@ CREATE INDEX IF NOT EXISTS idx_rewards_created_at ON rewards(created_at);
 
 -- Index on amount for aggregation queries
 CREATE INDEX IF NOT EXISTS idx_rewards_amount ON rewards(amount);
+
+-- ===================================
+-- TAGS SYSTEM TABLES
+-- ===================================
+
+-- Tags table for pre-defined tags
+CREATE TABLE IF NOT EXISTS tags (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    tag_type VARCHAR(20) NOT NULL CHECK (tag_type IN ('user', 'searchable')),
+    description TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User tags mapping (many-to-many)
+CREATE TABLE IF NOT EXISTS user_tags (
+    user_id INTEGER NOT NULL, -- References terminal.terminal_id
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, tag_id)
+);
+
+-- Searchable tags mapping (many-to-many)
+CREATE TABLE IF NOT EXISTS searchable_tags (
+    searchable_id INTEGER NOT NULL REFERENCES searchables(searchable_id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (searchable_id, tag_id)
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_tags_type ON tags(tag_type);
+CREATE INDEX IF NOT EXISTS idx_tags_active ON tags(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+CREATE INDEX IF NOT EXISTS idx_user_tags_user_id ON user_tags(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_tags_tag_id ON user_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_searchable_tags_searchable_id ON searchable_tags(searchable_id);
+CREATE INDEX IF NOT EXISTS idx_searchable_tags_tag_id ON searchable_tags(tag_id);
+
+-- ===================================
+-- PRE-DEFINED TAGS DATA
+-- ===================================
+
+-- Insert pre-defined User Tags
+INSERT INTO tags (name, tag_type, description) VALUES
+-- Creator/Professional Types
+('artist', 'user', 'Visual artists, digital artists, painters, sculptors'),
+('musician', 'user', 'Music creators, composers, performers'),
+('writer', 'user', 'Authors, bloggers, content writers'),
+('photographer', 'user', 'Professional and amateur photographers'),
+('designer', 'user', 'Graphic designers, UI/UX designers, product designers'),
+('developer', 'user', 'Software developers, web developers, app creators'),
+('educator', 'user', 'Teachers, trainers, course creators'),
+('researcher', 'user', 'Academic researchers, analysts'),
+
+-- Business Types
+('store', 'user', 'Online stores, retail businesses'),
+('publisher', 'user', 'Book publishers, content publishers'),
+('agency', 'user', 'Marketing agencies, creative agencies'),
+('startup', 'user', 'New businesses and startups'),
+('freelancer', 'user', 'Independent contractors and freelancers'),
+('consultant', 'user', 'Business and specialized consultants'),
+
+-- Content Creator Types
+('blogger', 'user', 'Blog writers and content creators'),
+('podcaster', 'user', 'Podcast hosts and audio content creators'),
+('streamer', 'user', 'Live streamers and video content creators'),
+('influencer', 'user', 'Social media influencers and content creators'),
+
+-- Specialty Types
+('nonprofit', 'user', 'Non-profit organizations and charities'),
+('community', 'user', 'Community groups and organizations'),
+('collector', 'user', 'Collectors of various items and memorabilia')
+
+ON CONFLICT (name) DO NOTHING;
+
+-- Insert pre-defined Searchable Tags
+INSERT INTO tags (name, tag_type, description) VALUES
+-- Content Types
+('books', 'searchable', 'Books, ebooks, novels, textbooks'),
+('music', 'searchable', 'Songs, albums, audio tracks, soundtracks'),
+('art', 'searchable', 'Digital art, paintings, illustrations, graphics'),
+('photos', 'searchable', 'Photography, stock photos, portraits'),
+('videos', 'searchable', 'Video content, tutorials, entertainment'),
+('software', 'searchable', 'Applications, tools, plugins, scripts'),
+('games', 'searchable', 'Video games, mobile games, game assets'),
+('courses', 'searchable', 'Educational content, tutorials, training materials'),
+
+-- Digital Products
+('templates', 'searchable', 'Design templates, document templates'),
+('fonts', 'searchable', 'Typography, custom fonts, typefaces'),
+('icons', 'searchable', 'Icon sets, symbols, graphics'),
+('themes', 'searchable', 'Website themes, app themes, UI kits'),
+('presets', 'searchable', 'Photo presets, audio presets, filters'),
+('plugins', 'searchable', 'Software plugins, extensions, add-ons'),
+('assets', 'searchable', 'Game assets, design assets, resources'),
+
+-- Physical Products/Services
+('prints', 'searchable', 'Physical prints, posters, merchandise'),
+('crafts', 'searchable', 'Handmade items, crafts, DIY products'),
+('services', 'searchable', 'Consulting, custom work, freelance services'),
+('coaching', 'searchable', 'Personal coaching, mentorship, advice'),
+
+-- Content Categories
+('fiction', 'searchable', 'Fiction books, stories, novels'),
+('nonfiction', 'searchable', 'Non-fiction books, educational content'),
+('romance', 'searchable', 'Romance novels and content'),
+('scifi', 'searchable', 'Science fiction content'),
+('fantasy', 'searchable', 'Fantasy books and content'),
+('horror', 'searchable', 'Horror content and stories'),
+('comedy', 'searchable', 'Comedy content and entertainment'),
+('documentary', 'searchable', 'Documentary content and educational videos'),
+
+-- Skill/Topic Areas
+('business', 'searchable', 'Business-related content and tools'),
+('technology', 'searchable', 'Tech-related content and tools'),
+('health', 'searchable', 'Health and wellness content'),
+('fitness', 'searchable', 'Fitness and exercise content'),
+('cooking', 'searchable', 'Recipes, cooking tutorials, food content'),
+('travel', 'searchable', 'Travel guides, photography, experiences'),
+('lifestyle', 'searchable', 'Lifestyle content and advice'),
+('finance', 'searchable', 'Financial advice, tools, and content'),
+
+-- Style/Genre Tags
+('minimalist', 'searchable', 'Clean, simple, minimalist design'),
+('vintage', 'searchable', 'Retro and vintage style content'),
+('modern', 'searchable', 'Contemporary and modern design'),
+('abstract', 'searchable', 'Abstract art and design'),
+('realistic', 'searchable', 'Realistic art and photography'),
+('experimental', 'searchable', 'Experimental and avant-garde content')
+
+ON CONFLICT (name) DO NOTHING;
 
 
 

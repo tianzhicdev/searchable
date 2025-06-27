@@ -15,6 +15,12 @@ const BaseSearchableDetails = ({
   // Type-specific content
   renderTypeSpecificContent,
   
+  // Type-specific reviews content (rendered outside main Paper)
+  renderReviewsContent,
+  
+  // Type-specific receipts content (rendered outside main Paper)
+  renderReceiptsContent,
+  
   // Type-specific handlers
   onPayment,
   
@@ -51,7 +57,7 @@ const BaseSearchableDetails = ({
     }
     
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -65,7 +71,7 @@ const BaseSearchableDetails = ({
   if (error) {
     const errorMessage = customErrorMessage || error;
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">{errorMessage}</Typography>
@@ -78,7 +84,7 @@ const BaseSearchableDetails = ({
   // Item not found
   if (!SearchableItem) {
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">Item not found</Typography>
@@ -134,6 +140,32 @@ const BaseSearchableDetails = ({
           />
         </Paper>
       </Grid>
+
+      {/* Reviews section - rendered outside main Paper */}
+      {renderReviewsContent && (
+        <Grid item xs={12}>
+          {renderReviewsContent({
+            SearchableItem,
+            isOwner,
+            searchableRating,
+            loadingRatings,
+            id
+          })}
+        </Grid>
+      )}
+
+      {/* Receipts section - rendered outside main Paper */}
+      {renderReceiptsContent && (
+        <Grid item xs={12}>
+          {renderReceiptsContent({
+            SearchableItem,
+            isOwner,
+            searchableRating,
+            loadingRatings,
+            id
+          })}
+        </Grid>
+      )}
     </Grid>
   );
 };

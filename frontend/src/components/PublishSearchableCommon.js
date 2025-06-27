@@ -1,6 +1,7 @@
 import React from 'react';
 import { Grid, Typography, TextField } from '@material-ui/core';
 import ImageUploader from './ImageUploader';
+import TagSelector from './Tags/TagSelector';
 import useComponentStyles from '../themes/componentStyles';
 
 const PublishSearchableCommon = ({
@@ -10,6 +11,8 @@ const PublishSearchableCommon = ({
   onImagesChange,
   onError,
   imageDescription = "Add up to 10 images",
+  selectedTags = [],
+  onTagsChange,
 }) => {
   const classes = useComponentStyles();
 
@@ -46,6 +49,23 @@ const PublishSearchableCommon = ({
           multiline
           rows={4}
           className={classes.textInput}
+        />
+      </Grid>
+      
+      <Grid item xs={12} className={classes.formGroup}>
+        <Typography variant="subtitle1" className={classes.formLabel}>
+          Tags (Optional)
+        </Typography>
+        <Typography variant="body2" color="textSecondary" style={{ marginBottom: 8 }}>
+          Add up to 3 tags to help users find your content
+        </Typography>
+        <TagSelector
+          tagType="searchable"
+          selectedTags={selectedTags}
+          onTagsChange={onTagsChange}
+          maxTags={3}
+          placeholder="Select tags..."
+          label=""
         />
       </Grid>
       

@@ -11,6 +11,7 @@ import { SET_USER } from '../../store/actions';
 import useComponentStyles from '../../themes/componentStyles';
 import ZoomableImage from '../../components/ZoomableImage';
 import ImageUploader from '../../components/ImageUploader';
+import TagSelector from '../../components/Tags/TagSelector';
 import { SOCIAL_MEDIA_PLATFORMS, validateSocialMediaUrl } from '../../components/SocialMediaIcons';
 
 // Singleton pattern to manage dialog state across components
@@ -29,8 +30,6 @@ const ProfileEditor = () => {
     username: account.user?.username || '',
     introduction: '',
     profile_image_url: '',
-    address: account.user?.address || '',
-    tel: account.user?.tel || '',
     additional_images: [],
     socialMedia: {
       instagram: '',
@@ -38,6 +37,7 @@ const ProfileEditor = () => {
       youtube: ''
     }
   });
+  const [userTags, setUserTags] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [additionalImages, setAdditionalImages] = useState([]);
@@ -76,8 +76,6 @@ const ProfileEditor = () => {
           username: profile.username || account.user.username || '',
           introduction: profile.introduction || '',
           profile_image_url: profile.profile_image_url || '',
-          address: account.user.address || '',
-          tel: account.user.tel || '',
           additional_images: profile.metadata?.additional_images || [],
           socialMedia: {
             instagram: profile.metadata?.socialMedia?.instagram || '',
@@ -101,45 +99,34 @@ const ProfileEditor = () => {
         }
         
       } catch (profileErr) {
-        // If profile doesn't exist, try to get terminal data for address/tel
+        // If profile doesn't exist, use defaults
         if (profileErr.response?.status === 404) {
-          console.log('User profile not found, trying terminal data...');
-          
-          try {
-            const terminalResponse = await Backend.get('v1/terminal');
-            
-            setProfileData({
-              username: account.user.username || '',
-              introduction: '',
-              profile_image_url: '',
-              address: terminalResponse.data.address || '',
-              tel: terminalResponse.data.tel || '',
-              additional_images: [],
-              socialMedia: {
-                instagram: '',
-                x: '',
-                youtube: ''
-              }
-            });
-          } catch (terminalErr) {
-            console.log('Terminal data not found, using defaults');
-            setProfileData({
-              username: account.user.username || '',
-              introduction: '',
-              profile_image_url: '',
-              address: '',
-              tel: '',
-              additional_images: [],
-              socialMedia: {
-                instagram: '',
-                x: '',
-                youtube: ''
-              }
-            });
-          }
+          console.log('User profile not found, using defaults');
+          setProfileData({
+            username: account.user.username || '',
+            introduction: '',
+            profile_image_url: '',
+            additional_images: [],
+            socialMedia: {
+              instagram: '',
+              x: '',
+              youtube: ''
+            }
+          });
         } else {
           throw profileErr;
         }
+      }
+      
+      // Fetch user tags
+      try {
+        const tagsResponse = await Backend.get(`v1/users/${account.user._id}/tags`);
+        if (tagsResponse.data && tagsResponse.data.success) {
+          setUserTags(tagsResponse.data.tags || []);
+        }
+      } catch (tagErr) {
+        console.error('Error fetching user tags:', tagErr);
+        // Don't fail the whole load if tags fail
       }
       
     } catch (err) {
@@ -258,6 +245,10 @@ const ProfileEditor = () => {
     setAdditionalImages(newImages);
   };
   
+  const handleTagsChange = (newTags) => {
+    setUserTags(newTags);
+  };
+  
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -298,17 +289,15 @@ const ProfileEditor = () => {
         throw new Error('Failed to update profile. Server returned an invalid response.');
       }
       
-      // Update terminal data if address/tel changed
-      if (profileData.address !== account.user.address || profileData.tel !== account.user.tel) {
-        try {
-          await Backend.put('v1/terminal', {
-            address: profileData.address,
-            tel: profileData.tel
-          });
-        } catch (terminalErr) {
-          console.warn('Failed to update terminal data:', terminalErr);
-          // Don't fail the whole operation for this
-        }
+      // Update user tags
+      try {
+        const tagIds = userTags.map(tag => tag.id);
+        await Backend.post(`v1/users/${account.user._id}/tags`, {
+          tag_ids: tagIds
+        });
+      } catch (tagError) {
+        console.error('Failed to update user tags:', tagError);
+        // Don't fail the whole operation if tags fail
       }
       
       // Update Redux store with new profile data
@@ -316,9 +305,7 @@ const ProfileEditor = () => {
         type: SET_USER,
         payload: {
           ...account.user,
-          username: profileData.username,
-          address: profileData.address,
-          tel: profileData.tel
+          username: profileData.username
         }
       });
       
@@ -418,6 +405,24 @@ const ProfileEditor = () => {
                 margin="normal"
                 placeholder="Tell others about yourself..."
               />
+
+              {/* User Tags Section */}
+              <Box mt={3} mb={2}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Your Tags
+                </Typography>
+                <Typography variant="body2" color="textSecondary" style={{ marginBottom: 8 }}>
+                  Add tags to help others find you (max 10 tags)
+                </Typography>
+                <TagSelector
+                  tagType="user"
+                  selectedTags={userTags}
+                  onTagsChange={handleTagsChange}
+                  maxTags={10}
+                  placeholder="Select tags that describe you..."
+                  label=""
+                />
+              </Box>
 
               {/* Social Media Links Section */}
               <Box mt={3} mb={2}>
