@@ -76,7 +76,7 @@ const MiniProfile = ({
     tags = data.tags || [];
     metaInfo = {
       username: data.username,
-      terminalId: data.terminal_id,
+      userId: data.user_id,
       price: publicData.price,
       category: publicData.category
     };
@@ -99,7 +99,7 @@ const MiniProfile = ({
       searchableCount: data.searchableCount,
       rating: data.rating,
       totalRatings: data.totalRatings,
-      terminalId: data.terminal_id
+      userId: data.user_id
     };
     clickPath = `/profile/${data.username || data.id}`;
   }
@@ -130,7 +130,7 @@ const MiniProfile = ({
               <Box className={classes.metaInfo}>
                 <PostedBy 
                   username={metaInfo.username} 
-                  userId={metaInfo.terminalId} 
+                  userId={metaInfo.userId} 
                   maxLength={30}
                 />
                 
