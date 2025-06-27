@@ -11,6 +11,10 @@ export const mockSearchableItem = {
   searchable_id: "mock-item-1",
   user_id: "1",
   username: "DigitalAssetStore",
+  tags: [
+    { id: 21, name: "books", tag_type: "searchable" },
+    { id: 23, name: "art", tag_type: "searchable" }
+  ],
   payloads: {
     public: {
       title: "Premium Digital Asset Bundle",
@@ -134,6 +138,11 @@ export const mockUserProfile = {
     username: "test_user",
     profile_image_url: "/api/v1/media/profile-mock-1",
     introduction: "Welcome to my digital store! I specialize in creating high-quality digital assets and templates for creative professionals.",
+    tags: [
+      { id: 1, name: "artist", tag_type: "user" },
+      { id: 5, name: "designer", tag_type: "user" },
+      { id: 10, name: "freelancer", tag_type: "user" }
+    ],
     metadata: {
       additional_images: [
         "/api/v1/media/gallery-mock-1",
@@ -148,7 +157,11 @@ export const mockUserProfile = {
       }
     },
     created_at: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago
-  }
+  },
+  terminals: [{
+    terminal_id: "mock-terminal-1",
+    username: "test_user"
+  }]
 };
 
 export const mockTerminal = {

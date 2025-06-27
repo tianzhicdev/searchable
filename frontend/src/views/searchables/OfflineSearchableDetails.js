@@ -270,35 +270,32 @@ const OfflineSearchableDetails = () => {
 
       {/* Items Section */}
       {renderOfflineItems()}
-      
-      {/* Collapsible Reviews Section */}
-      {!loadingRatings && searchableRating && searchableRating.individual_ratings && searchableRating.individual_ratings.length > 0 && (
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon className={classes.iconColor} />}
-            aria-controls="reviews-content"
-            id="reviews-header"
-          >
-            <Typography className={classes.staticText}>
-              Recent Reviews ({searchableRating.individual_ratings.length})
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box width="100%">
-              <RatingDisplay
-                averageRating={searchableRating.average_rating || 0}
-                totalRatings={searchableRating.total_ratings || 0}
-                individualRatings={searchableRating.individual_ratings || []}
-                showIndividualRatings={true}
-                maxIndividualRatings={10}
-              />
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      )}
-      
     </Box>
   );
+
+  // Render reviews content separately
+  const renderReviewsContent = ({ searchableRating, loadingRatings }) => {
+    if (!searchableRating || !searchableRating.individual_ratings || searchableRating.individual_ratings.length === 0) {
+      return null;
+    }
+    
+    return (
+      <Paper style={{ marginTop: 16, padding: 16, width: '100%' }}>
+        <Typography variant="h6" className={classes.staticText} gutterBottom>
+          Recent Reviews ({searchableRating.individual_ratings.length})
+        </Typography>
+        <Box width="100%">
+          <RatingDisplay
+            averageRating={searchableRating.average_rating || 0}
+            totalRatings={searchableRating.total_ratings || 0}
+            individualRatings={searchableRating.individual_ratings || []}
+            showIndividualRatings={true}
+            maxIndividualRatings={10}
+          />
+        </Box>
+      </Paper>
+    );
+  };
 
   // Render receipts content separately
   const renderReceiptsContent = ({ id }) => (
@@ -313,6 +310,7 @@ const OfflineSearchableDetails = () => {
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderOfflineContent}
+      renderReviewsContent={renderReviewsContent}
       renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
       totalPrice={totalPrice * 1.035}

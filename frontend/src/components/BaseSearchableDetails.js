@@ -15,6 +15,9 @@ const BaseSearchableDetails = ({
   // Type-specific content
   renderTypeSpecificContent,
   
+  // Type-specific reviews content (rendered outside main Paper)
+  renderReviewsContent,
+  
   // Type-specific receipts content (rendered outside main Paper)
   renderReceiptsContent,
   
@@ -92,7 +95,7 @@ const BaseSearchableDetails = ({
   }
 
   return (
-    <Grid spacing={2}>
+    <Grid container spacing={2}>
       {/* Back button */}
       <Grid item xs={12}>
         <Button
@@ -137,6 +140,19 @@ const BaseSearchableDetails = ({
           />
         </Paper>
       </Grid>
+
+      {/* Reviews section - rendered outside main Paper */}
+      {renderReviewsContent && (
+        <Grid item xs={12}>
+          {renderReviewsContent({
+            SearchableItem,
+            isOwner,
+            searchableRating,
+            loadingRatings,
+            id
+          })}
+        </Grid>
+      )}
 
       {/* Receipts section - rendered outside main Paper */}
       {renderReceiptsContent && (
