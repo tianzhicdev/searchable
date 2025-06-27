@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Typography,
   Box,
   TextField,
   Grid,
   Paper,
   Button,
-  Tabs,
-  Tab,
   InputAdornment,
-  IconButton
+  IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText
 } from '@material-ui/core';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
-  FilterList as FilterIcon
+  FilterList as FilterIcon,
+  MoreVert as MoreVertIcon,
+  Person as PersonIcon,
+  Group as GroupIcon,
+  Dashboard as DashboardIcon,
+  ExitToApp as ExitToAppIcon,
+  Add as AddIcon,
+  GetApp as GetAppIcon,
+  Storefront as StorefrontIcon,
+  Payment as PaymentIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useHistory, useLocation } from 'react-router-dom';
-import MainCard from '../../ui-component/cards/MainCard';
+import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
+import SearchBar from '../../components/Search/SearchBar';
 import UserSearchResults from '../../components/Search/UserSearchResults';
 import backend from '../../mocks/mockBackend';
 
@@ -59,6 +70,7 @@ const SearchByUser = () => {
   const classes = useStyles();
   const history = useHistory();
   const location = useLocation();
+  const handleLogout = useLogout();
   
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,7 +79,10 @@ const SearchByUser = () => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [currentTab, setCurrentTab] = useState(0); // 0 for users, 1 for searchables
+  const [navigationAnchorEl, setNavigationAnchorEl] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const navigationOpen = Boolean(navigationAnchorEl);
+  const open = Boolean(anchorEl);
   
   // Load initial data
   useEffect(() => {
@@ -122,162 +137,208 @@ const SearchByUser = () => {
     setSelectedTags([]);
   };
   
-  const handleTabChange = (event, newValue) => {
-    setCurrentTab(newValue);
-    if (newValue === 1) {
-      // Switch to searchables
-      history.push('/searchables');
-    }
-  };
-  
   const handleUserClick = (user) => {
     history.push(`/profile/${user.username || user.id}`);
   };
+
+  // Navigation menu handlers
+  const handleNavigationMenu = (event) => {
+    setNavigationAnchorEl(event.currentTarget);
+  };
+
+  const handleNavigationMenuClose = () => {
+    setNavigationAnchorEl(null);
+  };
+
+  const handleProfileClick = () => {
+    handleNavigationMenuClose();
+    history.push('/profile');
+  };
+
+  const handleFindCreators = () => {
+    handleNavigationMenuClose();
+    history.push('/landing?tab=creators');
+  };
+
+  const handleFindContent = () => {
+    handleNavigationMenuClose();
+    history.push('/landing?tab=content');
+  };
+
+  // Handle dropdown menu
+  const handleAddNew = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Handle navigation to publish pages
+  const handlePublishDigital = () => {
+    history.push('/publish-searchables');
+    handleMenuClose();
+  };
+
+  const handlePublishOffline = () => {
+    history.push('/publish-offline-searchables');
+    handleMenuClose();
+  };
+
+  const handlePublishDirect = () => {
+    history.push('/publish-direct-searchables');
+    handleMenuClose();
+  };
   
   return (
-    <Container maxWidth="lg" className={classes.container}>
-      {/* Page Header */}
-      <Box className={classes.searchHeader}>
-        <Typography variant="h4" gutterBottom>
-          Find Creators
-        </Typography>
-        <Typography variant="body1" color="textSecondary">
-          Discover talented creators and explore their work
-        </Typography>
-      </Box>
-      
-      {/* Navigation Tabs */}
-      <Paper className={classes.tabsContainer}>
-        <Tabs
-          value={currentTab}
-          onChange={handleTabChange}
-          indicatorColor="primary"
-          textColor="primary"
-        >
-          <Tab label="Search Users" />
-          <Tab label="Search Content" />
-        </Tabs>
-      </Paper>
-      
-      <MainCard>
-        <Grid container spacing={3}>
-          {/* Search and Filters Section */}
-          <Grid item xs={12} md={showFilters ? 8 : 12}>
-            {/* Search Section */}
-            <Box className={classes.searchSection}>
-              <form onSubmit={handleSearchSubmit}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} sm={showFilters ? 12 : 10}>
-                    <TextField
-                      className={classes.searchField}
-                      placeholder="Search by username..."
-                      variant="outlined"
-                      size="medium"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                        endAdornment: searchTerm && (
-                          <InputAdornment position="end">
-                            <IconButton
-                              size="small"
-                              onClick={() => setSearchTerm('')}
-                            >
-                              <ClearIcon />
-                            </IconButton>
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-                  </Grid>
-                  
-                  {!showFilters && (
-                    <Grid item xs={12} sm={2}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<FilterIcon />}
-                        onClick={() => setShowFilters(!showFilters)}
-                        fullWidth
-                      >
-                        Filters
-                      </Button>
-                    </Grid>
-                  )}
-                </Grid>
-                
-                <Box className={classes.searchActions}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    startIcon={<SearchIcon />}
-                    disabled={loading}
-                  >
-                    Search Users
-                  </Button>
-                  
-                  {(searchTerm || selectedTags.length > 0) && (
-                    <Button
-                      variant="outlined"
-                      startIcon={<ClearIcon />}
-                      onClick={handleClearSearch}
-                    >
-                      Clear All
-                    </Button>
-                  )}
-                  
-                  {showFilters && (
-                    <Button
-                      variant="outlined"
-                      onClick={() => setShowFilters(false)}
-                    >
-                      Hide Filters
-                    </Button>
-                  )}
-                </Box>
-              </form>
-            </Box>
+    <Box>
+      <Grid container>
+        <Grid item xs={12}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          {/* Navigation dropdown menu on the left */}
+          <Box>
+            <Button 
+              variant="contained" 
+              onClick={handleNavigationMenu}
+            >
+              <MoreVertIcon />
+            </Button>
             
-            {/* Results Section */}
-            <UserSearchResults
-              users={users}
-              loading={loading}
-              pagination={pagination}
-              onUserClick={handleUserClick}
-              emptyMessage={
-                selectedTags.length > 0 || searchTerm 
-                  ? "No users found matching your criteria"
-                  : "Start searching to find creators"
-              }
-              emptySubtext={
-                selectedTags.length > 0 || searchTerm
-                  ? "Try adjusting your search filters or search terms."
-                  : "Use the search bar or tag filters to discover talented creators."
-              }
-            />
-          </Grid>
+            <Menu
+              anchorEl={navigationAnchorEl}
+              open={navigationOpen}
+              onClose={handleNavigationMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+            >
+              <MenuItem onClick={handleProfileClick}>
+                <ListItemIcon>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="My Profile" />
+              </MenuItem>
+              <MenuItem onClick={handleFindCreators}>
+                <ListItemIcon>
+                  <GroupIcon />
+                </ListItemIcon>
+                <ListItemText primary="Find Creators" />
+              </MenuItem>
+              <MenuItem onClick={handleFindContent}>
+                <ListItemIcon>
+                  <DashboardIcon />
+                </ListItemIcon>
+                <ListItemText primary="Find Content" />
+              </MenuItem>
+            </Menu>
+          </Box>
           
-          {/* Filters Sidebar */}
-          {showFilters && (
-            <Grid item xs={12} md={4}>
-              <Box className={classes.filtersSection}>
-                <TagFilter
-                  tagType="user"
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
-                  title="Filter by User Tags"
-                  expanded={true}
-                />
-              </Box>
-            </Grid>
-          )}
+          {/* Action buttons on the right */}
+          <Box>
+            <Button 
+              variant="contained" 
+              onClick={handleLogout}
+              style={{ marginRight: 8 }}
+            >
+              <ExitToAppIcon />
+            </Button>
+            
+            <Button 
+              variant="contained" 
+              onClick={handleAddNew}
+            >
+              <AddIcon />
+            </Button>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={handlePublishDigital}>
+                <ListItemIcon>
+                  <GetAppIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sell Digital Products" />
+              </MenuItem>
+              <MenuItem onClick={handlePublishOffline}>
+                <ListItemIcon>
+                  <StorefrontIcon />
+                </ListItemIcon>
+                <ListItemText primary="Sell Offline Products" />
+              </MenuItem>
+              <MenuItem onClick={handlePublishDirect}>
+                <ListItemIcon>
+                  <PaymentIcon />
+                </ListItemIcon>
+                <ListItemText primary="Direct Payment Item" />
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Box>
+      </Grid>
+      
+      <Grid item xs={12} style={{ marginTop: 16 }}>
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchTermChange={setSearchTerm}
+          onSearch={() => handleSearch(1)}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+          onClear={handleClearSearch}
+          showFilters={showFilters}
+          filterCount={selectedTags.length}
+          loading={loading}
+          placeholder="Search by username..."
+          searchButtonText="Search Users"
+        />
+      </Grid>
+
+      {showFilters && (
+        <Grid item xs={12} style={{ marginTop: 16 }}>
+          <TagFilter
+            tagType="user"
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+            title="Filter by User Tags"
+          />
         </Grid>
-      </MainCard>
-    </Container>
+      )}
+            
+      {/* Results Section */}
+      <Grid item xs={12} style={{ marginTop: 16 }}>
+        <UserSearchResults
+          users={users}
+          loading={loading}
+          pagination={pagination}
+          onUserClick={handleUserClick}
+          onPageChange={handleSearch}
+          emptyMessage={
+            selectedTags.length > 0 || searchTerm 
+              ? "No users found matching your criteria"
+              : "Start searching to find creators"
+          }
+          emptySubtext={
+            selectedTags.length > 0 || searchTerm
+              ? "Try adjusting your search filters or search terms."
+              : "Use the search bar or tag filters to discover talented creators."
+          }
+        />
+      </Grid>
+      </Grid>
+    </Box>
   );
 };
 

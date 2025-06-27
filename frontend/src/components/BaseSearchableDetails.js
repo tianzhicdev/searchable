@@ -51,7 +51,7 @@ const BaseSearchableDetails = ({
     }
     
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -65,7 +65,7 @@ const BaseSearchableDetails = ({
   if (error) {
     const errorMessage = customErrorMessage || error;
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">{errorMessage}</Typography>
@@ -78,7 +78,7 @@ const BaseSearchableDetails = ({
   // Item not found
   if (!SearchableItem) {
     return (
-      <Grid container spacing={2}>
+      <Grid spacing={2}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">Item not found</Typography>
@@ -89,7 +89,7 @@ const BaseSearchableDetails = ({
   }
 
   return (
-    <Grid container spacing={2}>
+    <Grid spacing={2}>
       {/* Back button */}
       <Grid item xs={12}>
         <Button

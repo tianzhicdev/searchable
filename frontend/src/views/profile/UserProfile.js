@@ -61,7 +61,7 @@ const UserProfile = () => {
 
   const handleBackClick = () => {
     debugNavigationStack(location, 'UserProfile Back Click');
-    navigateBack(history, '/searchables');
+    navigateBack(history, '/landing');
   };
 
   if (loading) {
@@ -229,7 +229,7 @@ const UserProfile = () => {
               This user hasn't published any items yet.
             </Typography>
           ) : (
-            <Grid container spacing={2}>
+            <Grid spacing={2}>
               {downloadables.map((item) => (
                 <Grid item xs={12} sm={6} md={4} key={item.searchable_id}>
                   <Paper 

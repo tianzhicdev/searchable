@@ -120,7 +120,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
       resetForm();
 
       // Determine redirect path
-      let redirectPath = '/searchables';
+      let redirectPath = '/landing';
       if (customRedirectPath) {
         redirectPath = typeof customRedirectPath === 'function' 
           ? customRedirectPath(response) 
@@ -160,7 +160,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
 
   // Navigation helper
   const navigateBack = () => {
-    history.push('/searchables');
+    history.push('/landing');
   };
 
   return {

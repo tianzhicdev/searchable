@@ -4,7 +4,7 @@ import {
 } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 import PostedBy from '../PostedBy';
-import TagList from '../Tags/TagList';
+import TagsOnProfile from '../Tags/TagsOnProfile';
 
 const MiniSearchableProfile = ({ item, onClick }) => {
   const classes = useComponentStyles();
@@ -71,14 +71,7 @@ const MiniSearchableProfile = ({ item, onClick }) => {
             {/* Tags Section */}
             {item.tags && item.tags.length > 0 && (
               <Box style={{ marginTop: '12px' }}>
-                <Typography variant="caption" color="textSecondary" style={{ marginBottom: '4px', display: 'block' }}>
-                  Tags:
-                </Typography>
-                <TagList
-                  tags={item.tags}
-                  maxVisible={4}
-                  emptyMessage=""
-                />
+                <TagsOnProfile tags={item.tags} />
               </Box>
             )}
           </Box>

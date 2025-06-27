@@ -8,20 +8,17 @@ import {
   Divider
 } from '@material-ui/core';
 import { 
-  Person as PersonIcon,
-  Star as StarIcon,
-  Shop as ShopIcon 
+  Person as PersonIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
-import TagList from '../Tags/TagList';
+import TagsOnProfile from '../Tags/TagsOnProfile';
 import { useHistory } from 'react-router-dom';
 
 const useStyles = makeStyles((theme) => ({
   profileCard: {
-    padding: theme.spacing(2),
-    marginBottom: theme.spacing(2),
     cursor: 'pointer',
     transition: 'box-shadow 0.3s ease',
+    width: '100%',
     '&:hover': {
       boxShadow: theme.shadows[4]
     }
@@ -75,8 +72,7 @@ const useStyles = makeStyles((theme) => ({
 
 const MiniUserProfile = ({ 
   user, 
-  onClick = null,
-  showButton = true 
+  onClick = null
 }) => {
   const classes = useStyles();
   const history = useHistory();
@@ -108,10 +104,6 @@ const MiniUserProfile = ({
     }
   };
   
-  const handleViewProfile = (e) => {
-    e.stopPropagation(); // Prevent card click
-    history.push(`/profile/${username || id}`);
-  };
   
   // Truncate introduction for display
   const truncateText = (text, maxLength = 120) => {
@@ -119,107 +111,85 @@ const MiniUserProfile = ({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
   
-  // Format join date
-  const formatJoinDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 30) {
-      return `${diffDays} days ago`;
-    } else if (diffDays < 365) {
-      const months = Math.floor(diffDays / 30);
-      return `${months} month${months > 1 ? 's' : ''} ago`;
-    } else {
-      const years = Math.floor(diffDays / 365);
-      return `${years} year${years > 1 ? 's' : ''} ago`;
-    }
-  };
   
   return (
-    <Paper className={classes.profileCard} onClick={handleCardClick}>
-      {/* Profile Header */}
-      <Box className={classes.profileHeader}>
-        <Avatar 
-          src={profile_image_url} 
-          className={classes.avatar}
-          alt={displayName || username}
-        >
-          {(!profile_image_url) && <PersonIcon />}
-        </Avatar>
-        
-        <Box className={classes.userInfo}>
-          <Typography variant="h6" className={classes.username}>
+    <Paper 
+      className={classes.profileCard} 
+      onClick={handleCardClick}
+      style={{ marginBottom: '16px', cursor: 'pointer', padding: '16px' }}
+    >
+      <Box display="flex" flexDirection="row">
+        <Box flex="1 1 auto">
+          <Typography variant="h4" gutterBottom>
             {displayName || username}
           </Typography>
+
+          <Divider style={{ margin: '8px 0' }} />
           
-          {username && displayName && (
-            <Typography variant="body2" color="textSecondary">
-              @{username}
-            </Typography>
+          <Box>
+            {username && displayName && (
+              <Typography variant="body2" color="textSecondary" style={{ marginBottom: '4px' }}>
+                @{username}
+              </Typography>
+            )}
+            
+            {/* Stats */}
+            <Box style={{ marginTop: '4px' }}>
+              {typeof searchableCount === 'number' && (
+                <Typography variant="body2" style={{ marginBottom: '2px' }}>
+                  Items: {searchableCount}
+                </Typography>
+              )}
+              
+              {typeof rating === 'number' && (
+                <Typography variant="body2" style={{ marginBottom: '2px' }}>
+                  Rating: {rating.toFixed(1)} ({totalRatings || 0} reviews)
+                </Typography>
+              )}
+            </Box>
+            
+            {/* Introduction */}
+            {introduction && (
+              <Typography 
+                variant="body2" 
+                style={{ 
+                  wordBreak: 'break-word', 
+                  overflowWrap: 'break-word',
+                  marginTop: '8px'
+                }}
+              >
+                {truncateText(introduction, 150)}
+              </Typography>
+            )}
+            
+            {/* Tags Section */}
+            {tags && tags.length > 0 && (
+              <Box style={{ marginTop: '12px' }}>
+                <TagsOnProfile tags={tags} />
+              </Box>
+            )}
+          </Box>
+        </Box>
+        
+        {/* Profile Image */}
+        <Box flex="0 0 auto" style={{ marginLeft: '16px' }}>
+          {profile_image_url && (
+            <Paper>
+              <Box display="flex" justifyContent="center">
+                <img 
+                  src={profile_image_url} 
+                  alt={displayName || username}
+                  style={{ 
+                    maxWidth: '120px', 
+                    maxHeight: '120px', 
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            </Paper>
           )}
         </Box>
       </Box>
-      
-      {/* User Stats */}
-      <Box className={classes.userStats}>
-        {typeof searchableCount === 'number' && (
-          <Box className={classes.statItem}>
-            <ShopIcon fontSize="small" />
-            <Typography variant="caption">
-              {searchableCount} item{searchableCount !== 1 ? 's' : ''}
-            </Typography>
-          </Box>
-        )}
-        
-        {typeof rating === 'number' && (
-          <Box className={classes.statItem}>
-            <StarIcon fontSize="small" />
-            <Typography variant="caption">
-              {rating.toFixed(1)} ({totalRatings || 0} review{totalRatings !== 1 ? 's' : ''})
-            </Typography>
-          </Box>
-        )}
-        
-        {joinedDate && (
-          <Typography variant="caption" color="textSecondary">
-            Joined {formatJoinDate(joinedDate)}
-          </Typography>
-        )}
-      </Box>
-      
-      {/* Introduction */}
-      {introduction && (
-        <Typography className={classes.introduction}>
-          {truncateText(introduction)}
-        </Typography>
-      )}
-      
-      <Divider />
-      
-      {/* Tags Section */}
-      <Box className={classes.tagsSection}>
-        <TagList
-          tags={tags}
-          maxVisible={4}
-          emptyMessage="No tags assigned"
-        />
-      </Box>
-      
-      {/* Action Button */}
-      {showButton && (
-        <Button
-          variant="outlined"
-          size="small"
-          className={classes.actionButton}
-          onClick={handleViewProfile}
-          fullWidth
-        >
-          View Profile
-        </Button>
-      )}
     </Paper>
   );
 };

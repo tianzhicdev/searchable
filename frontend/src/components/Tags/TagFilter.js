@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Paper,
   Typography,
   FormGroup,
   FormControlLabel,
@@ -10,16 +8,19 @@ import {
   TextField,
   Box,
   Button,
-  Chip,
-  Badge
+  Chip
 } from '@material-ui/core';
-import { ExpandMore as ExpandMoreIcon, Clear as ClearIcon } from '@material-ui/icons';
+import { Clear as ClearIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import backend from '../../mocks/mockBackend';
 
 const useStyles = makeStyles((theme) => ({
   filterContainer: {
     width: '100%',
+    marginBottom: theme.spacing(2),
+    padding: theme.spacing(2)
+  },
+  filterHeader: {
     marginBottom: theme.spacing(2)
   },
   searchField: {
@@ -39,12 +40,6 @@ const useStyles = makeStyles((theme) => ({
     flexWrap: 'wrap',
     gap: theme.spacing(0.5),
     marginTop: theme.spacing(1)
-  },
-  accordionSummary: {
-    '& .MuiAccordionSummary-content': {
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    }
   }
 }));
 
@@ -52,14 +47,12 @@ const TagFilter = ({
   tagType = 'user', // 'user' or 'searchable'
   selectedTags = [],
   onTagsChange,
-  title = null,
-  expanded = false
+  title = null
 }) => {
   const classes = useStyles();
   const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isExpanded, setIsExpanded] = useState(expanded);
   
   // Auto-generate title if not provided
   const displayTitle = title || `Filter by ${tagType === 'user' ? 'User' : 'Content'} Tags`;
@@ -113,114 +106,100 @@ const TagFilter = ({
   };
   
   return (
-    <div className={classes.filterContainer}>
-      <Accordion 
-        expanded={isExpanded}
-        onChange={(event, expanded) => setIsExpanded(expanded)}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          className={classes.accordionSummary}
-        >
-          <Typography variant="h6">
-            {displayTitle}
+    <Paper className={classes.filterContainer}>
+      <Typography variant="h6" className={classes.filterHeader}>
+        {displayTitle}
+        {selectedTags.length > 0 && (
+          <Typography variant="caption" color="primary" style={{ marginLeft: 8 }}>
+            ({selectedTags.length} active)
           </Typography>
-          {selectedTags.length > 0 && (
-            <Badge badgeContent={selectedTags.length} color="primary">
-              <Typography variant="body2" color="textSecondary">
-                filters active
-              </Typography>
-            </Badge>
-          )}
-        </AccordionSummary>
+        )}
+      </Typography>
+      
+      <Box>
+        {/* Search within tags */}
+        <TextField
+          className={classes.searchField}
+          placeholder="Search tags..."
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={loading}
+        />
         
-        <AccordionDetails>
-          <Box width="100%">
-            {/* Search within tags */}
-            <TextField
-              className={classes.searchField}
-              placeholder="Search tags..."
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              disabled={loading}
-            />
+        {/* Selected tags display */}
+        {selectedTags.length > 0 && (
+          <Box className={classes.selectedTagsContainer}>
+            {selectedTags.map((tag) => (
+              <Chip
+                key={tag.id}
+                label={tag.name}
+                size="small"
+                onDelete={() => handleTagRemove(tag)}
+                color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
+              />
+            ))}
+          </Box>
+        )}
+        
+        {/* Available tags checkboxes */}
+        <FormGroup className={classes.tagGroup}>
+          {filteredTags.map((tag) => {
+            const isSelected = selectedTags.find(selected => selected.id === tag.id);
             
-            {/* Selected tags display */}
-            {selectedTags.length > 0 && (
-              <Box className={classes.selectedTagsContainer}>
-                {selectedTags.map((tag) => (
-                  <Chip
-                    key={tag.id}
-                    label={tag.name}
+            return (
+              <FormControlLabel
+                key={tag.id}
+                control={
+                  <Checkbox
+                    checked={!!isSelected}
+                    onChange={() => handleTagToggle(tag)}
                     size="small"
-                    onDelete={() => handleTagRemove(tag)}
                     color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
                   />
-                ))}
-              </Box>
-            )}
-            
-            {/* Available tags checkboxes */}
-            <FormGroup className={classes.tagGroup}>
-              {filteredTags.map((tag) => {
-                const isSelected = selectedTags.find(selected => selected.id === tag.id);
-                
-                return (
-                  <FormControlLabel
-                    key={tag.id}
-                    control={
-                      <Checkbox
-                        checked={!!isSelected}
-                        onChange={() => handleTagToggle(tag)}
-                        size="small"
-                        color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="body2">{tag.name}</Typography>
-                        {tag.description && (
-                          <Typography variant="caption" color="textSecondary">
-                            {tag.description}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
-                );
-              })}
-            </FormGroup>
-            
-            {loading && (
-              <Typography variant="body2" color="textSecondary">
-                Loading tags...
-              </Typography>
-            )}
-            
-            {!loading && filteredTags.length === 0 && searchTerm && (
-              <Typography variant="body2" color="textSecondary">
-                No tags found matching "{searchTerm}"
-              </Typography>
-            )}
-            
-            {/* Clear all button */}
-            {selectedTags.length > 0 && (
-              <Button
-                className={classes.clearButton}
-                variant="outlined"
-                size="small"
-                startIcon={<ClearIcon />}
-                onClick={handleClearAll}
-              >
-                Clear All Filters
-              </Button>
-            )}
-          </Box>
-        </AccordionDetails>
-      </Accordion>
-    </div>
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2">{tag.name}</Typography>
+                    {tag.description && (
+                      <Typography variant="caption" color="textSecondary">
+                        {tag.description}
+                      </Typography>
+                    )}
+                  </Box>
+                }
+              />
+            );
+          })}
+        </FormGroup>
+        
+        {loading && (
+          <Typography variant="body2" color="textSecondary">
+            Loading tags...
+          </Typography>
+        )}
+        
+        {!loading && filteredTags.length === 0 && searchTerm && (
+          <Typography variant="body2" color="textSecondary">
+            No tags found matching "{searchTerm}"
+          </Typography>
+        )}
+        
+        {/* Clear all button */}
+        {selectedTags.length > 0 && (
+          <Button
+            className={classes.clearButton}
+            variant="outlined"
+            size="small"
+            startIcon={<ClearIcon />}
+            onClick={handleClearAll}
+          >
+            Clear All Filters
+          </Button>
+        )}
+      </Box>
+    </Paper>
   );
 };
 

@@ -65,7 +65,7 @@ export const navigateWithReferrer = (history, targetPath, referrer = null, addit
  * @param {object} history - React Router history object
  * @param {string} fallbackPath - Default path if no navigation history is found
  */
-export const navigateBack = (history, fallbackPath = '/searchables') => {
+export const navigateBack = (history, fallbackPath = '/landing') => {
   const navigationStack = getNavigationStack(history.location);
   const currentPath = history.location.pathname;
   
@@ -99,7 +99,7 @@ export const navigateBack = (history, fallbackPath = '/searchables') => {
  * @param {object} history - React Router history object
  * @param {string} fallbackPath - Default path if no navigation history is found
  */
-export const navigateToOrigin = (history, fallbackPath = '/searchables') => {
+export const navigateToOrigin = (history, fallbackPath = '/landing') => {
   const navigationStack = getNavigationStack(history.location);
   
   if (navigationStack.length > 0) {
@@ -180,7 +180,7 @@ export const getBackButtonText = (location) => {
       return 'Back to Purchases';
     case '/profile':
       return 'Back to Profile';
-    case '/searchables':
+    case '/landing':
       return 'Back to Browse';
     default:
       return 'Back';
@@ -199,7 +199,7 @@ export const getFallbackPath = (location) => {
     return referrer;
   }
   
-  return '/searchables';
+  return '/landing';
 };
 
 /**

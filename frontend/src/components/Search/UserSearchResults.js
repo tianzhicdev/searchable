@@ -8,6 +8,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import MiniUserProfile from '../Profiles/MiniUserProfile';
+import Pagination from '../Pagination/Pagination';
 
 const useStyles = makeStyles((theme) => ({
   resultsContainer: {
@@ -39,9 +40,6 @@ const useStyles = makeStyles((theme) => ({
   },
   resultsCount: {
     color: theme.palette.text.secondary
-  },
-  gridItem: {
-    display: 'flex'
   }
 }));
 
@@ -50,6 +48,7 @@ const UserSearchResults = ({
   loading = false,
   pagination = null,
   onUserClick = null,
+  onPageChange = null,
   emptyMessage = "No users found",
   emptySubtext = "Try adjusting your search filters or search terms."
 }) => {
@@ -77,41 +76,29 @@ const UserSearchResults = ({
   }
   
   return (
-    <Box className={classes.resultsContainer}>
-      {/* Results Header */}
-      <Box className={classes.resultsHeader}>
-        <Typography variant="h6">
-          User Search Results
-        </Typography>
-        {pagination && (
-          <Typography variant="body2" className={classes.resultsCount}>
-            {pagination.total} user{pagination.total !== 1 ? 's' : ''} found
-          </Typography>
-        )}
-      </Box>
+    <>
+      {/* Results */}
+      {users.map((user) => (
+        <MiniUserProfile
+          key={user.id}
+          user={user}
+          onClick={onUserClick}
+        />
+      ))}
       
-      {/* Results Grid */}
-      <Grid container spacing={2}>
-        {users.map((user) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={user.id} className={classes.gridItem}>
-            <MiniUserProfile
-              user={user}
-              onClick={onUserClick}
-              showButton={true}
-            />
-          </Grid>
-        ))}
-      </Grid>
-      
-      {/* Pagination info */}
-      {pagination && pagination.pages > 1 && (
+      {/* Pagination */}
+      {pagination && onPageChange && (
         <Box mt={2}>
-          <Typography variant="body2" color="textSecondary" align="center">
-            Page {pagination.page} of {pagination.pages}
-          </Typography>
+          <Pagination
+            currentPage={pagination.page || pagination.current_page || 1}
+            totalPages={pagination.pages || pagination.total_pages || 1}
+            totalItems={pagination.total || pagination.total_count || 0}
+            onPageChange={onPageChange}
+            disabled={loading}
+          />
         </Box>
       )}
-    </Box>
+    </>
   );
 };
 
