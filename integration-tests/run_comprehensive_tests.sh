@@ -123,6 +123,7 @@ failed_test_names=()
 # Test execution order (dependencies considered)
 test_files=(
     "test_integration.py"                    # Core functionality (existing)
+    "test_user_profile_creation.py"          # User profile creation on registration
     "test_tags_basic.py"                     # Basic tag system functionality
     "test_tags_comprehensive.py"            # Comprehensive tag system tests
     "test_offline_searchables.py"           # Offline searchable functionality

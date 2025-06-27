@@ -26,6 +26,7 @@ from ..common.data_helpers import (
     get_invoices_for_searchable,
     get_user_all_invoices
 )
+from ..common.tag_helpers import get_searchable_tags
 from ..common.logging_config import setup_logger
 
 # Set up the logger
@@ -47,6 +48,10 @@ class GetSearchableItem(Resource):
             
             # Enrich with username
             self._enrich_searchable_with_username(searchable_data)
+            
+            # Add tags
+            tags = get_searchable_tags(searchable_id)
+            searchable_data['tags'] = tags
             
             return searchable_data, 200
             
@@ -304,13 +309,48 @@ class SearchSearchables(Resource):
             # Convert to list format and apply text filtering
             items = []
             
+            # Get all searchable IDs to fetch tags in batch
+            searchable_ids = []
+            searchable_data_map = {}
+            
             for result in results:
                 searchable_id, searchable_type, searchable_data = result
+                searchable_ids.append(searchable_id)
+                searchable_data_map[searchable_id] = (searchable_type, searchable_data)
+            
+            # Fetch tags for all searchables in batch
+            searchable_tags_map = {}
+            if searchable_ids:
+                tag_query = f"""
+                    SELECT st.searchable_id, t.id, t.name, t.tag_type, t.description
+                    FROM searchable_tags st
+                    JOIN tags t ON st.tag_id = t.id
+                    WHERE st.searchable_id IN ({','.join(str(id) for id in searchable_ids)})
+                    AND t.is_active = true
+                    ORDER BY st.searchable_id, t.name
+                """
+                execute_sql(cur, tag_query)
+                tag_results = cur.fetchall()
+                
+                for searchable_id, tag_id, tag_name, tag_type, tag_description in tag_results:
+                    if searchable_id not in searchable_tags_map:
+                        searchable_tags_map[searchable_id] = []
+                    searchable_tags_map[searchable_id].append({
+                        'id': tag_id,
+                        'name': tag_name,
+                        'tag_type': tag_type,
+                        'description': tag_description
+                    })
+            
+            # Build items with tags
+            for searchable_id in searchable_ids:
+                searchable_type, searchable_data = searchable_data_map[searchable_id]
                 
                 # Add searchable_id and type to data
                 item_data = dict(searchable_data)
                 item_data['searchable_id'] = searchable_id
                 item_data['type'] = searchable_type
+                item_data['tags'] = searchable_tags_map.get(searchable_id, [])
                 
                 # Apply text filtering
                 if query_term:

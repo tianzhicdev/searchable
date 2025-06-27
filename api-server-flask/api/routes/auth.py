@@ -155,6 +155,33 @@ class Register(Resource):
         new_user.set_password(_password)
         new_user.save()
         
+        # Create user_profile record
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            execute_sql(cur,
+                """INSERT INTO user_profile (user_id, username, metadata) 
+                   VALUES (%s, %s, %s)""",
+                params=(
+                    new_user.id,
+                    _username,
+                    Json({
+                        "created_via": "registration",
+                        "registration_date": datetime.utcnow().isoformat()
+                    })
+                )
+            )
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            logger.info(f"Created user_profile for user {new_user.id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to create user_profile for user {new_user.id}: {e}")
+            # Don't fail registration if profile creation fails
+        
         # Track user signup metric
         try:
             track_user_signup(
