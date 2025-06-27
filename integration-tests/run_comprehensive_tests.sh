@@ -123,6 +123,8 @@ failed_test_names=()
 # Test execution order (dependencies considered)
 test_files=(
     "test_integration.py"                    # Core functionality (existing)
+    "test_tags_basic.py"                     # Basic tag system functionality
+    "test_tags_comprehensive.py"            # Comprehensive tag system tests
     "test_offline_searchables.py"           # Offline searchable functionality
     "test_direct_searchables.py"            # Direct payment searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios

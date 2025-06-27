@@ -477,5 +477,91 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
+    # Tag-related methods
+    def get_tags(self, tag_type: str = None, active: bool = True) -> Dict[str, Any]:
+        """Get all available tags, optionally filtered by type"""
+        url = f"{self.base_url}/v1/tags"
+        params = {}
+        if tag_type:
+            params['type'] = tag_type
+        if not active:
+            params['active'] = 'false'
+        
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def get_user_tags(self, user_id: int) -> Dict[str, Any]:
+        """Get all tags associated with a specific user"""
+        url = f"{self.base_url}/v1/users/{user_id}/tags"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def add_user_tags(self, user_id: int, tag_ids: list) -> Dict[str, Any]:
+        """Add tags to a user"""
+        url = f"{self.base_url}/v1/users/{user_id}/tags"
+        data = {'tag_ids': tag_ids}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def remove_user_tag(self, user_id: int, tag_id: int) -> Dict[str, Any]:
+        """Remove a specific tag from a user"""
+        url = f"{self.base_url}/v1/users/{user_id}/tags/{tag_id}"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def get_searchable_tags(self, searchable_id: int) -> Dict[str, Any]:
+        """Get all tags associated with a specific searchable"""
+        url = f"{self.base_url}/v1/searchables/{searchable_id}/tags"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def add_searchable_tags(self, searchable_id: int, tag_ids: list) -> Dict[str, Any]:
+        """Add tags to a searchable"""
+        url = f"{self.base_url}/v1/searchables/{searchable_id}/tags"
+        data = {'tag_ids': tag_ids}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def remove_searchable_tag(self, searchable_id: int, tag_id: int) -> Dict[str, Any]:
+        """Remove a specific tag from a searchable"""
+        url = f"{self.base_url}/v1/searchables/{searchable_id}/tags/{tag_id}"
+        response = self.session.delete(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def search_users_by_tags(self, tag_names: list, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        """Search users by tags"""
+        url = f"{self.base_url}/v1/search/users"
+        params = {
+            'page': page,
+            'limit': limit
+        }
+        for tag_name in tag_names:
+            params.setdefault('tags[]', []).append(tag_name)
+        
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def search_searchables_by_tags(self, tag_names: list, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        """Search searchables by tags"""
+        url = f"{self.base_url}/v1/search/searchables"
+        params = {
+            'page': page,
+            'limit': limit
+        }
+        for tag_name in tag_names:
+            params.setdefault('tags[]', []).append(tag_name)
+        
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
 # Backwards compatibility alias
 SearchableAPIClient = APIClient
