@@ -2,6 +2,7 @@ import React from 'react';
 import { Grid, Button, Box, CircularProgress } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import useComponentStyles from '../themes/componentStyles';
+import { navigateWithStack } from '../utils/navigationUtils';
 
 const PublishSearchableActions = ({
   loading = false,
@@ -19,7 +20,7 @@ const PublishSearchableActions = ({
         <Button 
           variant="contained"
           className={classes.button} 
-          onClick={() => history.push('/landing')}
+          onClick={() => navigateWithStack(history, '/landing')}
         >
           Cancel
         </Button>

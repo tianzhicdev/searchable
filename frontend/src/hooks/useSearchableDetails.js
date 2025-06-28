@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
 import backend from '../views/utilities/Backend';
+import { navigateWithStack } from '../utils/navigationUtils';
 
 /**
  * Custom hook for shared SearchableDetails logic
@@ -74,7 +75,7 @@ const useSearchableDetails = () => {
     setIsRemoving(true);
     try {
       await backend.put(`v1/searchable/remove/${id}`, {});
-      history.push('/landing');
+      navigateWithStack(history, '/landing');
     } catch (err) {
       setError(err.message || 'Failed to remove item');
     } finally {

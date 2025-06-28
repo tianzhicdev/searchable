@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 import PostedBy from '../PostedBy';
 import TagsOnProfile from '../Tags/TagsOnProfile';
 import { useHistory } from 'react-router-dom';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const useStyles = makeStyles((theme) => ({
   profileCard: {
@@ -110,7 +111,7 @@ const MiniProfile = ({
     if (onClick) {
       onClick(data);
     } else if (clickPath) {
-      history.push(clickPath);
+      navigateWithStack(history, clickPath);
     }
   };
   

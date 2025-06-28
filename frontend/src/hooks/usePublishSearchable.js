@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import backend from '../views/utilities/Backend';
+import { navigateWithStack } from '../utils/navigationUtils';
 
 /**
  * Custom hook for shared PublishSearchable logic
@@ -150,7 +151,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
 
       // Redirect after a delay
       setTimeout(() => {
-        history.push(redirectPath);
+        navigateWithStack(history, redirectPath);
       }, 1500);
 
     } catch (err) {
@@ -179,7 +180,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
 
   // Navigation helper
   const navigateBack = () => {
-    history.push('/landing');
+    navigateWithStack(history, '/landing');
   };
 
   return {

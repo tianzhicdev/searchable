@@ -28,7 +28,8 @@ export const navigateWithStack = (history, targetPath, options = {}) => {
     additionalState = {} 
   } = options;
   
-  const currentPath = history.location.pathname;
+  // Include query parameters in the current path
+  const currentPath = history.location.pathname + history.location.search;
   let navigationStack = getNavigationStack(history.location);
   
   if (replaceStack) {
@@ -67,7 +68,7 @@ export const navigateWithReferrer = (history, targetPath, referrer = null, addit
  */
 export const navigateBack = (history, fallbackPath = '/landing') => {
   const navigationStack = getNavigationStack(history.location);
-  const currentPath = history.location.pathname;
+  const currentPath = history.location.pathname + history.location.search;
   
   // Find the last page in the stack that is different from current page
   let targetPath = null;
@@ -121,7 +122,7 @@ export const navigateToOrigin = (history, fallbackPath = '/landing') => {
  */
 export const getReferrer = (location) => {
   const navigationStack = getNavigationStack(location);
-  const currentPath = location.pathname;
+  const currentPath = location.pathname + location.search;
   
   // Find the last page in the stack that is different from current page
   for (let i = navigationStack.length - 1; i >= 0; i--) {
@@ -171,20 +172,7 @@ export const isOriginatedFrom = (location, expectedOrigin) => {
  * @returns {string} - Back button text
  */
 export const getBackButtonText = (location) => {
-  const referrer = getReferrer(location);
-  
-  switch (referrer) {
-    case '/my-downloads':
-      return 'Back to Downloads';
-    case '/my-purchases':
-      return 'Back to Purchases';
-    case '/profile':
-      return 'Back to Profile';
-    case '/landing':
-      return 'Back to Browse';
-    default:
-      return 'Back';
-  }
+  return 'Back';
 };
 
 /**

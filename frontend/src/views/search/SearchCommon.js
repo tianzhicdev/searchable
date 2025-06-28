@@ -23,6 +23,7 @@ import { useHistory } from 'react-router-dom';
 import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const SearchCommon = ({
   searchType = 'content', // 'content' or 'user'
@@ -62,17 +63,17 @@ const SearchCommon = ({
 
   const handleDashboardClick = () => {
     handleNavigationMenuClose();
-    history.push('/dashboard');
+    navigateWithStack(history, '/dashboard');
   };
 
   const handleFindCreators = () => {
     handleNavigationMenuClose();
-    history.push('/landing?tab=creators');
+    navigateWithStack(history, '/landing?tab=creators');
   };
 
   const handleFindContent = () => {
     handleNavigationMenuClose();
-    history.push('/landing?tab=content');
+    navigateWithStack(history, '/landing?tab=content');
   };
 
   // Handle dropdown menu
@@ -86,17 +87,17 @@ const SearchCommon = ({
 
   // Handle navigation to publish pages
   const handlePublishDigital = () => {
-    history.push('/publish-searchables');
+    navigateWithStack(history, '/publish-searchables');
     handleMenuClose();
   };
 
   const handlePublishOffline = () => {
-    history.push('/publish-offline-searchables');
+    navigateWithStack(history, '/publish-offline-searchables');
     handleMenuClose();
   };
 
   const handlePublishDirect = () => {
-    history.push('/publish-direct-searchables');
+    navigateWithStack(history, '/publish-direct-searchables');
     handleMenuClose();
   };
 
