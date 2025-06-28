@@ -568,123 +568,168 @@ local_mock() {
 
 # Local CI/CD workflow - tear down everything, rebuild, and test
 local_cicd() {
-    echo -e "${BLUE}🔄 Starting full CI/CD workflow...${NC}"
-    echo -e "${YELLOW}This will:${NC}"
-    echo "  1. 🗑️  Stop and remove all Docker containers"
-    echo "  2. 🧹 Remove all Docker volumes and networks"
-    echo "  3. 🏗️  Rebuild and start all containers"
-    echo "  4. ⏳ Wait for services to be ready"
-    echo "  5. 🧪 Run comprehensive integration tests"
-    echo ""
+    # Create reports directory if it doesn't exist
+    REPORTS_DIR="$SCRIPT_DIR/cicd_reports"
+    mkdir -p "$REPORTS_DIR"
+    
+    # Generate timestamp and report filename
+    TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    CICD_REPORT="$REPORTS_DIR/cicd_report_${TIMESTAMP}.log"
+    
+    # Function to output to both console and report file
+    log_output() {
+        echo -e "$@" | tee -a "$CICD_REPORT"
+    }
+    
+    # Start logging
+    echo "CI/CD Workflow Report - Started at $(date)" > "$CICD_REPORT"
+    echo "=======================================" >> "$CICD_REPORT"
+    echo "" >> "$CICD_REPORT"
+    
+    log_output "${BLUE}🔄 Starting full CI/CD workflow...${NC}"
+    log_output "${YELLOW}This will:${NC}"
+    log_output "  1. 🗑️  Stop and remove all Docker containers"
+    log_output "  2. 🧹 Remove all Docker volumes and networks"
+    log_output "  3. 🏗️  Rebuild and start all containers"
+    log_output "  4. ⏳ Wait for services to be ready"
+    log_output "  5. 🧪 Run comprehensive integration tests"
+    log_output ""
     
     # Confirm before proceeding
     read -p "Continue with CI/CD workflow? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}CI/CD workflow cancelled.${NC}"
+        log_output "${YELLOW}CI/CD workflow cancelled.${NC}"
         exit 0
     fi
     
     DOCKER_COMPOSE=$(get_docker_compose_cmd)
     
-    echo -e "${BLUE}📋 Step 1/5: Stopping and removing containers...${NC}"
+    log_output "${BLUE}📋 Step 1/5: Stopping and removing containers...${NC}"
     
     # Stop all containers (ignore errors)
-    echo "Stopping all containers..."
-    docker stop $(docker ps -aq) 2>/dev/null || true
+    log_output "Stopping all containers..."
+    docker stop $(docker ps -aq) 2>&1 | tee -a "$CICD_REPORT" || true
     
     # Remove all containers (ignore errors)
-    echo "Removing all containers..."
-    docker rm $(docker ps -aq) 2>/dev/null || true
+    log_output "Removing all containers..."
+    docker rm $(docker ps -aq) 2>&1 | tee -a "$CICD_REPORT" || true
     
     # Remove all volumes (ignore errors)
-    echo "Removing all volumes..."
-    docker volume rm $(docker volume ls -q) 2>/dev/null || true
+    log_output "Removing all volumes..."
+    docker volume rm $(docker volume ls -q) 2>&1 | tee -a "$CICD_REPORT" || true
     
     # Remove all networks (ignore errors)
-    echo "Removing custom networks..."
-    docker network rm $(docker network ls --filter type=custom -q) 2>/dev/null || true
+    log_output "Removing custom networks..."
+    docker network rm $(docker network ls --filter type=custom -q) 2>&1 | tee -a "$CICD_REPORT" || true
     
     # Clean up Docker system
-    echo "Cleaning up Docker system..."
-    docker system prune -f 2>/dev/null || true
+    log_output "Cleaning up Docker system..."
+    docker system prune -f 2>&1 | tee -a "$CICD_REPORT" || true
     
-    echo -e "${GREEN}✅ Step 1 complete: Environment cleaned${NC}"
-    echo ""
+    log_output "${GREEN}✅ Step 1 complete: Environment cleaned${NC}"
+    log_output ""
     
-    echo -e "${BLUE}📋 Step 2/5: Building Docker images...${NC}"
+    log_output "${BLUE}📋 Step 2/5: Building Docker images...${NC}"
     
     # Build all images from scratch
-    echo "Building all Docker images..."
-    $DOCKER_COMPOSE -f docker-compose.local.yml build --no-cache --pull
+    log_output "Building all Docker images..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml build --no-cache --pull 2>&1 | tee -a "$CICD_REPORT"
     
-    echo -e "${GREEN}✅ Step 2 complete: Images built${NC}"
-    echo ""
+    log_output "${GREEN}✅ Step 2 complete: Images built${NC}"
+    log_output ""
     
-    echo -e "${BLUE}📋 Step 3/5: Starting all services...${NC}"
+    log_output "${BLUE}📋 Step 3/5: Starting all services...${NC}"
     
     # Start all containers
-    echo "Starting all containers..."
-    $DOCKER_COMPOSE -f docker-compose.local.yml up -d
+    log_output "Starting all containers..."
+    $DOCKER_COMPOSE -f docker-compose.local.yml up -d 2>&1 | tee -a "$CICD_REPORT"
     
-    echo -e "${GREEN}✅ Step 3 complete: Services started${NC}"
-    echo ""
+    log_output "${GREEN}✅ Step 3 complete: Services started${NC}"
+    log_output ""
     
-    echo -e "${BLUE}📋 Step 4/5: Waiting for services to be ready...${NC}"
+    log_output "${BLUE}📋 Step 4/5: Waiting for services to be ready...${NC}"
     
     # Wait for services to be ready
-    echo "Waiting for database to be ready..."
+    log_output "Waiting for database to be ready..."
     sleep 10
     
     # Check if Flask API is responding
-    echo "Checking Flask API health..."
+    log_output "Checking Flask API health..."
     for i in {1..30}; do
         if curl -s http://localhost:5005/api/health >/dev/null 2>&1; then
-            echo "✅ Flask API is ready"
+            log_output "✅ Flask API is ready"
             break
         fi
-        echo "⏳ Waiting for Flask API... (attempt $i/30)"
+        log_output "⏳ Waiting for Flask API... (attempt $i/30)"
         sleep 2
     done
     
     # Additional wait for full initialization
-    echo "Allowing additional time for full service initialization..."
+    log_output "Allowing additional time for full service initialization..."
     sleep 5
     
-    echo -e "${GREEN}✅ Step 4 complete: Services are ready${NC}"
-    echo ""
+    log_output "${GREEN}✅ Step 4 complete: Services are ready${NC}"
+    log_output ""
     
-    echo -e "${BLUE}📋 Step 5/5: Running comprehensive integration tests...${NC}"
+    log_output "${BLUE}📋 Step 5/5: Running comprehensive integration tests...${NC}"
     
-    # Run local tests
-    run_tests "local"
+    # Export CICD_REPORT so the test runner can also log to it
+    export CICD_REPORT
+    
+    # Create a modified run_tests function that logs output
+    run_tests_with_logging() {
+        local environment=$1
+        # Redirect all output from run_tests to both console and report file
+        run_tests "$environment" 2>&1 | tee -a "$CICD_REPORT"
+        return ${PIPESTATUS[0]}
+    }
+    
+    # Run local tests with logging
+    run_tests_with_logging "local"
     TEST_RESULT=$?
     
-    echo ""
-    echo -e "${BLUE}🎯 CI/CD Workflow Summary${NC}"
-    echo "================================"
-    echo "✅ Environment cleaned and rebuilt"
-    echo "✅ All services started"
-    echo "✅ Integration tests completed"
+    log_output ""
+    log_output "${BLUE}🎯 CI/CD Workflow Summary${NC}"
+    log_output "================================"
+    log_output "✅ Environment cleaned and rebuilt"
+    log_output "✅ All services started"
+    log_output "✅ Integration tests completed"
     
     if [ $TEST_RESULT -eq 0 ]; then
-        echo -e "${GREEN}🎉 CI/CD workflow completed successfully!${NC}"
-        echo -e "${YELLOW}All containers are running and tests passed.${NC}"
-        echo ""
-        echo -e "${BLUE}🔗 Service URLs:${NC}"
-        echo "  Frontend: http://localhost:80"
-        echo "  API: http://localhost:5005"
-        echo "  Grafana: http://localhost:3050"
-        echo ""
-        echo -e "${YELLOW}To view logs:${NC} ./exec.sh local logs <container_name>"
-        echo -e "${YELLOW}To check status:${NC} ./exec.sh local status"
+        log_output "${GREEN}🎉 CI/CD workflow completed successfully!${NC}"
+        log_output "${YELLOW}All containers are running and tests passed.${NC}"
+        log_output ""
+        log_output "${BLUE}🔗 Service URLs:${NC}"
+        log_output "  Frontend: http://localhost:80"
+        log_output "  API: http://localhost:5005"
+        log_output "  Grafana: http://localhost:3050"
+        log_output ""
+        log_output "${YELLOW}To view logs:${NC} ./exec.sh local logs <container_name>"
+        log_output "${YELLOW}To check status:${NC} ./exec.sh local status"
     else
-        echo -e "${RED}❌ CI/CD workflow failed!${NC}"
-        echo -e "${YELLOW}Check the test output above for details.${NC}"
-        echo ""
-        echo -e "${YELLOW}To debug:${NC}"
-        echo "  ./exec.sh local status"
-        echo "  ./exec.sh local logs <container_name>"
+        log_output "${RED}❌ CI/CD workflow failed!${NC}"
+        log_output "${YELLOW}Check the test output above for details.${NC}"
+        log_output ""
+        log_output "${YELLOW}To debug:${NC}"
+        log_output "  ./exec.sh local status"
+        log_output "  ./exec.sh local logs <container_name>"
+    fi
+    
+    # Add summary at the end of report
+    echo "" >> "$CICD_REPORT"
+    echo "======================================" >> "$CICD_REPORT"
+    echo "CI/CD Workflow Report - Completed at $(date)" >> "$CICD_REPORT"
+    echo "Report saved to: $CICD_REPORT" >> "$CICD_REPORT"
+    
+    # Show report location to user
+    echo ""
+    echo -e "${BLUE}📝 Full report saved to:${NC}"
+    echo "   $CICD_REPORT"
+    echo ""
+    
+    # Exit with appropriate code
+    if [ $TEST_RESULT -ne 0 ]; then
         exit 1
     fi
 }
