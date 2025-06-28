@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Paper,
   Typography,
-  FormGroup,
   FormControlLabel,
   Checkbox,
   TextField,
@@ -16,17 +15,43 @@ import Backend from '../../views/utilities/Backend';
 
 const useStyles = makeStyles((theme) => ({
   filterContainer: {
-    width: '100%',
+    width: '350px',
+    maxWidth: '100%',
     marginBottom: theme.spacing(2),
-    padding: theme.spacing(2)
+    padding: theme.spacing(2),
+    position: 'absolute',
+    right: 0,
+    zIndex: 1200,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+    backgroundColor: theme.palette.background.paper,
+    marginTop: theme.spacing(1)
   },
   filterHeader: {
     marginBottom: theme.spacing(2)
   },
   tagGroup: {
-    maxHeight: '200px',
-    overflowY: 'auto',
-    marginBottom: theme.spacing(1)
+    maxHeight: '300px',
+    overflowY: 'scroll',
+    marginBottom: theme.spacing(1),
+    padding: theme.spacing(0.5),
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    '&::-webkit-scrollbar': {
+      width: '8px',
+      visibility: 'visible',
+      display: 'block'
+    },
+    '&::-webkit-scrollbar-track': {
+      backgroundColor: theme.palette.primary.light + '20',
+      borderRadius: '4px'
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: theme.palette.primary.main,
+      borderRadius: '4px',
+      '&:hover': {
+        backgroundColor: theme.palette.primary.dark
+      }
+    }
   },
   clearButton: {
     marginTop: theme.spacing(1)
@@ -35,7 +60,8 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     flexWrap: 'wrap',
     gap: theme.spacing(0.5),
-    marginTop: theme.spacing(1)
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1)
   }
 }));
 
@@ -122,13 +148,14 @@ const TagFilter = ({
         )}
         
         {/* Available tags checkboxes */}
-        <FormGroup className={classes.tagGroup}>
+        <Box className={classes.tagGroup}>
           {availableTags.map((tag) => {
             const isSelected = selectedTags.find(selected => selected.id === tag.id);
             
             return (
               <FormControlLabel
                 key={tag.id}
+                style={{ display: 'block', margin: '4px 0', width: '100%' }}
                 control={
                   <Checkbox
                     checked={!!isSelected}
@@ -137,20 +164,11 @@ const TagFilter = ({
                     color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
                   />
                 }
-                label={
-                  <Box>
-                    <Typography variant="body2">{tag.name}</Typography>
-                    {tag.description && (
-                      <Typography variant="caption" color="textSecondary">
-                        {tag.description}
-                      </Typography>
-                    )}
-                  </Box>
-                }
+                label={tag.name}
               />
             );
           })}
-        </FormGroup>
+        </Box>
         
         {loading && (
           <Typography variant="body2" color="textSecondary">

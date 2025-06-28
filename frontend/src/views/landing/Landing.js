@@ -9,7 +9,7 @@ import SearchByUser from '../search/SearchByUser';
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    padding: theme.spacing(2)
+    padding: theme.spacing(0)
   }
 }));
 
@@ -24,15 +24,17 @@ const Landing = () => {
   const showCreators = tab === 'creators';
   
   return (
-    <Grid container className={classes.container}>
-      <Grid item xs={12}>
+    // <Grid id="search-by-container" container className={classes.container}>
+      // <Grid item xs={12}>
+      <div>
         {showCreators ? (
           <SearchByUser />
         ) : (
           <SearchByContent />
         )}
-      </Grid>
-    </Grid>
+        </div>
+      // </Grid>
+    // </Grid>
   );
 };
 
