@@ -1,4 +1,4 @@
-iff # Profile routes
+# Profile routes
 import os
 import base64
 import uuid
