@@ -55,14 +55,14 @@ def check_invoice_payments():
         cur = conn.cursor()
         
         # Query for invoices without completed payments within the time window
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
                    i.amount, i.currency, i.created_at, i.metadata
             FROM invoice i 
-            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = '{PaymentStatus.COMPLETE.value}'
-            WHERE i.created_at >= '{cutoff_time}'
+            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = %s
+            WHERE i.created_at >= %s
             AND p.id IS NULL
-        """)
+        """, params=(PaymentStatus.COMPLETE.value, cutoff_time))
         
         invoices = cur.fetchall()
         cur.close()
@@ -149,11 +149,11 @@ def process_pending_withdrawals():
                             'status': PaymentStatus.COMPLETE.value
                         }
                         
-                        execute_sql(cur, f"""
+                        execute_sql(cur, """
                             UPDATE withdrawal 
-                            SET status = '{PaymentStatus.COMPLETE.value}', metadata = '{json.dumps(updated_metadata)}'
-                            WHERE id = '{withdrawal_id}'
-                        """)
+                            SET status = %s, metadata = %s
+                            WHERE id = %s
+                        """, params=(PaymentStatus.COMPLETE.value, json.dumps(updated_metadata), withdrawal_id))
                         
                         conn.commit()
                         cur.close()
@@ -180,11 +180,11 @@ def process_pending_withdrawals():
                         'timestamp': int(time.time())
                     }
                     
-                    execute_sql(cur, f"""
+                    execute_sql(cur, """
                         UPDATE withdrawal 
-                        SET status = '{PaymentStatus.FAILED.value}', metadata = '{json.dumps(updated_metadata)}'
-                        WHERE id = '{withdrawal_id}'
-                    """)
+                        SET status = %s, metadata = %s
+                        WHERE id = %s
+                    """, params=(PaymentStatus.FAILED.value, json.dumps(updated_metadata), withdrawal_id))
                     
                     conn.commit()
                     cur.close()

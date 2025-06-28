@@ -25,7 +25,7 @@ def user_exists(user_id):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        execute_sql(cur, f"SELECT 1 FROM users WHERE id = '{user_id}' LIMIT 1")
+        execute_sql(cur, "SELECT 1 FROM users WHERE id = %s LIMIT 1", params=(user_id,))
         result = cur.fetchone()
         return result is not None
     finally:

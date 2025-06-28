@@ -84,13 +84,13 @@ class UploadFile(Resource):
             file_uri = f"{FILE_SERVER_URL_RETRIEVAL}/api/file/download?file_id={file_id}"
             
             # Insert into files table
-            sql = f"""
+            sql = """
                 INSERT INTO files (uri, metadata)
-                VALUES ('{file_uri}', {Json(metadata)})
+                VALUES (%s, %s)
                 RETURNING file_id;
             """
             
-            execute_sql(cur, sql)
+            execute_sql(cur, sql, params=(file_uri, Json(metadata)))
             db_file_id = cur.fetchone()[0]  # Get the database file_id (different from UUID)
             
             conn.commit()
@@ -120,11 +120,11 @@ class GetFile(Resource):
             cur = conn.cursor()
             
             # Query to get the file metadata
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 SELECT file_id, uri, metadata
                 FROM files
-                WHERE file_id = {file_id}
-            """)
+                WHERE file_id = %s
+            """, params=(file_id,))
             
             result = cur.fetchone()
             
@@ -177,23 +177,23 @@ class ListFiles(Resource):
             cur = conn.cursor()
             
             # Count total files for pagination
-            count_sql = f"""
+            count_sql = """
                 SELECT COUNT(*)
                 FROM files
-                WHERE metadata->>'user_id' = '{current_user.id}'
+                WHERE metadata->>'user_id' = %s
             """
-            execute_sql(cur, count_sql)
+            execute_sql(cur, count_sql, params=(str(current_user.id),))
             total_count = cur.fetchone()[0]
             
             # Query files with pagination
-            files_sql = f"""
+            files_sql = """
                 SELECT file_id, uri, metadata
                 FROM files
-                WHERE metadata->>'user_id' = '{current_user.id}'
+                WHERE metadata->>'user_id' = %s
                 ORDER BY file_id DESC
-                LIMIT {per_page} OFFSET {offset}
+                LIMIT %s OFFSET %s
             """
-            execute_sql(cur, files_sql)
+            execute_sql(cur, files_sql, params=(str(current_user.id), per_page, offset))
             
             files = []
             for row in cur.fetchall():
@@ -236,11 +236,11 @@ class DeleteFile(Resource):
             cur = conn.cursor()
             
             # First, get the file metadata to check ownership and get URI
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 SELECT file_id, uri, metadata
                 FROM files
-                WHERE file_id = {file_id}
-            """)
+                WHERE file_id = %s
+            """, params=(file_id,))
             
             result = cur.fetchone()
             
@@ -274,10 +274,10 @@ class DeleteFile(Resource):
                 # Continue with database deletion even if file server deletion fails
             
             # Delete metadata from database
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 DELETE FROM files
-                WHERE file_id = {file_id}
-            """, commit=True, connection=conn)
+                WHERE file_id = %s
+            """, params=(file_id,), commit=True, connection=conn)
             
             cur.close()
             conn.close()
