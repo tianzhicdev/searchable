@@ -154,21 +154,17 @@ class SearchSearchables(Resource):
             if 'error' in params:
                 return params, 400
             
-            # Query database for results
+            # Query database for results with pagination
             results, total_count = self._query_database(
                 params['query_term'],
                 params.get('filters', {}),
-                params.get('tag_ids', [])
+                params.get('tag_ids', []),
+                params['page_number'],
+                params['page_size']
             )
             
-            # Apply pagination
-            paginated_results = self._apply_pagination(results, params['page_number'], params['page_size'])
-            
-            # Enrich paginated results with usernames
-            self._enrich_results_with_usernames(paginated_results)
-            
             # Format and return response
-            return self._format_response(paginated_results, params['page_number'], params['page_size'], total_count), 200
+            return self._format_response(results, params['page_number'], params['page_size'], total_count), 200
             
         except Exception as e:
             logger.error(f"Error in search: {str(e)}")
@@ -232,91 +228,94 @@ class SearchSearchables(Resource):
             return {"error": f"Parameter parsing error: {str(e)}"}
 
 
-    def _tokenize_text(self, text):
-        """Tokenize text for matching"""
-        if not text:
-            return []
-        
-        # Convert to lowercase and split by non-alphanumeric characters
-        tokens = re.findall(r'[a-zA-Z0-9]+', text.lower())
-        return tokens
-
-    def _calculate_match_score(self, query_term, item_data):
-        """Calculate relevance score for simple substring matching"""
-        if not query_term:
-            return 1.0  # Default score when no query
-        
-        query_lower = query_term.lower()
-        score = 0.0
-        
-        # Search in various fields of the item for substring matches
-        try:
-            public_data = item_data.get('payloads', {}).get('public', {})
-            
-            # Check title (highest weight)
-            title = public_data.get('title', '').lower()
-            if query_lower in title:
-                score += 2.0
-            
-            # Check description (medium weight)
-            description = public_data.get('description', '').lower()
-            if query_lower in description:
-                score += 1.0
-            
-            # Check selectables (lower weight)
-            selectables_text = ' '.join([item.get('name', '') for item in public_data.get('selectables', [])]).lower()
-            if query_lower in selectables_text:
-                score += 0.5
-                
-        except Exception as e:
-            logger.error(f"Error calculating match score: {str(e)}")
-            pass
-        
-        return score
-
-    def _query_database(self, query_term, filters={}, tag_ids=[]):
-        """Query database for searchable items"""
+    def _query_database(self, query_term, filters={}, tag_ids=[], page_number=1, page_size=20):
+        """Query database for searchable items with pagination and simple text search"""
         conn = get_db_connection()
         cur = conn.cursor()
         
         try:
-            # Build the query based on whether we need to filter by tags
+            # Calculate offset for pagination
+            offset = (page_number - 1) * page_size
+            
+            # Base query with username join
+            base_query = """
+                SELECT DISTINCT s.searchable_id, s.type, s.searchable_data, s.user_id, 
+                       u.username, s.created_at
+                FROM searchables s
+                LEFT JOIN users u ON s.user_id = u.id
+            """
+            
+            # Build WHERE conditions
+            where_conditions = ["s.removed = FALSE"]
+            params = []
+            
+            # Add simple text search condition if query_term exists
+            if query_term:
+                # Search in title and description using ILIKE (case-insensitive)
+                where_conditions.append("""
+                    (
+                        s.searchable_data->'payloads'->'public'->>'title' ILIKE %s
+                        OR s.searchable_data->'payloads'->'public'->>'description' ILIKE %s
+                    )
+                """)
+                search_pattern = f"%{query_term}%"
+                params.extend([search_pattern, search_pattern])
+            
+            # Add tag filtering if needed
             if tag_ids:
-                # Query with tag filtering using OR logic (any matching tag)
                 tag_placeholders = ','.join(['%s'] * len(tag_ids))
-                query = f"""
-                    SELECT DISTINCT s.searchable_id, s.type, s.searchable_data
-                    FROM searchables s
-                    INNER JOIN searchable_tags st ON s.searchable_id = st.searchable_id
-                    WHERE st.tag_id IN ({tag_placeholders})
-                    AND (s.searchable_data->>'removed' IS NULL 
-                    OR s.searchable_data->>'removed' != 'true')
-                    ORDER BY s.searchable_id DESC
-                """
-                execute_sql(cur, query, params=tag_ids)
-            else:
-                # Query all searchables without tag filtering
-                query = """
-                    SELECT s.searchable_id, s.type, s.searchable_data
-                    FROM searchables s
-                    WHERE s.searchable_data->>'removed' IS NULL 
-                    OR s.searchable_data->>'removed' != 'true'
-                    ORDER BY s.searchable_id DESC
-                """
-                execute_sql(cur, query)
+                where_conditions.append(f"""
+                    EXISTS (
+                        SELECT 1 FROM searchable_tags st 
+                        WHERE st.searchable_id = s.searchable_id 
+                        AND st.tag_id IN ({tag_placeholders})
+                    )
+                """)
+                params.extend(tag_ids)
+            
+            # Combine conditions
+            where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+            
+            # Order by created_at desc
+            order_clause = "ORDER BY s.created_at DESC"
+            
+            # Get total count first
+            count_query = f"""
+                SELECT COUNT(DISTINCT s.searchable_id)
+                FROM searchables s
+                {where_clause}
+            """
+            
+            execute_sql(cur, count_query, params=params)
+            total_count = cur.fetchone()[0]
+            
+            # Get paginated results
+            final_query = f"""
+                {base_query}
+                {where_clause}
+                {order_clause}
+                LIMIT %s OFFSET %s
+            """
+            
+            params.extend([page_size, offset])
+            execute_sql(cur, final_query, params=params)
             results = cur.fetchall()
             
-            # Convert to list format and apply text filtering
+            # Convert to list format
             items = []
-            
-            # Get all searchable IDs to fetch tags in batch
             searchable_ids = []
-            searchable_data_map = {}
+            searchable_map = {}
             
             for result in results:
-                searchable_id, searchable_type, searchable_data = result
+                searchable_id, searchable_type, searchable_data, user_id, username, created_at = result
                 searchable_ids.append(searchable_id)
-                searchable_data_map[searchable_id] = (searchable_type, searchable_data)
+                searchable_map[searchable_id] = {
+                    'type': searchable_type,
+                    'data': searchable_data,
+                    'user_id': user_id,
+                    'username': username,
+                    'created_at': created_at
+                }
             
             # Fetch tags for all searchables in batch
             searchable_tags_map = {}
@@ -343,30 +342,23 @@ class SearchSearchables(Resource):
                         'description': tag_description
                     })
             
-            # Build items with tags
+            # Build items with all data
             for searchable_id in searchable_ids:
-                searchable_type, searchable_data = searchable_data_map[searchable_id]
+                searchable_info = searchable_map[searchable_id]
                 
-                # Add searchable_id and type to data
-                item_data = dict(searchable_data)
+                # Build item data from searchable_data JSON
+                item_data = dict(searchable_info['data'])
+                
+                # Add metadata
                 item_data['searchable_id'] = searchable_id
-                item_data['type'] = searchable_type
+                item_data['type'] = searchable_info['type']
+                item_data['user_id'] = searchable_info['user_id']
+                item_data['username'] = searchable_info['username']
                 item_data['tags'] = searchable_tags_map.get(searchable_id, [])
                 
-                # Apply text filtering
-                if query_term:
-                    match_score = self._calculate_match_score(query_term, item_data)
-                    if match_score == 0:
-                        continue  # Skip items that don't match
-                    item_data['relevance_score'] = match_score
+                # No relevance score with simple LIKE search
                 
                 items.append(item_data)
-            
-            # Sort by relevance if text search was performed
-            if query_term:
-                items.sort(key=lambda x: x.get('relevance_score', 0), reverse=True)
-            
-            total_count = len(items)
             
             cur.close()
             conn.close()
@@ -383,12 +375,6 @@ class SearchSearchables(Resource):
                 conn.close()
 
 
-    def _apply_pagination(self, results, page_number, page_size):
-        """Apply pagination to results"""
-        start_index = (page_number - 1) * page_size
-        end_index = start_index + page_size
-        return results[start_index:end_index]
-
     def _format_response(self, results, page_number, page_size, total_count):
         """Format the final response"""
         total_pages = math.ceil(total_count / page_size)
@@ -402,47 +388,6 @@ class SearchSearchables(Resource):
                 "total_pages": total_pages
             }
         }
-
-    def _enrich_results_with_usernames(self, results):
-        """Add username information to results"""
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Get unique user_ids from results
-            user_ids = set()
-            for item in results:
-                user_id = item.get('user_id')
-                if user_id:
-                    user_ids.add(user_id)
-            
-            if not user_ids:
-                return
-            
-            # Query usernames for all user_ids
-            placeholders = ','.join(['%s'] * len(user_ids))
-            execute_sql(cur, f"""
-                SELECT id, username FROM users WHERE id IN ({placeholders})
-            """, params=[str(uid) for uid in user_ids])
-            
-            # Create mapping
-            username_map = {}
-            for row in cur.fetchall():
-                user_id, username = row
-                username_map[str(user_id)] = username
-            
-            # Add usernames to results
-            for item in results:
-                user_id = item.get('user_id')
-                if user_id and str(user_id) in username_map:
-                    item['username'] = username_map[str(user_id)]
-            
-            cur.close()
-            conn.close()
-            
-        except Exception as e:
-            logger.error(f"Error enriching with usernames: {str(e)}")
-            # Continue without usernames rather than failing
 
 @rest_api.route('/api/v1/searchable/remove/<int:searchable_id>', methods=['PUT'])
 class RemoveSearchableItem(Resource):
@@ -458,26 +403,22 @@ class RemoveSearchableItem(Resource):
             
             # First, check if the searchable exists and belongs to the current user
             execute_sql(cur, """
-                SELECT searchable_data FROM searchables 
+                SELECT 1 FROM searchables 
                 WHERE searchable_id = %s 
                 AND user_id = %s
+                AND removed = FALSE
             """, params=(searchable_id, current_user.id))
             
             result = cur.fetchone()
             if not result:
                 return {"error": "Searchable item not found or access denied"}, 404
             
-            searchable_data = result[0]
-            
-            # Mark as removed
-            searchable_data['removed'] = 'true'
-            
-            # Update the database
+            # Mark as removed using the new column
             execute_sql(cur, """
                 UPDATE searchables 
-                SET searchable_data = %s
+                SET removed = TRUE, updated_at = CURRENT_TIMESTAMP
                 WHERE searchable_id = %s
-            """, params=(Json(searchable_data), searchable_id), commit=True, connection=conn)
+            """, params=(searchable_id,), commit=True, connection=conn)
             
             cur.close()
             conn.close()
