@@ -38,6 +38,32 @@ const useStyles = makeStyles((theme) => ({
   },
   errorMessage: {
     marginTop: theme.spacing(1)
+  },
+  menuPaper: {
+    maxHeight: 400,
+    width: 350,
+    '& .MuiList-root': {
+      paddingTop: 0,
+      paddingBottom: 0,
+      maxHeight: 400,
+      overflowY: 'scroll',
+      '&::-webkit-scrollbar': {
+        width: '8px',
+        visibility: 'visible',
+        display: 'block'
+      },
+      '&::-webkit-scrollbar-track': {
+        backgroundColor: theme.palette.primary.light + '20',
+        borderRadius: '4px'
+      },
+      '&::-webkit-scrollbar-thumb': {
+        backgroundColor: theme.palette.primary.main,
+        borderRadius: '4px',
+        '&:hover': {
+          backgroundColor: theme.palette.primary.dark
+        }
+      }
+    }
   }
 }));
 
@@ -128,6 +154,24 @@ const TagSelector = ({
         displayEmpty
         className={classes.select}
         size="small"
+        MenuProps={{
+          classes: { paper: classes.menuPaper },
+          anchorOrigin: {
+            vertical: 'bottom',
+            horizontal: 'left',
+          },
+          transformOrigin: {
+            vertical: 'top',
+            horizontal: 'left',
+          },
+          getContentAnchorEl: null,
+          PaperProps: {
+            style: {
+              maxHeight: 400,
+              width: 350,
+            }
+          }
+        }}
         renderValue={(selected) => {
           if (selected.length === 0) {
             return <Typography color="textSecondary">{placeholder}</Typography>;

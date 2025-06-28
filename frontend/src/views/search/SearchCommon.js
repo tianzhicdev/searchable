@@ -108,7 +108,7 @@ const SearchCommon = ({
 
   return (
     <Box>
-      <Grid container>
+      <Grid container margin={0} spacing={0} padding={0}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             {/* Navigation dropdown menu on the left */}
@@ -223,7 +223,7 @@ const SearchCommon = ({
         </Grid>
 
         {showFilters && (
-          <Grid item xs={12} style={{ marginTop: 16 }}>
+          <Grid item xs={12} style={{ marginTop: 0, position: 'relative' }}>
             <TagFilter
               tagType={tagType}
               selectedTags={selectedTags}

@@ -267,7 +267,7 @@ const Searchables = () => {
       </Grid>
 
       {showFilters && (
-        <Grid item xs={12} style={{ marginTop: 16 }}>
+        <Grid item xs={12} style={{ marginTop: 0, position: 'relative' }}>
           <TagFilter
             selectedTags={selectedTags}
             onTagsChange={handleTagSelection}
