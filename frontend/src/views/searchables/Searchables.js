@@ -23,7 +23,8 @@ import SearchableList from './SearchableList';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
 import Backend from '../utilities/Backend';
-import { isMockMode } from '../../mocks/mockBackend'; 
+import { isMockMode } from '../../mocks/mockBackend';
+import { navigateWithStack } from '../../utils/navigationUtils'; 
 const Searchables = () => {
   
   // State variables
@@ -93,34 +94,34 @@ const Searchables = () => {
 
   // Handle navigation to publish pages
   const handlePublishDigital = () => {
-    history.push('/publish-searchables');
+    navigateWithStack(history, '/publish-searchables');
     handleMenuClose();
   };
 
   const handlePublishOffline = () => {
-    history.push('/publish-offline-searchables');
+    navigateWithStack(history, '/publish-offline-searchables');
     handleMenuClose();
   };
 
   const handlePublishDirect = () => {
-    history.push('/publish-direct-searchables');
+    navigateWithStack(history, '/publish-direct-searchables');
     handleMenuClose();
   };
 
   // Handle navigation actions
   const handleProfileClick = () => {
     handleNavigationMenuClose();
-    history.push('/profile');
+    navigateWithStack(history, '/profile');
   };
 
   const handleFindCreators = () => {
     handleNavigationMenuClose();
-    history.push('/landing?tab=creators');
+    navigateWithStack(history, '/landing?tab=creators');
   };
 
   const handleFindContent = () => {
     handleNavigationMenuClose();
-    history.push('/landing?tab=content');
+    navigateWithStack(history, '/landing?tab=content');
   };
 
 

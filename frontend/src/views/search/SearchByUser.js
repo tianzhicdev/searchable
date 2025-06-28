@@ -3,6 +3,7 @@ import { useHistory } from 'react-router-dom';
 import SearchCommon from './SearchCommon';
 import UserSearchResults from '../../components/Search/UserSearchResults';
 import Backend from '../utilities/Backend';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 
 const SearchByUser = () => {
@@ -60,7 +61,7 @@ const SearchByUser = () => {
   };
   
   const handleUserClick = (user) => {
-    history.push(`/profile/${user.id}`);
+    navigateWithStack(history, `/profile/${user.id}`);
   };
   
   return (

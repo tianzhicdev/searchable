@@ -13,6 +13,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import TagsOnProfile from '../Tags/TagsOnProfile';
 import { useHistory } from 'react-router-dom';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const useStyles = makeStyles((theme) => ({
   profileCard: {
@@ -100,7 +101,7 @@ const MiniUserProfile = ({
       onClick(user);
     } else {
       // Navigate to user profile
-      history.push(`/profile/${username || id}`);
+      navigateWithStack(history, `/profile/${username || id}`);
     }
   };
   
