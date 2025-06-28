@@ -2,8 +2,17 @@ CREATE TABLE IF NOT EXISTS searchables (
     searchable_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     type TEXT NOT NULL,
-    searchable_data JSONB NOT NULL
+    searchable_data JSONB NOT NULL,
+    removed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes for searchables table
+CREATE INDEX IF NOT EXISTS idx_searchables_user_id ON searchables(user_id);
+CREATE INDEX IF NOT EXISTS idx_searchables_removed ON searchables(removed);
+CREATE INDEX IF NOT EXISTS idx_searchables_created_at ON searchables(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_searchables_user_id_removed ON searchables(user_id, removed);
 
 
 CREATE TABLE IF NOT EXISTS files (
@@ -200,6 +209,11 @@ $$ language 'plpgsql';
 -- Trigger to automatically update updated_at on user_profile changes
 CREATE TRIGGER update_user_profile_updated_at 
     BEFORE UPDATE ON user_profile 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger to automatically update updated_at on searchables changes
+CREATE TRIGGER update_searchables_updated_at 
+    BEFORE UPDATE ON searchables 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Metrics table for event tracking and analytics

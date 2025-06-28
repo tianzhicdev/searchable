@@ -30,8 +30,9 @@ def get_searchableIds_by_user(user_id):
         execute_sql(cur, """
             SELECT searchable_id
             FROM searchables
-            WHERE searchable_data->>'user_id' = %s
-        """, params=(str(user_id),))
+            WHERE user_id = %s
+            AND removed = FALSE
+        """, params=(user_id,))
         
         searchable_ids = [row[0] for row in cur.fetchall()]
         
@@ -61,6 +62,7 @@ def get_searchable(searchable_id):
             SELECT searchable_id, type, searchable_data
             FROM searchables
             WHERE searchable_id = %s
+            AND removed = FALSE
         """, params=(searchable_id,))
         
         result = cur.fetchone()
