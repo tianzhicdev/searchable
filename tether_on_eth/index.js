@@ -308,6 +308,8 @@ app.post('/send', async (req, res) => {
       });
     }
   });
+
+  // if failure, exhash -> delayed, no txhash -> failure 
     
     
 
@@ -392,6 +394,9 @@ app.get('/tx-status/:txHash', async (req, res) => {
     }
   }
 );
+
+// we dont mark failure from lookup
+// complete, delayed (can become complete), failed.
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 USDT Service running on port ${process.env.PORT}`);
