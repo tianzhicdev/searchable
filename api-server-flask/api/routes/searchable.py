@@ -261,6 +261,11 @@ class SearchSearchables(Resource):
                 search_pattern = f"%{query_term}%"
                 params.extend([search_pattern, search_pattern])
             
+            # Add user_id filtering if provided in filters
+            if filters.get('user_id'):
+                where_conditions.append("s.user_id = %s")
+                params.append(filters['user_id'])
+            
             # Add tag filtering if needed
             if tag_ids:
                 tag_placeholders = ','.join(['%s'] * len(tag_ids))

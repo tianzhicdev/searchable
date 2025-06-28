@@ -102,7 +102,7 @@ const MiniProfile = ({
       totalRatings: data.totalRatings,
       userId: data.user_id
     };
-    clickPath = `/profile/${data.username || data.id}`;
+    clickPath = `/profile/${data.user_id || data.id}`;
   }
 
   console.log('MiniProfile metaInfo:', metaInfo);
