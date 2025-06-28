@@ -234,7 +234,6 @@ const UserProfile = () => {
 
       {/* Published Items Section */}
       <Grid item xs={12} className={classes.gridItem}>
-        <Paper elevation={3} className={classes.paper}>
           <Typography variant="h6" gutterBottom>
             Published Items
           </Typography>
@@ -246,7 +245,6 @@ const UserProfile = () => {
               Loading published items...
             </Typography>
           )}
-        </Paper>
       </Grid>
     </Grid>
   );
