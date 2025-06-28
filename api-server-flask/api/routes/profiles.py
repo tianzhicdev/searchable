@@ -1,4 +1,4 @@
-# Profile routes
+iff # Profile routes
 import os
 import base64
 import uuid
@@ -104,33 +104,14 @@ class GetUserProfile(Resource):
             # Add tags to profile
             profile['tags'] = user_tags
             
-            # Get user's searchables/downloadables
-            searchable_ids = get_searchableIds_by_user(user_id)
-            downloadables = []
-            
-            for searchable_id in searchable_ids:
-                searchable = get_searchable(searchable_id)
-                if searchable:
-                    public_data = searchable.get('payloads', {}).get('public', {})
-                    downloadables.append({
-                        'searchable_id': searchable_id,
-                        'title': public_data.get('title', 'Untitled'),
-                        'description': public_data.get('description', ''),
-                        'type': public_data.get('type', 'unknown'),
-                        'price': public_data.get('price', 0),
-                        'currency': public_data.get('currency', 'USD')
-                    })
-            
-            # Return profile with downloadables and tags
+            # Return profile with tags only
             return {
-                "profile": profile,
-                "downloadables": downloadables
+                "profile": profile
             }, 200
             
         except Exception as e:
             logger.error(f"Error getting user profile {user_id}: {str(e)}")
             return {"error": str(e)}, 500
-
 
 @rest_api.route('/api/v1/profile', methods=['GET'])
 class GetMyProfile(Resource):
@@ -161,27 +142,9 @@ class GetMyProfile(Resource):
             # Add tags to profile
             profile['tags'] = user_tags
             
-            # Get user's searchables/downloadables
-            searchable_ids = get_searchableIds_by_user(user_id)
-            downloadables = []
-            
-            for searchable_id in searchable_ids:
-                searchable = get_searchable(searchable_id)
-                if searchable:
-                    public_data = searchable.get('payloads', {}).get('public', {})
-                    downloadables.append({
-                        'searchable_id': searchable_id,
-                        'title': public_data.get('title', 'Untitled'),
-                        'description': public_data.get('description', ''),
-                        'type': public_data.get('type', 'unknown'),
-                        'price': public_data.get('price', 0),
-                        'currency': public_data.get('currency', 'USD')
-                    })
-            
-            # Return profile with downloadables and tags
+            # Return profile with tags only
             return {
-                "profile": profile,
-                "downloadables": downloadables
+                "profile": profile
             }, 200
             
         except Exception as e:

@@ -13,18 +13,19 @@ import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
+import SearchableList from '../searchables/SearchableList';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
   const theme = useTheme();
-  const { identifier } = useParams(); // Can be username or user_id
+  const { identifier } = useParams(); // user_id
   const history = useHistory();
   const location = useLocation();
   
   const [profileData, setProfileData] = useState(null);
-  const [downloadables, setDownloadables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchCriteria, setSearchCriteria] = useState(null);
 
   useEffect(() => {
     fetchUserProfile();
@@ -37,12 +38,22 @@ const UserProfile = () => {
     try {
       let response;
       
-      // Support both usernames and numeric user IDs
+      // Get profile by user ID
       response = await backend.get(`v1/profile/${identifier}`);
       
-      const { profile, downloadables } = response.data;
+      const { profile } = response.data;
       setProfileData(profile);
-      setDownloadables(downloadables || []);
+      
+      // Set up search criteria for SearchableList
+      if (profile && profile.user_id) {
+        setSearchCriteria({
+          searchTerm: '',
+          filters: {
+            user_id: profile.user_id
+          },
+          searchTrigger: Date.now() // Trigger initial search
+        });
+      }
       
     } catch (err) {
       console.error('Error fetching user profile:', err);
@@ -54,10 +65,6 @@ const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDownloadableClick = (searchableId) => {
-    navigateWithStack(history, `/searchable-item/${searchableId}`);
   };
 
   const handleBackClick = () => {
@@ -225,70 +232,19 @@ const UserProfile = () => {
         </Grid>
       )}
 
-      {/* Downloadables Section */}
+      {/* Published Items Section */}
       <Grid item xs={12} className={classes.gridItem}>
         <Paper elevation={3} className={classes.paper}>
           <Typography variant="h6" gutterBottom>
-            Published Items ({downloadables.length})
+            Published Items
           </Typography>
           
-          {downloadables.length === 0 ? (
-            <Typography variant="body2" color="textSecondary">
-              This user hasn't published any items yet.
-            </Typography>
+          {searchCriteria ? (
+            <SearchableList criteria={searchCriteria} />
           ) : (
-            <Grid spacing={2}>
-              {downloadables.map((item) => (
-                <Grid item xs={12} sm={6} md={4} key={item.searchable_id}>
-                  <Paper 
-                    elevation={1} 
-                    style={{ 
-                      padding: '16px', 
-                      cursor: 'pointer',
-                      transition: 'elevation 0.2s',
-                      '&:hover': {
-                        elevation: 3
-                      }
-                    }}
-                    onClick={() => handleDownloadableClick(item.searchable_id)}
-                  >
-                    <Typography variant="h6" gutterBottom noWrap>
-                      {item.title}
-                    </Typography>
-                    
-                    {item.description && (
-                      <Typography 
-                        variant="body2" 
-                        color="textSecondary" 
-                        style={{ 
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          marginBottom: '8px'
-                        }}
-                      >
-                        {item.description}
-                      </Typography>
-                    )}
-                    
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Chip 
-                        label={item.type} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined"
-                      />
-                      {item.price && (
-                        <Typography variant="body2" color="primary" fontWeight="bold">
-                          ${item.price} {item.currency}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
+            <Typography variant="body2" color="textSecondary">
+              Loading published items...
+            </Typography>
           )}
         </Paper>
       </Grid>
