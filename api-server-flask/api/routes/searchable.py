@@ -70,9 +70,9 @@ class GetSearchableItem(Resource):
             cur = conn.cursor()
             
             # Query username for this user_id
-            execute_sql(cur, f"""
-                SELECT username FROM users WHERE id = '{user_id}'
-            """)
+            execute_sql(cur, """
+                SELECT username FROM users WHERE id = %s
+            """, params=(user_id,))
             
             result = cur.fetchone()
             if result:
@@ -112,8 +112,8 @@ class CreateSearchable(Resource):
             
             # Insert into searchables table with type field
             logger.info("Executing database insert...")
-            sql = f"INSERT INTO searchables (user_id, type, searchable_data) VALUES ('{current_user.id}', '{searchable_type}', {Json(data)}) RETURNING searchable_id;"
-            execute_sql(cur, sql)
+            sql = "INSERT INTO searchables (user_id, type, searchable_data) VALUES (%s, %s, %s) RETURNING searchable_id;"
+            execute_sql(cur, sql, params=(current_user.id, searchable_type, Json(data)))
             searchable_id = cur.fetchone()[0]
             
             
@@ -283,16 +283,17 @@ class SearchSearchables(Resource):
             # Build the query based on whether we need to filter by tags
             if tag_ids:
                 # Query with tag filtering using OR logic (any matching tag)
-                tag_ids_str = ','.join(str(tag_id) for tag_id in tag_ids)
+                tag_placeholders = ','.join(['%s'] * len(tag_ids))
                 query = f"""
                     SELECT DISTINCT s.searchable_id, s.type, s.searchable_data
                     FROM searchables s
                     INNER JOIN searchable_tags st ON s.searchable_id = st.searchable_id
-                    WHERE st.tag_id IN ({tag_ids_str})
+                    WHERE st.tag_id IN ({tag_placeholders})
                     AND (s.searchable_data->>'removed' IS NULL 
                     OR s.searchable_data->>'removed' != 'true')
                     ORDER BY s.searchable_id DESC
                 """
+                execute_sql(cur, query, params=tag_ids)
             else:
                 # Query all searchables without tag filtering
                 query = """
@@ -302,8 +303,7 @@ class SearchSearchables(Resource):
                     OR s.searchable_data->>'removed' != 'true'
                     ORDER BY s.searchable_id DESC
                 """
-            
-            execute_sql(cur, query)
+                execute_sql(cur, query)
             results = cur.fetchall()
             
             # Convert to list format and apply text filtering
@@ -321,15 +321,16 @@ class SearchSearchables(Resource):
             # Fetch tags for all searchables in batch
             searchable_tags_map = {}
             if searchable_ids:
+                tag_placeholders = ','.join(['%s'] * len(searchable_ids))
                 tag_query = f"""
                     SELECT st.searchable_id, t.id, t.name, t.tag_type, t.description
                     FROM searchable_tags st
                     JOIN tags t ON st.tag_id = t.id
-                    WHERE st.searchable_id IN ({','.join(str(id) for id in searchable_ids)})
+                    WHERE st.searchable_id IN ({tag_placeholders})
                     AND t.is_active = true
                     ORDER BY st.searchable_id, t.name
                 """
-                execute_sql(cur, tag_query)
+                execute_sql(cur, tag_query, params=searchable_ids)
                 tag_results = cur.fetchall()
                 
                 for searchable_id, tag_id, tag_name, tag_type, tag_description in tag_results:
@@ -419,10 +420,10 @@ class SearchSearchables(Resource):
                 return
             
             # Query usernames for all user_ids
-            user_ids_str = "', '".join(str(uid) for uid in user_ids)
+            placeholders = ','.join(['%s'] * len(user_ids))
             execute_sql(cur, f"""
-                SELECT id, username FROM users WHERE id IN ('{user_ids_str}')
-            """)
+                SELECT id, username FROM users WHERE id IN ({placeholders})
+            """, params=[str(uid) for uid in user_ids])
             
             # Create mapping
             username_map = {}
@@ -456,11 +457,11 @@ class RemoveSearchableItem(Resource):
             cur = conn.cursor()
             
             # First, check if the searchable exists and belongs to the current user
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 SELECT searchable_data FROM searchables 
-                WHERE searchable_id = {searchable_id} 
-                AND user_id = {current_user.id}
-            """)
+                WHERE searchable_id = %s 
+                AND user_id = %s
+            """, params=(searchable_id, current_user.id))
             
             result = cur.fetchone()
             if not result:
@@ -472,11 +473,11 @@ class RemoveSearchableItem(Resource):
             searchable_data['removed'] = 'true'
             
             # Update the database
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 UPDATE searchables 
-                SET searchable_data = {Json(searchable_data)}
-                WHERE searchable_id = {searchable_id}
-            """, commit=True, connection=conn)
+                SET searchable_data = %s
+                WHERE searchable_id = %s
+            """, params=(Json(searchable_data), searchable_id), commit=True, connection=conn)
             
             cur.close()
             conn.close()
@@ -525,14 +526,14 @@ class SearchableRating(Resource):
             cur = conn.cursor()
             
             # Get ratings for this searchable from invoice/payment/rating tables
-            sql = f"""
+            sql = """
                 SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
-                WHERE i.searchable_id = {searchable_id}
+                WHERE i.searchable_id = %s
             """
             
-            execute_sql(cur, sql)
+            execute_sql(cur, sql, params=(searchable_id,))
             result = cur.fetchone()
             
             if result and result[0] is not None:
@@ -543,17 +544,17 @@ class SearchableRating(Resource):
                 total_ratings = 0
             
             # Get individual ratings with reviews
-            ratings_sql = f"""
+            ratings_sql = """
                 SELECT r.rating, r.review, r.created_at, u.username
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
                 LEFT JOIN users u ON r.user_id = u.id
-                WHERE i.searchable_id = {searchable_id}
+                WHERE i.searchable_id = %s
                 ORDER BY r.created_at DESC
                 LIMIT 10
             """
             
-            execute_sql(cur, ratings_sql)
+            execute_sql(cur, ratings_sql, params=(searchable_id,))
             individual_ratings = []
             
             for row in cur.fetchall():
@@ -592,14 +593,14 @@ class UserRating(Resource):
             cur = conn.cursor()
             
             # Get average rating for all searchables belonging to this terminal
-            sql = f"""
+            sql = """
                 SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
-                WHERE i.seller_id = {user_id}
+                WHERE i.seller_id = %s
             """
             
-            execute_sql(cur, sql)
+            execute_sql(cur, sql, params=(user_id,))
             result = cur.fetchone()
             
             if result and result[0] is not None:
@@ -610,18 +611,18 @@ class UserRating(Resource):
                 total_ratings = 0
             
             # Get recent ratings for this terminal
-            ratings_sql = f"""
+            ratings_sql = """
                 SELECT r.rating, r.review, r.created_at, u.username, s.searchable_data->'payloads'->'public'->>'title' as item_title
                 FROM rating r
                 JOIN invoice i ON r.invoice_id = i.id
                 JOIN searchables s ON i.searchable_id = s.searchable_id
                 LEFT JOIN users u ON r.user_id = u.id
-                WHERE i.seller_id = {user_id}
+                WHERE i.seller_id = %s
                 ORDER BY r.created_at DESC
                 LIMIT 10
             """
             
-            execute_sql(cur, ratings_sql)
+            execute_sql(cur, ratings_sql, params=(user_id,))
             individual_ratings = []
             
             for row in cur.fetchall():
@@ -737,7 +738,7 @@ class UserPurchases(Resource):
             cur = conn.cursor()
             
             # Get all completed payments for this user with invoice and searchable details
-            query = f"""
+            query = """
                 SELECT 
                     i.id as invoice_id,
                     i.searchable_id,
@@ -749,17 +750,17 @@ class UserPurchases(Resource):
                     s.searchable_data->'payloads'->'public'->>'description' as item_description,
                     EXISTS(
                         SELECT 1 FROM rating r 
-                        WHERE r.invoice_id = i.id AND r.user_id = '{current_user.id}'
+                        WHERE r.invoice_id = i.id AND r.user_id = %s
                     ) as already_rated
                 FROM invoice i
                 JOIN payment p ON i.id = p.invoice_id
                 JOIN searchables s ON i.searchable_id = s.searchable_id
-                WHERE i.buyer_id = '{current_user.id}'
-                AND p.status = 'complete'
+                WHERE i.buyer_id = %s
+                AND p.status = %s
                 ORDER BY p.created_at DESC
             """
             
-            execute_sql(cur, query)
+            execute_sql(cur, query, params=(current_user.id, current_user.id, 'complete'))
             purchases = []
             
             for row in cur.fetchall():
@@ -806,10 +807,10 @@ class InvoiceNotes(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            query = f"""
-                SELECT buyer_id, seller_id FROM invoice WHERE id = {invoice_id}
+            query = """
+                SELECT buyer_id, seller_id FROM invoice WHERE id = %s
             """
-            execute_sql(cur, query)
+            execute_sql(cur, query, params=(invoice_id,))
             result = cur.fetchone()
             
             if not result:
@@ -878,10 +879,10 @@ class CreateInvoiceNote(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            query = f"""
-                SELECT buyer_id, seller_id FROM invoice WHERE id = {invoice_id}
+            query = """
+                SELECT buyer_id, seller_id FROM invoice WHERE id = %s
             """
-            execute_sql(cur, query)
+            execute_sql(cur, query, params=(invoice_id,))
             result = cur.fetchone()
             
             if not result:
@@ -1114,13 +1115,13 @@ class DownloadSearchableFile(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            file_query = f"""
+            file_query = """
                 SELECT uri, metadata
                 FROM files
-                WHERE file_id = {file_id}
+                WHERE file_id = %s
             """
             
-            execute_sql(cur, file_query)
+            execute_sql(cur, file_query, params=(file_id,))
             file_result = cur.fetchone()
             
             if not file_result:

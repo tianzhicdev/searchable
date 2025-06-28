@@ -27,11 +27,11 @@ def get_searchableIds_by_user(user_id):
         cur = conn.cursor()
         
         # Query searchables with user_id matching the user
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             SELECT searchable_id
             FROM searchables
-            WHERE searchable_data->>'user_id' = '{str(user_id)}'
-        """)
+            WHERE searchable_data->>'user_id' = %s
+        """, params=(str(user_id),))
         
         searchable_ids = [row[0] for row in cur.fetchall()]
         
@@ -57,11 +57,11 @@ def get_searchable(searchable_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             SELECT searchable_id, type, searchable_data
             FROM searchables
-            WHERE searchable_id = {searchable_id}
-        """)
+            WHERE searchable_id = %s
+        """, params=(searchable_id,))
         
         result = cur.fetchone()
         
@@ -98,29 +98,38 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
         
         # Build query dynamically
         conditions = []
+        params = []
+        
         if buyer_id is not None:
             if isinstance(buyer_id, list):
-                buyer_ids = "', '".join([str(b) for b in buyer_id])
-                conditions.append(f"i.buyer_id IN ('{buyer_ids}')")
+                placeholders = ','.join(['%s'] * len(buyer_id))
+                conditions.append(f"i.buyer_id IN ({placeholders})")
+                params.extend([str(b) for b in buyer_id])
             else:
-                conditions.append(f"i.buyer_id = '{buyer_id}'")
+                conditions.append(f"i.buyer_id = %s")
+                params.append(str(buyer_id))
         
         if seller_id is not None:
             if isinstance(seller_id, list):
-                seller_ids = "', '".join([str(s) for s in seller_id])
-                conditions.append(f"i.seller_id IN ('{seller_ids}')")
+                placeholders = ','.join(['%s'] * len(seller_id))
+                conditions.append(f"i.seller_id IN ({placeholders})")
+                params.extend([str(s) for s in seller_id])
             else:
-                conditions.append(f"i.seller_id = '{seller_id}'")
+                conditions.append(f"i.seller_id = %s")
+                params.append(str(seller_id))
         
         if searchable_id is not None:
             if isinstance(searchable_id, list):
-                searchable_ids = "', '".join([str(s) for s in searchable_id])
-                conditions.append(f"i.searchable_id IN ('{searchable_ids}')")
+                placeholders = ','.join(['%s'] * len(searchable_id))
+                conditions.append(f"i.searchable_id IN ({placeholders})")
+                params.extend([str(s) for s in searchable_id])
             else:
-                conditions.append(f"i.searchable_id = '{searchable_id}'")
+                conditions.append(f"i.searchable_id = %s")
+                params.append(str(searchable_id))
         
         if external_id:
-            conditions.append(f"i.external_id = '{external_id}'")
+            conditions.append(f"i.external_id = %s")
+            params.append(external_id)
         
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         
@@ -139,11 +148,12 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
             if status == 'pending':
                 query += " AND p.status IS NULL"
             else:
-                query += f" AND p.status = '{status}'"
+                query += " AND p.status = %s"
+                params.append(status)
         
         query += " ORDER BY i.created_at DESC"
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=params if params else None)
         
         results = []
         for row in cur.fetchall():
@@ -241,14 +251,19 @@ def get_withdrawals(user_id=None, status=None, currency=None):
         cur = conn.cursor()
         
         conditions = []
+        params = []
+        
         if user_id is not None:
-            conditions.append(f"user_id = {user_id}")
+            conditions.append("user_id = %s")
+            params.append(user_id)
         
         if status:
-            conditions.append(f"status = '{status}'")
+            conditions.append("status = %s")
+            params.append(status)
         
         if currency:
-            conditions.append(f"currency = '{currency}'")
+            conditions.append("currency = %s")
+            params.append(currency)
         
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         
@@ -260,7 +275,7 @@ def get_withdrawals(user_id=None, status=None, currency=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=params if params else None)
         
         results = []
         for row in cur.fetchall():
@@ -297,11 +312,11 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, in
         
         metadata = metadata or {}
         
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata)
-            VALUES ({buyer_id}, {seller_id}, {searchable_id}, {amount}, {fee}, '{currency}', '{invoice_type}', '{external_id}', {Json(metadata)})
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
-        """, commit=True, connection=conn)
+        """, params=(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, Json(metadata)), commit=True, connection=conn)
         
         row = cur.fetchone()
         
@@ -338,11 +353,11 @@ def create_payment(invoice_id, amount, fee, currency, payment_type, external_id=
         
         metadata = metadata or {}
         
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             INSERT INTO payment (invoice_id, amount, fee, currency, type, external_id, metadata)
-            VALUES ({invoice_id}, {amount}, {fee}, '{currency}', '{payment_type}', '{external_id}', {Json(metadata)})
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-        """, commit=True, connection=conn)
+        """, params=(invoice_id, amount, fee, currency, payment_type, external_id, Json(metadata)), commit=True, connection=conn)
         
         row = cur.fetchone()
         
@@ -376,19 +391,19 @@ def update_payment_status(payment_id, status, metadata=None):
         cur = conn.cursor()
         
         if metadata is not None:
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 UPDATE payment 
-                SET status = '{status}', metadata = {Json(metadata)}
-                WHERE id = {payment_id}
+                SET status = %s, metadata = %s
+                WHERE id = %s
                 RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-            """, commit=True, connection=conn)
+            """, params=(status, Json(metadata), payment_id), commit=True, connection=conn)
         else:
-            execute_sql(cur, f"""
+            execute_sql(cur, """
                 UPDATE payment 
-                SET status = '{status}'
-                WHERE id = {payment_id}
+                SET status = %s
+                WHERE id = %s
                 RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-            """, commit=True, connection=conn)
+            """, params=(status, payment_id), commit=True, connection=conn)
         
         row = cur.fetchone()
         
@@ -426,11 +441,11 @@ def create_withdrawal(user_id, amount, fee, currency, withdrawal_type, external_
         
         metadata = metadata or {}
         
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             INSERT INTO withdrawal (user_id, amount, fee, currency, type, external_id, metadata)
-            VALUES ({user_id}, {amount}, {fee}, '{currency}', '{withdrawal_type}', '{external_id}', {Json(metadata)})
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, user_id, amount, fee, currency, type, external_id, status, created_at, metadata
-        """, commit=True, connection=conn)
+        """, params=(user_id, amount, fee, currency, withdrawal_type, external_id, Json(metadata)), commit=True, connection=conn)
         
         row = cur.fetchone()
         
@@ -682,16 +697,16 @@ def get_user_paid_files(user_id, searchable_id):
         cur = conn.cursor()
         
         # Get all completed payments by this user for this searchable item
-        query = f"""
+        query = """
             SELECT i.metadata
             FROM invoice i 
             JOIN payment p ON i.id = p.invoice_id 
-            WHERE i.buyer_id = {user_id}
-            AND i.searchable_id = {searchable_id}
-            AND p.status = 'complete'
+            WHERE i.buyer_id = %s
+            AND i.searchable_id = %s
+            AND p.status = %s
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=(user_id, searchable_id, 'complete'))
         results = cur.fetchall()
         
         paid_file_ids = set()
@@ -728,7 +743,7 @@ def get_balance_by_currency(user_id):
         logger.info(f"Calculating balance for user_id: {user_id}")
         
         # Get all searchables published by this user
-        execute_sql(cur, f"""SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.user_id = {user_id};""")
+        execute_sql(cur, """SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.user_id = %s;""", params=(user_id,))
         searchable_results = cur.fetchall()
         
         for searchable in searchable_results:
@@ -743,14 +758,14 @@ def get_balance_by_currency(user_id):
                 searchable_currency = searchable_data['payloads']['public']['currency'].lower()
                 
                 # Get paid invoices for this searchable (seller earnings)
-                execute_sql(cur, f"""
+                execute_sql(cur, """
                     SELECT i.amount, i.fee, i.currency, i.metadata
                     FROM invoice i
                     JOIN payment p ON i.id = p.invoice_id
-                    WHERE i.searchable_id = {searchable_id} 
-                    AND i.seller_id = {user_id}
-                    AND p.status = '{PaymentStatus.COMPLETE.value}'
-                """)
+                    WHERE i.searchable_id = %s 
+                    AND i.seller_id = %s
+                    AND p.status = %s
+                """, params=(searchable_id, user_id, PaymentStatus.COMPLETE.value))
                 
                 paid_invoices = cur.fetchall()
                 
@@ -768,11 +783,11 @@ def get_balance_by_currency(user_id):
                 continue
         
         # Add rewards
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             SELECT amount, currency
             FROM rewards 
-            WHERE user_id = {user_id}
-        """)
+            WHERE user_id = %s
+        """, params=(user_id,))
         
         reward_results = cur.fetchall()
         
@@ -789,12 +804,12 @@ def get_balance_by_currency(user_id):
                     logger.error(f"Invalid amount format in reward: {amount}")
         
         # Subtract withdrawals (both completed and pending to prevent double-spending)
-        execute_sql(cur, f"""
+        execute_sql(cur, """
             SELECT amount, currency
             FROM withdrawal 
-            WHERE user_id = {user_id}
-            AND status IN ('{PaymentStatus.COMPLETE.value}', '{PaymentStatus.PENDING.value}')
-        """)
+            WHERE user_id = %s
+            AND status IN (%s, %s)
+        """, params=(user_id, PaymentStatus.COMPLETE.value, PaymentStatus.PENDING.value))
         
         withdrawal_results = cur.fetchall()
         
@@ -831,11 +846,15 @@ def get_ratings(invoice_id=None, user_id=None):
         cur = conn.cursor()
         
         conditions = []
+        params = []
+        
         if invoice_id is not None:
-            conditions.append(f"invoice_id = {invoice_id}")
+            conditions.append("invoice_id = %s")
+            params.append(invoice_id)
         
         if user_id is not None:
-            conditions.append(f"user_id = {user_id}")
+            conditions.append("user_id = %s")
+            params.append(user_id)
         
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         
@@ -846,7 +865,7 @@ def get_ratings(invoice_id=None, user_id=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=params if params else None)
         
         results = []
         for row in cur.fetchall():
@@ -878,29 +897,29 @@ def can_user_rate_invoice(user_id, invoice_id):
         cur = conn.cursor()
         
         # Check if user has a completed payment for this invoice
-        payment_query = f"""
+        payment_query = """
             SELECT p.status, i.buyer_id
             FROM payment p
             JOIN invoice i ON p.invoice_id = i.id
-            WHERE i.id = {invoice_id}
-            AND i.buyer_id = '{user_id}'
-            AND p.status = 'complete'
+            WHERE i.id = %s
+            AND i.buyer_id = %s
+            AND p.status = %s
         """
         
-        execute_sql(cur, payment_query)
+        execute_sql(cur, payment_query, params=(invoice_id, user_id, 'complete'))
         payment_result = cur.fetchone()
         
         if not payment_result:
             return False, "No completed payment found for this invoice"
         
         # Check if user has already rated this invoice
-        rating_query = f"""
+        rating_query = """
             SELECT id FROM rating
-            WHERE invoice_id = {invoice_id}
-            AND user_id = '{user_id}'
+            WHERE invoice_id = %s
+            AND user_id = %s
         """
         
-        execute_sql(cur, rating_query)
+        execute_sql(cur, rating_query, params=(invoice_id, user_id))
         rating_result = cur.fetchone()
         
         if rating_result:
@@ -937,13 +956,13 @@ def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None)
             metadata = {}
         
         # Insert rating
-        query = f"""
+        query = """
             INSERT INTO rating (invoice_id, user_id, rating, review, metadata, created_at)
-            VALUES ({invoice_id}, '{user_id}', {rating_value}, %s, {Json(metadata)}, CURRENT_TIMESTAMP)
+            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             RETURNING id
         """
         
-        execute_sql(cur, query, params=(review,))
+        execute_sql(cur, query, params=(invoice_id, user_id, rating_value, review, Json(metadata)))
         rating_id = cur.fetchone()[0]
         
         conn.commit()
@@ -972,16 +991,16 @@ def get_invoice_notes(invoice_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        query = f"""
+        query = """
             SELECT n.id, n.invoice_id, n.user_id, n.buyer_seller, n.content, 
                    n.metadata, n.created_at, u.username
             FROM invoice_note n
             LEFT JOIN users u ON n.user_id = u.id
-            WHERE n.invoice_id = {invoice_id}
+            WHERE n.invoice_id = %s
             ORDER BY n.created_at ASC
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=(invoice_id,))
         notes = []
         
         for row in cur.fetchall():
@@ -1023,13 +1042,13 @@ def create_invoice_note(invoice_id, user_id, content, buyer_seller, metadata=Non
         if metadata is None:
             metadata = {}
         
-        query = f"""
+        query = """
             INSERT INTO invoice_note (invoice_id, user_id, buyer_seller, content, metadata, created_at)
-            VALUES ({invoice_id}, '{user_id}', '{buyer_seller}', %s, {Json(metadata)}, CURRENT_TIMESTAMP)
+            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             RETURNING id
         """
         
-        execute_sql(cur, query, params=(content,))
+        execute_sql(cur, query, params=(invoice_id, user_id, buyer_seller, content, Json(metadata)))
         note_id = cur.fetchone()[0]
         
         conn.commit()
@@ -1060,7 +1079,7 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
         
         if user_role == 'seller':
             # Sellers see all invoices for their searchable items
-            query = f"""
+            query = """
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                        i.fee, i.currency, i.type, i.external_id, i.created_at, 
                        i.metadata, p.status as payment_status, p.created_at as payment_date,
@@ -1068,14 +1087,15 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 FROM invoice i
                 LEFT JOIN payment p ON i.id = p.invoice_id
                 LEFT JOIN users u ON i.buyer_id = u.id
-                WHERE i.searchable_id = {searchable_id}
-                AND i.seller_id = '{user_id}'
-                AND p.status = 'complete'
+                WHERE i.searchable_id = %s
+                AND i.seller_id = %s
+                AND p.status = %s
                 ORDER BY i.created_at DESC
             """
+            execute_sql(cur, query, params=(searchable_id, user_id, 'complete'))
         else:
             # Buyers see their own paid invoices and pending invoices from past 24 hours
-            query = f"""
+            query = """
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                        i.fee, i.currency, i.type, i.external_id, i.created_at, 
                        i.metadata, p.status as payment_status, p.created_at as payment_date,
@@ -1083,13 +1103,12 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 FROM invoice i
                 LEFT JOIN payment p ON i.id = p.invoice_id
                 LEFT JOIN users u ON i.seller_id = u.id
-                WHERE i.searchable_id = {searchable_id}
-                AND i.buyer_id = '{user_id}'
-                AND (p.status = 'complete' OR (p.status = 'pending' AND i.created_at >= NOW() - INTERVAL '24 hours'))
+                WHERE i.searchable_id = %s
+                AND i.buyer_id = %s
+                AND (p.status = %s OR (p.status = %s AND i.created_at >= NOW() - INTERVAL '24 hours'))
                 ORDER BY i.created_at DESC
             """
-        
-        execute_sql(cur, query)
+            execute_sql(cur, query, params=(searchable_id, user_id, 'complete', 'pending'))
         invoices = []
         
         for row in cur.fetchall():
@@ -1129,7 +1148,7 @@ def get_user_all_invoices(user_id):
         cur = conn.cursor()
         
         # Get invoices where user is buyer
-        buyer_query = f"""
+        buyer_query = """
             SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
@@ -1139,12 +1158,12 @@ def get_user_all_invoices(user_id):
             LEFT JOIN payment p ON i.id = p.invoice_id
             LEFT JOIN users u ON i.seller_id = u.id
             LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
-            WHERE i.buyer_id = '{user_id}'
-            AND p.status = 'complete'
+            WHERE i.buyer_id = %s
+            AND p.status = %s
         """
         
         # Get invoices where user is seller
-        seller_query = f"""
+        seller_query = """
             SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
@@ -1154,8 +1173,8 @@ def get_user_all_invoices(user_id):
             LEFT JOIN payment p ON i.id = p.invoice_id
             LEFT JOIN users u ON i.buyer_id = u.id
             LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
-            WHERE i.seller_id = '{user_id}'
-            AND p.status = 'complete'
+            WHERE i.seller_id = %s
+            AND p.status = %s
         """
         
         # Combine both queries with UNION
@@ -1166,7 +1185,7 @@ def get_user_all_invoices(user_id):
             ORDER BY payment_date DESC
         """
         
-        execute_sql(cur, combined_query)
+        execute_sql(cur, combined_query, params=(user_id, 'complete', user_id, 'complete'))
         invoices = []
         
         for row in cur.fetchall():
@@ -1383,8 +1402,11 @@ def get_rewards(user_id=None):
         cur = conn.cursor()
         
         conditions = []
+        params = []
+        
         if user_id is not None:
-            conditions.append(f"user_id = {user_id}")
+            conditions.append("user_id = %s")
+            params.append(user_id)
         
         where_clause = " AND ".join(conditions) if conditions else "1=1"
         
@@ -1395,7 +1417,7 @@ def get_rewards(user_id=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=params if params else None)
         
         results = []
         for row in cur.fetchall():
@@ -1432,7 +1454,7 @@ def get_downloadable_items_by_user_id(user_id):
         cur = conn.cursor()
         
         # Query to get all completed purchases for the user
-        query = f"""
+        query = """
             SELECT 
                 i.id as invoice_id,
                 i.searchable_id,
@@ -1447,12 +1469,12 @@ def get_downloadable_items_by_user_id(user_id):
             INNER JOIN payment p ON i.id = p.invoice_id
             INNER JOIN searchables s ON i.searchable_id = s.searchable_id
             INNER JOIN users u ON i.seller_id = u.id
-            WHERE i.buyer_id = '{user_id}'
-            AND p.status = 'complete'
+            WHERE i.buyer_id = %s
+            AND p.status = %s
             ORDER BY p.created_at DESC
         """
         
-        execute_sql(cur, query)
+        execute_sql(cur, query, params=(user_id, 'complete'))
         downloadable_items = []
         
         for row in cur.fetchall():
