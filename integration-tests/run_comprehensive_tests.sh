@@ -49,8 +49,22 @@ run_test_file() {
     print_color $BLUE "Running: $test_name"
     print_color $BLUE "=========================================="
     
-    # Run pytest and capture the exit code properly
-    python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
+    # Check if this is a standalone script (has if __name__ == "__main__")
+    if grep -q "if __name__ == [\"']__main__[\"']:" "$test_file"; then
+        # Run as standalone Python script
+        if [ -n "$CICD_REPORT" ]; then
+            python "$test_file" 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
+        else
+            python "$test_file" 2>&1 | tee "$log_file"
+        fi
+    else
+        # Run with pytest
+        if [ -n "$CICD_REPORT" ]; then
+            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
+        else
+            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
+        fi
+    fi
     local exit_code=${PIPESTATUS[0]}
     
     if [ $exit_code -eq 0 ]; then
