@@ -197,7 +197,8 @@ class TestSearchableIntegration:
         
         # Search for our specific test item
         search_query = f"Test Searchable Item {self.test_id}"
-        response = self.client.search_searchables(query_term=search_query)
+        response = self.client.search_searchables_by_term(search_query)
+        # logger.info(f"Search response: {json.dumps(response, indent=2)}")
         
         # Verify exact search response structure
         assert 'results' in response

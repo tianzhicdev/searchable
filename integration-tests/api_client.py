@@ -95,7 +95,7 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
-    def search_searchables(self, query_term: str = "", filters: Dict = None) -> Dict[str, Any]:
+    def search_searchables_by_term(self, query_term: str = "", filters: Dict = None) -> Dict[str, Any]:
         """Search for searchable items"""
         url = f"{self.base_url}/v1/searchable/search"
         params = {
