@@ -355,7 +355,8 @@ def get_searchable_tag_count(searchable_id):
 def search_users_by_tags(tag_names, page=1, limit=20):
     """
     Search users by tags (OR logic - users with ANY of the specified tags)
-    If no tags specified, returns all users
+    If no tags specified, returns all users who have published items
+    Only returns users who have at least one published (non-removed) searchable item
     
     Args:
         tag_names (list): List of tag names to search for (optional)
@@ -369,19 +370,29 @@ def search_users_by_tags(tag_names, page=1, limit=20):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # If no tags specified, return all users
+        # Always require users to have at least one published searchable
+        published_searchable_condition = """
+            EXISTS (
+                SELECT 1 FROM searchables s 
+                WHERE s.user_id = u.id 
+                AND s.removed = FALSE
+            )
+        """
+        
+        # If no tags specified, return all users with published items
         if not tag_names:
-            # Get total count of all users
-            count_query = "SELECT COUNT(*) FROM users"
+            # Get total count of all users with published items
+            count_query = f"SELECT COUNT(*) FROM users u WHERE {published_searchable_condition}"
             execute_sql(cur, count_query)
             count_result = cur.fetchone()
             total = count_result[0] if count_result else 0
             
-            # Get paginated users
+            # Get paginated users with published items
             offset = (page - 1) * limit
-            user_query = """
+            user_query = f"""
                 SELECT u.id, u.username 
                 FROM users u
+                WHERE {published_searchable_condition}
                 ORDER BY u.id
                 LIMIT %s OFFSET %s
             """
@@ -416,7 +427,7 @@ def search_users_by_tags(tag_names, page=1, limit=20):
             
             tag_ids = [row[0] for row in tag_result]
             
-            # Find users with ANY of the specified tags
+            # Find users with ANY of the specified tags AND published items
             tag_placeholders = ','.join(['%s'] * len(tag_ids))
             
             # Get total count
@@ -425,6 +436,7 @@ def search_users_by_tags(tag_names, page=1, limit=20):
                 FROM user_tags ut
                 JOIN users u ON ut.user_id = u.id
                 WHERE ut.tag_id IN ({tag_placeholders})
+                AND {published_searchable_condition}
             """
             
             execute_sql(cur, count_query, tag_ids)
@@ -438,6 +450,7 @@ def search_users_by_tags(tag_names, page=1, limit=20):
                 FROM users u
                 JOIN user_tags ut ON u.id = ut.user_id
                 WHERE ut.tag_id IN ({tag_placeholders})
+                AND {published_searchable_condition}
                 ORDER BY u.id
                 LIMIT %s OFFSET %s
             """
@@ -740,6 +753,7 @@ def search_searchables_by_tags(tag_names, page=1, limit=20):
 def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
     """
     Search users by tag IDs and/or username (OR logic for tags, substring match for username)
+    Only returns users who have at least one published (non-removed) searchable item
     
     Args:
         tag_ids (list): List of tag IDs to search for (optional)
@@ -762,6 +776,16 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
         if username_search:
             where_conditions.append("LOWER(u.username) LIKE LOWER(%s)")
             params.append(f"%{username_search}%")
+        
+        # Always require users to have at least one published searchable
+        published_searchable_condition = """
+            EXISTS (
+                SELECT 1 FROM searchables s 
+                WHERE s.user_id = u.id 
+                AND s.removed = FALSE
+            )
+        """
+        where_conditions.append(published_searchable_condition)
         
         # Tag filter
         if tag_ids:
@@ -798,8 +822,8 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
             query_params = (tag_ids if tag_ids else []) + params + [limit, offset]
             execute_sql(cur, user_query, query_params)
         else:
-            # No tags specified - search all users
-            # Get count with username filter only
+            # No tags specified - search all users with published items
+            # Get count with username filter and published items filter
             count_query = """
                 SELECT COUNT(*) FROM users u
                 WHERE 1=1
@@ -810,7 +834,7 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
             execute_sql(cur, count_query, params)
             total = cur.fetchone()[0]
             
-            # Get users with username filter only
+            # Get users with username filter and published items filter
             offset = (page - 1) * limit
             user_query = """
                 SELECT u.id, u.username
