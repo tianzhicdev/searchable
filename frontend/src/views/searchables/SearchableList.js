@@ -193,7 +193,7 @@ const SearchableList = ({ criteria }) => {
           <Paper elevation={2}>
             <Typography variant="body1">
               {pagination.totalCount === 0 ? 
-                "No items found. Try adjusting your search criteria." : 
+                "No items found." : 
                 "Use the search button to find items."}
             </Typography>
           </Paper>
