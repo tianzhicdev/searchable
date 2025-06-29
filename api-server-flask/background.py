@@ -28,8 +28,8 @@ logging.basicConfig(
 logger = logging.getLogger('background')
 
 # Configuration
-CHECK_INVOICE_INTERVAL = 60  # Check invoices every 60 seconds
-WITHDRAWAL_SENDER_INTERVAL = 5  # Process pending withdrawals every 5 seconds
+CHECK_INVOICE_INTERVAL = 1  # Check invoices every 60 seconds
+WITHDRAWAL_SENDER_INTERVAL = 1  # Process pending withdrawals every 5 seconds
 STATUS_CHECKER_INTERVAL = 15  # Check sent withdrawals every 15 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
