@@ -149,23 +149,6 @@ def process_pending_withdrawals():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        
-        # Handle timeout for stuck 'sending' withdrawals
-        # sending_timeout = int(time.time()) - (SENDING_TIMEOUT_MINUTES * 60)
-        
-        # # Reset stuck 'sending' withdrawals directly
-        # execute_sql(cur, f"""
-        #     UPDATE withdrawal 
-        #     SET status = '{PaymentStatus.PENDING.value}'
-        #     WHERE status = '{PaymentStatus.SENDING.value}'
-        #     AND CAST(metadata->>'sending_timestamp' AS INTEGER) < {sending_timeout}
-        # """)
-        
-        # timeout_resets = cur.rowcount
-        # if timeout_resets > 0:
-        #     logger.warning(f"Reset {timeout_resets} stuck 'sending' withdrawals back to 'pending' due to timeout")
-        
-        # Get pending withdrawals with SELECT FOR UPDATE to prevent race conditions
         execute_sql(cur, f"""
             SELECT id, user_id, amount, currency, type, external_id, metadata
             FROM withdrawal 
@@ -207,18 +190,10 @@ def process_pending_withdrawals():
                     response_data = response.json()
                     logger.info(f"USDT API response for withdrawal {withdrawal_id}: {response_data}")
                     
-                    if 'txHash' in response_data 
-                    and is_valid_tx_hash(response_data.get('txHash')) 
-                    and 'status' in response_data
-                    and response_data.get('status') == 'complete':
+                    if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')) and 'status' in response_data and response_data.get('status') == 'complete':
                         # Success - got txHash, mark as 'sent'
                         tx_hash = response_data.get('txHash')
-                        
-                        # logger.info(f"USDT service returned txHash: {tx_hash} for withdrawal {withdrawal_id}")
-                        
-                        # if not tx_hash or tx_hash in ['None', 'null', 'undefined']:
-                        #     raise Exception("USDT service returned success but no valid txHash")
-                        
+
                         complete_metadata = {
                             'tx_hash': tx_hash,
                             'complete_timestamp': int(time.time()),
@@ -234,7 +209,8 @@ def process_pending_withdrawals():
                         
                         logger.info(f"✅ Withdrawal {withdrawal_id} sent successfully - txHash: {tx_hash}")
                         
-                    else if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                    elif 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                        # we should check the status code to be 5xx
                         tx_hash = response_data.get('txHash')
                         sent_metadata = {
                             'tx_hash': tx_hash,
@@ -247,12 +223,12 @@ def process_pending_withdrawals():
                                 external_id = %s,
                                 metadata = %s
                             WHERE id = %s
-                        """, (PaymentStatus.SENT.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
+                        """, (PaymentStatus.DELAYED.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
                     else:
                         error_metadata = {
                             'error_timestamp': int(time.time()),
                         }
-                        
+                        # todo: error should be excluded from balance calculation
                         cur.execute("""
                             UPDATE withdrawal 
                             SET status = %s,
@@ -279,7 +255,7 @@ def process_pending_withdrawals():
         logger.error(traceback.format_exc())
 
 
-def check_sent_withdrawals():
+def check_delayed_withdrawals():
     """
     JOB 2: Check status of sent withdrawals using USDT service
     Status flow: sent → complete/failed (or stay sent if pending)
@@ -292,9 +268,10 @@ def check_sent_withdrawals():
         execute_sql(cur, f"""
             SELECT id, user_id, amount, currency, metadata, external_id, status
             FROM withdrawal 
-            WHERE status = '{PaymentStatus.SENT.value}'
+            WHERE status = '{PaymentStatus.DELAYED.value}'
             AND external_id IS NOT NULL
             ORDER BY created_at ASC
+            LIMIT 1
         """)
         
         sent_withdrawals = cur.fetchall()
@@ -374,7 +351,7 @@ def check_sent_withdrawals():
         logger.info(f"Status checker job completed: checked {checked_count} withdrawals")
         
     except Exception as e:
-        logger.error(f"Error in check_sent_withdrawals: {str(e)}")
+        logger.error(f"Error in check_delayed_withdrawals: {str(e)}")
         logger.error(traceback.format_exc())
 
 
@@ -395,7 +372,7 @@ def withdrawal_sender_thread():
     while True:
         try:
 
-            check_sent_withdrawals()
+            check_delayed_withdrawals()
             process_pending_withdrawals()
         except Exception as e:
             logger.error(f"Error in withdrawal sender thread: {str(e)}")
@@ -404,16 +381,6 @@ def withdrawal_sender_thread():
         time.sleep(WITHDRAWAL_SENDER_INTERVAL)
 
 
-def status_checker_thread():
-    """Thread function that periodically checks sent withdrawals"""
-    while True:
-        try:
-            check_sent_withdrawals()
-        except Exception as e:
-            logger.error(f"Error in status checker thread: {str(e)}")
-            logger.error(traceback.format_exc())
-        
-        time.sleep(STATUS_CHECKER_INTERVAL)
 
 
 def start_background_threads():
@@ -436,20 +403,12 @@ def start_background_threads():
     )
     sender_thread.start()
     
-    # Start status checker thread (Job 2)
-    # checker_thread = threading.Thread(
-    #     target=status_checker_thread,
-    #     daemon=True,
-    #     name="status-checker"
-    # )
-    # checker_thread.start()
-    
     logger.info("Background threads started:")
     logger.info(f"  - Invoice checker: every {CHECK_INVOICE_INTERVAL}s")
     logger.info(f"  - Withdrawal sender: every {WITHDRAWAL_SENDER_INTERVAL}s")
     logger.info(f"  - Status checker: every {STATUS_CHECKER_INTERVAL}s")
     
-    return [invoice_thread, sender_thread, checker_thread]
+    return [invoice_thread, sender_thread]
 
 
 # This will be called when the module is imported
