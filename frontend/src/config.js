@@ -12,6 +12,8 @@ if (process.env.REACT_APP_ENV === 'local') {
 let APP_BRANDING = 'silkroadonlightning';
 if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
   APP_BRANDING = 'eccentricprotocol';
+} else if (process.env.REACT_APP_BRANDING === 'abitchaotic') {
+  APP_BRANDING = 'abitchaotic';
 } else if (process.env.REACT_APP_BRANDING === 'local') {
   APP_BRANDING = 'local';
 } 
@@ -25,6 +27,11 @@ if (APP_BRANDING === 'eccentricprotocol') {
   branding_config = {
     logo: 'eccentricprotocol.gif',
     domain: 'eccentricprotocol.com',
+  }
+} else if (APP_BRANDING === 'abitchaotic') {
+  branding_config = {
+    logo: 'abitchaotic.gif',
+    domain: 'abitchaotic.com',
   }
 } else if (APP_BRANDING === 'silkroadonlightning') {
   branding_config = {

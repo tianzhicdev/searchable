@@ -49,8 +49,11 @@
     "start": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts start",
     "start:mock": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_MOCK_MODE=true REACT_APP_ENV=local REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts start",
     "start-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.png REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts start",
+    "start-abitchaotic": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=abitchaotic REACT_APP_LOGO=abitchaotic.png REACT_APP_DESCRIPTION='A Bit Chaotic' react-scripts start",
+    "start-abitchaotic:mock": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_MOCK_MODE=true REACT_APP_ENV=local REACT_APP_BRANDING=abitchaotic REACT_APP_LOGO=abitchaotic.png REACT_APP_DESCRIPTION='A Bit Chaotic' react-scripts start",
     "build": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=silkroadonlightning REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Silk Road on Lightning' react-scripts build",
     "build-eccentricprotocol": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=eccentricprotocol REACT_APP_LOGO=eccentricprotocol.png REACT_APP_DESCRIPTION='Eccentric Protocol' react-scripts build",
+    "build-abitchaotic": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=prod REACT_APP_BRANDING=abitchaotic REACT_APP_LOGO=abitchaotic.png REACT_APP_DESCRIPTION='A Bit Chaotic' react-scripts build",
     "build-local": "NODE_OPTIONS=--openssl-legacy-provider REACT_APP_ENV=local REACT_APP_BRANDING=local REACT_APP_LOGO=camel_logo.jpg REACT_APP_DESCRIPTION='Local Development' react-scripts build",
     "test": "react-scripts test --passWithNoTests",
     "eject": "react-scripts eject"
