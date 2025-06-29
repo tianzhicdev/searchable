@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS payment (
     currency TEXT NOT NULL CHECK (currency = 'usd'),
     type TEXT NOT NULL CHECK (type = 'stripe'),
     external_id TEXT, -- External payment ID if available
-    status TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'failed')) DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending','complete', 'delayed', 'error')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS withdrawal (
     currency TEXT NOT NULL CHECK (currency = 'usd'),
     type TEXT NOT NULL CHECK (type = 'bank_transfer'),
     external_id TEXT, -- Transaction ID
-    status TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'failed')) DEFAULT 'pending',
+    status TEXT NOT NULL CHECK (status IN ('pending','complete', 'delayed', 'error')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -129,6 +129,14 @@ CREATE INDEX IF NOT EXISTS idx_withdrawal_currency ON withdrawal(currency);
 
 -- Index on created_at for faster date-based queries
 CREATE INDEX IF NOT EXISTS idx_withdrawal_created_at ON withdrawal(created_at);
+
+-- Migration: Add delayed status to existing withdrawal table
+ALTER TABLE withdrawal 
+DROP CONSTRAINT IF EXISTS withdrawal_status_check;
+
+ALTER TABLE withdrawal 
+ADD CONSTRAINT withdrawal_status_check 
+CHECK (status IN ('pending', 'sending', 'sent', 'complete', 'failed', 'delayed', 'processing'));
 
 -- Invoice notes table for communication between buyer and seller
 CREATE TABLE IF NOT EXISTS invoice_note (

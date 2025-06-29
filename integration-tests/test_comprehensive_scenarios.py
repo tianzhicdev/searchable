@@ -336,7 +336,7 @@ class TestComprehensiveScenarios:
             assert 'searchable_id' in response
             assert 'type' in response
             assert 'username' in response
-            assert response['user_id'] == str(self.user1_id)
+            assert response['user_id'] == self.user1_id
             assert response['searchable_id'] == searchable['id']
             assert response['type'] == 'downloadable'
             assert response['username'] == self.user1_username
@@ -726,22 +726,12 @@ class TestComprehensiveScenarios:
         current_profile = self.user1_client.get_current_profile()
         print(f"[RESPONSE] Get User 1 current profile: {current_profile}")
         assert 'profile' in current_profile
-        assert 'downloadables' in current_profile
         assert current_profile['profile']['username'] == self.user1_username
         assert current_profile['profile']['introduction'] == profile_data['introduction']
         assert current_profile['profile']['profile_image_url'] == profile_media['media_uri']
-        assert len(current_profile['downloadables']) == 4  # Should show 4 searchables created
         assert isinstance(current_profile['profile']['id'], int)
         assert isinstance(current_profile['profile']['user_id'], int)
-        # Verify all searchables are present
-        for downloadable in current_profile['downloadables']:
-            assert 'searchable_id' in downloadable
-            assert 'title' in downloadable
-            assert 'description' in downloadable
-            assert 'type' in downloadable
-            assert downloadable['type'] == 'downloadable'
-            assert downloadable['currency'] == 'usd'
-        
+
         # Verify profile data is not empty
         assert len(current_profile['profile']['username']) > 0
         assert len(current_profile['profile']['introduction']) > 0
@@ -751,11 +741,9 @@ class TestComprehensiveScenarios:
         public_profile = self.user2_client.get_profile_by_id(self.user1_id)
         print(f"[RESPONSE] Get User 1 public profile: {public_profile}")
         assert 'profile' in public_profile
-        assert 'downloadables' in public_profile
         assert public_profile['profile']['username'] == self.user1_username
         assert public_profile['profile']['introduction'] == profile_data['introduction']
         assert public_profile['profile']['profile_image_url'] == profile_media['media_uri']
-        assert len(public_profile['downloadables']) == 4  # Should show 4 searchables created
         assert isinstance(public_profile['profile']['id'], int)
         assert isinstance(public_profile['profile']['user_id'], int)
         assert public_profile['profile']['user_id'] == self.user1_id

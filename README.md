@@ -88,3 +88,8 @@ We can define the Searchable schema as follows:
 │     3. Implement comprehensive logging and SIEM                                                                      │
 │     4. Regular security audits                                                                                       │
 │     5. Consider Cloudflare or similar DDoS protection explain to me why each one is important
+
+
+
+
+migration plan: 1. user_ids 2. add_searchables_columns_and_indexes 3. withdrawal status checks
