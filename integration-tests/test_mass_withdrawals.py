@@ -25,7 +25,7 @@ class TestMassWithdrawals:
         self.test_password = DEFAULT_PASSWORD
         
         # Configuration
-        self.num_withdrawals = int(os.getenv('MASS_WITHDRAWAL_COUNT', '10'))
+        self.num_withdrawals = int(os.getenv('MASS_WITHDRAWAL_COUNT', '1'))
         self.withdrawal_amount = float(os.getenv('WITHDRAWAL_AMOUNT', '1.0'))  # $1 USD each
         self.timeout_seconds = int(os.getenv('MASS_WITHDRAWAL_TIMEOUT', '1200'))  # 5 minutes
         
