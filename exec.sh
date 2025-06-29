@@ -712,6 +712,19 @@ local_cicd() {
     run_tests_with_logging "local"
     TEST_RESULT=$?
     
+    # Copy individual test logs to the reports directory
+    log_output ""
+    log_output "${BLUE}📁 Copying individual test logs...${NC}"
+    TEST_LOGS_DIR="$SCRIPT_DIR/integration-tests/logs"
+    if [ -d "$TEST_LOGS_DIR" ]; then
+        # Find the most recent test logs (created in the last 5 minutes)
+        find "$TEST_LOGS_DIR" -name "*.log" -type f -mmin -5 -exec cp {} "$REPORTS_DIR/" \; 2>/dev/null || true
+        
+        # Count how many logs were copied
+        COPIED_LOGS=$(find "$TEST_LOGS_DIR" -name "*.log" -type f -mmin -5 2>/dev/null | wc -l)
+        log_output "✅ Copied $COPIED_LOGS individual test log files"
+    fi
+    
     log_output ""
     log_output "${BLUE}🎯 CI/CD Workflow Summary${NC}"
     log_output "================================"
@@ -747,8 +760,16 @@ local_cicd() {
     
     # Show report location to user
     echo ""
-    echo -e "${BLUE}📝 Full report saved to:${NC}"
+    echo -e "${BLUE}📝 Full CI/CD report saved to:${NC}"
     echo "   $CICD_REPORT"
+    echo ""
+    echo -e "${BLUE}📂 All log files saved in:${NC}"
+    echo "   $REPORTS_DIR/"
+    echo ""
+    
+    # List all log files in the reports directory
+    echo -e "${BLUE}📋 Log files created:${NC}"
+    ls -la "$REPORTS_DIR/" | grep -E "\.log$" | awk '{print "   - " $9}'
     echo ""
     
     # Exit with appropriate code

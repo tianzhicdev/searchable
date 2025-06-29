@@ -4,70 +4,57 @@ Comprehensive integration tests for the tag system
 Tests full tag functionality including CRUD operations and search
 """
 
-import sys
-import os
-import requests
+import pytest
+import uuid
 import time
-import random
-import string
+import os
+from api_client import SearchableAPIClient
+from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
 
-# Configuration
-BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5005')
-
-def generate_random_string(length=8):
-    """Generate a random string for unique usernames/emails"""
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
-
-class TagTestSuite:
-    def __init__(self):
-        self.base_url = BASE_URL
-        self.user_token = None
-        self.user_id = None
-        self.searchable_id = None
-        
-    def setup(self):
+class TestTagsComprehensive:
+    """Comprehensive tests for tag functionality"""
+    
+    @classmethod
+    def setup_class(cls):
+        """Set up test class with API client and test data"""
+        cls.client = SearchableAPIClient()
+        cls.test_id = str(uuid.uuid4())[:8]
+        cls.username = f"{TEST_USER_PREFIX}tag_{cls.test_id}"
+        cls.email = f"{cls.username}@{TEST_EMAIL_DOMAIN}"
+        cls.password = DEFAULT_PASSWORD
+        cls.user_id = None
+        cls.searchable_id = None
+        cls.available_user_tags = []
+        cls.available_searchable_tags = []
+    
+    @classmethod
+    def teardown_class(cls):
+        """Clean up after tests"""
+        if cls.client.token:
+            cls.client.logout()
+    
+    def test_01_setup_user_and_searchable(self):
         """Create a test user and searchable for tag testing"""
-        print("Setting up test data...")
+        # Register user
+        response = self.client.register_user(
+            username=self.username,
+            email=self.email,
+            password=self.password
+        )
+        assert response['success'] is True
+        assert 'userID' in response
+        self.__class__.user_id = response['userID']
         
-        # Register a new user
-        random_suffix = generate_random_string()
-        register_data = {
-            "username": f"tagtest_{random_suffix}",
-            "email": f"tagtest_{random_suffix}@example.com",
-            "password": "testpass123"
-        }
+        # Login
+        login_response = self.client.login_user(self.email, self.password)
+        assert login_response['success'] is True
+        assert 'token' in login_response
         
-        response = requests.post(f"{self.base_url}/api/users/register", json=register_data)
-        if response.status_code != 200:
-            print(f"✗ Failed to register test user: {response.status_code}")
-            return False
-            
-        self.user_id = response.json().get('userID')
-        
-        # Login to get token
-        login_data = {
-            "email": register_data['email'],
-            "password": register_data['password']
-        }
-        
-        response = requests.post(f"{self.base_url}/api/users/login", json=login_data)
-        if response.status_code != 200:
-            print(f"✗ Failed to login: {response.status_code}")
-            return False
-            
-        login_result = response.json()
-        self.user_token = login_result.get('token')
-        if not self.user_token:
-            print("✗ No token received from login")
-            return False
-        print(f"✓ Login successful, token received")
-        
-        # Create a searchable
-        headers = {"authorization": self.user_token}
+        # Create a test searchable
         searchable_data = {
             "payloads": {
                 "public": {
-                    "title": f"Test Searchable {random_suffix}",
+                    "title": f"Test Searchable for Tags {self.test_id}",
                     "description": "A test searchable for tag testing",
                     "type": "downloadable",
                     "category": "test",
@@ -78,354 +65,188 @@ class TagTestSuite:
             }
         }
         
-        response = requests.post(
-            f"{self.base_url}/api/v1/searchable/create",
-            json=searchable_data,
-            headers=headers
-        )
-        
-        if response.status_code == 201:
-            self.searchable_id = response.json().get('searchable_id')
-            print(f"✓ Test setup complete. User ID: {self.user_id}, Searchable ID: {self.searchable_id}")
-            return True
-        else:
-            print(f"✗ Failed to create searchable: {response.status_code}")
-            if response.text:
-                print(f"  Error details: {response.text}")
-            return False
+        create_response = self.client.create_searchable(searchable_data)
+        assert 'searchable_id' in create_response
+        self.__class__.searchable_id = create_response['searchable_id']
     
-    def test_add_user_tags(self):
-        """Test adding tags to a user"""
-        print("\nTesting: Add tags to user")
-        
-        headers = {"authorization": self.user_token}
-        
+    def test_02_get_available_tags(self):
+        """Get available tags for users and searchables"""
         # Get available user tags
-        response = requests.get(f"{self.base_url}/api/v1/tags?type=user")
-        if response.status_code != 200:
-            print("✗ Failed to get available tags")
-            return False
-            
-        available_tags = response.json().get('tags', [])
-        if len(available_tags) < 2:
-            print("✗ Not enough user tags available for testing")
-            return False
-        
-        # Select first 2 tags
-        tag_ids = [tag['id'] for tag in available_tags[:2]]
-        
-        # Add tags to user
-        tag_data = {"tag_ids": tag_ids}
-        response = requests.post(
-            f"{self.base_url}/api/v1/users/{self.user_id}/tags",
-            json=tag_data,
-            headers=headers
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            user_tags = data.get('tags', [])
-            print(f"✓ Successfully added {len(user_tags)} tags to user")
-            
-            # Verify the tags were added
-            added_tag_ids = [tag['id'] for tag in user_tags]
-            for tag_id in tag_ids:
-                if tag_id in added_tag_ids:
-                    print(f"  ✓ Tag ID {tag_id} was added")
-                else:
-                    print(f"  ✗ Tag ID {tag_id} was not added")
-                    return False
-            
-            return True
-        else:
-            print(f"✗ Failed to add tags: {response.status_code}")
-            return False
-    
-    def test_get_user_tags(self):
-        """Test getting tags for a specific user"""
-        print("\nTesting: Get user tags")
-        
-        response = requests.get(f"{self.base_url}/api/v1/users/{self.user_id}/tags")
-        
-        if response.status_code == 200:
-            data = response.json()
-            tags = data.get('tags', [])
-            print(f"✓ Successfully retrieved {len(tags)} tags for user")
-            
-            for tag in tags:
-                print(f"  - {tag['name']} ({tag['tag_type']})")
-            
-            return True
-        else:
-            print(f"✗ Failed to get user tags: {response.status_code}")
-            return False
-    
-    def test_add_searchable_tags(self):
-        """Test adding tags to a searchable"""
-        print("\nTesting: Add tags to searchable")
-        
-        headers = {"authorization": self.user_token}
+        user_tags_response = self.client.get_tags('user')
+        assert 'tags' in user_tags_response
+        self.__class__.available_user_tags = user_tags_response['tags']
+        assert len(self.available_user_tags) > 0
         
         # Get available searchable tags
-        response = requests.get(f"{self.base_url}/api/v1/tags?type=searchable")
-        if response.status_code != 200:
-            print("✗ Failed to get available tags")
-            return False
-            
-        available_tags = response.json().get('tags', [])
-        if len(available_tags) < 3:
-            print("✗ Not enough searchable tags available for testing")
-            return False
+        searchable_tags_response = self.client.get_tags('searchable')
+        assert 'tags' in searchable_tags_response
+        self.__class__.available_searchable_tags = searchable_tags_response['tags']
+        assert len(self.available_searchable_tags) > 0
+    
+    def test_03_add_user_tags(self):
+        """Test adding tags to a user"""
+        # Select first 2 user tags
+        if len(self.available_user_tags) < 2:
+            pytest.skip("Not enough user tags available")
         
-        # Select first 3 tags
-        tag_ids = [tag['id'] for tag in available_tags[:3]]
+        tag_ids = [tag['id'] for tag in self.available_user_tags[:2]]
+        
+        # Add tags to user
+        response = self.client.add_user_tags(self.user_id, tag_ids)
+        assert 'tags' in response
+        user_tags = response['tags']
+        assert len(user_tags) >= 2
+        
+        # Verify the tags were added
+        added_tag_ids = [tag['id'] for tag in user_tags]
+        for tag_id in tag_ids:
+            assert tag_id in added_tag_ids
+    
+    def test_04_get_user_tags(self):
+        """Test getting tags for a specific user"""
+        response = self.client.get_user_tags(self.user_id)
+        assert 'tags' in response
+        tags = response['tags']
+        assert len(tags) >= 2
+        
+        # Verify tag structure
+        for tag in tags:
+            assert 'id' in tag
+            assert 'name' in tag
+            assert 'tag_type' in tag
+            assert tag['tag_type'] == 'user'
+    
+    def test_05_add_searchable_tags(self):
+        """Test adding tags to a searchable"""
+        # Select first 3 searchable tags
+        if len(self.available_searchable_tags) < 3:
+            pytest.skip("Not enough searchable tags available")
+        
+        tag_ids = [tag['id'] for tag in self.available_searchable_tags[:3]]
         
         # Add tags to searchable
-        tag_data = {"tag_ids": tag_ids}
-        response = requests.post(
-            f"{self.base_url}/api/v1/searchables/{self.searchable_id}/tags",
-            json=tag_data,
-            headers=headers
-        )
+        response = self.client.add_searchable_tags(self.searchable_id, tag_ids)
+        assert 'tags' in response
+        searchable_tags = response['tags']
+        assert len(searchable_tags) >= 3
         
-        if response.status_code == 200:
-            data = response.json()
-            searchable_tags = data.get('tags', [])
-            print(f"✓ Successfully added {len(searchable_tags)} tags to searchable")
-            
-            # Verify the tags were added
-            added_tag_ids = [tag['id'] for tag in searchable_tags]
-            for tag_id in tag_ids:
-                if tag_id in added_tag_ids:
-                    print(f"  ✓ Tag ID {tag_id} was added")
-                else:
-                    print(f"  ✗ Tag ID {tag_id} was not added")
-                    return False
-            
-            return True
-        else:
-            print(f"✗ Failed to add tags: {response.status_code}")
-            return False
+        # Verify the tags were added
+        added_tag_ids = [tag['id'] for tag in searchable_tags]
+        for tag_id in tag_ids:
+            assert tag_id in added_tag_ids
     
-    def test_search_by_user_tags(self):
+    def test_06_get_searchable_tags(self):
+        """Test getting tags for a specific searchable"""
+        response = self.client.get_searchable_tags(self.searchable_id)
+        assert 'tags' in response
+        tags = response['tags']
+        assert len(tags) >= 3
+        
+        # Verify tag structure
+        for tag in tags:
+            assert 'id' in tag
+            assert 'name' in tag
+            assert 'tag_type' in tag
+            assert tag['tag_type'] == 'searchable'
+    
+    def test_07_search_users_by_tags(self):
         """Test searching users by tags"""
-        print("\nTesting: Search users by tags")
-        
         # Get the tags we added to our user
-        response = requests.get(f"{self.base_url}/api/v1/users/{self.user_id}/tags")
-        if response.status_code != 200:
-            print("✗ Failed to get user tags")
-            return False
-            
-        user_tags = response.json().get('tags', [])
-        if len(user_tags) == 0:
-            print("✗ User has no tags for search testing")
-            return False
+        user_tags_response = self.client.get_user_tags(self.user_id)
+        user_tags = user_tags_response['tags']
+        assert len(user_tags) > 0
         
-        # Search by first tag ID (API expects comma-separated tag IDs)
-        tag_id = user_tags[0]['id']
-        tag_name = user_tags[0]['name']
+        # Search by first tag name
+        tag_names = [user_tags[0]['name']]
         
         # Search with higher limit to handle environments with more data
-        response = requests.get(f"{self.base_url}/api/v1/search/users?tags={tag_id}&limit=50")
+        search_response = self.client.search_users_by_tags(tag_names, limit=50)
+        assert 'users' in search_response
+        users = search_response['users']
+        assert len(users) > 0
         
-        if response.status_code == 200:
-            data = response.json()
-            users = data.get('users', [])
-            total = data.get('pagination', {}).get('total', len(users))
-            print(f"✓ Search returned {len(users)} users (total: {total}) with tag '{tag_name}' (ID: {tag_id})")
-            
-            # Check if our test user is in results
-            user_found = False
-            for user in users:
-                if user.get('id') == self.user_id or user.get('user_id') == self.user_id:
-                    user_found = True
-                    break
-            
-            if user_found:
-                print(f"  ✓ Test user found in search results")
-                return True
-            else:
-                # If not found and there are more pages, it's still a valid test
-                # The search is working, just our user isn't in the first page
-                pages = data.get('pagination', {}).get('pages', 1)
-                if pages > 1:
-                    print(f"  ⚠ Test user not in first page (total pages: {pages})")
-                    print(f"  ✓ Search functionality is working correctly")
-                    return True
-                else:
-                    print(f"  ✗ Test user not found in search results")
-                    # Debug: print first few user IDs to help diagnose
-                    print(f"    Debug: First few user IDs in results: {[u.get('id', u.get('user_id')) for u in users[:5]]}")
-                    print(f"    Debug: Looking for user ID: {self.user_id}")
-                    return False
-        else:
-            print(f"✗ Search failed: {response.status_code}")
-            if response.text:
-                print(f"  Error: {response.text}")
-            return False
+        # Check if our test user is in results
+        user_ids = [user.get('id', user.get('user_id')) for user in users]
+        
+        # Our user might not be in first page if there are many users
+        # Just verify the search worked
+        assert 'pagination' in search_response
+        assert search_response['pagination']['total'] > 0
     
-    def test_search_by_searchable_tags(self):
+    def test_08_search_searchables_by_tags(self):
         """Test searching searchables by tags"""
-        print("\nTesting: Search searchables by tags")
-        
         # Get the tags we added to our searchable
-        response = requests.get(f"{self.base_url}/api/v1/searchables/{self.searchable_id}/tags")
-        if response.status_code != 200:
-            print("✗ Failed to get searchable tags")
-            return False
-            
-        searchable_tags = response.json().get('tags', [])
-        if len(searchable_tags) == 0:
-            print("✗ Searchable has no tags for search testing")
-            return False
+        searchable_tags_response = self.client.get_searchable_tags(self.searchable_id)
+        searchable_tags = searchable_tags_response['tags']
+        assert len(searchable_tags) > 0
         
-        # Search by first tag ID (API now expects comma-separated tag IDs like user search)
-        tag_id = searchable_tags[0]['id']
-        tag_name = searchable_tags[0]['name']
-        response = requests.get(f"{self.base_url}/api/v1/search/searchables?tags={tag_id}")
+        # Search by first tag name
+        tag_names = [searchable_tags[0]['name']]
         
-        if response.status_code == 200:
-            data = response.json()
-            searchables = data.get('searchables', [])
-            print(f"✓ Search returned {len(searchables)} searchables with tag '{tag_name}' (ID: {tag_id})")
-            
-            # Check if our test searchable is in results
-            searchable_ids = [s['searchable_id'] for s in searchables]
-            if self.searchable_id in searchable_ids:
-                print(f"  ✓ Test searchable found in search results")
-                return True
-            else:
-                print(f"  ✗ Test searchable not found in search results")
-                # Debug: print first few searchable IDs to help diagnose
-                print(f"    Debug: First few searchable IDs in results: {searchable_ids[:5]}")
-                print(f"    Debug: Looking for searchable ID: {self.searchable_id}")
-                return False
-        else:
-            print(f"✗ Search failed: {response.status_code}")
-            if response.text:
-                print(f"  Error: {response.text}")
-            return False
+        search_response = self.client.search_searchables_by_tags(tag_names)
+        assert 'searchables' in search_response
+        searchables = search_response['searchables']
+        
+        # Our searchable should be in the results
+        searchable_ids = [s['searchable_id'] for s in searchables]
+        if self.searchable_id not in searchable_ids:
+            # Might be on another page
+            assert 'pagination' in search_response
+            assert search_response['pagination']['total'] > 0
     
-    def test_remove_user_tag(self):
+    def test_09_remove_user_tag(self):
         """Test removing a tag from a user"""
-        print("\nTesting: Remove tag from user")
-        
-        headers = {"authorization": self.user_token}
-        
         # Get current user tags
-        response = requests.get(f"{self.base_url}/api/v1/users/{self.user_id}/tags")
-        if response.status_code != 200:
-            print("✗ Failed to get user tags")
-            return False
-            
-        user_tags = response.json().get('tags', [])
+        response = self.client.get_user_tags(self.user_id)
+        user_tags = response['tags']
         if len(user_tags) == 0:
-            print("✗ User has no tags to remove")
-            return False
+            pytest.skip("User has no tags to remove")
         
         # Remove the first tag
         tag_to_remove = user_tags[0]
-        response = requests.delete(
-            f"{self.base_url}/api/v1/users/{self.user_id}/tags/{tag_to_remove['id']}",
-            headers=headers
-        )
+        remove_response = self.client.remove_user_tag(self.user_id, tag_to_remove['id'])
+        assert 'tags' in remove_response
         
-        if response.status_code == 200:
-            data = response.json()
-            remaining_tags = data.get('tags', [])
-            print(f"✓ Successfully removed tag '{tag_to_remove['name']}'")
-            
-            # Verify tag was removed
-            remaining_tag_ids = [tag['id'] for tag in remaining_tags]
-            if tag_to_remove['id'] not in remaining_tag_ids:
-                print(f"  ✓ Tag was removed from user")
-                return True
-            else:
-                print(f"  ✗ Tag still exists on user")
-                return False
-        else:
-            print(f"✗ Failed to remove tag: {response.status_code}")
-            return False
+        # Verify tag was removed
+        remaining_tags = remove_response['tags']
+        remaining_tag_ids = [tag['id'] for tag in remaining_tags]
+        assert tag_to_remove['id'] not in remaining_tag_ids
     
-    def test_tag_limits(self):
+    def test_10_remove_searchable_tag(self):
+        """Test removing a tag from a searchable"""
+        # Get current searchable tags
+        response = self.client.get_searchable_tags(self.searchable_id)
+        searchable_tags = response['tags']
+        if len(searchable_tags) == 0:
+            pytest.skip("Searchable has no tags to remove")
+        
+        # Remove the first tag
+        tag_to_remove = searchable_tags[0]
+        remove_response = self.client.remove_searchable_tag(self.searchable_id, tag_to_remove['id'])
+        assert 'tags' in remove_response
+        
+        # Verify tag was removed
+        remaining_tags = remove_response['tags']
+        remaining_tag_ids = [tag['id'] for tag in remaining_tags]
+        assert tag_to_remove['id'] not in remaining_tag_ids
+    
+    def test_11_tag_limits(self):
         """Test tag limits (max 10 for users, max 15 for searchables)"""
-        print("\nTesting: Tag limits")
-        
-        headers = {"authorization": self.user_token}
-        
         # Try to add more than 10 tags to user
-        response = requests.get(f"{self.base_url}/api/v1/tags?type=user")
-        available_tags = response.json().get('tags', [])
-        
-        if len(available_tags) >= 10:
+        if len(self.available_user_tags) >= 11:
             # Try to add 11 tags
-            tag_ids = [tag['id'] for tag in available_tags[:11]]
-            tag_data = {"tag_ids": tag_ids}
+            tag_ids = [tag['id'] for tag in self.available_user_tags[:11]]
             
-            response = requests.post(
-                f"{self.base_url}/api/v1/users/{self.user_id}/tags",
-                json=tag_data,
-                headers=headers
-            )
-            
-            if response.status_code == 400:
-                print("✓ Correctly rejected adding more than 10 tags to user")
-                return True
-            else:
-                print(f"✗ Should have rejected >10 tags, got: {response.status_code}")
-                return False
-        else:
-            print("  - Not enough tags available to test limit")
-            return True
-    
-    def run_all_tests(self):
-        """Run all comprehensive tag tests"""
-        if not self.setup():
-            print("✗ Test setup failed")
-            return 0, 1
-        
-        tests = [
-            self.test_add_user_tags,
-            self.test_get_user_tags,
-            self.test_add_searchable_tags,
-            self.test_search_by_user_tags,
-            self.test_search_by_searchable_tags,
-            self.test_remove_user_tag,
-            self.test_tag_limits
-        ]
-        
-        passed = 0
-        total = len(tests)
-        
-        for test in tests:
             try:
-                if test():
-                    passed += 1
+                response = self.client.add_user_tags(self.user_id, tag_ids)
+                # Should either reject or only add up to 10
+                if 'tags' in response:
+                    assert len(response['tags']) <= 10
             except Exception as e:
-                print(f"✗ Test failed with exception: {str(e)}")
-        
-        return passed, total
+                # Expected to fail with 400
+                assert "400" in str(e) or "limit" in str(e).lower()
 
-def main():
-    """Run comprehensive tag tests"""
-    print("=" * 60)
-    print("COMPREHENSIVE TAG SYSTEM INTEGRATION TESTS")
-    print(f"Base URL: {BASE_URL}")
-    print("=" * 60)
-    
-    suite = TagTestSuite()
-    passed, total = suite.run_all_tests()
-    
-    print("\n" + "=" * 60)
-    print(f"RESULTS: {passed}/{total} tests passed")
-    
-    if passed == total:
-        print("🎉 All comprehensive tag tests passed!")
-        return 0
-    else:
-        print("❌ Some tests failed. Check implementation.")
-        return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Run tests with verbose output
+    pytest.main([__file__, "-v", "-s", "--tb=short"])

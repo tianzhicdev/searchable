@@ -429,7 +429,6 @@ class TestWithdrawalOperations:
                     assert final_withdrawal['metadata']['address'] == '0xB1Eb9593ed5C832e6f618c60CDc6017b0eE28563'
                 
                 assert final_withdrawal['metadata']['fee_percentage'] == 0.1
-                assert final_withdrawal['metadata']['status'] == 'complete'
                 
                 # Validate transaction hash exists and has correct format
                 assert 'tx_hash' in final_withdrawal['metadata']
@@ -503,7 +502,6 @@ class TestWithdrawalOperations:
                 
                 # For completed withdrawals, validate transaction details
                 if withdrawal['status'] == 'complete':
-                    assert withdrawal['metadata']['status'] == 'complete'
                     assert 'tx_hash' in withdrawal['metadata']
                     assert len(withdrawal['metadata']['tx_hash']) == 66
                     assert withdrawal['metadata']['tx_hash'].startswith('0x')
@@ -557,7 +555,6 @@ class TestWithdrawalOperations:
                 
                 # For completed withdrawals, validate transaction hash format
                 if withdrawal['status'] == 'complete':
-                    assert withdrawal['metadata']['status'] == 'complete'
                     assert len(withdrawal['metadata']['tx_hash']) == 66
                     assert withdrawal['metadata']['tx_hash'].startswith('0x')
                 

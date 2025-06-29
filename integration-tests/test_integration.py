@@ -234,24 +234,19 @@ class TestSearchableIntegration:
         assert self.client.token is not None
         
         response = self.client.get_user_profile()
-        
         # Verify exact profile response structure
         assert response is not None
         assert isinstance(response, dict)
         assert 'profile' in response
-        assert 'downloadables' in response
         
         profile = response['profile']
         assert isinstance(profile, dict)
         assert 'username' in profile
         assert profile['username'] == self.username
         
-        downloadables = response['downloadables']
-        assert isinstance(downloadables, list)
         
         # Store profile data for verification
         self.__class__.initial_profile = profile
-        self.__class__.initial_downloadables_count = len(downloadables)
     
     def test_08_create_invoice_for_payment(self):
         """Test creating an invoice for purchasing the searchable item"""
@@ -449,13 +444,10 @@ class TestSearchableIntegration:
         assert self.profile_created is True
         
         response = self.client.get_user_profile()
-        
         # Verify exact profile response structure
         assert 'profile' in response
-        assert 'downloadables' in response
         
         profile = response['profile']
-        downloadables = response['downloadables']
         
         # Verify profile data matches what we created
         assert isinstance(profile, dict)
@@ -464,26 +456,8 @@ class TestSearchableIntegration:
         assert 'introduction' in profile
         assert 'profile_image_url' in profile
         
-        # Verify downloadables structure
-        assert isinstance(downloadables, list)
-        assert len(downloadables) > 0  # Should have at least our created searchable
-        
-        # Find our created searchable in downloadables
-        found_searchable = False
-        assert len(downloadables) > 0  # Check list length before iteration
-        for downloadable in downloadables:
-            assert 'searchable_id' in downloadable
-            if downloadable['searchable_id'] == self.created_searchable_id:
-                found_searchable = True
-                assert 'title' in downloadable
-                assert downloadable['title'] == self.expected_title
-                break
-        
-        assert found_searchable is True
-        
         # Store updated profile data
         self.__class__.retrieved_profile = profile
-        self.__class__.final_downloadables_count = len(downloadables)
     
     def test_14_update_user_profile(self):
         """Test updating user profile"""

@@ -194,10 +194,17 @@ def process_pending_withdrawals():
                         # Success - got txHash, mark as 'sent'
                         tx_hash = response_data.get('txHash')
 
-                        complete_metadata = {
+                        # Preserve existing metadata and add new fields
+                        complete_metadata = metadata.copy()
+                        complete_metadata.update({
                             'tx_hash': tx_hash,
                             'complete_timestamp': int(time.time()),
-                        }
+                            # Ensure important fields are preserved
+                            'address': metadata.get('address'),
+                            'original_amount': metadata.get('original_amount'),
+                            'fee_percentage': metadata.get('fee_percentage'),
+                            'amount_after_fee': metadata.get('amount_after_fee')
+                        })
                         
                         cur.execute("""
                             UPDATE withdrawal 
@@ -212,10 +219,17 @@ def process_pending_withdrawals():
                     elif 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
                         # we should check the status code to be 5xx
                         tx_hash = response_data.get('txHash')
-                        sent_metadata = {
+                        # Preserve existing metadata and add new fields
+                        sent_metadata = metadata.copy()
+                        sent_metadata.update({
                             'tx_hash': tx_hash,
                             'complete_timestamp': int(time.time()),
-                        }
+                            # Ensure important fields are preserved
+                            'address': metadata.get('address'),
+                            'original_amount': metadata.get('original_amount'),
+                            'fee_percentage': metadata.get('fee_percentage'),
+                            'amount_after_fee': metadata.get('amount_after_fee')
+                        })
                         
                         cur.execute("""
                             UPDATE withdrawal 
@@ -225,9 +239,16 @@ def process_pending_withdrawals():
                             WHERE id = %s
                         """, (PaymentStatus.DELAYED.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
                     else:
-                        error_metadata = {
+                        # Preserve existing metadata and add error timestamp
+                        error_metadata = metadata.copy()
+                        error_metadata.update({
                             'error_timestamp': int(time.time()),
-                        }
+                            # Ensure important fields are preserved
+                            'address': metadata.get('address'),
+                            'original_amount': metadata.get('original_amount'),
+                            'fee_percentage': metadata.get('fee_percentage'),
+                            'amount_after_fee': metadata.get('amount_after_fee')
+                        })
                         # todo: error should be excluded from balance calculation
                         cur.execute("""
                             UPDATE withdrawal 
@@ -280,6 +301,7 @@ def check_delayed_withdrawals():
         
         for withdrawal_row in sent_withdrawals:
             withdrawal_id, user_id, amount, currency, metadata, external_id, current_status = withdrawal_row
+            metadata = metadata or {}
             
             tx_hash = external_id
             
@@ -299,11 +321,17 @@ def check_delayed_withdrawals():
                         logger.info(f"Transaction status for withdrawal {withdrawal_id}: {tx_status}")
                         
                         if tx_status['status'] == 'complete':
-                            # Transaction confirmed and successful - keep only essential fields
-                            updated_metadata = {
+                            # Transaction confirmed and successful - preserve existing metadata
+                            updated_metadata = metadata.copy()
+                            updated_metadata.update({
                                 'tx_hash': tx_hash,
                                 'confirmed_timestamp': int(time.time()),
-                            }
+                                # Ensure important fields are preserved
+                                'address': metadata.get('address'),
+                                'original_amount': metadata.get('original_amount'),
+                                'fee_percentage': metadata.get('fee_percentage'),
+                                'amount_after_fee': metadata.get('amount_after_fee')
+                            })
                             
                             cur.execute("""
                                 UPDATE withdrawal 
@@ -315,11 +343,17 @@ def check_delayed_withdrawals():
                             logger.info(f"✅ Withdrawal {withdrawal_id} confirmed as complete ")
                             
                         elif tx_status['status'] == 'failed':
-                            # Transaction confirmed but reverted/failed - keep only essential fields
-                            updated_metadata = {
+                            # Transaction confirmed but reverted/failed - preserve existing metadata
+                            updated_metadata = metadata.copy()
+                            updated_metadata.update({
                                 'tx_hash': tx_hash,
-                                'failed_timestamp': int(time.time())
-                            }
+                                'failed_timestamp': int(time.time()),
+                                # Ensure important fields are preserved
+                                'address': metadata.get('address'),
+                                'original_amount': metadata.get('original_amount'),
+                                'fee_percentage': metadata.get('fee_percentage'),
+                                'amount_after_fee': metadata.get('amount_after_fee')
+                            })
                             
                             cur.execute("""
                                 UPDATE withdrawal 
