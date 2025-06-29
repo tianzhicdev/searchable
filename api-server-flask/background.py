@@ -219,6 +219,8 @@ def process_pending_withdrawals():
                     elif 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
                         # we should check the status code to be 5xx
                         tx_hash = response_data.get('txHash')
+                        error = response_data.get('error', 'Unknown error')
+                        logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error} - txHash: {tx_hash}")
                         # Preserve existing metadata and add new fields
                         sent_metadata = metadata.copy()
                         sent_metadata.update({
@@ -228,7 +230,8 @@ def process_pending_withdrawals():
                             'address': metadata.get('address'),
                             'original_amount': metadata.get('original_amount'),
                             'fee_percentage': metadata.get('fee_percentage'),
-                            'amount_after_fee': metadata.get('amount_after_fee')
+                            'amount_after_fee': metadata.get('amount_after_fee'),
+                            'error': error
                         })
                         
                         cur.execute("""
@@ -241,13 +244,18 @@ def process_pending_withdrawals():
                     else:
                         # Preserve existing metadata and add error timestamp
                         error_metadata = metadata.copy()
+
+                        error = response_data.get('error', 'Unknown error')
+                        logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error} - txHash: {tx_hash}")
+                        
                         error_metadata.update({
                             'error_timestamp': int(time.time()),
                             # Ensure important fields are preserved
                             'address': metadata.get('address'),
                             'original_amount': metadata.get('original_amount'),
                             'fee_percentage': metadata.get('fee_percentage'),
-                            'amount_after_fee': metadata.get('amount_after_fee')
+                            'amount_after_fee': metadata.get('amount_after_fee'),
+                            'error': error
                         })
                         # todo: error should be excluded from balance calculation
                         cur.execute("""
