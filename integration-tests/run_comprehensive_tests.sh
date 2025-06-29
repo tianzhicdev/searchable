@@ -145,6 +145,7 @@ test_files=(
     "test_user_profile_creation.py"          # User profile creation on registration
     "test_tags_basic.py"                     # Basic tag system functionality
     "test_tags_comprehensive.py"            # Comprehensive tag system tests
+    "test_search_comprehensive.py"          # Search by users and searchables functionality
     "test_offline_searchables.py"           # Offline searchable functionality
     "test_direct_searchables.py"            # Direct payment searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios

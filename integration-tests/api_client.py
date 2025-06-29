@@ -563,5 +563,40 @@ class APIClient:
         response.raise_for_status()
         return response.json()
 
+    def search_users(self, tags: list = None, username: str = "", page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        """Search users by tags (IDs) and/or username"""
+        url = f"{self.base_url}/v1/search/users"
+        params = {
+            'page': page,
+            'limit': limit
+        }
+        
+        if username:
+            params['username'] = username
+            
+        if tags:
+            # Convert tag IDs to comma-separated string
+            params['tags'] = ','.join(str(tag_id) for tag_id in tags)
+        
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
+    def search_searchables(self, tags: list = None, page: int = 1, limit: int = 20) -> Dict[str, Any]:
+        """Search searchables by tags (IDs)"""
+        url = f"{self.base_url}/v1/search/searchables"
+        params = {
+            'page': page,
+            'limit': limit
+        }
+        
+        if tags:
+            # Convert tag IDs to comma-separated string
+            params['tags'] = ','.join(str(tag_id) for tag_id in tags)
+        
+        response = self.session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+
 # Backwards compatibility alias
 SearchableAPIClient = APIClient
