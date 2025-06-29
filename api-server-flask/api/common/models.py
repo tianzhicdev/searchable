@@ -9,8 +9,13 @@ logger = setup_logger(__name__, 'models.log')
 
 class PaymentStatus(Enum):
     PENDING = 'pending'
+    SENDING = 'sending'
+    SENT = 'sent'
+    PROCESSING = 'processing'  # Legacy status, will be phased out
+    DELAYED = 'delayed'        # Legacy status, will be phased out
     COMPLETE = 'complete'
     FAILED = 'failed'
+    ERROR = 'error'
 
 class PaymentType(Enum):
     STRIPE = 'stripe'

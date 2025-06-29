@@ -44,28 +44,33 @@ run_test_file() {
     local test_file=$1
     local test_name=$(basename "$test_file" .py)
     local log_file="${LOG_DIR}/${test_name}_${TIMESTAMP}.log"
+    local failed_tests_file="${LOG_DIR}/.failed_tests_${test_name}_${TIMESTAMP}.tmp"
     
     print_color $BLUE "=========================================="
     print_color $BLUE "Running: $test_name"
     print_color $BLUE "=========================================="
     
-    # Check if this is a standalone script (has if __name__ == "__main__")
-    if grep -q "if __name__ == [\"']__main__[\"']:" "$test_file"; then
-        # Run as standalone Python script
-        if [ -n "$CICD_REPORT" ]; then
-            python "$test_file" 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
-        else
-            python "$test_file" 2>&1 | tee "$log_file"
-        fi
+    # Handle special test parameters
+    local test_env=""
+    if [ "$test_name" = "test_mass_withdrawals" ]; then
+        local withdrawal_count=${MASS_WITHDRAWAL_COUNT:-10}
+        test_env="MASS_WITHDRAWAL_COUNT=$withdrawal_count"
+        print_color $YELLOW "  Configuration: $withdrawal_count withdrawals"
+    fi
+    
+    # Run pytest and capture the exit code properly
+    if [ -n "$test_env" ]; then
+        env $test_env python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
     else
-        # Run with pytest
-        if [ -n "$CICD_REPORT" ]; then
-            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file" | tee -a "$CICD_REPORT"
-        else
-            python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
-        fi
+        python -m pytest "$test_file" -v -s --tb=short 2>&1 | tee "$log_file"
     fi
     local exit_code=${PIPESTATUS[0]}
+    
+    # Extract failed test names from the log
+    if [ $exit_code -ne 0 ]; then
+        # Look for FAILED test lines in pytest output
+        grep -E "FAILED.*::" "$log_file" | sed -E 's/^.*FAILED[[:space:]]+[^:]+::(.+)/\1/' | sed 's/ -.*//' > "$failed_tests_file" || true
+    fi
     
     if [ $exit_code -eq 0 ]; then
         print_color $GREEN "✓ PASSED: $test_name"
@@ -147,6 +152,7 @@ test_files=(
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
     "test_withdrawals.py"                   # Withdrawal operations
+    "test_mass_withdrawals.py"              # Mass withdrawal stress testing
     "test_ratings.py"                       # Rating system
     "test_file_management.py"               # File CRUD operations
     "test_invoice_notes.py"                 # Invoice notes functionality
@@ -261,6 +267,15 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
         echo "==================="
         for test_name in "${failed_test_names[@]}"; do
             echo "- $test_name: See ${test_name}_${TIMESTAMP}.log for details"
+            
+            # Include individual failed test methods if available
+            failed_tests_file="${LOG_DIR}/.failed_tests_${test_name}_${TIMESTAMP}.tmp"
+            if [[ -f "$failed_tests_file" ]] && [[ -s "$failed_tests_file" ]]; then
+                echo "  Failed test methods:"
+                while IFS= read -r failed_test_method; do
+                    echo "    • $failed_test_method"
+                done < "$failed_tests_file"
+            fi
         done
     fi
     
@@ -296,6 +311,9 @@ print_color $YELLOW "Detailed summary saved to: $summary_file"
 # Cleanup old logs (keep last 10 runs)
 find "$LOG_DIR" -name "*.log" -type f -mtime +7 -delete 2>/dev/null || true
 find "$LOG_DIR" -name "test_summary_*.txt" -type f | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
+
+# Cleanup temporary failed test files
+find "$LOG_DIR" -name ".failed_tests_*.tmp" -type f -delete 2>/dev/null || true
 
 # Exit with appropriate code
 if [[ $failed_tests -eq 0 ]]; then
