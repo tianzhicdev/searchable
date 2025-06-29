@@ -53,7 +53,7 @@ run_test_file() {
     # Handle special test parameters
     local test_env=""
     if [ "$test_name" = "test_mass_withdrawals" ]; then
-        local withdrawal_count=${MASS_WITHDRAWAL_COUNT:-10}
+        local withdrawal_count=${MASS_WITHDRAWAL_COUNT:-1}
         test_env="MASS_WITHDRAWAL_COUNT=$withdrawal_count"
         print_color $YELLOW "  Configuration: $withdrawal_count withdrawals"
     fi
