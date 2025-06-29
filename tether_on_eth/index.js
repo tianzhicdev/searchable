@@ -291,6 +291,7 @@ app.post('/send', async (req, res) => {
     await rateLimit();
     console.log(`[${request_id}] Broadcasting signed transaction...`);
     const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    console.log(`[${request_id}] Transaction broadcast complete - Receipt:`, receipt);
     res.json({ 
       status: 'complete',
       txHash: receipt.transactionHash,
