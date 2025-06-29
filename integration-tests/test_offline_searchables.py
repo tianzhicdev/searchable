@@ -219,7 +219,7 @@ class TestOfflineSearchables:
         # Search with a term that should match our item
         search_term = f"Test Coffee Shop {self.test_id}"
         
-        response = self.client.search_searchables(query_term=search_term)
+        response = self.client.search_searchables_by_term(search_term)
         
         # Verify search response
         assert isinstance(response, dict)
