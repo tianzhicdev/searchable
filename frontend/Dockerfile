@@ -14,11 +14,17 @@ ARG REACT_APP_BRANDING
 RUN if [ "$REACT_APP_BRANDING" = "eccentricprotocol" ]; then \
     echo "Building for eccentricprotocol..." && \
     npm run build-eccentricprotocol; \
+  elif [ "$REACT_APP_BRANDING" = "abitchaotic" ]; then \
+    echo "Building for abitchaotic..." && \
+    npm run build-abitchaotic; \
+  elif [ "$REACT_APP_BRANDING" = "silkroadonlightning" ]; then \
+    echo "Building for silkroadonlightning..." && \
+    npm run build; \
   elif [ "$REACT_APP_BRANDING" = "local" ]; then \
     echo "Building for local development..." && \
     npm run build-local; \
   else \
-    echo "Building default version..." && \
+    echo "Building default version (silkroadonlightning)..." && \
     npm run build; \
   fi
 
