@@ -40,7 +40,7 @@ if (APP_BRANDING === 'eccentricprotocol') {
   }
 } else if (APP_BRANDING === 'local') {
   branding_config = {
-    logo: 'eccentricprotocol.gif',
+    logo: 'abitchaotic.gif',
     domain: 'localhost',
   }
 }
