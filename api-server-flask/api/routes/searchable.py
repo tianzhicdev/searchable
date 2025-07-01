@@ -1096,6 +1096,7 @@ class DownloadSearchableFile(Resource):
                 
                 # Return the file content with appropriate headers
                 from flask import Response
+                from urllib.parse import quote
                 
                 # Use original filename from file metadata instead of searchable fileName
                 original_filename = "download"
@@ -1111,11 +1112,22 @@ class DownloadSearchableFile(Resource):
                             yield chunk
                 logger.info(f"Serving file: {original_filename}")
                 
+                # Handle Unicode filenames properly using RFC 2231 encoding
+                # For ASCII filenames, use simple format. For non-ASCII, use filename*
+                try:
+                    # Try to encode as ASCII
+                    original_filename.encode('ascii')
+                    content_disposition = f'attachment; filename="{original_filename}"'
+                except UnicodeEncodeError:
+                    # Use RFC 2231 encoding for Unicode filenames
+                    encoded_filename = quote(original_filename, safe='')
+                    content_disposition = f"attachment; filename*=UTF-8''{encoded_filename}"
+                
                 response = Response(
                     generate(),
                     content_type=download_response.headers.get('content-type', 'application/octet-stream'),
                     headers={
-                        'Content-Disposition': f'attachment; filename="{original_filename}"',
+                        'Content-Disposition': content_disposition,
                         'Content-Length': download_response.headers.get('content-length', '')
                     }
                 )
