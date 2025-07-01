@@ -11,7 +11,7 @@ from flask_restx import Resource, fields
 from .. import rest_api
 from ..common.config import BaseConfig
 from ..common.models import db, Users, JWTTokenBlocklist
-from ..common.database import get_db_connection, execute_sql, Json
+from ..common.database import get_db_connection, execute_sql, Json, execute_query
 from ..common.logging_config import setup_logger
 from ..common.metrics_collector import track_user_signup, track_user_login, track_error
 

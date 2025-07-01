@@ -3,7 +3,7 @@ Tag system helper functions using direct SQL queries
 Handles tag operations for users and searchables without SQLAlchemy models
 """
 
-from .database import get_db_connection, execute_sql
+from .database import get_db_connection, execute_sql, execute_query
 from .logging_config import setup_logger
 
 # Set up logger
@@ -33,12 +33,7 @@ def get_tags(tag_type=None, active_only=True):
         
         query += " ORDER BY name"
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, params)
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = execute_query(query, params, fetchall=True)
         
         return [
             {
@@ -73,12 +68,7 @@ def get_tags_by_ids(tag_ids):
         placeholders = ','.join(['%s'] * len(tag_ids))
         query = f"SELECT id, name, tag_type, description, is_active, created_at FROM tags WHERE id IN ({placeholders})"
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, tag_ids)
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = execute_query(query, tag_ids, fetchall=True)
         
         return [
             {
@@ -115,12 +105,7 @@ def get_user_tags(user_id):
             ORDER BY t.name
         """
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [user_id])
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = execute_query(query, [user_id], fetchall=True)
         
         return [
             {
@@ -211,13 +196,7 @@ def get_user_tag_count(user_id):
     """
     try:
         query = "SELECT COUNT(*) FROM user_tags WHERE user_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [user_id])
-        result = cur.fetchone()
-        cur.close()
-        conn.close()
-        
+        result = execute_query(query, [user_id], fetchone=True)
         return result[0] if result else 0
         
     except Exception as e:
@@ -243,12 +222,7 @@ def get_searchable_tags(searchable_id):
             ORDER BY t.name
         """
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [searchable_id])
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = execute_query(query, [searchable_id], fetchall=True)
         
         return [
             {
@@ -339,13 +313,7 @@ def get_searchable_tag_count(searchable_id):
     """
     try:
         query = "SELECT COUNT(*) FROM searchable_tags WHERE searchable_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [searchable_id])
-        result = cur.fetchone()
-        cur.close()
-        conn.close()
-        
+        result = execute_query(query, [searchable_id], fetchone=True)
         return result[0] if result else 0
         
     except Exception as e:

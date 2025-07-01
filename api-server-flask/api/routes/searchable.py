@@ -26,6 +26,7 @@ from ..common.data_helpers import (
     get_invoices_for_searchable,
     get_user_all_invoices
 )
+from ..common.database import execute_query
 from ..common.tag_helpers import get_searchable_tags
 from ..common.logging_config import setup_logger
 
@@ -66,21 +67,16 @@ class GetSearchableItem(Resource):
             if not user_id:
                 return
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Query username for this user_id
-            execute_sql(cur, """
-                SELECT username FROM users WHERE id = %s
-            """, params=(user_id,))
+            result = execute_query(
+                "SELECT username FROM users WHERE id = %s",
+                params=(user_id,),
+                fetchone=True
+            )
             
-            result = cur.fetchone()
             if result:
                 username = result[0]
                 searchable_data['username'] = username
-            
-            cur.close()
-            conn.close()
             
         except Exception as e:
             logger.error(f"Error enriching searchable with username: {str(e)}")

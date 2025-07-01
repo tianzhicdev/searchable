@@ -2,7 +2,7 @@ import os
 import time
 import stripe
 from psycopg2.extras import Json
-from .database import get_db_connection, execute_sql
+from .database import get_db_connection, execute_sql, execute_query
 from .logging_config import setup_logger
 from .models import PaymentStatus, PaymentType, Currency
 from .payment_helpers import calc_invoice
@@ -23,21 +23,15 @@ def get_searchableIds_by_user(user_id):
         List of searchable IDs belonging to the user
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Query searchables with user_id matching the user
-        execute_sql(cur, """
+        results = execute_query("""
             SELECT searchable_id
             FROM searchables
             WHERE user_id = %s
             AND removed = FALSE
-        """, params=(user_id,))
+        """, params=(user_id,), fetchall=True)
         
-        searchable_ids = [row[0] for row in cur.fetchall()]
-        
-        cur.close()
-        conn.close()
+        searchable_ids = [row[0] for row in results]
         
         return searchable_ids
     except Exception as e:
@@ -55,20 +49,12 @@ def get_searchable(searchable_id):
         dict: The searchable data including the searchable_id, or None if not found
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        execute_sql(cur, """
+        result = execute_query("""
             SELECT searchable_id, type, searchable_data, user_id
             FROM searchables
             WHERE searchable_id = %s
             AND removed = FALSE
-        """, params=(searchable_id,))
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
+        """, params=(searchable_id,), fetchone=True)
         
         if not result:
             return None
