@@ -806,6 +806,29 @@ def get_balance_by_currency(user_id):
                 except ValueError:
                     logger.error(f"Invalid amount format in reward: {amount}")
         
+        # Add completed deposits
+        execute_sql(cur, """
+            SELECT amount, currency
+            FROM deposit 
+            WHERE user_id = %s
+            AND status = 'complete'
+        """, params=(user_id,))
+        
+        deposit_results = cur.fetchall()
+        
+        for deposit in deposit_results:
+            amount, currency = deposit
+            
+            if amount is not None and currency is not None:
+                try:
+                    amount_float = float(amount)
+                    if currency.lower() == 'usdt':
+                        # USDT deposits count as USD
+                        balance_by_currency['usd'] += amount_float
+                        logger.debug(f"Added ${amount_float} USD from USDT deposit")
+                except ValueError:
+                    logger.error(f"Invalid amount format in deposit: {amount}")
+        
         # Subtract withdrawals (completed, pending, and delayed to prevent double-spending)
         execute_sql(cur, f"""
             SELECT amount, currency

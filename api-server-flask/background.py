@@ -19,6 +19,7 @@ from api.common.data_helpers import (
     refresh_stripe_payment
 )
 from api.common.models import PaymentStatus, PaymentType
+from psycopg2.extras import Json
 
 # Configure logging
 logging.basicConfig(
@@ -31,6 +32,7 @@ logger = logging.getLogger('background')
 CHECK_INVOICE_INTERVAL = 1  # Check invoices every 60 seconds
 WITHDRAWAL_SENDER_INTERVAL = 1  # Process pending withdrawals every 5 seconds
 STATUS_CHECKER_INTERVAL = 15  # Check sent withdrawals every 15 seconds
+DEPOSIT_CHECK_INTERVAL = 300  # Check deposits every 5 minutes
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 # Timeout settings
@@ -38,6 +40,7 @@ SENDING_TIMEOUT_MINUTES = 5  # Reset 'sending' to 'pending' after 5 minutes
 SENT_TIMEOUT_HOURS = 24  # Mark 'sent' as 'failed' after 24 hours
 
 INFURA_DOMAIN = os.getenv("INFURA_DOMAIN", "")
+USDT_SERVICE_URL = os.getenv('USDT_SERVICE_URL', 'http://usdt-api:3100')
 
 if INFURA_DOMAIN == "mainnet.infura.io":
     USDT_DECIMALS = 6
@@ -425,6 +428,127 @@ def withdrawal_sender_thread():
 
 
 
+def check_pending_deposits():
+    """Check pending deposits for USDT balance and update status"""
+    try:
+        logger.info("Checking pending deposits...")
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        try:
+            # Get pending deposits that haven't expired
+            execute_sql(cur, """
+                SELECT id, user_id, amount, metadata, created_at
+                FROM deposit
+                WHERE status = 'pending'
+                AND created_at > NOW() - INTERVAL '23 hours'
+                ORDER BY created_at ASC
+            """)
+            
+            pending_deposits = cur.fetchall()
+            logger.info(f"Found {len(pending_deposits)} pending deposits to check")
+            
+            for deposit in pending_deposits:
+                deposit_id, user_id, expected_amount, metadata, created_at = deposit
+                
+                try:
+                    # Check if deposit has expired (23 hours)
+                    if datetime.utcnow() - created_at.replace(tzinfo=None) > timedelta(hours=23):
+                        logger.info(f"Deposit {deposit_id} has expired, marking as failed")
+                        metadata['error'] = 'Deposit expired after 23 hours'
+                        execute_sql(cur, """
+                            UPDATE deposit 
+                            SET status = 'failed', metadata = %s
+                            WHERE id = %s
+                        """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                        continue
+                    
+                    eth_address = metadata.get('eth_address')
+                    if not eth_address:
+                        logger.error(f"Deposit {deposit_id} missing eth_address in metadata")
+                        continue
+                    
+                    # Check balance at the deposit address
+                    logger.info(f"Checking balance for deposit {deposit_id} at address {eth_address}")
+                    
+                    balance_response = requests.get(
+                        f"{USDT_SERVICE_URL}/balance/{eth_address}",
+                        timeout=10
+                    )
+                    
+                    if balance_response.status_code != 200:
+                        logger.error(f"Failed to check balance for {eth_address}: {balance_response.text}")
+                        continue
+                    
+                    balance_data = balance_response.json()
+                    balance_wei = int(balance_data['balance'])
+                    
+                    # Convert from wei (6 decimals for USDT) to decimal
+                    balance_usdt = Decimal(balance_wei) / Decimal(10 ** USDT_DECIMALS)
+                    
+                    logger.info(f"Deposit {deposit_id}: Expected {expected_amount} USDT, found {balance_usdt} USDT")
+                    
+                    # Update checked_at timestamp
+                    metadata['checked_at'] = datetime.utcnow().isoformat()
+                    
+                    # Check if balance meets or exceeds expected amount
+                    if balance_usdt >= expected_amount:
+                        logger.info(f"Deposit {deposit_id} has sufficient balance, marking as complete")
+                        
+                        # TODO: In production, we should:
+                        # 1. Check for actual transactions to this address
+                        # 2. Verify transaction has enough confirmations
+                        # 3. Sweep funds to main wallet
+                        
+                        # For now, just mark as complete
+                        metadata['balance_found'] = str(balance_usdt)
+                        metadata['completed_at'] = datetime.utcnow().isoformat()
+                        
+                        execute_sql(cur, """
+                            UPDATE deposit 
+                            SET status = 'complete', metadata = %s
+                            WHERE id = %s
+                        """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                        
+                        logger.info(f"Deposit {deposit_id} completed successfully")
+                        
+                        # TODO: Sweep funds to main wallet
+                        # This would involve calling the /sweep endpoint with the private key
+                        
+                    else:
+                        # Just update the checked_at timestamp
+                        execute_sql(cur, """
+                            UPDATE deposit 
+                            SET metadata = %s
+                            WHERE id = %s
+                        """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                        
+                except Exception as e:
+                    logger.error(f"Error processing deposit {deposit_id}: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    
+        finally:
+            cur.close()
+            conn.close()
+            
+    except Exception as e:
+        logger.error(f"Error in check_pending_deposits: {str(e)}")
+        logger.error(traceback.format_exc())
+
+def deposit_check_thread():
+    """Thread that runs deposit checking loop"""
+    logger.info(f"Starting deposit check thread (interval: {DEPOSIT_CHECK_INTERVAL}s)")
+    
+    while True:
+        try:
+            check_pending_deposits()
+        except Exception as e:
+            logger.error(f"Error in deposit check thread: {str(e)}")
+            logger.error(traceback.format_exc())
+        
+        time.sleep(DEPOSIT_CHECK_INTERVAL)
+
 def start_background_threads():
     """Start all background processing threads"""
     logger.info("Starting background processing threads with new two-job withdrawal system")
@@ -445,12 +569,21 @@ def start_background_threads():
     )
     sender_thread.start()
     
+    # Start deposit check thread
+    deposit_thread = threading.Thread(
+        target=deposit_check_thread,
+        daemon=True,
+        name="deposit-check"
+    )
+    deposit_thread.start()
+    
     logger.info("Background threads started:")
     logger.info(f"  - Invoice checker: every {CHECK_INVOICE_INTERVAL}s")
     logger.info(f"  - Withdrawal sender: every {WITHDRAWAL_SENDER_INTERVAL}s")
     logger.info(f"  - Status checker: every {STATUS_CHECKER_INTERVAL}s")
+    logger.info(f"  - Deposit checker: every {DEPOSIT_CHECK_INTERVAL}s")
     
-    return [invoice_thread, sender_thread]
+    return [invoice_thread, sender_thread, deposit_thread]
 
 
 # This will be called when the module is imported

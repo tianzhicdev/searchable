@@ -511,3 +511,47 @@ export const mockDirectSearchableItem3 = {
   created_at: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
   updated_at: new Date(Date.now() - 43200000).toISOString()
 };
+
+// Mock deposits data
+export const mockDeposits = {
+  deposits: [
+    {
+      deposit_id: "mock-deposit-1",
+      amount: "100.00",
+      currency: "USDT",
+      status: "complete",
+      address: "0x742d35cc6634c0532925a3b844bc9e7595ed5e6e",
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      expires_at: new Date(Date.now() - 63400000).toISOString(),
+      metadata: {
+        balance_found: "100.00",
+        completed_at: new Date(Date.now() - 84000000).toISOString()
+      }
+    },
+    {
+      deposit_id: "mock-deposit-2",
+      amount: "50.00", 
+      currency: "USDT",
+      status: "pending",
+      address: "0x123abc456def789012345678901234567890abcd",
+      created_at: new Date(Date.now() - 7200000).toISOString(),
+      expires_at: new Date(Date.now() + 75600000).toISOString(),
+      metadata: {
+        checked_at: new Date(Date.now() - 300000).toISOString()
+      }
+    },
+    {
+      deposit_id: "mock-deposit-3",
+      amount: "25.50",
+      currency: "USDT", 
+      status: "failed",
+      address: "0xfedcba987654321098765432109876543210fedc",
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      expires_at: new Date(Date.now() - 90000000).toISOString(),
+      metadata: {
+        error: "Deposit expired after 23 hours"
+      }
+    }
+  ],
+  total: 3
+};
