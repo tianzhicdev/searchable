@@ -222,13 +222,24 @@ app.get('/balance/:address', async (req, res) => {
 });
 
 // Get receive address
+// Generate one-time deposit address
 app.post('/receive', (req, res) => {
   try {
-    const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+    // Generate a new private key and address for one-time use
+    const newAccount = web3.eth.accounts.create();
+    
+    // In production, you would want to:
+    // 1. Store this private key securely (encrypted in database)
+    // 2. Associate it with the deposit request
+    // For now, we'll return both address and private key
+    // The API server should store the private key securely
+    
     res.json({
-      address: account.address
+      address: newAccount.address,
+      privateKey: newAccount.privateKey  // API server must store this securely!
     });
   } catch (error) {
+    console.error('Error generating deposit address:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -398,6 +409,94 @@ app.get('/tx-status/:txHash', async (req, res) => {
 
 // we dont mark failure from lookup
 // complete, delayed (can become complete), failed.
+
+// Transfer from deposit address to main wallet
+app.post('/sweep', async (req, res) => {
+  const { from_address, private_key, amount } = req.body;
+  
+  try {
+    await rateLimit();
+    
+    if (!web3.utils.isAddress(from_address)) {
+      return res.status(400).json({ error: 'Invalid from address' });
+    }
+    
+    // Import the account from private key
+    const depositAccount = web3.eth.accounts.privateKeyToAccount(private_key);
+    if (depositAccount.address.toLowerCase() !== from_address.toLowerCase()) {
+      return res.status(400).json({ error: 'Private key does not match address' });
+    }
+    
+    // Add account to wallet to sign transactions
+    web3.eth.accounts.wallet.add(depositAccount);
+    
+    const mainWallet = account.address;
+    console.log(`Sweeping ${amount} USDT from ${from_address} to ${mainWallet}`);
+    
+    // Build transaction
+    const tx = usdtContract.methods.transfer(mainWallet, amount.toString());
+    
+    // Get gas estimates
+    const gasPrice = await getGasPrice();
+    const gas = await tx.estimateGas({ from: from_address });
+    
+    // Send transaction
+    const receipt = await tx.send({
+      from: from_address,
+      gas: gas,
+      gasPrice: gasPrice
+    });
+    
+    // Remove account from wallet
+    web3.eth.accounts.wallet.remove(depositAccount);
+    
+    res.json({
+      success: true,
+      txHash: receipt.transactionHash,
+      from: from_address,
+      to: mainWallet,
+      amount: amount.toString()
+    });
+    
+  } catch (error) {
+    console.error('Sweep error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get recent transactions for an address
+app.get('/transactions/:address', async (req, res) => {
+  try {
+    await rateLimit();
+    
+    const { address } = req.params;
+    if (!web3.utils.isAddress(address)) {
+      return res.status(400).json({ error: 'Invalid address' });
+    }
+    
+    // Get recent USDT transfer events to this address
+    const events = await usdtContract.getPastEvents('Transfer', {
+      filter: { to: address },
+      fromBlock: 'latest',
+      toBlock: 'latest'
+    });
+    
+    // Format the events
+    const transactions = events.map(event => ({
+      txHash: event.transactionHash,
+      from: event.returnValues.from,
+      to: event.returnValues.to,
+      value: event.returnValues.value,
+      blockNumber: event.blockNumber
+    }));
+    
+    res.json({ transactions });
+    
+  } catch (error) {
+    console.error('Transaction query error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 USDT Service running on port ${process.env.PORT}`);

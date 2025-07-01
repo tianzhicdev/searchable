@@ -1,0 +1,261 @@
+"""
+Deposit management API routes
+Handles USDT deposits on Ethereum
+"""
+
+import os
+import uuid
+import requests
+from decimal import Decimal
+from datetime import datetime, timezone, timedelta
+from flask import request
+from flask_restx import Resource, fields
+from psycopg2.extras import Json
+
+from .. import rest_api
+from .auth import token_required
+from ..common.database import get_db_connection, execute_sql
+from ..common.logging_config import setup_logger
+
+# Set up logger
+logger = setup_logger(__name__, 'deposits.log')
+
+# USDT service configuration
+USDT_SERVICE_URL = os.getenv('USDT_SERVICE_URL', 'http://usdt-api:3100')
+
+# Minimum deposit amount (in USDT)
+MIN_DEPOSIT_AMOUNT = Decimal('10.0')  # $10 minimum
+MAX_DEPOSIT_AMOUNT = Decimal('10000.0')  # $10,000 maximum
+
+# Flask-RESTX models
+deposit_create_model = rest_api.model('DepositCreate', {
+    'amount': fields.String(required=True, description='Amount in USDT to deposit', example='100.50')
+})
+
+deposit_response_model = rest_api.model('DepositResponse', {
+    'deposit_id': fields.Integer(description='Deposit ID'),
+    'address': fields.String(description='Ethereum address for deposit'),
+    'amount': fields.String(description='Amount to deposit'),
+    'status': fields.String(description='Deposit status'),
+    'expires_at': fields.String(description='When deposit monitoring expires'),
+    'created_at': fields.String(description='When deposit was created')
+})
+
+@rest_api.route('/api/v1/deposit/create')
+class CreateDeposit(Resource):
+    """Create a new deposit request"""
+    
+    @rest_api.expect(deposit_create_model)
+    @rest_api.marshal_with(deposit_response_model)
+    @token_required
+    def post(self, current_user):
+        """Create a new USDT deposit request"""
+        try:
+            data = request.get_json()
+            amount_str = data.get('amount')
+            
+            # Validate amount
+            try:
+                amount = Decimal(amount_str)
+            except:
+                return {"error": "Invalid amount format"}, 400
+            
+            if amount < MIN_DEPOSIT_AMOUNT:
+                return {"error": f"Minimum deposit amount is {MIN_DEPOSIT_AMOUNT} USDT"}, 400
+            
+            if amount > MAX_DEPOSIT_AMOUNT:
+                return {"error": f"Maximum deposit amount is {MAX_DEPOSIT_AMOUNT} USDT"}, 400
+            
+            # Generate external ID for idempotency
+            external_id = f"dep_{uuid.uuid4().hex[:16]}"
+            
+            # Get one-time deposit address from USDT service
+            logger.info(f"Requesting deposit address for user {current_user.id}")
+            
+            try:
+                usdt_response = requests.post(
+                    f"{USDT_SERVICE_URL}/receive",
+                    timeout=10
+                )
+                
+                if usdt_response.status_code != 200:
+                    logger.error(f"USDT service error: {usdt_response.text}")
+                    return {"error": "Failed to generate deposit address"}, 500
+                
+                usdt_data = usdt_response.json()
+                eth_address = usdt_data['address']
+                private_key = usdt_data['privateKey']  # Need to store this securely!
+                
+            except Exception as e:
+                logger.error(f"Failed to contact USDT service: {str(e)}")
+                return {"error": "Deposit service temporarily unavailable"}, 503
+            
+            # Create deposit record
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            try:
+                # Calculate expiration (23 hours from now)
+                expires_at = datetime.now(timezone.utc) + timedelta(hours=23)
+                
+                # Prepare metadata
+                metadata = {
+                    'eth_address': eth_address,
+                    'private_key': private_key,  # TODO: Encrypt this!
+                    'expires_at': expires_at.isoformat(),
+                    'checked_at': None,
+                    'tx_hash': None,
+                    'confirmations': 0
+                }
+                
+                # Insert deposit record
+                execute_sql(cur, """
+                    INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id, created_at
+                """, params=(
+                    current_user.id,
+                    amount,
+                    'usdt',
+                    external_id,
+                    'pending',
+                    Json(metadata)
+                ), commit=True, connection=conn)
+                
+                result = cur.fetchone()
+                deposit_id = result[0]
+                created_at = result[1]
+                
+                logger.info(f"Created deposit {deposit_id} for user {current_user.id} with address {eth_address}")
+                
+                # Return deposit information
+                return {
+                    'deposit_id': deposit_id,
+                    'address': eth_address,
+                    'amount': str(amount),
+                    'status': 'pending',
+                    'expires_at': expires_at.isoformat(),
+                    'created_at': created_at.isoformat()
+                }, 200
+                
+            finally:
+                cur.close()
+                conn.close()
+                
+        except Exception as e:
+            logger.error(f"Error creating deposit: {str(e)}")
+            return {"error": "Failed to create deposit"}, 500
+
+@rest_api.route('/api/v1/deposit/status/<int:deposit_id>')
+class DepositStatus(Resource):
+    """Check deposit status"""
+    
+    @rest_api.marshal_with(deposit_response_model)
+    @token_required
+    def get(self, current_user, deposit_id):
+        """Get status of a specific deposit"""
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            try:
+                # Get deposit record
+                execute_sql(cur, """
+                    SELECT id, amount, currency, status, metadata, created_at
+                    FROM deposit
+                    WHERE id = %s AND user_id = %s
+                """, params=(deposit_id, current_user.id))
+                
+                result = cur.fetchone()
+                if not result:
+                    return {"error": "Deposit not found"}, 404
+                
+                dep_id, amount, currency, status, metadata, created_at = result
+                
+                # Extract address from metadata
+                eth_address = metadata.get('eth_address', '')
+                expires_at = metadata.get('expires_at', '')
+                
+                return {
+                    'deposit_id': dep_id,
+                    'address': eth_address,
+                    'amount': str(amount),
+                    'status': status,
+                    'expires_at': expires_at,
+                    'created_at': created_at.isoformat()
+                }, 200
+                
+            finally:
+                cur.close()
+                conn.close()
+                
+        except Exception as e:
+            logger.error(f"Error getting deposit status: {str(e)}")
+            return {"error": "Failed to get deposit status"}, 500
+
+@rest_api.route('/api/v1/deposits')
+class ListDeposits(Resource):
+    """List user deposits"""
+    
+    @token_required
+    def get(self, current_user):
+        """Get list of user's deposits"""
+        try:
+            # Get pagination parameters
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 20))
+            
+            if per_page > 100:
+                per_page = 100
+                
+            offset = (page - 1) * per_page
+            
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            try:
+                # Get total count
+                execute_sql(cur, """
+                    SELECT COUNT(*) FROM deposit WHERE user_id = %s
+                """, params=(current_user.id,))
+                
+                total_count = cur.fetchone()[0]
+                
+                # Get deposits
+                execute_sql(cur, """
+                    SELECT id, amount, currency, status, metadata, created_at
+                    FROM deposit
+                    WHERE user_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s OFFSET %s
+                """, params=(current_user.id, per_page, offset))
+                
+                deposits = []
+                for row in cur.fetchall():
+                    dep_id, amount, currency, status, metadata, created_at = row
+                    
+                    deposits.append({
+                        'deposit_id': dep_id,
+                        'amount': str(amount),
+                        'currency': currency,
+                        'status': status,
+                        'address': metadata.get('eth_address', ''),
+                        'tx_hash': metadata.get('tx_hash'),
+                        'created_at': created_at.isoformat()
+                    })
+                
+                return {
+                    'deposits': deposits,
+                    'total': total_count,
+                    'page': page,
+                    'per_page': per_page,
+                    'total_pages': (total_count + per_page - 1) // per_page
+                }, 200
+                
+            finally:
+                cur.close()
+                conn.close()
+                
+        except Exception as e:
+            logger.error(f"Error listing deposits: {str(e)}")
+            return {"error": "Failed to list deposits"}, 500
