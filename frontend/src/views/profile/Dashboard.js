@@ -511,10 +511,13 @@ const Dashboard = () => {
               <Typography variant="body1" gutterBottom>
                 Click "Create Deposit" to generate a unique Ethereum address for your USDT deposit.
               </Typography>
-              <Typography variant="body2" color="textSecondary" style={{ marginTop: 16 }}>
+              <Typography variant="body2" >
                 • Send any amount of USDT to the generated address
-                • Minimum deposit: $10 USDT
-                • Deposits expire after 23 hours
+              </Typography>
+              <Typography variant="body2" >
+                • Deposits expire after 1 hour
+              </Typography>
+              <Typography variant="body2" >
                 • Funds will be credited once confirmed on blockchain
               </Typography>
               {depositError && (
