@@ -152,6 +152,7 @@ test_files=(
     "test_social_media_profiles.py"         # Social media profile functionality
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
+    "test_deposits.py"                       # USDT deposit functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_mass_withdrawals.py"              # Mass withdrawal stress testing
     "test_ratings.py"                       # Rating system
@@ -292,6 +293,7 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "✅ File Management (upload, metadata, listing)"
     echo "✅ Media Management (upload, retrieval)"
     echo "✅ Profile Management (create, update, retrieve, social media links)"
+    echo "✅ USDT Deposits (HD wallet, address generation, balance tracking, sweep)"
     echo "✅ Withdrawal Operations (USDT withdrawals)"
     echo "✅ Rating System (submit, retrieve, eligibility)"
     echo "✅ Invoice Notes (create, retrieve, permissions)"

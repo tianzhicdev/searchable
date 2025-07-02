@@ -156,7 +156,7 @@ async function getGasPrice() {
     const baseGasPrice = await web3.eth.getGasPrice();
     
     // Add 20% buffer to ensure faster mining
-    const bufferedGasPrice = BigInt(baseGasPrice) * BigInt(120) / BigInt(100);
+    const bufferedGasPrice = BigInt(baseGasPrice) * BigInt(200) / BigInt(100);
     
     cachedGasPrice = bufferedGasPrice.toString();
     gasPriceLastUpdate = now;
@@ -507,10 +507,18 @@ app.get('/transactions/:address', async (req, res) => {
       return res.status(400).json({ error: 'Invalid address' });
     }
     
+    // Get current block number
+    const currentBlock = await web3.eth.getBlockNumber();
+    
+    // Look back 100 blocks (roughly 25 minutes on mainnet, 20 minutes on Sepolia)
+    const fromBlock = currentBlock - BigInt(100);
+    
+    console.log(`Fetching USDT transfers to ${address} from block ${fromBlock} to ${currentBlock}`);
+    
     // Get recent USDT transfer events to this address
     const events = await usdtContract.getPastEvents('Transfer', {
       filter: { to: address },
-      fromBlock: 'latest',
+      fromBlock: fromBlock.toString(),
       toBlock: 'latest'
     });
     
@@ -522,6 +530,8 @@ app.get('/transactions/:address', async (req, res) => {
       value: event.returnValues.value,
       blockNumber: event.blockNumber
     }));
+    
+    console.log(`Found ${transactions.length} USDT transfers to ${address}`);
     
     res.json({ transactions });
     
