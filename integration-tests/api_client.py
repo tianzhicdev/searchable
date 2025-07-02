@@ -395,6 +395,29 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
+    # Deposit Methods
+    def create_deposit(self, amount: str) -> Dict[str, Any]:
+        """Create a deposit request"""
+        url = f"{self.base_url}/v1/deposit/create"
+        data = {"amount": amount}
+        response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_deposit_status(self, deposit_id: int) -> Dict[str, Any]:
+        """Get status of a specific deposit"""
+        url = f"{self.base_url}/v1/deposit/status/{deposit_id}"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_deposits(self) -> Dict[str, Any]:
+        """Get list of deposits for current user"""
+        url = f"{self.base_url}/v1/deposits"
+        response = self.session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
     # Invoice Notes Methods
     def get_invoice_notes(self, invoice_id: str) -> Dict[str, Any]:
         """Get notes for a specific invoice"""

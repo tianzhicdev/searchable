@@ -698,6 +698,40 @@ const mockHandlers = {
   
   'balance': () => createMockResponse(mockData.mockBalance),
   
+  // Deposit endpoints
+  'v1/deposit/create': (url, config) => {
+    const data = JSON.parse(config.data || '{}');
+    console.log('[MOCK] Creating deposit:', data);
+    const depositId = Date.now();  // Use number to match backend
+    return createMockResponse({
+      deposit_id: depositId,
+      amount: data.amount || '0.00',  // Amount can be 0 for deposits
+      currency: 'USDT',
+      address: `0x${Math.random().toString(16).substr(2, 40)}`,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString()
+    });
+  },
+  
+  'v1/deposit/status/': (url) => {
+    const depositId = url.split('/').pop();
+    console.log('[MOCK] Getting deposit status:', depositId);
+    return createMockResponse({
+      deposit_id: depositId,
+      status: 'pending',
+      amount: '100.00',
+      currency: 'USDT',
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      expires_at: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString()
+    });
+  },
+  
+  'v1/deposits': () => {
+    console.log('[MOCK] Getting user deposits');
+    return createMockResponse(mockData.mockDeposits);
+  },
+  
   // Withdrawal endpoint
   'v1/withdrawal-usd': (url, config) => {
     const data = JSON.parse(config.data);
