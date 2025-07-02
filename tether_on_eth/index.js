@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { Web3 } = require('web3');
 const cors = require('cors');
+const HDWallet = require('./hdWallet');
 
 const app = express();
 app.use(express.json());
@@ -78,6 +79,10 @@ const usdtContract = new web3.eth.Contract(
 let currentNonce = null;
 const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
 
+// Initialize HD wallet for deposit address generation
+const hdWallet = new HDWallet(process.env.PRIVATE_KEY);
+console.log('HD Wallet initialized for deterministic address generation');
+
 // Rate limiting protection - increase interval to prevent crashes
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 500; // Minimum 500ms between requests (was 100ms)
@@ -147,10 +152,16 @@ async function getGasPrice() {
   }
   
   try {
-    await rateLimit(); // Apply rate limiting
-    cachedGasPrice = await web3.eth.getGasPrice();
+    // Get current gas price
+    const baseGasPrice = await web3.eth.getGasPrice();
+    
+    // Add 20% buffer to ensure faster mining
+    const bufferedGasPrice = BigInt(baseGasPrice) * BigInt(200) / BigInt(100);
+    
+    cachedGasPrice = bufferedGasPrice.toString();
     gasPriceLastUpdate = now;
-    console.log(`[GAS] Updated cached gas price: ${cachedGasPrice}`);
+    
+    console.log(`[GAS] Updated gas price: ${cachedGasPrice} (base: ${baseGasPrice}, +20% buffer)`);
     return cachedGasPrice;
   } catch (error) {
     console.error('Failed to fetch gas price:', error);
@@ -222,19 +233,38 @@ app.get('/balance/:address', async (req, res) => {
 });
 
 // Get receive address
+// Generate deterministic deposit address from deposit ID
 app.post('/receive', (req, res) => {
   try {
-    const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+    const { deposit_id } = req.body;
+    
+    // Validate deposit_id
+    if (deposit_id === undefined || deposit_id === null) {
+      return res.status(400).json({ error: 'deposit_id is required' });
+    }
+    
+    const depositId = parseInt(deposit_id);
+    if (isNaN(depositId) || depositId < 0) {
+      return res.status(400).json({ error: 'deposit_id must be a non-negative integer' });
+    }
+    
+    // Generate deterministic address from deposit ID
+    const addressInfo = hdWallet.generateAddress(depositId);
+    
+    console.log(`Generated deposit address for ID ${depositId}: ${addressInfo.address}`);
+    
     res.json({
-      address: account.address
+      address: addressInfo.address,
+      deposit_id: depositId,
+      // No private key returned - it can be derived when needed
     });
   } catch (error) {
+    console.error('Error generating deposit address:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 
-// Send USDT
 app.post('/send', async (req, res) => {
   const { to, amount, request_id: provided_request_id } = req.body;
   const request_id = provided_request_id || `req_${Math.random().toString(36).substring(2, 15)}${Date.now().toString(36)}`;
@@ -309,6 +339,7 @@ app.post('/send', async (req, res) => {
       });
     }
   });
+
 
   // if failure, exhash -> delayed, no txhash -> failure 
     
@@ -398,6 +429,117 @@ app.get('/tx-status/:txHash', async (req, res) => {
 
 // we dont mark failure from lookup
 // complete, delayed (can become complete), failed.
+
+// Transfer from deposit address to main wallet
+app.post('/sweep', async (req, res) => {
+  const { from_address, deposit_id, amount } = req.body;
+  
+  try {
+    await rateLimit();
+    
+    if (!web3.utils.isAddress(from_address)) {
+      return res.status(400).json({ error: 'Invalid from address' });
+    }
+    
+    // Validate deposit_id
+    if (deposit_id === undefined || deposit_id === null) {
+      return res.status(400).json({ error: 'deposit_id is required' });
+    }
+    
+    const depositId = parseInt(deposit_id);
+    if (isNaN(depositId) || depositId < 0) {
+      return res.status(400).json({ error: 'deposit_id must be a non-negative integer' });
+    }
+    
+    // Verify the address matches the deposit ID
+    if (!hdWallet.verifyAddress(depositId, from_address)) {
+      return res.status(400).json({ error: 'Address does not match deposit ID' });
+    }
+    
+    // Get private key from HD wallet
+    const privateKey = hdWallet.getPrivateKey(depositId);
+    const depositAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
+    
+    // Add account to wallet to sign transactions
+    web3.eth.accounts.wallet.add(depositAccount);
+    
+    const mainWallet = account.address;
+    console.log(`Sweeping ${amount} USDT from ${from_address} to ${mainWallet}`);
+    
+    // Build transaction
+    const tx = usdtContract.methods.transfer(mainWallet, amount.toString());
+    
+    // Get gas estimates
+    const gasPrice = await getGasPrice();
+    const gas = await tx.estimateGas({ from: from_address });
+    
+    // Send transaction
+    const receipt = await tx.send({
+      from: from_address,
+      gas: gas,
+      gasPrice: gasPrice
+    });
+    
+    // Remove account from wallet
+    web3.eth.accounts.wallet.remove(depositAccount);
+    
+    res.json({
+      success: true,
+      txHash: receipt.transactionHash,
+      from: from_address,
+      to: mainWallet,
+      amount: amount.toString()
+    });
+    
+  } catch (error) {
+    console.error('Sweep error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get recent transactions for an address
+app.get('/transactions/:address', async (req, res) => {
+  try {
+    await rateLimit();
+    
+    const { address } = req.params;
+    if (!web3.utils.isAddress(address)) {
+      return res.status(400).json({ error: 'Invalid address' });
+    }
+    
+    // Get current block number
+    const currentBlock = await web3.eth.getBlockNumber();
+    
+    // Look back 100 blocks (roughly 25 minutes on mainnet, 20 minutes on Sepolia)
+    const fromBlock = currentBlock - BigInt(100);
+    
+    console.log(`Fetching USDT transfers to ${address} from block ${fromBlock} to ${currentBlock}`);
+    
+    // Get recent USDT transfer events to this address
+    const events = await usdtContract.getPastEvents('Transfer', {
+      filter: { to: address },
+      fromBlock: fromBlock.toString(),
+      toBlock: 'latest'
+    });
+    
+    // Format the events
+    const transactions = events.map(event => ({
+      txHash: event.transactionHash,
+      from: event.returnValues.from,
+      to: event.returnValues.to,
+      value: event.returnValues.value,
+      blockNumber: event.blockNumber
+    }));
+    
+    console.log(`Found ${transactions.length} USDT transfers to ${address}`);
+    
+    res.json({ transactions });
+    
+  } catch (error) {
+    console.error('Transaction query error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 USDT Service running on port ${process.env.PORT}`);

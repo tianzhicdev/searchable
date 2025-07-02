@@ -420,3 +420,24 @@ ON CONFLICT (name) DO NOTHING;
 
 
 
+
+-- Create deposit table for USDT deposits
+CREATE TABLE IF NOT EXISTS deposit (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    amount DECIMAL(20,8) NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'usdt',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    external_id TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'complete', 'failed')),
+    metadata JSONB NOT NULL DEFAULT '{}'
+);
+
+-- Create indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_deposit_user_id ON deposit(user_id);
+CREATE INDEX IF NOT EXISTS idx_deposit_status ON deposit(status);
+CREATE INDEX IF NOT EXISTS idx_deposit_created_at ON deposit(created_at);
+CREATE INDEX IF NOT EXISTS idx_deposit_external_id ON deposit(external_id);
+
+-- Add comment explaining metadata fields
+COMMENT ON COLUMN deposit.metadata IS 'Contains: eth_address, private_key (encrypted), tx_hash, confirmations, expires_at, checked_at, error';
