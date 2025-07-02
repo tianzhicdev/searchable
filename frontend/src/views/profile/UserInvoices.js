@@ -18,7 +18,8 @@ import {
   TrendingDown,
   AccountBalanceWallet,
   CardGiftcard,
-  MoreVert
+  MoreVert,
+  AccountBalance
 } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
@@ -33,6 +34,7 @@ const UserInvoices = () => {
   const [sales, setSales] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
   const [rewards, setRewards] = useState([]);
+  const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -42,16 +44,19 @@ const UserInvoices = () => {
     totalEarned: 0,
     totalWithdrawn: 0,
     totalRewards: 0,
+    totalDeposited: 0,
     purchasesCount: 0,
     salesCount: 0,
     withdrawalsCount: 0,
-    rewardsCount: 0
+    rewardsCount: 0,
+    depositsCount: 0
   });
 
   useEffect(() => {
     fetchUserInvoices();
     fetchUserWithdrawals();
     fetchUserRewards();
+    fetchUserDeposits();
   }, []);
 
   const fetchUserInvoices = async () => {
@@ -131,6 +136,30 @@ const UserInvoices = () => {
       // Don't set error state for rewards as it's not critical
     }
   };
+  
+  const fetchUserDeposits = async () => {
+    try {
+      const response = await Backend.get('v1/deposits');
+      const data = response.data;
+      
+      setDeposits(data.deposits || []);
+      
+      // Calculate deposit statistics
+      const totalDeposited = data.deposits.reduce((sum, deposit) => {
+        return deposit.status === 'complete' ? sum + parseFloat(deposit.amount) : sum;
+      }, 0);
+      
+      setStats(prevStats => ({
+        ...prevStats,
+        totalDeposited,
+        depositsCount: data.deposits.length
+      }));
+      
+    } catch (err) {
+      console.error('Error fetching user deposits:', err);
+      // Don't set error state for deposits as it's not critical
+    }
+  };
 
   const handleRatingSubmitted = () => {
     // Refresh invoices to get updated rating status
@@ -159,7 +188,8 @@ const UserInvoices = () => {
       case 0: return 'Purchases';
       case 1: return 'Sales';
       case 2: return 'Withdrawals';
-      case 3: return 'Gifts';
+      case 3: return 'Deposits';
+      case 4: return 'Gifts';
       default: return 'Purchases';
     }
   };
@@ -188,6 +218,7 @@ const UserInvoices = () => {
             fetchUserInvoices();
             fetchUserWithdrawals();
             fetchUserRewards();
+            fetchUserDeposits();
           }} 
           style={{ marginTop: 16 }}
           variant="outlined"
@@ -237,10 +268,17 @@ const UserInvoices = () => {
             <AccountBalanceWallet style={{ marginRight: 8 }} />
             Withdrawals ({stats.withdrawalsCount})
           </MenuItem>
+          <MenuItem 
+            onClick={() => handleMenuItemClick(3)}
+            selected={activeTab === 3}
+          >
+            <AccountBalance style={{ marginRight: 8 }} />
+            Deposits ({stats.depositsCount})
+          </MenuItem>
           {stats.totalRewards > 0 && (
             <MenuItem 
-              onClick={() => handleMenuItemClick(3)}
-              selected={activeTab === 3}
+              onClick={() => handleMenuItemClick(4)}
+              selected={activeTab === 4}
             >
               <CardGiftcard style={{ marginRight: 8 }} />
               Gifts ({stats.rewardsCount})
@@ -401,8 +439,64 @@ const UserInvoices = () => {
             </Box>
           )}
 
-          {/* Total Rewards Tab */}
+          {/* Deposits Tab */}
           {activeTab === 3 && (
+            <Box>
+              {deposits.length === 0 ? (
+                <Box textAlign="center" py={4}>
+                  <AccountBalance style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                  <Typography variant="h6" className={classes.staticText}>
+                    No deposits yet
+                  </Typography>
+                  <Typography variant="body2" className={classes.staticText}>
+                    Your deposit history will appear here
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  <Typography variant="h6" gutterBottom>
+                    Total Deposit History ({deposits.length})
+                  </Typography>
+                  {deposits.map((deposit) => (
+                    <Paper 
+                      key={deposit.deposit_id}
+                      style={{ marginBottom: 16, padding: 16 }}
+                    >
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                        <Box flex={1}>
+                          <Chip 
+                            label={deposit.status.toUpperCase()}
+                            color={deposit.status === 'complete' ? 'primary' : 'default'}
+                            size="small"
+                          />
+                          <Typography variant="h6" className={classes.staticText}>
+                            Deposit #{deposit.deposit_id}
+                          </Typography>
+                          <Typography variant="body2" className={classes.systemText}>
+                            {new Date(deposit.created_at).toLocaleDateString()} at {new Date(deposit.created_at).toLocaleTimeString()}
+                          </Typography>
+                          <Typography variant="body2" className={classes.systemText}>
+                            Address: {deposit.address}
+                          </Typography>
+                          {deposit.tx_hash && (
+                            <Typography variant="body2" className={classes.systemText}>
+                              TX: {deposit.tx_hash}
+                            </Typography>
+                          )}
+                          <Typography variant="h6" className={classes.userText} style={{ marginTop: 8 }}>
+                            {deposit.amount === '0.00000000' ? 'Pending' : `$${deposit.amount} USDT`}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  ))}
+                </>
+              )}
+            </Box>
+          )}
+
+          {/* Total Rewards Tab */}
+          {activeTab === 4 && (
             <Box>
               {rewards.length === 0 ? (
                 <Box textAlign="center" py={4}>
