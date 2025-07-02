@@ -49,28 +49,8 @@ class CreateDeposit(Resource):
             except:
                 amount = Decimal('0.01')  # Default to minimal amount
             
-            # Get one-time deposit address from USDT service
-            logger.info(f"Requesting deposit address for user {current_user.id}")
-            
-            try:
-                usdt_response = requests.post(
-                    f"{USDT_SERVICE_URL}/receive",
-                    timeout=10
-                )
-                
-                if usdt_response.status_code != 200:
-                    logger.error(f"USDT service error: {usdt_response.text}")
-                    return {"error": "Failed to generate deposit address"}, 500
-                
-                usdt_data = usdt_response.json()
-                eth_address = usdt_data['address']
-                private_key = usdt_data['privateKey']
-                
-            except Exception as e:
-                logger.error(f"Failed to contact USDT service: {str(e)}")
-                return {"error": "Deposit service temporarily unavailable"}, 503
-            
-            # Create deposit record
+            # Create deposit record first to get the ID
+            logger.info(f"Creating deposit record for user {current_user.id}")
             conn = get_db_connection()
             cur = conn.cursor()
             
@@ -78,17 +58,7 @@ class CreateDeposit(Resource):
                 # Calculate expiration (23 hours from now)
                 expires_at = datetime.now(timezone.utc) + timedelta(hours=23)
                 
-                # Prepare metadata
-                metadata = {
-                    'eth_address': eth_address,
-                    'private_key': private_key,  # TODO: Encrypt this!
-                    'expires_at': expires_at.isoformat(),
-                    'checked_at': None,
-                    'tx_hash': None,
-                    'confirmations': 0
-                }
-                
-                # Insert deposit record - use eth_address as external_id
+                # First, create deposit record with temporary external_id to get the ID
                 execute_sql(cur, """
                     INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata)
                     VALUES (%s, %s, %s, %s, %s, %s)
@@ -97,14 +67,60 @@ class CreateDeposit(Resource):
                     current_user.id,
                     amount,
                     'usdt',
-                    eth_address,
+                    f'temp_{current_user.id}_{datetime.now().timestamp()}',  # Temporary unique ID
                     'pending',
-                    Json(metadata)
+                    Json({})
                 ), commit=True, connection=conn)
                 
                 result = cur.fetchone()
                 deposit_id = result[0]
                 created_at = result[1]
+                
+                logger.info(f"Created deposit record {deposit_id} for user {current_user.id}")
+                
+                # Now get deterministic address using deposit ID
+                try:
+                    usdt_response = requests.post(
+                        f"{USDT_SERVICE_URL}/receive",
+                        json={'deposit_id': deposit_id},
+                        timeout=10
+                    )
+                    
+                    if usdt_response.status_code != 200:
+                        logger.error(f"USDT service error: {usdt_response.text}")
+                        # Delete the deposit record
+                        execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,), commit=True, connection=conn)
+                        return {"error": "Failed to generate deposit address"}, 500
+                    
+                    usdt_data = usdt_response.json()
+                    eth_address = usdt_data['address']
+                    
+                except Exception as e:
+                    logger.error(f"Failed to contact USDT service: {str(e)}")
+                    # Delete the deposit record
+                    execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,), commit=True, connection=conn)
+                    return {"error": "Deposit service temporarily unavailable"}, 503
+                
+                # Prepare metadata
+                metadata = {
+                    'eth_address': eth_address,
+                    'deposit_id': deposit_id,  # Store deposit ID for reference
+                    'expires_at': expires_at.isoformat(),
+                    'checked_at': None,
+                    'tx_hash': None,
+                    'confirmations': 0
+                }
+                
+                # Update deposit record with actual address
+                execute_sql(cur, """
+                    UPDATE deposit 
+                    SET external_id = %s, metadata = %s
+                    WHERE id = %s
+                """, params=(
+                    eth_address,
+                    Json(metadata),
+                    deposit_id
+                ), commit=True, connection=conn)
                 
                 logger.info(f"Created deposit {deposit_id} for user {current_user.id} with address {eth_address}")
                 
