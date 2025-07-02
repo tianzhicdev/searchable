@@ -121,10 +121,10 @@ class TestDepositOperations:
         assert deposit_data['amount'] == deposit_amount
         
         # Save deposit info for later tests
-        self.deposit_id = deposit_data['deposit_id']
-        self.deposit_address = deposit_data['address']
-        self.deposit_amount = float(deposit_amount)
-        self.created_deposits.append(self.deposit_id)
+        self.__class__.deposit_id = deposit_data['deposit_id']
+        self.__class__.deposit_address = deposit_data['address']
+        self.__class__.deposit_amount = float(deposit_amount)
+        self.created_deposits.append(self.__class__.deposit_id)
         
         print(f"[DEBUG] Created deposit {self.deposit_id} with address {self.deposit_address}")
     
@@ -140,13 +140,13 @@ class TestDepositOperations:
         # Find our created deposit
         found = False
         for deposit in deposits_data['deposits']:
-            if deposit['deposit_id'] == self.deposit_id:
+            if deposit['deposit_id'] == self.__class__.deposit_id:
                 found = True
                 assert deposit['status'] == 'pending'
-                assert deposit['address'] == self.deposit_address
+                assert deposit['address'] == self.__class__.deposit_address
                 break
         
-        assert found, f"Deposit {self.deposit_id} not found in list"
+        assert found, f"Deposit {self.__class__.deposit_id} not found in list"
     
     def test_05_send_usdt_and_verify_balance(self):
         """Send USDT to deposit address and verify balance increase"""
@@ -162,15 +162,15 @@ class TestDepositOperations:
         print(f"[DEBUG] Initial balance: ${initial_balance}")
         
         # Try to send USDT
-        print(f"[DEBUG] Attempting to send {self.deposit_amount} USDT to {self.deposit_address}")
+        print(f"[DEBUG] Attempting to send {self.__class__.deposit_amount} USDT to {self.__class__.deposit_address}")
         
         try:
             import requests
             send_response = requests.post(
                 f"{USDT_SERVICE_URL}/send",
                 json={
-                    "to": self.deposit_address,
-                    "amount": int(self.deposit_amount * 1000000),  # Convert to wei (6 decimals)
+                    "to": self.__class__.deposit_address,
+                    "amount": int(self.__class__.deposit_amount * 1000000),  # Convert to wei (6 decimals)
                     "request_id": f"test_deposit_{int(time.time())}"
                 },
                 timeout=300
@@ -195,7 +195,7 @@ class TestDepositOperations:
         
         # Wait for deposit to complete
         print(f"[DEBUG] Waiting for deposit to complete...")
-        final_deposit = self.wait_for_deposit_completion(self.deposit_id, max_wait_seconds=120)
+        final_deposit = self.wait_for_deposit_completion(self.__class__.deposit_id, max_wait_seconds=120)
         
         if not final_deposit:
             pytest.fail("Deposit did not complete within timeout period")
@@ -216,8 +216,8 @@ class TestDepositOperations:
         
         # The actual deposited amount might be slightly different due to gas fees or rounding
         # So we check if it's reasonably close (within 10%)
-        if abs(balance_increase - self.deposit_amount) > (self.deposit_amount * 0.1):
-            pytest.fail(f"Balance increase ${balance_increase} significantly different from expected ${self.deposit_amount}")
+        if abs(balance_increase - self.__class__.deposit_amount) > (self.__class__.deposit_amount * 0.1):
+            pytest.fail(f"Balance increase ${balance_increase} significantly different from expected ${self.__class__.deposit_amount}")
     
     def test_06_deposit_expiration(self):
         """Test deposit expiration time"""
