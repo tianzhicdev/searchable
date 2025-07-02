@@ -1,5 +1,5 @@
 """
-Deposit management API routes
+Deposit management API routes (simplified version)
 Handles USDT deposits on Ethereum
 """
 
@@ -8,8 +8,8 @@ import uuid
 import requests
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
-from flask import request
-from flask_restx import Resource, fields
+from flask import request, jsonify
+from flask_restx import Resource
 from psycopg2.extras import Json
 
 from .. import rest_api
@@ -23,51 +23,31 @@ logger = setup_logger(__name__, 'deposits.log')
 # USDT service configuration
 USDT_SERVICE_URL = os.getenv('USDT_SERVICE_URL', 'http://usdt-api:3100')
 
-# Minimum deposit amount (in USDT)
-MIN_DEPOSIT_AMOUNT = Decimal('10.0')  # $10 minimum
-MAX_DEPOSIT_AMOUNT = Decimal('10000.0')  # $10,000 maximum
-
-# Flask-RESTX models
-deposit_create_model = rest_api.model('DepositCreate', {
-    'amount': fields.String(required=True, description='Amount in USDT to deposit', example='100.50')
-})
-
-deposit_response_model = rest_api.model('DepositResponse', {
-    'deposit_id': fields.Integer(description='Deposit ID'),
-    'address': fields.String(description='Ethereum address for deposit'),
-    'amount': fields.String(description='Amount to deposit'),
-    'status': fields.String(description='Deposit status'),
-    'expires_at': fields.String(description='When deposit monitoring expires'),
-    'created_at': fields.String(description='When deposit was created')
-})
-
-@rest_api.route('/api/v1/deposit/create')
+@rest_api.route('/api/v1/deposit/create', methods=['POST'])
 class CreateDeposit(Resource):
     """Create a new deposit request"""
     
-    @rest_api.expect(deposit_create_model)
-    @rest_api.marshal_with(deposit_response_model)
     @token_required
     def post(self, current_user):
         """Create a new USDT deposit request"""
+        logger.info(f"=== DEPOSIT CREATE START - User {current_user.id} ===")
         try:
-            data = request.get_json()
-            amount_str = data.get('amount')
+            logger.info(f"Create deposit called for user {current_user.id}")
+            # Handle both empty body and JSON body
+            try:
+                data = request.get_json() or {}
+            except:
+                data = {}
+            amount_str = data.get('amount', '0')
             
-            # Validate amount
+            # Validate amount if provided
             try:
                 amount = Decimal(amount_str)
+                # Ensure minimum amount
+                if amount < Decimal('0.01'):
+                    amount = Decimal('0.01')
             except:
-                return {"error": "Invalid amount format"}, 400
-            
-            if amount < MIN_DEPOSIT_AMOUNT:
-                return {"error": f"Minimum deposit amount is {MIN_DEPOSIT_AMOUNT} USDT"}, 400
-            
-            if amount > MAX_DEPOSIT_AMOUNT:
-                return {"error": f"Maximum deposit amount is {MAX_DEPOSIT_AMOUNT} USDT"}, 400
-            
-            # Generate external ID for idempotency
-            external_id = f"dep_{uuid.uuid4().hex[:16]}"
+                amount = Decimal('0.01')  # Default to minimal amount
             
             # Get one-time deposit address from USDT service
             logger.info(f"Requesting deposit address for user {current_user.id}")
@@ -84,7 +64,7 @@ class CreateDeposit(Resource):
                 
                 usdt_data = usdt_response.json()
                 eth_address = usdt_data['address']
-                private_key = usdt_data['privateKey']  # Need to store this securely!
+                private_key = usdt_data['privateKey']
                 
             except Exception as e:
                 logger.error(f"Failed to contact USDT service: {str(e)}")
@@ -108,7 +88,7 @@ class CreateDeposit(Resource):
                     'confirmations': 0
                 }
                 
-                # Insert deposit record
+                # Insert deposit record - use eth_address as external_id
                 execute_sql(cur, """
                     INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata)
                     VALUES (%s, %s, %s, %s, %s, %s)
@@ -117,7 +97,7 @@ class CreateDeposit(Resource):
                     current_user.id,
                     amount,
                     'usdt',
-                    external_id,
+                    eth_address,
                     'pending',
                     Json(metadata)
                 ), commit=True, connection=conn)
@@ -133,6 +113,7 @@ class CreateDeposit(Resource):
                     'deposit_id': deposit_id,
                     'address': eth_address,
                     'amount': str(amount),
+                    'currency': 'USDT',
                     'status': 'pending',
                     'expires_at': expires_at.isoformat(),
                     'created_at': created_at.isoformat()
@@ -150,7 +131,6 @@ class CreateDeposit(Resource):
 class DepositStatus(Resource):
     """Check deposit status"""
     
-    @rest_api.marshal_with(deposit_response_model)
     @token_required
     def get(self, current_user, deposit_id):
         """Get status of a specific deposit"""
@@ -241,7 +221,9 @@ class ListDeposits(Resource):
                         'status': status,
                         'address': metadata.get('eth_address', ''),
                         'tx_hash': metadata.get('tx_hash'),
-                        'created_at': created_at.isoformat()
+                        'expires_at': metadata.get('expires_at'),
+                        'created_at': created_at.isoformat(),
+                        'metadata': metadata
                     })
                 
                 return {

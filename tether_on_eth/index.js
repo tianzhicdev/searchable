@@ -147,10 +147,16 @@ async function getGasPrice() {
   }
   
   try {
-    await rateLimit(); // Apply rate limiting
-    cachedGasPrice = await web3.eth.getGasPrice();
+    // Get current gas price
+    const baseGasPrice = await web3.eth.getGasPrice();
+    
+    // Add 20% buffer to ensure faster mining
+    const bufferedGasPrice = BigInt(baseGasPrice) * BigInt(120) / BigInt(100);
+    
+    cachedGasPrice = bufferedGasPrice.toString();
     gasPriceLastUpdate = now;
-    console.log(`[GAS] Updated cached gas price: ${cachedGasPrice}`);
+    
+    console.log(`[GAS] Updated gas price: ${cachedGasPrice} (base: ${baseGasPrice}, +20% buffer)`);
     return cachedGasPrice;
   } catch (error) {
     console.error('Failed to fetch gas price:', error);
@@ -301,15 +307,70 @@ app.post('/send', async (req, res) => {
     
     await rateLimit();
     console.log(`[${request_id}] Broadcasting signed transaction...`);
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log(`[${request_id}] Transaction broadcast complete - Receipt:`, receipt);
-    res.json({ 
-      status: 'complete',
-      txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber,
-      gasUsed:receipt.gasUsed,
-      ReceiptStatus: receipt.status,
-    });
+    
+    // Send transaction with custom timeout handling
+    try {
+      // Set a shorter timeout for the initial send
+      const sendPromise = web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      
+      // Wait for transaction hash (usually immediate)
+      sendPromise.once('transactionHash', (hash) => {
+        console.log(`[${request_id}] Transaction hash received: ${hash}`);
+      });
+      
+      // Don't wait for full confirmation, just for acceptance
+      const txResponse = await Promise.race([
+        sendPromise,
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // If we have a txHash, consider it submitted successfully
+            if (txHash) {
+              console.log(`[${request_id}] Transaction timeout but hash exists, returning as submitted`);
+              resolve({
+                transactionHash: txHash,
+                status: 'submitted',
+                message: 'Transaction submitted but confirmation pending'
+              });
+            } else {
+              reject(new Error('Transaction submission timeout'));
+            }
+          }, 30000); // 30 second timeout for submission
+        })
+      ]);
+      
+      if (txResponse.status === 'submitted') {
+        // Transaction was submitted but not yet mined
+        res.json({ 
+          status: 'pending',
+          txHash: txResponse.transactionHash,
+          message: 'Transaction submitted, awaiting confirmation',
+          request_id: request_id
+        });
+      } else {
+        // Transaction was mined successfully
+        console.log(`[${request_id}] Transaction confirmed - Receipt:`, txResponse);
+        res.json({ 
+          status: 'complete',
+          txHash: txResponse.transactionHash,
+          blockNumber: txResponse.blockNumber,
+          gasUsed: txResponse.gasUsed,
+          ReceiptStatus: txResponse.status,
+        });
+      }
+    } catch (sendError) {
+      // Handle specific timeout error
+      if (sendError.code === 432 || sendError.message.includes('not mined within')) {
+        console.log(`[${request_id}] Transaction timeout but likely submitted: ${txHash}`);
+        res.json({
+          status: 'pending',
+          txHash: txHash,
+          message: 'Transaction submitted but mining timeout. Check status later.',
+          request_id: request_id
+        });
+      } else {
+        throw sendError; // Re-throw other errors
+      }
+    }
     } catch (error) {
       console.error(`[${request_id}] USDT Transfer Error:`, error);
       res.status(500).json({ 

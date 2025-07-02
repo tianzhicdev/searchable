@@ -700,12 +700,12 @@ const mockHandlers = {
   
   // Deposit endpoints
   'v1/deposit/create': (url, config) => {
-    const data = JSON.parse(config.data);
+    const data = JSON.parse(config.data || '{}');
     console.log('[MOCK] Creating deposit:', data);
-    const depositId = `mock-deposit-${Date.now()}`;
+    const depositId = Date.now();  // Use number to match backend
     return createMockResponse({
       deposit_id: depositId,
-      amount: data.amount,
+      amount: data.amount || '0.00',  // Amount can be 0 for deposits
       currency: 'USDT',
       address: `0x${Math.random().toString(16).substr(2, 40)}`,
       status: 'pending',
