@@ -333,7 +333,8 @@ class TestWithdrawalOperations:
             balance_response = self.client.get_balance()
             print(f"[RESPONSE] Balance after small withdrawal: {balance_response}")
             new_balance = balance_response.get('balance').get('usd')
-            assert new_balance == 39.900000000000006 
+            # Use approximate comparison for floating point
+            assert abs(new_balance - 39.9) < 0.01, f"Expected balance ~39.9, got {new_balance}" 
                 
         except Exception as e:
             pytest.fail(f"Small withdrawal API failed: {e}")

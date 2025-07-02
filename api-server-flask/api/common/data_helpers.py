@@ -736,120 +736,85 @@ def get_balance_by_currency(user_id):
     Get user balance from payments and withdrawals using new table structure
     """
     try:
-        balance_by_currency = {
-            'usd': 0,
-        }
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
         logger.info(f"Calculating balance for user_id: {user_id}")
         
-        # Get all searchables published by this user
-        execute_sql(cur, """SELECT s.searchable_id, s.searchable_data FROM searchables s WHERE s.user_id = %s;""", params=(user_id,))
-        searchable_results = cur.fetchall()
-        
-        for searchable in searchable_results:
-            searchable_id = searchable[0]
-            searchable_data = searchable[1]
+        # Single query to calculate the entire balance
+        query = """
+        WITH balance_sources AS (
+            -- Income from sales (seller earnings after fees)
+            SELECT 
+                'sale' as source_type,
+                (i.amount - i.fee) as net_amount,
+                i.currency
+            FROM invoice i
+            JOIN payment p ON i.id = p.invoice_id
+            WHERE i.seller_id = %s
+            AND p.status = %s
+            AND i.currency IN ('USD', 'USDT', 'usd', 'usdt')
             
-            if not isinstance(searchable_data, dict):
-                import json
-                searchable_data = json.loads(searchable[1])
-                
-            try:
-                searchable_currency = searchable_data['payloads']['public']['currency'].lower()
-                
-                # Get paid invoices for this searchable (seller earnings)
-                execute_sql(cur, """
-                    SELECT i.amount, i.fee, i.currency, i.metadata
-                    FROM invoice i
-                    JOIN payment p ON i.id = p.invoice_id
-                    WHERE i.searchable_id = %s 
-                    AND i.seller_id = %s
-                    AND p.status = %s
-                """, params=(searchable_id, user_id, PaymentStatus.COMPLETE.value))
-                
-                paid_invoices = cur.fetchall()
-                
-                for invoice_result in paid_invoices:
-                    amount, fee, currency, metadata = invoice_result
-                    
-                    # All payments are in USD
-                    if currency.lower() in ['usdt', 'usd']:
-                        net_amount = float(amount) - float(fee)
-                        balance_by_currency['usd'] += net_amount
-                        logger.debug(f"Added ${net_amount} USD (amount {amount} - fee {fee}) from searchable {searchable_id}")
-                        
-            except KeyError as ke:
-                logger.error(f"KeyError processing searchable {searchable_id}: {str(ke)}")
-                continue
-        
-        # Add rewards
-        execute_sql(cur, """
-            SELECT amount, currency
-            FROM rewards 
-            WHERE user_id = %s
-        """, params=(user_id,))
-        
-        reward_results = cur.fetchall()
-        
-        for reward in reward_results:
-            amount, currency = reward
+            UNION ALL
             
-            if amount is not None and currency is not None:
-                try:
-                    amount_float = float(amount)
-                    if currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usd'] += amount_float
-                        logger.debug(f"Added ${amount_float} USD from rewards")
-                except ValueError:
-                    logger.error(f"Invalid amount format in reward: {amount}")
-        
-        # Add completed deposits
-        execute_sql(cur, """
-            SELECT amount, currency
-            FROM deposit 
-            WHERE user_id = %s
-            AND status = 'complete'
-        """, params=(user_id,))
-        
-        deposit_results = cur.fetchall()
-        
-        for deposit in deposit_results:
-            amount, currency = deposit
+            -- Rewards
+            SELECT 
+                'reward' as source_type,
+                r.amount as net_amount,
+                r.currency
+            FROM rewards r
+            WHERE r.user_id = %s
+            AND r.currency IN ('USD', 'USDT', 'usd', 'usdt')
             
-            if amount is not None and currency is not None:
-                try:
-                    amount_float = float(amount)
-                    if currency.lower() == 'usdt':
-                        # USDT deposits count as USD
-                        balance_by_currency['usd'] += amount_float
-                        logger.debug(f"Added ${amount_float} USD from USDT deposit")
-                except ValueError:
-                    logger.error(f"Invalid amount format in deposit: {amount}")
-        
-        # Subtract withdrawals (completed, pending, and delayed to prevent double-spending)
-        execute_sql(cur, f"""
-            SELECT amount, currency
-            FROM withdrawal 
-            WHERE user_id = {user_id}
-            AND status IN ('{PaymentStatus.COMPLETE.value}', '{PaymentStatus.PENDING.value}', '{PaymentStatus.DELAYED.value}')
-        """)
-        
-        withdrawal_results = cur.fetchall()
-        
-        for withdrawal in withdrawal_results:
-            amount, currency = withdrawal
+            UNION ALL
             
-            if amount is not None and currency is not None:
-                try:
-                    amount_float = float(amount)
-                    if currency.lower() in ['usdt', 'usd']:
-                        balance_by_currency['usd'] -= amount_float
-                        logger.debug(f"Subtracted ${amount_float} USD from withdrawal (completed, pending, or delayed)")
-                except ValueError:
-                    logger.error(f"Invalid amount format in withdrawal: {amount}")
+            -- Completed deposits
+            SELECT 
+                'deposit' as source_type,
+                d.amount as net_amount,
+                d.currency
+            FROM deposit d
+            WHERE d.user_id = %s
+            AND d.status = 'complete'
+            AND d.currency IN ('USDT', 'usdt')
+            
+            UNION ALL
+            
+            -- Withdrawals (negative amounts)
+            SELECT 
+                'withdrawal' as source_type,
+                -w.amount as net_amount,
+                w.currency
+            FROM withdrawal w
+            WHERE w.user_id = %s
+            AND w.status IN (%s, %s, %s)
+            AND w.currency IN ('USD', 'USDT', 'usd', 'usdt')
+        )
+        SELECT 
+            COALESCE(SUM(net_amount), 0) as total_balance
+        FROM balance_sources
+        """
+        
+        execute_sql(cur, query, params=(
+            user_id,  # for sales
+            PaymentStatus.COMPLETE.value,
+            user_id,  # for rewards
+            user_id,  # for deposits
+            user_id,  # for withdrawals
+            PaymentStatus.COMPLETE.value,
+            PaymentStatus.PENDING.value,
+            PaymentStatus.DELAYED.value
+        ))
+        
+        result = cur.fetchone()
+        total_balance = float(result[0]) if result and result[0] else 0.0
+        
+        cur.close()
+        conn.close()
+        
+        balance_by_currency = {
+            'usd': total_balance
+        }
         
         logger.info(f"Final balance for user {user_id}: {balance_by_currency}")
         return balance_by_currency
