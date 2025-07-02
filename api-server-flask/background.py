@@ -29,10 +29,10 @@ logging.basicConfig(
 logger = logging.getLogger('background')
 
 # Configuration
-CHECK_INVOICE_INTERVAL = 1  # Check invoices every 60 seconds
-WITHDRAWAL_SENDER_INTERVAL = 1  # Process pending withdrawals every 5 seconds
-STATUS_CHECKER_INTERVAL = 15  # Check sent withdrawals every 15 seconds
-DEPOSIT_CHECK_INTERVAL = 300  # Check deposits every 5 minutes
+CHECK_INVOICE_INTERVAL = 1  # Check invoices every 1 second
+WITHDRAWAL_SENDER_INTERVAL = 5  # Process pending withdrawals every 5 seconds
+STATUS_CHECKER_INTERVAL = 300  # Check delayed withdrawals every 5 minutes
+DEPOSIT_CHECK_INTERVAL = 30  # Check deposits every 30 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 # Timeout settings
@@ -416,8 +416,6 @@ def withdrawal_sender_thread():
     """Thread function that periodically processes pending withdrawals"""
     while True:
         try:
-            check_pending_deposits()
-            check_delayed_withdrawals()
             process_pending_withdrawals()
         except Exception as e:
             logger.error(f"Error in withdrawal sender thread: {str(e)}")
@@ -425,6 +423,29 @@ def withdrawal_sender_thread():
         
         time.sleep(WITHDRAWAL_SENDER_INTERVAL)
 
+
+def deposit_check_thread():
+    """Thread function that periodically checks pending deposits"""
+    while True:
+        try:
+            check_pending_deposits()
+        except Exception as e:
+            logger.error(f"Error in deposit check thread: {str(e)}")
+            logger.error(traceback.format_exc())
+        
+        time.sleep(DEPOSIT_CHECK_INTERVAL)
+
+
+def status_checker_thread():
+    """Thread function that periodically checks delayed withdrawals"""
+    while True:
+        try:
+            check_delayed_withdrawals()
+        except Exception as e:
+            logger.error(f"Error in status checker thread: {str(e)}")
+            logger.error(traceback.format_exc())
+        
+        time.sleep(STATUS_CHECKER_INTERVAL)
 
 
 
@@ -442,7 +463,7 @@ def check_pending_deposits():
                 SELECT id, user_id, amount, metadata, created_at
                 FROM deposit
                 WHERE status = 'pending'
-                AND created_at > NOW() - INTERVAL '24 hours'
+                AND created_at > NOW() - INTERVAL '1 hours'
                 ORDER BY created_at ASC
             """)
             
@@ -453,10 +474,10 @@ def check_pending_deposits():
                 deposit_id, user_id, expected_amount, metadata, created_at = deposit
                 
                 try:
-                    # Check if deposit has expired (23 hours)
-                    if datetime.utcnow() - created_at.replace(tzinfo=None) > timedelta(hours=24):
+                    # Check if deposit has expired (1 hour)
+                    if datetime.utcnow() - created_at.replace(tzinfo=None) > timedelta(hours=1):
                         logger.info(f"Deposit {deposit_id} has expired, marking as failed")
-                        metadata['error'] = 'Deposit expired after 23 hours'
+                        metadata['error'] = 'Deposit expired after 1 hour'
                         execute_sql(cur, """
                             UPDATE deposit 
                             SET status = 'failed', metadata = %s
@@ -487,35 +508,14 @@ def check_pending_deposits():
                     # Convert from wei (6 decimals for USDT) to decimal
                     balance_usdt = Decimal(balance_wei) / Decimal(10 ** USDT_DECIMALS)
                     
-                    logger.info(f"Deposit {deposit_id}: Expected {expected_amount} USDT, found {balance_usdt} USDT")
+                    logger.info(f"Deposit {deposit_id}: found {balance_usdt} USDT")
                     
                     # Update checked_at timestamp
                     metadata['checked_at'] = datetime.utcnow().isoformat()
                     
                     # Check if balance meets or exceeds expected amount
-                    if balance_usdt >= expected_amount:
+                    if balance_usdt > 0:
                         logger.info(f"Deposit {deposit_id} has sufficient balance, marking as complete")
-                        
-                        # Get transaction details to find the actual deposit
-                        try:
-                            # Check for transactions to this address
-                            tx_response = requests.get(
-                                f"{USDT_SERVICE_URL}/transactions/{eth_address}",
-                                timeout=10
-                            )
-                            
-                            if tx_response.status_code == 200:
-                                tx_data = tx_response.json()
-                                transactions = tx_data.get('transactions', [])
-                                
-                                # Find the most recent incoming transaction
-                                for tx in transactions:
-                                    if tx.get('to', '').lower() == eth_address.lower():
-                                        metadata['tx_hash'] = tx.get('hash')
-                                        metadata['from_address'] = tx.get('from')
-                                        break
-                        except Exception as e:
-                            logger.warning(f"Failed to get transaction details: {str(e)}")
                         
                         # Update the amount to the actual deposited amount
                         actual_amount = balance_usdt
@@ -554,11 +554,10 @@ def check_pending_deposits():
         logger.error(f"Error in check_pending_deposits: {str(e)}")
         logger.error(traceback.format_exc())
 
-# Removed separate deposit_check_thread - now runs in withdrawal_sender_thread
 
 def start_background_threads():
     """Start all background processing threads"""
-    logger.info("Starting background processing threads with new two-job withdrawal system")
+    logger.info("Starting background processing threads with optimized timing")
     
     # Start invoice check thread
     invoice_thread = threading.Thread(
@@ -568,7 +567,7 @@ def start_background_threads():
     )
     invoice_thread.start()
     
-    # Start withdrawal sender thread (Job 1)
+    # Start withdrawal sender thread
     sender_thread = threading.Thread(
         target=withdrawal_sender_thread,
         daemon=True,
@@ -576,11 +575,29 @@ def start_background_threads():
     )
     sender_thread.start()
     
+    # Start deposit check thread
+    deposit_thread = threading.Thread(
+        target=deposit_check_thread,
+        daemon=True,
+        name="deposit-check"
+    )
+    deposit_thread.start()
+    
+    # Start status checker thread for delayed withdrawals
+    status_thread = threading.Thread(
+        target=status_checker_thread,
+        daemon=True,
+        name="status-checker"
+    )
+    status_thread.start()
+    
     logger.info("Background threads started:")
     logger.info(f"  - Invoice checker: every {CHECK_INVOICE_INTERVAL}s")
-    logger.info(f"  - Withdrawal/Deposit processor: every {WITHDRAWAL_SENDER_INTERVAL}s")
+    logger.info(f"  - Withdrawal processor: every {WITHDRAWAL_SENDER_INTERVAL}s")
+    logger.info(f"  - Deposit checker: every {DEPOSIT_CHECK_INTERVAL}s")
+    logger.info(f"  - Delayed withdrawal checker: every {STATUS_CHECKER_INTERVAL}s")
     
-    return [invoice_thread, sender_thread]
+    return [invoice_thread, sender_thread, deposit_thread, status_thread]
 
 
 # This will be called when the module is imported
