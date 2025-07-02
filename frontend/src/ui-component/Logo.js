@@ -48,10 +48,10 @@ const Logo = () => {
             {(config.APP_BRANDING !== 'silkroadonlightning' && config.APP_BRANDING !== 'eccentricprotocol') && (
                 <div>
                 <Typography variant="h1" >
-                    warp to the future 
+                    WARP TO THE FUTURE
                 </Typography>
                 <Typography variant="h2">
-                    it is a bit chaotic
+                    It is a bit chaotic
                 </Typography>
                 </div>
             )}
