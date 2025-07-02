@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { Web3 } = require('web3');
 const cors = require('cors');
+const HDWallet = require('./hdWallet');
 
 const app = express();
 app.use(express.json());
@@ -77,6 +78,10 @@ const usdtContract = new web3.eth.Contract(
 // Simple nonce counter - initialize on startup
 let currentNonce = null;
 const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+
+// Initialize HD wallet for deposit address generation
+const hdWallet = new HDWallet(process.env.PRIVATE_KEY);
+console.log('HD Wallet initialized for deterministic address generation');
 
 // Rate limiting protection - increase interval to prevent crashes
 let lastRequestTime = 0;
@@ -228,21 +233,30 @@ app.get('/balance/:address', async (req, res) => {
 });
 
 // Get receive address
-// Generate one-time deposit address
+// Generate deterministic deposit address from deposit ID
 app.post('/receive', (req, res) => {
   try {
-    // Generate a new private key and address for one-time use
-    const newAccount = web3.eth.accounts.create();
+    const { deposit_id } = req.body;
     
-    // In production, you would want to:
-    // 1. Store this private key securely (encrypted in database)
-    // 2. Associate it with the deposit request
-    // For now, we'll return both address and private key
-    // The API server should store the private key securely
+    // Validate deposit_id
+    if (deposit_id === undefined || deposit_id === null) {
+      return res.status(400).json({ error: 'deposit_id is required' });
+    }
+    
+    const depositId = parseInt(deposit_id);
+    if (isNaN(depositId) || depositId < 0) {
+      return res.status(400).json({ error: 'deposit_id must be a non-negative integer' });
+    }
+    
+    // Generate deterministic address from deposit ID
+    const addressInfo = hdWallet.generateAddress(depositId);
+    
+    console.log(`Generated deposit address for ID ${depositId}: ${addressInfo.address}`);
     
     res.json({
-      address: newAccount.address,
-      privateKey: newAccount.privateKey  // API server must store this securely!
+      address: addressInfo.address,
+      deposit_id: depositId,
+      // No private key returned - it can be derived when needed
     });
   } catch (error) {
     console.error('Error generating deposit address:', error);
@@ -251,7 +265,6 @@ app.post('/receive', (req, res) => {
 });
 
 
-// Send USDT
 app.post('/send', async (req, res) => {
   const { to, amount, request_id: provided_request_id } = req.body;
   const request_id = provided_request_id || `req_${Math.random().toString(36).substring(2, 15)}${Date.now().toString(36)}`;
@@ -307,70 +320,15 @@ app.post('/send', async (req, res) => {
     
     await rateLimit();
     console.log(`[${request_id}] Broadcasting signed transaction...`);
-    
-    // Send transaction with custom timeout handling
-    try {
-      // Set a shorter timeout for the initial send
-      const sendPromise = web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-      
-      // Wait for transaction hash (usually immediate)
-      sendPromise.once('transactionHash', (hash) => {
-        console.log(`[${request_id}] Transaction hash received: ${hash}`);
-      });
-      
-      // Don't wait for full confirmation, just for acceptance
-      const txResponse = await Promise.race([
-        sendPromise,
-        new Promise((resolve, reject) => {
-          setTimeout(() => {
-            // If we have a txHash, consider it submitted successfully
-            if (txHash) {
-              console.log(`[${request_id}] Transaction timeout but hash exists, returning as submitted`);
-              resolve({
-                transactionHash: txHash,
-                status: 'submitted',
-                message: 'Transaction submitted but confirmation pending'
-              });
-            } else {
-              reject(new Error('Transaction submission timeout'));
-            }
-          }, 30000); // 30 second timeout for submission
-        })
-      ]);
-      
-      if (txResponse.status === 'submitted') {
-        // Transaction was submitted but not yet mined
-        res.json({ 
-          status: 'pending',
-          txHash: txResponse.transactionHash,
-          message: 'Transaction submitted, awaiting confirmation',
-          request_id: request_id
-        });
-      } else {
-        // Transaction was mined successfully
-        console.log(`[${request_id}] Transaction confirmed - Receipt:`, txResponse);
-        res.json({ 
-          status: 'complete',
-          txHash: txResponse.transactionHash,
-          blockNumber: txResponse.blockNumber,
-          gasUsed: txResponse.gasUsed,
-          ReceiptStatus: txResponse.status,
-        });
-      }
-    } catch (sendError) {
-      // Handle specific timeout error
-      if (sendError.code === 432 || sendError.message.includes('not mined within')) {
-        console.log(`[${request_id}] Transaction timeout but likely submitted: ${txHash}`);
-        res.json({
-          status: 'pending',
-          txHash: txHash,
-          message: 'Transaction submitted but mining timeout. Check status later.',
-          request_id: request_id
-        });
-      } else {
-        throw sendError; // Re-throw other errors
-      }
-    }
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    console.log(`[${request_id}] Transaction broadcast complete - Receipt:`, receipt);
+    res.json({ 
+      status: 'complete',
+      txHash: receipt.transactionHash,
+      blockNumber: receipt.blockNumber,
+      gasUsed:receipt.gasUsed,
+      ReceiptStatus: receipt.status,
+    });
     } catch (error) {
       console.error(`[${request_id}] USDT Transfer Error:`, error);
       res.status(500).json({ 
@@ -381,6 +339,7 @@ app.post('/send', async (req, res) => {
       });
     }
   });
+
 
   // if failure, exhash -> delayed, no txhash -> failure 
     
@@ -473,7 +432,7 @@ app.get('/tx-status/:txHash', async (req, res) => {
 
 // Transfer from deposit address to main wallet
 app.post('/sweep', async (req, res) => {
-  const { from_address, private_key, amount } = req.body;
+  const { from_address, deposit_id, amount } = req.body;
   
   try {
     await rateLimit();
@@ -482,11 +441,24 @@ app.post('/sweep', async (req, res) => {
       return res.status(400).json({ error: 'Invalid from address' });
     }
     
-    // Import the account from private key
-    const depositAccount = web3.eth.accounts.privateKeyToAccount(private_key);
-    if (depositAccount.address.toLowerCase() !== from_address.toLowerCase()) {
-      return res.status(400).json({ error: 'Private key does not match address' });
+    // Validate deposit_id
+    if (deposit_id === undefined || deposit_id === null) {
+      return res.status(400).json({ error: 'deposit_id is required' });
     }
+    
+    const depositId = parseInt(deposit_id);
+    if (isNaN(depositId) || depositId < 0) {
+      return res.status(400).json({ error: 'deposit_id must be a non-negative integer' });
+    }
+    
+    // Verify the address matches the deposit ID
+    if (!hdWallet.verifyAddress(depositId, from_address)) {
+      return res.status(400).json({ error: 'Address does not match deposit ID' });
+    }
+    
+    // Get private key from HD wallet
+    const privateKey = hdWallet.getPrivateKey(depositId);
+    const depositAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
     
     // Add account to wallet to sign transactions
     web3.eth.accounts.wallet.add(depositAccount);
