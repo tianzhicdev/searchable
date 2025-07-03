@@ -150,7 +150,11 @@ class TestDepositOperations:
     
     def test_05_send_usdt_and_verify_balance(self):
         """Send USDT to deposit address and verify balance increase"""
-
+        
+        # Check if we should skip real USDT sending
+        if os.environ.get('SKIP_REAL_DEPOSIT', 'false').lower() == 'true':
+            print("[DEBUG] SKIP_REAL_DEPOSIT is set, skipping USDT transfer test")
+            pytest.skip("SKIP_REAL_DEPOSIT environment variable is set")
         
         # Get initial balance
         initial_balance_response = self.client.get_balance()
@@ -268,7 +272,6 @@ class TestDepositOperations:
             data = response.json()
             assert data['address'] == expected_address, f"Address mismatch for deposit {deposit_id}"
         
-        print("[DEBUG] HD wallet address generation is consistent")
 
 
 if __name__ == "__main__":

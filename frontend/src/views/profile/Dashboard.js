@@ -6,11 +6,12 @@ import useComponentStyles from '../../themes/componentStyles'; // Import shared 
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert,
-  Menu, MenuItem, IconButton, Avatar
+  Menu, MenuItem, IconButton, Avatar, useTheme
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
+import QRCode from 'react-qr-code';
 import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
@@ -24,6 +25,7 @@ import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStac
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
+  const theme = useTheme();
   const [balance, setBalance] = useState({ usd: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -531,27 +533,41 @@ const Dashboard = () => {
               <Typography variant="h6" gutterBottom>
                 Send USDT to this address:
               </Typography>
+              
+              {/* QR Code */}
+              <Box display="flex" justifyContent="center" style={{ marginBottom: 24 }}>
+                <Box style={{ background: 'black', padding: 16, borderRadius: 8 }}>
+                  <QRCode
+                    value={depositAddress}
+                    size={200}
+                    level="M"
+                    includeMargin={true}
+                    bgColor="black"
+                    fgColor={theme.palette.primary.main}
+                  />
+                </Box>
+              </Box>
+              
               <Box 
-                display="flex" 
-                flexDirection="column" 
-                alignItems="center"
+                style={{ 
+                  textAlign: 'center'
+                }}
+                onClick={() => handleCopyAddress(depositAddress)}
               >
                 <Typography>
                   {depositAddress}
                 </Typography>
-                <Button
-                  onClick={() => handleCopyAddress(depositAddress)}
-                  variant="contained"
-                  style={{ marginTop: 12 }}
-                >
-                  Copy Address
-                </Button>
               </Box>
+              <Button
+                onClick={() => handleCopyAddress(depositAddress)}
+                variant="outlined"
+                fullWidth
+                style={{ marginBottom: 16 }}
+              >
+                Copy Address
+              </Button>
               <Typography variant="body2" color="textSecondary">
                 • Send only USDT on Ethereum network
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                • Minimum deposit: $10 USDT
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 • Deposit will be credited once confirmed
