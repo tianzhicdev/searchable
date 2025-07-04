@@ -23,6 +23,7 @@ const BaseSearchableDetails = ({
   
   // Type-specific handlers
   onPayment,
+  onDepositPayment,
   
   // Type-specific props for price display
   totalPrice = 0,
@@ -131,6 +132,7 @@ const BaseSearchableDetails = ({
             totalPrice={totalPrice}
             processing={creatingInvoice}
             onPayButtonClick={onPayment}
+            onDepositPayment={onDepositPayment}
             isOwner={isOwner}
             onRemoveItem={handleRemoveItem}
             isRemoving={isRemoving}

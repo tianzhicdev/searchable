@@ -79,6 +79,24 @@ const DirectSearchableDetails = () => {
     }
   };
 
+  const handleDepositPayment = async (depositData) => {
+    if (!paymentAmount || paymentAmount <= 0) {
+      setPaymentError('Please enter a valid amount');
+      return;
+    }
+
+    setPaymentError(null);
+    
+    // For deposit payments, we show a success message and let the user know to deposit
+    console.log('Deposit created for direct payment:', {
+      depositData,
+      paymentAmount
+    });
+    
+    // You could implement deposit-based payment logic here if needed
+    // For now, we just acknowledge the deposit address was created
+  };
+
   // Render type-specific content for direct payment
   const renderDirectPaymentContent = ({ isOwner }) => (
     !isOwner && (
@@ -101,7 +119,7 @@ const DirectSearchableDetails = () => {
             </Typography>
 
             {/* Quick amount buttons */}
-            <ButtonGroup fullWidth style={{ marginBottom: 16 }}>
+            <ButtonGroup fullWidth>
               {quickAmounts.map((amount) => (
                 <Button
                   key={amount}
@@ -124,13 +142,12 @@ const DirectSearchableDetails = () => {
               InputProps={{
                 startAdornment: <InputAdornment position="start">$</InputAdornment>,
               }}
-              style={{ marginBottom: 24 }}
             />
           </Box>
         )}
 
         {paymentError && (
-          <Alert severity="error" style={{ marginBottom: 16 }}>
+          <Alert severity="error">
             {paymentError}
           </Alert>
         )}
@@ -139,12 +156,12 @@ const DirectSearchableDetails = () => {
   );
 
   return (
-
     <BaseSearchableDetails
       renderTypeSpecificContent={renderDirectPaymentContent}
       onPayment={handlePayment}
-      totalPrice={paymentAmount * 1.035}
-      payButtonText={`Pay $${(paymentAmount * 1.035).toFixed(2)}`}
+      onDepositPayment={handleDepositPayment}
+      totalPrice={paymentAmount}
+      payButtonText="Pay"
       disabled={!paymentAmount || paymentAmount <= 0}
     />
   );
