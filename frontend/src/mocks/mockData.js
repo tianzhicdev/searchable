@@ -425,18 +425,46 @@ export const mockRewards = {
     },
     {
       id: 2,
+      amount: 50.0,
+      currency: "usd",
+      user_id: "mock-user-1",
+      created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+      metadata: {
+        type: "referral_reward",
+        referred_user_id: "mock-user-2",
+        referred_username: "newuser123",
+        referral_id: 1,
+        invite_code_id: 5
+      }
+    },
+    {
+      id: 3,
+      amount: 50.0,
+      currency: "usd",
+      user_id: "mock-user-1", 
+      created_at: new Date(Date.now() - 86400000 * 10).toISOString(), // 10 days ago
+      metadata: {
+        type: "referral_reward",
+        referred_user_id: "mock-user-3",
+        referred_username: "creativepro",
+        referral_id: 2,
+        invite_code_id: 5
+      }
+    },
+    {
+      id: 4,
       amount: 10.0,
       currency: "usd", 
       user_id: "mock-user-1",
-      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      created_at: new Date(Date.now() - 86400000 * 20).toISOString(), // 20 days ago
       metadata: {
         type: "signup_bonus",
         description: "Welcome bonus for new users"
       }
     }
   ],
-  total_amount: 15.0,
-  count: 2
+  total_amount: 115.0,
+  count: 4
 };
 
 // Mock direct searchable items

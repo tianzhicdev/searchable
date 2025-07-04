@@ -200,39 +200,78 @@ class Register(Resource):
                 
                 # Check if code exists and is active
                 execute_sql(cur,
-                    "SELECT id, active FROM invite_code WHERE code = %s",
+                    """SELECT id, active, creator_user_id, max_uses, times_used 
+                       FROM invite_code WHERE code = %s""",
                     params=(_invite_code,)
                 )
                 
                 result = cur.fetchone()
                 if result and result[1]:  # result[1] is the active boolean
                     invite_code_id = result[0]
+                    creator_user_id = result[2]
+                    max_uses = result[3]
+                    times_used = result[4] or 0
                     
-                    # Mark the invite code as used
-                    execute_sql(cur,
-                        "UPDATE invite_code SET active = false, used_by_user_id = %s, used_at = NOW() WHERE id = %s",
-                        params=(new_user.id, invite_code_id)
-                    )
-                    
-                    # Create a reward record
-                    execute_sql(cur,
-                        """INSERT INTO rewards (amount, currency, user_id, metadata) 
-                           VALUES (%s, %s, %s, %s)""",
-                        params=(
-                            5.0,  # $5 USD reward
-                            'usd',
-                            new_user.id,  # User receiving the reward
-                            Json({
-                                "type": "invite_code_reward", 
-                                "invite_code": _invite_code,
-                                "invite_code_id": invite_code_id
-                            })
+                    # Check if code has reached max uses
+                    if max_uses is not None and times_used >= max_uses:
+                        logger.info(f"Invite code {_invite_code} has reached max uses")
+                    else:
+                        # For legacy single-use codes (no creator_user_id), mark as inactive
+                        if creator_user_id is None:
+                            execute_sql(cur,
+                                "UPDATE invite_code SET active = false, used_by_user_id = %s, used_at = NOW(), times_used = times_used + 1 WHERE id = %s",
+                                params=(new_user.id, invite_code_id)
+                            )
+                        else:
+                            # For new multi-use codes, just increment usage count
+                            execute_sql(cur,
+                                "UPDATE invite_code SET times_used = times_used + 1 WHERE id = %s",
+                                params=(invite_code_id,)
+                            )
+                            
+                            # Check if we should deactivate the code
+                            if max_uses is not None and times_used + 1 >= max_uses:
+                                execute_sql(cur,
+                                    "UPDATE invite_code SET active = false WHERE id = %s",
+                                    params=(invite_code_id,)
+                                )
+                        
+                        # Create a reward record for the new user
+                        execute_sql(cur,
+                            """INSERT INTO rewards (amount, currency, user_id, metadata) 
+                               VALUES (%s, %s, %s, %s) RETURNING id""",
+                            params=(
+                                5.0,  # $5 USD reward
+                                'usd',
+                                new_user.id,  # User receiving the reward
+                                Json({
+                                    "type": "invite_code_reward", 
+                                    "invite_code": _invite_code,
+                                    "invite_code_id": invite_code_id,
+                                    "referrer_user_id": creator_user_id
+                                })
+                            )
                         )
-                    )
-                    
-                    conn.commit()
-                    invite_code_used = True
-                    logger.info(f"Invite code {_invite_code} used by user {new_user.id}, $5 reward credited")
+                        signup_reward_id = cur.fetchone()[0]
+                        
+                        # Create referral tracking record if this is a user-generated code
+                        if creator_user_id is not None:
+                            execute_sql(cur,
+                                """INSERT INTO referrals (referrer_user_id, referred_user_id, invite_code_id, signup_reward_id, referrer_reward_paid)
+                                   VALUES (%s, %s, %s, %s, %s)""",
+                                params=(
+                                    creator_user_id,
+                                    new_user.id,
+                                    invite_code_id,
+                                    signup_reward_id,
+                                    False  # Referrer reward not paid yet
+                                )
+                            )
+                        
+                        conn.commit()
+                        invite_code_used = True
+                        logger.info(f"Invite code {_invite_code} used by user {new_user.id}, $5 reward credited" + 
+                                   (f", referred by user {creator_user_id}" if creator_user_id else ""))
                 
                 cur.close()
                 conn.close()
@@ -399,7 +438,8 @@ class CheckInviteCode(Resource):
             
             # Check if code exists and is active
             execute_sql(cur,
-                "SELECT active FROM invite_code WHERE code = %s",
+                """SELECT active, max_uses, times_used 
+                   FROM invite_code WHERE code = %s""",
                 params=(invite_code,)
             )
             
@@ -408,7 +448,14 @@ class CheckInviteCode(Resource):
             conn.close()
             
             if result and result[0]:  # result[0] is the active boolean
-                return {"active": True}, 200
+                max_uses = result[1]
+                times_used = result[2] or 0
+                
+                # Check if code has reached max uses
+                if max_uses is not None and times_used >= max_uses:
+                    return {"active": False}, 200
+                else:
+                    return {"active": True}, 200
             else:
                 return {"active": False}, 200
                 
@@ -457,6 +504,181 @@ class GetActiveInviteCode(Resource):
             return {
                 "success": False,
                 "message": "Error retrieving invite code"
+            }, 500
+
+
+@rest_api.route('/api/v1/generate-invite-code')
+class GenerateInviteCode(Resource):
+    """
+    Generate a new invite code for the authenticated user
+    """
+    @token_required
+    def post(self, current_user):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Check if user already has an active invite code
+            execute_sql(cur,
+                "SELECT code FROM invite_code WHERE creator_user_id = %s AND active = TRUE LIMIT 1",
+                params=(current_user.id,)
+            )
+            
+            existing_code = cur.fetchone()
+            if existing_code:
+                cur.close()
+                conn.close()
+                return {
+                    "success": True,
+                    "invite_code": existing_code[0],
+                    "message": "You already have an active invite code"
+                }, 200
+            
+            # Generate a new 6-letter uppercase code
+            import random
+            import string
+            max_attempts = 100
+            code_generated = False
+            
+            for _ in range(max_attempts):
+                new_code = ''.join(random.choices(string.ascii_uppercase, k=6))
+                
+                # Check if code already exists
+                execute_sql(cur,
+                    "SELECT id FROM invite_code WHERE code = %s",
+                    params=(new_code,)
+                )
+                
+                if not cur.fetchone():
+                    # Code doesn't exist, create it
+                    execute_sql(cur,
+                        """INSERT INTO invite_code (code, active, creator_user_id, max_uses, times_used, created_at, metadata)
+                           VALUES (%s, %s, %s, %s, %s, NOW(), %s)""",
+                        params=(
+                            new_code,
+                            True,
+                            current_user.id,
+                            None,  # Unlimited uses
+                            0,
+                            Json({
+                                "description": f"Invite code by {current_user.username}",
+                                "type": "user_generated"
+                            })
+                        )
+                    )
+                    conn.commit()
+                    code_generated = True
+                    break
+            
+            cur.close()
+            conn.close()
+            
+            if code_generated:
+                logger.info(f"User {current_user.id} generated invite code: {new_code}")
+                return {
+                    "success": True,
+                    "invite_code": new_code,
+                    "message": "Invite code generated successfully"
+                }, 200
+            else:
+                return {
+                    "success": False,
+                    "message": "Failed to generate unique invite code"
+                }, 500
+                
+        except Exception as e:
+            logger.error(f"Error generating invite code: {e}")
+            return {
+                "success": False,
+                "message": "Error generating invite code"
+            }, 500
+
+
+@rest_api.route('/api/v1/referral-stats')
+class ReferralStats(Resource):
+    """
+    Get referral statistics for the authenticated user
+    """
+    @token_required
+    def get(self, current_user):
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            
+            # Get user's active invite code
+            execute_sql(cur,
+                "SELECT code, times_used FROM invite_code WHERE creator_user_id = %s AND active = TRUE LIMIT 1",
+                params=(current_user.id,)
+            )
+            invite_code_data = cur.fetchone()
+            
+            # Get referral statistics
+            execute_sql(cur,
+                """SELECT 
+                    COUNT(*) as total_referrals,
+                    COUNT(CASE WHEN referrer_reward_paid = TRUE THEN 1 END) as qualified_referrals,
+                    COUNT(CASE WHEN referrer_reward_paid = FALSE THEN 1 END) as pending_referrals
+                   FROM referrals 
+                   WHERE referrer_user_id = %s""",
+                params=(current_user.id,)
+            )
+            stats = cur.fetchone()
+            
+            # Get list of referred users with their status
+            execute_sql(cur,
+                """SELECT 
+                    u.username,
+                    r.created_at,
+                    r.referrer_reward_paid,
+                    CASE WHEN s.id IS NOT NULL THEN TRUE ELSE FALSE END as has_searchable
+                   FROM referrals r
+                   JOIN users u ON u.id = r.referred_user_id
+                   LEFT JOIN searchable s ON s.user_id = r.referred_user_id AND s.deleted_at IS NULL
+                   WHERE r.referrer_user_id = %s
+                   ORDER BY r.created_at DESC
+                   LIMIT 50""",
+                params=(current_user.id,)
+            )
+            referred_users = cur.fetchall()
+            
+            # Calculate total rewards earned
+            execute_sql(cur,
+                """SELECT COUNT(*) * 50 as total_earned
+                   FROM referrals 
+                   WHERE referrer_user_id = %s AND referrer_reward_paid = TRUE""",
+                params=(current_user.id,)
+            )
+            rewards_earned = cur.fetchone()[0] or 0
+            
+            cur.close()
+            conn.close()
+            
+            return {
+                "success": True,
+                "invite_code": invite_code_data[0] if invite_code_data else None,
+                "stats": {
+                    "total_referrals": stats[0],
+                    "qualified_referrals": stats[1],
+                    "pending_referrals": stats[2],
+                    "total_rewards_earned": float(rewards_earned),
+                    "times_code_used": invite_code_data[1] if invite_code_data else 0
+                },
+                "referred_users": [
+                    {
+                        "username": user[0],
+                        "joined_at": user[1].isoformat() if user[1] else None,
+                        "reward_paid": user[2],
+                        "has_searchable": user[3]
+                    }
+                    for user in referred_users
+                ]
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"Error getting referral stats: {e}")
+            return {
+                "success": False,
+                "message": "Error retrieving referral statistics"
             }, 500
 
 

@@ -1185,6 +1185,73 @@ const mockHandlers = {
     });
   },
   
+  // Generate invite code endpoint
+  'v1/generate-invite-code': () => {
+    console.log('[MOCK] Generating invite code');
+    
+    // Generate a random 6-letter code
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    return createMockResponse({
+      success: true,
+      invite_code: code,
+      message: 'Invite code generated successfully'
+    });
+  },
+  
+  // Referral stats endpoint
+  'v1/referral-stats': () => {
+    console.log('[MOCK] Getting referral stats');
+    
+    return createMockResponse({
+      success: true,
+      invite_code: 'MYCODE',
+      stats: {
+        total_referrals: 5,
+        qualified_referrals: 2,
+        pending_referrals: 3,
+        total_rewards_earned: 100.0,
+        times_code_used: 5
+      },
+      referred_users: [
+        {
+          username: 'user1',
+          joined_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+          reward_paid: true,
+          has_searchable: true
+        },
+        {
+          username: 'user2',
+          joined_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+          reward_paid: true,
+          has_searchable: true
+        },
+        {
+          username: 'user3',
+          joined_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+          reward_paid: false,
+          has_searchable: true
+        },
+        {
+          username: 'user4',
+          joined_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          reward_paid: false,
+          has_searchable: false
+        },
+        {
+          username: 'user5',
+          joined_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+          reward_paid: false,
+          has_searchable: false
+        }
+      ]
+    });
+  },
+  
   // Search/listing endpoints  
   'v1/searchables': (url) => {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
