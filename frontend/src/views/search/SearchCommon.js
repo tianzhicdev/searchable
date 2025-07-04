@@ -68,12 +68,12 @@ const SearchCommon = ({
 
   const handleFindCreators = () => {
     handleNavigationMenuClose();
-    navigateWithStack(history, '/landing?tab=creators');
+    navigateWithStack(history, '/search?tab=creators');
   };
 
   const handleFindContent = () => {
     handleNavigationMenuClose();
-    navigateWithStack(history, '/landing?tab=content');
+    navigateWithStack(history, '/search?tab=content');
   };
 
   // Handle dropdown menu
