@@ -7,7 +7,7 @@ import PublishOfflineSearchable from '../views/searchables/PublishOfflineSearcha
 import PublishDirectSearchable from '../views/searchables/PublishDirectSearchable';
 import Dashboard from '../views/profile/Dashboard';
 import PurchaseRatings from '../views/ratings/PurchaseRatings';
-import Landing from '../views/landing/Landing';
+import Search from '../views/search/Search';
 import DownloadableSearchableDetails from '../views/searchables/DownloadableSearchableDetails';
 import OfflineSearchableDetails from '../views/searchables/OfflineSearchableDetails';
 import DirectSearchableDetails from '../views/searchables/DirectSearchableDetails';
@@ -20,11 +20,11 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/landing', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/dashboard', '/my-purchases', '/my-downloads']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/dashboard', '/my-purchases', '/my-downloads']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
-                    <Route exact path="/landing" component={Landing} />
+                    <Route exact path="/search" component={Search} />
                     <Route exact path="/searchable-item/:id" component={DownloadableSearchableDetails} />
                     <Route exact path="/offline-item/:id" component={OfflineSearchableDetails} />
                     <Route exact path="/direct-item/:id" component={DirectSearchableDetails} />

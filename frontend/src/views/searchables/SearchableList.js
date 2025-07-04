@@ -138,11 +138,11 @@ const SearchableList = ({ criteria }) => {
     // Use the type field from the backend if available, fallback to payload type
     const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
-      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/landing');
+      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/search');
     } else if (itemType === 'direct') {
-      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/landing');
+      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/search');
     } else {
-      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/landing');
+      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/search');
     }
   };
 

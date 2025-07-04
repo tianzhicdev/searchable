@@ -21,27 +21,32 @@ if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
 let branding_config = {
   logo: 'camel_logo.jpg',
   domain: 'silkroadonlightning.com',
+  landingIntro: 'Silk Road on Lightning'
 }
 
 if (APP_BRANDING === 'eccentricprotocol') {
   branding_config = {
     logo: 'eccentricprotocol.gif',
     domain: 'eccentricprotocol.com',
+    landingIntro: 'Eccentric Protocol'
   }
 } else if (APP_BRANDING === 'abitchaotic') {
   branding_config = {
     logo: 'abitchaotic.gif',
     domain: 'abitchaotic.com',
+    landingIntro: 'it is a bit chaotic'
   }
 } else if (APP_BRANDING === 'silkroadonlightning') {
   branding_config = {
     logo: 'camel_logo.jpg',
     domain: 'silkroadonlightning.com',
+    landingIntro: 'Silk Road on Lightning'
   }
 } else if (APP_BRANDING === 'local') {
   branding_config = {
     logo: 'abitchaotic.gif',
     domain: 'localhost',
+    landingIntro: 'it is a bit chaotic'
   }
 }
 
