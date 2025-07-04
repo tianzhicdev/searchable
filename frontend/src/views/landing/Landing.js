@@ -28,10 +28,6 @@ const Landing = () => {
     'Instant payouts, Globally available',
   ];
 
-  const handleLearnMore = () => {
-    history.push('/getting-started');
-  };
-
   const handleJoinNow = () => {
     history.push('/visitor');
   };
@@ -158,16 +154,9 @@ const Landing = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={handleLearnMore}
-            >
-              Learn More
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
               onClick={handleJoinNow}
             >
-              Join Now
+              Enter Marketplace
             </Button>
           </Box>
         </Box>
