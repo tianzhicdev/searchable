@@ -40,19 +40,9 @@ const Landing = () => {
         flexDirection: 'column',
         backgroundImage: `url(${abitchaoticLogo})`,
         backgroundSize: 'contain',
-        backgroundPosition: 'center',
+        backgroundPosition: 'top center',
         backgroundRepeat: 'no-repeat',
         position: 'relative',
-        // '&::before': {
-        //   content: '""',
-        //   position: 'absolute',
-        //   top: 0,
-        //   left: 0,
-        //   right: 0,
-        //   bottom: 0,
-        //   backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        //   zIndex: 1
-        // }
       }}
     >
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
@@ -67,11 +57,6 @@ const Landing = () => {
             py: 4
           }}
         >
-          {/* Logo */}
-          {/* <Box sx={{ mb: 4, maxWidth: isMobile ? '80%' : '60%', width: '100%' }}>
-            <Logo />
-          </Box> */}
-
           {/* Title */}
             <Typography 
             variant={isMobile ? 'h3' : 'h2'} 
