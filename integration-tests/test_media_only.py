@@ -119,7 +119,7 @@ class TestMediaEndpoints:
         
         profile_data = {
             "introduction": f"Profile updated with media URI at {uuid.uuid4()}",
-            "profile_image_uri": media_uri
+            "profile_image_url": media_uri
         }
         
         response = self.client.update_profile(profile_data)

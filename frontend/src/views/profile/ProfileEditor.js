@@ -261,9 +261,9 @@ const ProfileEditor = () => {
         metadata: {}
       };
 
-      // Include profile image URI if selected
+      // Include profile image URL if selected
       if (profileImage) {
-        updateData.profile_image_uri = profileImage;
+        updateData.profile_image_url = profileImage;
       }
 
       // Include additional image URIs

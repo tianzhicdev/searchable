@@ -809,8 +809,15 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
             # Get users with filters
             offset = (page - 1) * limit
             user_query = f"""
-                SELECT DISTINCT u.id, u.username
+                SELECT DISTINCT u.id, u.username, 
+                       up.metadata->>'display_name' as display_name,
+                       up.profile_image_url, 
+                       up.introduction,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r WHERE r.user_id = u.id), 0) as rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r WHERE r.user_id = u.id), 0) as total_ratings,
+                       COALESCE((SELECT COUNT(*) FROM searchables s WHERE s.user_id = u.id AND s.removed = FALSE), 0) as searchable_count
                 FROM users u
+                LEFT JOIN user_profile up ON u.id = up.user_id
                 {'JOIN user_tags ut ON u.id = ut.user_id' if tag_ids else ''}
                 WHERE 1=1
                 {' AND ut.tag_id IN (' + tag_placeholders + ')' if tag_ids else ''}
@@ -837,8 +844,15 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
             # Get users with username filter and published items filter
             offset = (page - 1) * limit
             user_query = """
-                SELECT u.id, u.username
+                SELECT u.id, u.username, 
+                       up.metadata->>'display_name' as display_name,
+                       up.profile_image_url, 
+                       up.introduction,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r WHERE r.user_id = u.id), 0) as rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r WHERE r.user_id = u.id), 0) as total_ratings,
+                       COALESCE((SELECT COUNT(*) FROM searchables s WHERE s.user_id = u.id AND s.removed = FALSE), 0) as searchable_count
                 FROM users u
+                LEFT JOIN user_profile up ON u.id = up.user_id
                 WHERE 1=1
             """
             if where_conditions:
@@ -852,11 +866,18 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
         
         # Get tags for each user
         users = []
-        for user_id, username in user_result:
+        for row in user_result:
+            user_id, username, display_name, profile_image_url, introduction, rating, total_ratings, searchable_count = row
             user_tags = get_user_tags(user_id)
             users.append({
                 'id': user_id,
                 'username': username,
+                'displayName': display_name,
+                'profile_image_url': profile_image_url,
+                'introduction': introduction,
+                'rating': float(rating) if rating else 0.0,
+                'totalRatings': total_ratings or 0,
+                'searchableCount': searchable_count or 0,
                 'tags': user_tags
             })
         

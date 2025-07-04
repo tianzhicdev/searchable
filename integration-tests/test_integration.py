@@ -567,7 +567,7 @@ class TestSearchableIntegration:
         updated_introduction = f"Profile with media URI at {timestamp}"
         updated_data = {
             "introduction": updated_introduction,
-            "profile_image_uri": media_uri
+            "profile_image_url": media_uri
         }
         
         response = self.client.update_user_profile(updated_data)

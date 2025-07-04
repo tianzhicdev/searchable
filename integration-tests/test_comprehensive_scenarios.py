@@ -696,7 +696,7 @@ class TestComprehensiveScenarios:
         profile_data = {
             'username': self.user1_username,
             'introduction': 'Professional digital asset creator with 5+ years experience in design and development.',
-            'profile_image_uri': profile_media['media_uri'],
+            'profile_image_url': profile_media['media_uri'],
             'metadata': {
                 'additional_images': gallery_images
             }
