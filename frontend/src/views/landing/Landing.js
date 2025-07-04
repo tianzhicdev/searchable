@@ -39,10 +39,9 @@ const Landing = () => {
         display: 'flex',
         flexDirection: 'column',
         backgroundImage: `url(${abitchaoticLogo})`,
-        backgroundSize: 'contain',
-        backgroundPosition: 'top center',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        position: 'relative',
       }}
     >
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
