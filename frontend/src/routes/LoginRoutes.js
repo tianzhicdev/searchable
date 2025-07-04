@@ -19,13 +19,11 @@ const LoginRoutes = () => {
     return (
         <Route path={['/login', '/register', '/visitor']}>
                 <Switch location={location} key={location.pathname}>
-                    {/* <NavMotion> */}
                         <GuestGuard>
                             <Route path="/login" component={AuthLogin} />
                             <Route path="/register" component={AuthRegister} />
                         </GuestGuard>
                         <Route path="/visitor" component={VisitorSection} />
-                    {/* </NavMotion> */}
                 </Switch>
         </Route>
     );

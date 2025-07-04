@@ -35,7 +35,7 @@ const VisitorSection = () => {
     const [isCreatingGuest, setIsCreatingGuest] = useState(false);
 
     // Get the intended destination from location state or default to home
-    const intendedDestination = location.state?.from || '/';
+    const intendedDestination = location.state?.from || '/search';
 
     /**
      * Creates a guest account and redirects to the intended destination
