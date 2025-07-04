@@ -12,10 +12,10 @@ const dashboard = {
     type: 'group',
     children: [
         {
-            id: 'landing',
+            id: 'search',
             title: 'Search & Browse',
             type: 'item',
-            url: '/landing',
+            url: '/search',
             icon: icons.IconDashboard,
             breadcrumbs: false
         }
