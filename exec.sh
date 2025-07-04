@@ -48,8 +48,10 @@ show_usage() {
     echo "  ./exec.sh local test --ls                   - List all available individual tests"
     echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
+    echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
-    echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
+    echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
+    echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo ""
@@ -78,8 +80,10 @@ show_usage() {
     echo "  ./exec.sh beta test --t integration"
     echo "  ./exec.sh prod test --t invite_codes"
     echo "  ./exec.sh local test --t mass_withdrawals -n 10"
+    echo "  ./exec.sh local test --parallel"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
+    echo "  ./exec.sh local cicd --sequential"
     echo "  ./exec.sh release"
 }
 
@@ -503,7 +507,13 @@ run_tests() {
     DEFAULT_PASSWORD="TestPass123!" \
     REQUEST_TIMEOUT=30 \
     UPLOAD_TIMEOUT=60 \
-    ./run_comprehensive_tests.sh
+    # Check if parallel flag is set
+    if [ "$2" = "--parallel" ]; then
+        echo -e "${YELLOW}Running tests in parallel mode (4x faster)...${NC}"
+        ./run_parallel_tests.sh
+    else
+        ./run_comprehensive_tests.sh
+    fi
     
     TEST_RESULT=$?
     
@@ -591,6 +601,8 @@ local_mock() {
 
 # Local CI/CD workflow - tear down everything, rebuild, and test
 local_cicd() {
+    local parallel_flag=$1
+    
     # Create reports directory if it doesn't exist
     REPORTS_DIR="$SCRIPT_DIR/cicd_reports"
     mkdir -p "$REPORTS_DIR"
@@ -615,7 +627,11 @@ local_cicd() {
     log_output "  2. 🧹 Remove all Docker volumes and networks"
     log_output "  3. 🏗️  Rebuild and start all containers"
     log_output "  4. ⏳ Wait for services to be ready"
-    log_output "  5. 🧪 Run comprehensive integration tests"
+    if [ "$parallel_flag" = "--parallel" ]; then
+        log_output "  5. 🧪 Run comprehensive integration tests in PARALLEL mode (default)"
+    else
+        log_output "  5. 🧪 Run comprehensive integration tests in SEQUENTIAL mode"
+    fi
     log_output ""
     
     # Confirm before proceeding
@@ -703,13 +719,14 @@ local_cicd() {
     # Create a modified run_tests function that logs output
     run_tests_with_logging() {
         local environment=$1
+        local parallel=$2
         # Redirect all output from run_tests to both console and report file
-        run_tests "$environment" 2>&1 | tee -a "$CICD_REPORT"
+        run_tests "$environment" "$parallel" 2>&1 | tee -a "$CICD_REPORT"
         return ${PIPESTATUS[0]}
     }
     
     # Run local tests with logging
-    run_tests_with_logging "local"
+    run_tests_with_logging "local" "$parallel_flag"
     TEST_RESULT=$?
     
     # Copy individual test logs to the reports directory
@@ -1075,6 +1092,8 @@ case "$ENVIRONMENT" in
                     else
                         run_single_test "local" "$4"
                     fi
+                elif [ "$CONTAINER" = "--parallel" ]; then
+                    run_tests "local" "--parallel"
                 else
                     local_test
                 fi
@@ -1083,7 +1102,12 @@ case "$ENVIRONMENT" in
                 local_mock
                 ;;
             "cicd")
-                local_cicd
+                # Default to parallel mode for cicd
+                if [ "$CONTAINER" = "--sequential" ]; then
+                    local_cicd
+                else
+                    local_cicd "--parallel"
+                fi
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"

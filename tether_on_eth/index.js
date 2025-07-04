@@ -321,7 +321,7 @@ app.post('/send', async (req, res) => {
     await rateLimit();
     console.log(`[${request_id}] Broadcasting signed transaction...`);
     const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log(`[${request_id}] Transaction broadcast complete - Receipt:`, receipt);
+    console.log(`[${request_id}] Transaction broadcast complete to address ${to} - Receipt:`, receipt);
     res.json({ 
       status: 'complete',
       txHash: receipt.transactionHash,
@@ -393,8 +393,33 @@ app.get('/tx-status/:txHash', async (req, res) => {
                               receipt.status === true;
     
     console.log(`[${request_id}] Transaction found - Block: ${receipt.blockNumber}, Status: ${receipt.status} (type: ${typeof receipt.status}), Success: ${transactionSuccess}`);
+    console.log(`[${request_id}] Full receipt:`, JSON.stringify(receipt, null, 2));
     
-    res.json({
+    // Get the transaction details to extract USDT amount
+    let usdtAmount = null;
+    try {
+      const tx = await web3.eth.getTransaction(txHash);
+      if (tx && tx.to && tx.to.toLowerCase() === process.env.USDT_CONTRACT.toLowerCase()) {
+        // This is a USDT transaction, decode the transfer amount
+        const decodedData = usdtContract.methods.transfer(
+          '0x0000000000000000000000000000000000000000',
+          '0'
+        ).encodeABI();
+        
+        if (tx.input && tx.input.startsWith(decodedData.slice(0, 10))) {
+          // Extract the transfer parameters
+          const params = web3.eth.abi.decodeParameters(
+            ['address', 'uint256'],
+            '0x' + tx.input.slice(10)
+          );
+          usdtAmount = params[1]; // This is in wei (6 decimals for USDT)
+        }
+      }
+    } catch (err) {
+      console.error(`[${request_id}] Error extracting USDT amount:`, err);
+    }
+    
+    const response = {
       txHash: txHash,
       status: 'complete',
       // confirmations: confirmations,
@@ -412,7 +437,13 @@ app.get('/tx-status/:txHash', async (req, res) => {
         transactionIndex: receipt.transactionIndex,
         type: receipt.type
       }
-    });
+    };
+    
+    if (usdtAmount !== null) {
+      response.usdtAmount = usdtAmount.toString();
+    }
+    
+    res.json(response);
     
   } catch (error) {
 
