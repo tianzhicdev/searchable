@@ -157,7 +157,7 @@ class DepositStatus(Resource):
             try:
                 # Get deposit record
                 execute_sql(cur, """
-                    SELECT id, amount, currency, status, metadata, created_at
+                    SELECT id, amount, currency, status, metadata, created_at, tx_hash
                     FROM deposit
                     WHERE id = %s AND user_id = %s
                 """, params=(deposit_id, current_user.id))
@@ -166,20 +166,25 @@ class DepositStatus(Resource):
                 if not result:
                     return {"error": "Deposit not found"}, 404
                 
-                dep_id, amount, currency, status, metadata, created_at = result
+                dep_id, amount, currency, status, metadata, created_at, tx_hash = result
                 
                 # Extract address from metadata
                 eth_address = metadata.get('eth_address', '')
                 expires_at = metadata.get('expires_at', '')
                 
-                return {
+                response = {
                     'deposit_id': dep_id,
                     'address': eth_address,
                     'amount': str(amount),
                     'status': status,
                     'expires_at': expires_at,
                     'created_at': created_at.isoformat()
-                }, 200
+                }
+                
+                if tx_hash:
+                    response['tx_hash'] = tx_hash
+                    
+                return response, 200
                 
             finally:
                 cur.close()
@@ -219,7 +224,7 @@ class ListDeposits(Resource):
                 
                 # Get deposits
                 execute_sql(cur, """
-                    SELECT id, amount, currency, status, metadata, created_at
+                    SELECT id, amount, currency, status, metadata, created_at, tx_hash
                     FROM deposit
                     WHERE user_id = %s
                     ORDER BY created_at DESC
@@ -228,19 +233,21 @@ class ListDeposits(Resource):
                 
                 deposits = []
                 for row in cur.fetchall():
-                    dep_id, amount, currency, status, metadata, created_at = row
+                    dep_id, amount, currency, status, metadata, created_at, tx_hash = row
                     
-                    deposits.append({
+                    deposit_data = {
                         'deposit_id': dep_id,
                         'amount': str(amount),
                         'currency': currency,
                         'status': status,
                         'address': metadata.get('eth_address', ''),
-                        'tx_hash': metadata.get('tx_hash'),
+                        'tx_hash': tx_hash,  # Now from column, not metadata
                         'expires_at': metadata.get('expires_at'),
                         'created_at': created_at.isoformat(),
                         'metadata': metadata
-                    })
+                    }
+                    
+                    deposits.append(deposit_data)
                 
                 return {
                     'deposits': deposits,
