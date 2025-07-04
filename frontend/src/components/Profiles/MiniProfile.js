@@ -66,6 +66,16 @@ const MiniProfile = ({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
   
+  // Helper function to get searchable type label
+  const getSearchableTypeLabel = (searchableType) => {
+    const typeLabels = {
+      'offline': 'Offline Store',
+      'direct': 'Direct Payment',
+      'downloadable': 'Digital Products'
+    };
+    return typeLabels[searchableType] || searchableType;
+  };
+  
   // Extract common data based on type
   let title, description, imageUrl, tags, metaInfo, clickPath;
   
@@ -79,7 +89,8 @@ const MiniProfile = ({
       username: data.username,
       userId: data.user_id,
       price: publicData.price,
-      category: publicData.category
+      category: publicData.category,
+      searchableType: publicData.type
     };
     
     // Determine click path based on searchable type
@@ -134,6 +145,12 @@ const MiniProfile = ({
                   userId={metaInfo.userId} 
                   maxLength={30}
                 />
+                
+                {metaInfo.searchableType && (
+                  <Typography variant="body2" style={{ fontWeight: 'bold' }}>
+                    Type: {getSearchableTypeLabel(metaInfo.searchableType)}
+                  </Typography>
+                )}
                 
                 {metaInfo.price && (
                   <Typography variant="body2">
