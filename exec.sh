@@ -50,8 +50,8 @@ show_usage() {
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
-    echo "  ./exec.sh local cicd                        - Full CI/CD: tear down, rebuild, and test locally"
-    echo "  ./exec.sh local cicd --parallel             - Full CI/CD with parallel tests"
+    echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
+    echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo ""
@@ -83,7 +83,7 @@ show_usage() {
     echo "  ./exec.sh local test --parallel"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
-    echo "  ./exec.sh local cicd --parallel"
+    echo "  ./exec.sh local cicd --sequential"
     echo "  ./exec.sh release"
 }
 
@@ -627,7 +627,11 @@ local_cicd() {
     log_output "  2. 🧹 Remove all Docker volumes and networks"
     log_output "  3. 🏗️  Rebuild and start all containers"
     log_output "  4. ⏳ Wait for services to be ready"
-    log_output "  5. 🧪 Run comprehensive integration tests"
+    if [ "$parallel_flag" = "--parallel" ]; then
+        log_output "  5. 🧪 Run comprehensive integration tests in PARALLEL mode (default)"
+    else
+        log_output "  5. 🧪 Run comprehensive integration tests in SEQUENTIAL mode"
+    fi
     log_output ""
     
     # Confirm before proceeding
@@ -1098,10 +1102,11 @@ case "$ENVIRONMENT" in
                 local_mock
                 ;;
             "cicd")
-                if [ "$CONTAINER" = "--parallel" ]; then
-                    local_cicd "--parallel"
-                else
+                # Default to parallel mode for cicd
+                if [ "$CONTAINER" = "--sequential" ]; then
                     local_cicd
+                else
+                    local_cicd "--parallel"
                 fi
                 ;;
             *)
