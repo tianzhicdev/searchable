@@ -171,18 +171,18 @@ class UpdateMyProfile(Resource):
             username = data.get('username')
             introduction = data.get('introduction')
             profile_image_data = data.get('profile_image')  # Legacy base64 support
-            profile_image_uri = data.get('profile_image_uri')  # New URI support
+            profile_image_url = data.get('profile_image_url')  # URL/URI support
             metadata = data.get('metadata', {})
             
             # Handle profile image
-            profile_image_url = None
-            if profile_image_uri:
-                # New URI-based approach - store the URI directly
-                profile_image_url = profile_image_uri
+            final_profile_image_url = None
+            if profile_image_url:
+                # URL/URI approach - store the URL directly
+                final_profile_image_url = profile_image_url
             elif profile_image_data:
                 # Legacy base64 support
-                profile_image_url = validate_and_process_profile_image(profile_image_data)
-                if not profile_image_url:
+                final_profile_image_url = validate_and_process_profile_image(profile_image_data)
+                if not final_profile_image_url:
                     return {"error": "Invalid profile image or file too large"}, 400
             
             # Check if profile exists
@@ -193,7 +193,7 @@ class UpdateMyProfile(Resource):
                 profile = update_user_profile(
                     user_id=user_id,
                     username=username,
-                    profile_image_url=profile_image_url,
+                    profile_image_url=final_profile_image_url,
                     introduction=introduction,
                     metadata=metadata
                 )
@@ -202,7 +202,7 @@ class UpdateMyProfile(Resource):
                 profile = create_user_profile(
                     user_id=user_id,
                     username=username or current_user.username,
-                    profile_image_url=profile_image_url,
+                    profile_image_url=final_profile_image_url,
                     introduction=introduction,
                     metadata=metadata
                 )

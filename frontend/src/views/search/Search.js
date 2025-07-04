@@ -21,7 +21,8 @@ const Landing = () => {
   // Determine which component to show based on URL query parameter
   const searchParams = new URLSearchParams(location.search);
   const tab = searchParams.get('tab');
-  const showCreators = tab === 'creators';
+  // Default to creators tab if no tab specified
+  const showCreators = tab === 'creators' || !tab;
   
   return (
     // <Grid id="search-by-container" container className={classes.container}>
