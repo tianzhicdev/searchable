@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Grid, Typography, Button, Paper, Box, CircularProgress } from '@material-ui/core';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import SearchableDetailsTop from './SearchableDetailsTop';
 import SearchableDetailsPriceDisplay from './SearchableDetailsPriceDisplay';
+import DepositUSDT from './DepositUSDT';
 import useComponentStyles from '../themes/componentStyles';
 import { navigateBack, getBackButtonText } from '../utils/navigationUtils';
 import useSearchableDetails from '../hooks/useSearchableDetails';
@@ -34,6 +35,7 @@ const BaseSearchableDetails = ({
   customLoadingComponent,
 }) => {
   const classes = useComponentStyles();
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   
   const {
     SearchableItem,
@@ -49,6 +51,16 @@ const BaseSearchableDetails = ({
     history,
     location
   } = useSearchableDetails();
+
+  const handleDepositClick = () => {
+    setDepositDialogOpen(true);
+  };
+
+  const handleDepositSuccess = (depositData) => {
+    // Close the dialog after successful deposit
+    setDepositDialogOpen(false);
+    // The user can now use their deposited balance to pay
+  };
 
   // Custom loading component or default
   if (loading) {
@@ -131,6 +143,7 @@ const BaseSearchableDetails = ({
             totalPrice={totalPrice}
             processing={creatingInvoice}
             onPayButtonClick={onPayment}
+            onDepositClick={handleDepositClick}
             isOwner={isOwner}
             onRemoveItem={handleRemoveItem}
             isRemoving={isRemoving}
@@ -166,6 +179,13 @@ const BaseSearchableDetails = ({
           })}
         </Grid>
       )}
+
+      {/* Deposit USDT Dialog */}
+      <DepositUSDT
+        open={depositDialogOpen}
+        onClose={() => setDepositDialogOpen(false)}
+        onSuccess={handleDepositSuccess}
+      />
     </Grid>
   );
 };

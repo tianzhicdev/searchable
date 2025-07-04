@@ -1,11 +1,13 @@
 import React from 'react';
 import { Typography, Box, Button, Divider, CircularProgress } from '@material-ui/core';
 import useComponentStyles from '../themes/componentStyles';
+import PayButton from './PayButton';
 
 const SearchableDetailsPriceDisplay = ({
   totalPrice,
   processing,
   onPayButtonClick,
+  onDepositClick,
   isOwner,
   onRemoveItem,
   isRemoving,
@@ -44,16 +46,13 @@ const SearchableDetailsPriceDisplay = ({
       {/* Payment Button */}
       {!isOwner && (
         <div style={{ margin: '8px', display: 'flex', justifyContent: 'center' }}>
-          <Button
-            variant="outlined"
-            onClick={onPayButtonClick}
-            disabled={processing || disabled || totalPrice === 0}
-            startIcon={processing ? <CircularProgress size={20} /> : null}
-          >
-            <Typography variant="body2" className={classes.staticText}>
-              {processing ? 'Processing...' : payButtonText}
-            </Typography>
-          </Button>
+          <PayButton
+            onCreditCardClick={onPayButtonClick}
+            onDepositClick={onDepositClick}
+            loading={processing}
+            disabled={disabled || totalPrice === 0}
+            buttonText={payButtonText}
+          />
         </div>
       )}
       
