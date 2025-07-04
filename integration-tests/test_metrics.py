@@ -65,6 +65,7 @@ class TestMetrics:
         assert response.status_code == 200
         
         metrics_data = response.json()
+        print(f"Metrics data: {json.dumps(metrics_data, indent=2)}")
         assert 'metrics' in metrics_data
         
         # Find our signup metric
