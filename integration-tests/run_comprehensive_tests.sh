@@ -152,7 +152,7 @@ test_files=(
     "test_social_media_profiles.py"         # Social media profile functionality
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
-    "test_deposits.py"                       # USDT deposit functionality
+    "test_deposits.py"                       # Simple USDT deposit functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_mass_withdrawals.py"              # Mass withdrawal stress testing
     "test_ratings.py"                       # Rating system
