@@ -9,7 +9,7 @@ import {
   useTheme,
   useMediaQuery
 } from '@material-ui/core';
-import configData from '../../config';
+import config from '../../config';
 import Logo from '../../ui-component/Logo';
 import backgroundImage from '../../assets/images/bg.png';
 
@@ -43,7 +43,7 @@ const Landing = () => {
         display: 'flex',
         flexDirection: 'column',
         backgroundImage: `url(${abitchaoticLogo})`,
-        backgroundSize: 'cover',
+        backgroundSize: 'contain',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         position: 'relative',
@@ -77,7 +77,7 @@ const Landing = () => {
           </Box> */}
 
           {/* Title */}
-          <Typography 
+            <Typography 
             variant={isMobile ? 'h3' : 'h2'} 
             component="h1" 
             gutterBottom
@@ -85,7 +85,37 @@ const Landing = () => {
               fontWeight: 'bold', 
               backgroundColor: 'rgba(0, 0, 0, 0.7)',
               mb: 4, 
+              fontSize: isMobile ? '2.5rem' : '3.5rem',
+              // color: 'white',
+              // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            WARP TO THE FUTURE
+          </Typography>
+                      <Typography 
+            variant={isMobile ? 'h3' : 'h2'} 
+            component="h2" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 'bold', 
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              mb: 4, 
               fontSize: isMobile ? '1.5rem' : '2.5rem',
+              // color: 'white',
+              // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            {config.BRANDING_CONFIG.landingIntro}
+          </Typography>
+          <Typography 
+            variant={isMobile ? 'h3' : 'h2'} 
+            component="h2" 
+            gutterBottom
+            sx={{ 
+              // fontWeight: 'bold', 
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              // mb: 4, 
+              // fontSize: isMobile ? '1.5rem' : '2.5rem',
               // color: 'white',
               // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
