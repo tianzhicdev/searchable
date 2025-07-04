@@ -157,6 +157,24 @@ const DownloadableSearchableDetails = () => {
     // Create payment
     handlePayment();
   };
+
+  const handleDepositPayment = async (depositData) => {
+    // Check if price meets minimum payment requirement
+    if (totalPrice < 1) {
+      showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
+      return;
+    }
+
+    // For deposit payments, we show a success message and let the user know to deposit
+    showAlert(`Deposit address created! Send $${totalPrice.toFixed(2)} USDT to complete your purchase.`, "info");
+    
+    // Optionally, you can store the deposit information for tracking
+    console.log('Deposit created for downloadable files:', {
+      depositData,
+      totalPrice,
+      selectedFiles
+    });
+  };
   
   // Function to show alerts
   const showAlert = (message, severity = 'success') => {
@@ -375,8 +393,9 @@ const DownloadableSearchableDetails = () => {
       renderReviewsContent={renderReviewsContent}
       renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
-      totalPrice={totalPrice * 1.035}
-      payButtonText={`Pay ${formatCurrency(totalPrice * 1.035)}`}
+      onDepositPayment={handleDepositPayment}
+      totalPrice={totalPrice}
+      payButtonText="Pay"
       disabled={totalPrice === 0}
     />
   );
