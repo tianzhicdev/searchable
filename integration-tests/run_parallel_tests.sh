@@ -227,22 +227,32 @@ echo ""
 print_color $BLUE "📋 PHASE 2: Parallel Test Groups"
 print_color $YELLOW "Running independent test groups in parallel..."
 
-# Phase 2: Parallel test groups
-declare -A test_groups=(
-    ["basic_features"]="test_tags_basic.py test_social_media_profiles.py test_invite_codes.py test_file_management.py"
-    ["searchable_tests"]="test_offline_searchables.py test_direct_searchables.py test_my_downloads.py"
-    ["search_tests"]="test_tags_comprehensive.py test_search_comprehensive.py"
-    ["financial_tests"]="test_deposits.py test_withdrawals.py test_payment_refresh.py test_invoice_notes.py"
-)
-
-# Start parallel groups
+# Phase 2: Parallel test groups (using arrays instead of associative arrays for compatibility)
 parallel_groups=()
-for group_name in "${!test_groups[@]}"; do
-    IFS=' ' read -ra tests <<< "${test_groups[$group_name]}"
-    print_color $YELLOW "Starting group: $group_name (${tests[*]})"
-    run_test_group "$group_name" "${tests[@]}" &
-    parallel_groups+=("$group_name")
-done
+
+# Group 1: Basic features
+basic_features_tests="test_tags_basic.py test_social_media_profiles.py test_invite_codes.py test_file_management.py"
+print_color $YELLOW "Starting group: basic_features ($basic_features_tests)"
+run_test_group "basic_features" $basic_features_tests &
+parallel_groups+=("basic_features")
+
+# Group 2: Searchable tests
+searchable_tests="test_offline_searchables.py test_direct_searchables.py test_my_downloads.py"
+print_color $YELLOW "Starting group: searchable_tests ($searchable_tests)"
+run_test_group "searchable_tests" $searchable_tests &
+parallel_groups+=("searchable_tests")
+
+# Group 3: Search tests
+search_tests="test_tags_comprehensive.py test_search_comprehensive.py"
+print_color $YELLOW "Starting group: search_tests ($search_tests)"
+run_test_group "search_tests" $search_tests &
+parallel_groups+=("search_tests")
+
+# Group 4: Financial tests
+financial_tests="test_deposits.py test_withdrawals.py test_payment_refresh.py test_invoice_notes.py"
+print_color $YELLOW "Starting group: financial_tests ($financial_tests)"
+run_test_group "financial_tests" $financial_tests &
+parallel_groups+=("financial_tests")
 
 # Wait for Phase 2 completion
 if wait_for_groups "${parallel_groups[@]}"; then
@@ -261,20 +271,20 @@ echo ""
 print_color $BLUE "📋 PHASE 3: Complex Tests"
 print_color $YELLOW "Running complex scenario tests..."
 
-# Phase 3: Complex tests
-declare -A complex_groups=(
-    ["complex_tests"]="test_comprehensive_scenarios.py test_ratings.py"
-    ["metrics_tests"]="test_metrics.py test_grafana.py test_metrics_workflows.py"
-)
-
-# Start complex test groups
+# Phase 3: Complex tests (using arrays instead of associative arrays for compatibility)
 complex_parallel_groups=()
-for group_name in "${!complex_groups[@]}"; do
-    IFS=' ' read -ra tests <<< "${complex_groups[$group_name]}"
-    print_color $YELLOW "Starting group: $group_name (${tests[*]})"
-    run_test_group "$group_name" "${tests[@]}" &
-    complex_parallel_groups+=("$group_name")
-done
+
+# Group 5: Complex tests
+complex_tests="test_comprehensive_scenarios.py test_ratings.py"
+print_color $YELLOW "Starting group: complex_tests ($complex_tests)"
+run_test_group "complex_tests" $complex_tests &
+complex_parallel_groups+=("complex_tests")
+
+# Group 6: Metrics tests
+metrics_tests="test_metrics.py test_grafana.py test_metrics_workflows.py"
+print_color $YELLOW "Starting group: metrics_tests ($metrics_tests)"
+run_test_group "metrics_tests" $metrics_tests &
+complex_parallel_groups+=("metrics_tests")
 
 # Wait for Phase 3 completion
 if wait_for_groups "${complex_parallel_groups[@]}"; then
