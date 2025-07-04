@@ -471,6 +471,7 @@ def check_pending_deposits():
             logger.info(f"Found {len(pending_deposits)} pending deposits to check")
             
             for deposit in pending_deposits:
+                time.sleep(5) # to avoid hitting the USDT service too fast
                 deposit_id, user_id, expected_amount, metadata, created_at = deposit
                 
                 try:
@@ -490,57 +491,91 @@ def check_pending_deposits():
                         logger.error(f"Deposit {deposit_id} missing eth_address in metadata")
                         continue
                     
-                    # Check balance at the deposit address
-                    logger.info(f"Checking balance for deposit {deposit_id} at address {eth_address}")
+                    # Check for transactions to the deposit address
+                    logger.info(f"Checking transactions for deposit {deposit_id} at address {eth_address}")
                     
-                    balance_response = requests.get(
-                        f"{USDT_SERVICE_URL}/balance/{eth_address}",
+                    tx_response = requests.get(
+                        f"{USDT_SERVICE_URL}/transactions/{eth_address}",
                         timeout=10
                     )
                     
-                    if balance_response.status_code != 200:
-                        logger.error(f"Failed to check balance for {eth_address}: {balance_response.text}")
+                    if tx_response.status_code != 200:
+                        logger.error(f"Failed to check transactions for {eth_address}: {tx_response.text}")
                         continue
                     
-                    balance_data = balance_response.json()
-                    balance_wei = int(balance_data['balance'])
+                    tx_data = tx_response.json()
+                    transactions = tx_data.get('transactions', [])
                     
-                    # Convert from wei (6 decimals for USDT) to decimal
-                    balance_usdt = Decimal(balance_wei) / Decimal(10 ** USDT_DECIMALS)
-                    
-                    logger.info(f"Deposit {deposit_id}: found {balance_usdt} USDT")
-                    
-                    # Update checked_at timestamp
-                    metadata['checked_at'] = datetime.utcnow().isoformat()
-                    
-                    # Check if balance meets or exceeds expected amount
-                    if balance_usdt > 0:
-                        logger.info(f"Deposit {deposit_id} has sufficient balance, marking as complete")
-                        
-                        # Update the amount to the actual deposited amount
-                        actual_amount = balance_usdt
-                        
-                        # For now, just mark as complete
-                        metadata['balance_found'] = str(actual_amount)
-                        metadata['completed_at'] = datetime.utcnow().isoformat()
-                        
-                        execute_sql(cur, """
-                            UPDATE deposit 
-                            SET status = 'complete', 
-                                amount = %s,
-                                metadata = %s
-                            WHERE id = %s
-                        """, params=(actual_amount, Json(metadata), deposit_id), commit=True, connection=conn)
-                        
-                        logger.info(f"Deposit {deposit_id} completed successfully")
-                        
-                    else:
-                        # Just update the checked_at timestamp
+                    if not transactions:
+                        # No transactions found, just update checked_at
+                        metadata['checked_at'] = datetime.utcnow().isoformat()
                         execute_sql(cur, """
                             UPDATE deposit 
                             SET metadata = %s
                             WHERE id = %s
                         """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                        continue
+                    
+                    # Sort transactions by block number descending to get the latest
+                    transactions.sort(key=lambda x: int(x.get('blockNumber', 0)), reverse=True)
+                    latest_tx = transactions[0]
+                    
+                    tx_hash = latest_tx['txHash']
+                    tx_value_wei = int(latest_tx['value'])
+                    
+                    # Check the full transaction status to get accurate amount
+                    try:
+                        tx_status_response = requests.get(
+                            f"{USDT_SERVICE_URL}/tx-status/{tx_hash}",
+                            timeout=10
+                        )
+                        if tx_status_response.status_code == 200:
+                            tx_status_data = tx_status_response.json()
+                            if 'usdtAmount' in tx_status_data:
+                                tx_value_wei = int(tx_status_data['usdtAmount'])
+                    except Exception as e:
+                        logger.warning(f"Could not get detailed tx status for {tx_hash}: {e}")
+                    
+                    tx_amount = Decimal(tx_value_wei) / Decimal(10 ** USDT_DECIMALS)
+                    
+                    logger.info(f"Deposit {deposit_id}: Found latest transaction {tx_hash} with amount {tx_amount} USDT")
+                    
+                    # Check if this tx_hash is already used by any deposit
+                    execute_sql(cur, """
+                        SELECT id FROM deposit 
+                        WHERE tx_hash = %s
+                    """, params=(tx_hash,))
+                    
+                    existing_deposit = cur.fetchone()
+                    if existing_deposit:
+                        logger.info(f"Transaction {tx_hash} already credited to deposit {existing_deposit[0]}")
+                        # Update checked_at and continue
+                        metadata['checked_at'] = datetime.utcnow().isoformat()
+                        metadata['skipped_tx'] = tx_hash
+                        execute_sql(cur, """
+                            UPDATE deposit 
+                            SET metadata = %s
+                            WHERE id = %s
+                        """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                        continue
+                    
+                    # Transaction is unique, credit this deposit
+                    metadata['tx_hash'] = tx_hash
+                    metadata['tx_from'] = latest_tx['from']
+                    metadata['tx_amount'] = str(tx_amount)
+                    metadata['tx_block'] = str(latest_tx['blockNumber'])
+                    metadata['completed_at'] = datetime.utcnow().isoformat()
+                    
+                    execute_sql(cur, """
+                        UPDATE deposit 
+                        SET status = 'complete', 
+                            amount = %s,
+                            metadata = %s,
+                            tx_hash = %s
+                        WHERE id = %s
+                    """, params=(tx_amount, Json(metadata), tx_hash, deposit_id), commit=True, connection=conn)
+                    
+                    logger.info(f"Deposit {deposit_id} completed with tx {tx_hash} for {tx_amount} USDT")
                         
                 except Exception as e:
                     logger.error(f"Error processing deposit {deposit_id}: {str(e)}")
