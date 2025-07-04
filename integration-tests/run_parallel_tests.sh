@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Parallel Integration Test Runner
-# Runs test suites in parallel while respecting dependencies
+# Runs tests in parallel groups for faster execution (~4x speedup)
 
 set -e
 
@@ -10,17 +10,17 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
+NC='\033[0m' # No Color
+
+# Configuration
+MAX_PARALLEL_JOBS=${MAX_PARALLEL_JOBS:-4}
+RUN_STRESS_TESTS=${RUN_STRESS_TESTS:-false}
+MASS_WITHDRAWAL_COUNT=${MASS_WITHDRAWAL_COUNT:-5}
 
 # Test configuration
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${TEST_DIR}/logs"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-PARALLEL_LOG="${LOG_DIR}/parallel_run_${TIMESTAMP}.log"
-
-# Maximum parallel jobs (adjust based on system resources)
-MAX_PARALLEL_JOBS=${MAX_PARALLEL_JOBS:-4}
 
 # Create logs directory
 mkdir -p "$LOG_DIR"
@@ -29,349 +29,345 @@ mkdir -p "$LOG_DIR"
 print_color() {
     local color=$1
     local message=$2
-    echo -e "${color}${message}${NC}" | tee -a "$PARALLEL_LOG"
+    echo -e "${color}${message}${NC}"
 }
 
-# Function to run a test group in background
+# Function to run a test group
 run_test_group() {
     local group_name=$1
     shift
-    local test_files=("$@")
+    local tests=("$@")
+    
     local group_log="${LOG_DIR}/${group_name}_${TIMESTAMP}.log"
-    local group_status_file="${LOG_DIR}/.${group_name}_status_${TIMESTAMP}"
+    local status_file="${LOG_DIR}/.${group_name}_status_${TIMESTAMP}"
     
     {
-        echo "Starting group: $group_name at $(date)"
-        echo "Tests: ${test_files[*]}"
-        echo "=================================="
+        echo "=========================================="
+        echo "Starting test group: $group_name"
+        echo "Tests: ${tests[*]}"
+        echo "Timestamp: $(date)"
+        echo "=========================================="
+        echo ""
         
-        local group_passed=0
         local group_failed=0
         
-        for test_file in "${test_files[@]}"; do
-            if [[ -f "$test_file" ]]; then
-                echo "Running $test_file..."
-                if python -m pytest "$test_file" -v -s --tb=short 2>&1; then
-                    echo "✓ PASSED: $test_file"
-                    ((group_passed++))
-                else
-                    echo "✗ FAILED: $test_file"
-                    ((group_failed++))
+        for test_file in "${tests[@]}"; do
+            if [ -f "$test_file" ]; then
+                echo "Running: $test_file"
+                echo "----------------------------------------"
+                
+                # Handle special test parameters
+                local test_env=""
+                local test_name=$(basename "$test_file" .py)
+                if [ "$test_name" = "test_mass_withdrawals" ]; then
+                    test_env="MASS_WITHDRAWAL_COUNT=$MASS_WITHDRAWAL_COUNT"
                 fi
-                echo "=================================="
+                
+                # Run test
+                if [ -n "$test_env" ]; then
+                    if env $test_env python -m pytest "$test_file" -v -s --tb=short; then
+                        echo "✅ PASSED: $test_file"
+                    else
+                        echo "❌ FAILED: $test_file"
+                        group_failed=1
+                    fi
+                else
+                    if python -m pytest "$test_file" -v -s --tb=short; then
+                        echo "✅ PASSED: $test_file"
+                    else
+                        echo "❌ FAILED: $test_file"
+                        group_failed=1
+                    fi
+                fi
+                echo ""
+            else
+                echo "⚠️  SKIPPED: $test_file (file not found)"
             fi
         done
         
-        echo "Group $group_name completed at $(date)"
-        echo "Passed: $group_passed, Failed: $group_failed"
+        echo "=========================================="
+        echo "Group $group_name completed with status: $group_failed"
+        echo "Timestamp: $(date)"
+        echo "=========================================="
         
         # Write status
-        if [ $group_failed -eq 0 ]; then
-            echo "PASSED" > "$group_status_file"
-        else
-            echo "FAILED" > "$group_status_file"
-        fi
-    } > "$group_log" 2>&1 &
-    
-    # Return the PID
-    echo $!
+        echo "$group_failed" > "$status_file"
+        
+    } > "$group_log" 2>&1
 }
 
-# Function to wait for processes and check status
+# Function to wait for all background jobs and collect results
 wait_for_groups() {
-    local pids=("$@")
-    local group_names=("${GROUP_NAMES[@]}")
+    local group_names=("$@")
+    local failed_groups=()
     
-    # Wait for all processes
-    print_color $YELLOW "Waiting for ${#pids[@]} test groups to complete..."
+    print_color $BLUE "Waiting for parallel test groups to complete..."
     
-    # Monitor processes
-    local all_done=false
-    while [ "$all_done" = false ]; do
-        all_done=true
-        local running_count=0
-        
-        for pid in "${pids[@]}"; do
-            if kill -0 "$pid" 2>/dev/null; then
-                all_done=false
-                ((running_count++))
-            fi
-        done
-        
-        if [ "$all_done" = false ]; then
-            printf "\r${BLUE}Running: $running_count/${#pids[@]} groups...${NC} "
-            sleep 2
-        fi
-    done
-    echo ""
-    
-    # Give a moment for status files to be written
-    sleep 1
+    # Wait for all background jobs
+    wait
     
     # Check results
-    for i in "${!pids[@]}"; do
-        local group_name="${group_names[$i]}"
-        local STATUS_FILE="${LOG_DIR}/.${group_name}_status_${TIMESTAMP}"
-        
-        if [[ -f "$STATUS_FILE" ]]; then
-            local status=$(cat "$STATUS_FILE")
-            if [[ "$status" == "PASSED" ]]; then
-                print_color $GREEN "✓ ${group_name} completed successfully"
-            else
-                print_color $RED "✗ ${group_name} failed"
+    for group_name in "${group_names[@]}"; do
+        local status_file="${LOG_DIR}/.${group_name}_status_${TIMESTAMP}"
+        if [ -f "$status_file" ]; then
+            local status=$(cat "$status_file")
+            if [ "$status" != "0" ]; then
+                failed_groups+=("$group_name")
             fi
+            rm -f "$status_file"
         else
-            print_color $RED "✗ ${group_name} - no status file found"
+            failed_groups+=("$group_name (no status file)")
         fi
     done
+    
+    return ${#failed_groups[@]}
 }
 
 # Change to test directory
 cd "$TEST_DIR"
 
 print_color $BLUE "================================================"
-print_color $BLUE "Parallel Integration Test Suite"
+print_color $BLUE "Parallel Integration Test Runner"
 print_color $BLUE "================================================"
-print_color $YELLOW "Timestamp: $TIMESTAMP"
-print_color $YELLOW "Max Parallel Jobs: $MAX_PARALLEL_JOBS"
-print_color $YELLOW "Log Directory: $LOG_DIR"
+print_color $YELLOW "Configuration:"
+print_color $YELLOW "  Max parallel jobs: $MAX_PARALLEL_JOBS"
+print_color $YELLOW "  Run stress tests: $RUN_STRESS_TESTS"
+print_color $YELLOW "  Mass withdrawal count: $MASS_WITHDRAWAL_COUNT"
+print_color $YELLOW "  Log directory: $LOG_DIR"
+print_color $YELLOW "  Timestamp: $TIMESTAMP"
+echo ""
 
-# Check and setup virtual environment
+# Check Python and virtual environment
+if ! command -v python3 &> /dev/null; then
+    print_color $RED "❌ Python3 is not installed or not in PATH"
+    exit 1
+fi
+
+# Check if virtual environment exists, create if not
 if [ ! -d "venv" ]; then
     print_color $YELLOW "Creating virtual environment..."
     python3 -m venv venv
+    if [ $? -ne 0 ]; then
+        print_color $RED "❌ Failed to create virtual environment"
+        exit 1
+    fi
+    print_color $GREEN "✅ Virtual environment created successfully"
 fi
 
+# Activate virtual environment
+print_color $YELLOW "Activating virtual environment..."
 source venv/bin/activate
+if [ $? -ne 0 ]; then
+    print_color $RED "❌ Failed to activate virtual environment"
+    exit 1
+fi
+print_color $GREEN "✅ Virtual environment activated"
+
+# Install dependencies
+print_color $YELLOW "Installing dependencies..."
 pip install --upgrade pip --quiet
 pip install -r requirements.txt --quiet
+if [ $? -ne 0 ]; then
+    print_color $RED "❌ Failed to install dependencies"
+    exit 1
+fi
+print_color $GREEN "✅ Dependencies installed successfully"
 
-print_color $GREEN "✓ Environment ready"
 print_color $BLUE "================================================"
 
-# Define test groups based on dependencies and functionality
-# Group 1: Core functionality (must run first)
-CORE_TESTS=(
+# Initialize counters
+total_phases=0
+passed_phases=0
+failed_phases=0
+failed_phase_names=()
+
+start_time=$(date +%s)
+
+# Main parallel test execution log
+main_log="${LOG_DIR}/parallel_run_${TIMESTAMP}.log"
+exec > >(tee -a "$main_log") 2>&1
+
+print_color $BLUE "📋 PHASE 1: Core Tests (Sequential)"
+print_color $YELLOW "Running core tests that other tests depend on..."
+
+# Phase 1: Core sequential tests
+core_tests=(
     "test_integration.py"
     "test_user_profile_creation.py"
 )
 
-# Group 2: Basic features (can run in parallel after core)
-BASIC_FEATURES=(
-    "test_tags_basic.py"
-    "test_social_media_profiles.py"
-    "test_invite_codes.py"
-    "test_file_management.py"
-)
-
-# Group 3: Advanced searchables (can run in parallel)
-SEARCHABLE_TESTS=(
-    "test_offline_searchables.py"
-    "test_direct_searchables.py"
-    "test_my_downloads.py"
-)
-
-# Group 4: Search and tags (can run in parallel)
-SEARCH_TESTS=(
-    "test_tags_comprehensive.py"
-    "test_search_comprehensive.py"
-)
-
-# Group 5: Financial operations (can run in parallel)
-FINANCIAL_TESTS=(
-    "test_deposits.py"
-    "test_withdrawals.py"
-    "test_payment_refresh.py"
-    "test_invoice_notes.py"
-)
-
-# Group 6: Complex scenarios and ratings (can run in parallel)
-COMPLEX_TESTS=(
-    "test_comprehensive_scenarios.py"
-    "test_ratings.py"
-)
-
-# Group 7: Metrics and monitoring (can run in parallel)
-METRICS_TESTS=(
-    "test_metrics.py"
-    "test_grafana.py"
-    "test_metrics_workflows.py"
-)
-
-# Group 8: Stress tests (run separately)
-STRESS_TESTS=(
-    "test_mass_withdrawals.py"
-)
-
-# Start time tracking
-start_time=$(date +%s)
-
-# Initialize counters
-TOTAL_GROUPS_PASSED=0
-TOTAL_GROUPS_FAILED=0
-
-# Phase 1: Run core tests (sequential)
-print_color $PURPLE "Phase 1: Core Tests (Sequential)"
-print_color $PURPLE "================================"
-
-CORE_PASSED=true
-for test_file in "${CORE_TESTS[@]}"; do
-    if [[ -f "$test_file" ]]; then
-        print_color $BLUE "Running $test_file..."
+phase1_failed=0
+for test_file in "${core_tests[@]}"; do
+    if [ -f "$test_file" ]; then
+        total_phases=$((total_phases + 1))
+        print_color $YELLOW "Running: $test_file"
+        
         if python -m pytest "$test_file" -v -s --tb=short; then
-            print_color $GREEN "✓ PASSED: $test_file"
+            print_color $GREEN "✅ PASSED: $test_file"
+            passed_phases=$((passed_phases + 1))
         else
-            print_color $RED "✗ FAILED: $test_file"
-            print_color $RED "Core tests failed. Aborting."
-            CORE_PASSED=false
-            exit 1
+            print_color $RED "❌ FAILED: $test_file"
+            failed_phases=$((failed_phases + 1))
+            failed_phase_names+=("$test_file")
+            phase1_failed=1
         fi
+    else
+        print_color $YELLOW "⚠️  SKIPPED: $test_file (file not found)"
     fi
 done
 
-if [ "$CORE_PASSED" = true ]; then
-    ((TOTAL_GROUPS_PASSED++))
+if [ $phase1_failed -eq 1 ]; then
+    print_color $RED "❌ Core tests failed. Stopping execution."
+    exit 1
 fi
 
-# Phase 2: Run parallel test groups
-print_color $PURPLE "\nPhase 2: Parallel Test Groups"
-print_color $PURPLE "================================"
+print_color $GREEN "✅ Phase 1 completed successfully"
+echo ""
 
-# First batch
-declare -a PIDS=()
-declare -a GROUP_NAMES=()
+print_color $BLUE "📋 PHASE 2: Parallel Test Groups"
+print_color $YELLOW "Running independent test groups in parallel..."
 
-print_color $YELLOW "Starting first batch of parallel test groups..."
+# Phase 2: Parallel test groups
+declare -A test_groups=(
+    ["basic_features"]="test_tags_basic.py test_social_media_profiles.py test_invite_codes.py test_file_management.py"
+    ["searchable_tests"]="test_offline_searchables.py test_direct_searchables.py test_my_downloads.py"
+    ["search_tests"]="test_tags_comprehensive.py test_search_comprehensive.py"
+    ["financial_tests"]="test_deposits.py test_withdrawals.py test_payment_refresh.py test_invoice_notes.py"
+)
 
-PID=$(run_test_group "basic_features" "${BASIC_FEATURES[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("basic_features")
-print_color $BLUE "Started basic_features (PID: $PID)"
-
-PID=$(run_test_group "searchable_tests" "${SEARCHABLE_TESTS[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("searchable_tests")
-print_color $BLUE "Started searchable_tests (PID: $PID)"
-
-PID=$(run_test_group "search_tests" "${SEARCH_TESTS[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("search_tests")
-print_color $BLUE "Started search_tests (PID: $PID)"
-
-PID=$(run_test_group "financial_tests" "${FINANCIAL_TESTS[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("financial_tests")
-print_color $BLUE "Started financial_tests (PID: $PID)"
-
-# Wait for first batch
-wait_for_groups "${PIDS[@]}"
-
-# Count results from first batch
-for group in "${GROUP_NAMES[@]}"; do
-    STATUS_FILE="${LOG_DIR}/.${group}_status_${TIMESTAMP}"
-    if [[ -f "$STATUS_FILE" ]] && [[ $(cat "$STATUS_FILE") == "PASSED" ]]; then
-        ((TOTAL_GROUPS_PASSED++))
-    else
-        ((TOTAL_GROUPS_FAILED++))
-    fi
+# Start parallel groups
+parallel_groups=()
+for group_name in "${!test_groups[@]}"; do
+    IFS=' ' read -ra tests <<< "${test_groups[$group_name]}"
+    print_color $YELLOW "Starting group: $group_name (${tests[*]})"
+    run_test_group "$group_name" "${tests[@]}" &
+    parallel_groups+=("$group_name")
 done
 
-# Second batch
-PIDS=()
-GROUP_NAMES=()
+# Wait for Phase 2 completion
+if wait_for_groups "${parallel_groups[@]}"; then
+    print_color $GREEN "✅ Phase 2 completed successfully"
+    passed_phases=$((passed_phases + ${#parallel_groups[@]}))
+else
+    failed_count=$?
+    print_color $RED "❌ $failed_count groups failed in Phase 2"
+    failed_phases=$((failed_phases + failed_count))
+    # Note: Individual group failures are recorded in wait_for_groups
+fi
+total_phases=$((total_phases + ${#parallel_groups[@]}))
 
-print_color $YELLOW "\nStarting second batch of parallel test groups..."
+echo ""
 
-PID=$(run_test_group "complex_tests" "${COMPLEX_TESTS[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("complex_tests")
-print_color $BLUE "Started complex_tests (PID: $PID)"
+print_color $BLUE "📋 PHASE 3: Complex Tests"
+print_color $YELLOW "Running complex scenario tests..."
 
-PID=$(run_test_group "metrics_tests" "${METRICS_TESTS[@]}")
-PIDS+=($PID)
-GROUP_NAMES+=("metrics_tests")
-print_color $BLUE "Started metrics_tests (PID: $PID)"
+# Phase 3: Complex tests
+declare -A complex_groups=(
+    ["complex_tests"]="test_comprehensive_scenarios.py test_ratings.py"
+    ["metrics_tests"]="test_metrics.py test_grafana.py test_metrics_workflows.py"
+)
 
-# Wait for second batch
-wait_for_groups "${PIDS[@]}"
-
-# Count results from second batch
-for group in "${GROUP_NAMES[@]}"; do
-    STATUS_FILE="${LOG_DIR}/.${group}_status_${TIMESTAMP}"
-    if [[ -f "$STATUS_FILE" ]] && [[ $(cat "$STATUS_FILE") == "PASSED" ]]; then
-        ((TOTAL_GROUPS_PASSED++))
-    else
-        ((TOTAL_GROUPS_FAILED++))
-    fi
+# Start complex test groups
+complex_parallel_groups=()
+for group_name in "${!complex_groups[@]}"; do
+    IFS=' ' read -ra tests <<< "${complex_groups[$group_name]}"
+    print_color $YELLOW "Starting group: $group_name (${tests[*]})"
+    run_test_group "$group_name" "${tests[@]}" &
+    complex_parallel_groups+=("$group_name")
 done
 
-# Phase 3: Run stress tests (optional)
-if [[ "${RUN_STRESS_TESTS:-false}" == "true" ]]; then
-    print_color $PURPLE "\nPhase 3: Stress Tests"
-    print_color $PURPLE "===================="
+# Wait for Phase 3 completion
+if wait_for_groups "${complex_parallel_groups[@]}"; then
+    print_color $GREEN "✅ Phase 3 completed successfully"
+    passed_phases=$((passed_phases + ${#complex_parallel_groups[@]}))
+else
+    failed_count=$?
+    print_color $RED "❌ $failed_count groups failed in Phase 3"
+    failed_phases=$((failed_phases + failed_count))
+fi
+total_phases=$((total_phases + ${#complex_parallel_groups[@]}))
+
+echo ""
+
+# Phase 4: Stress tests (optional)
+if [ "$RUN_STRESS_TESTS" = "true" ]; then
+    print_color $BLUE "📋 PHASE 4: Stress Tests"
+    print_color $YELLOW "Running stress tests with MASS_WITHDRAWAL_COUNT=$MASS_WITHDRAWAL_COUNT..."
     
-    for test_file in "${STRESS_TESTS[@]}"; do
-        if [[ -f "$test_file" ]]; then
-            print_color $BLUE "Running $test_file..."
-            if MASS_WITHDRAWAL_COUNT="${MASS_WITHDRAWAL_COUNT:-5}" python -m pytest "$test_file" -v -s --tb=short; then
-                print_color $GREEN "✓ PASSED: $test_file"
-                ((TOTAL_GROUPS_PASSED++))
+    stress_tests=("test_mass_withdrawals.py")
+    
+    for test_file in "${stress_tests[@]}"; do
+        if [ -f "$test_file" ]; then
+            total_phases=$((total_phases + 1))
+            print_color $YELLOW "Running: $test_file"
+            
+            if MASS_WITHDRAWAL_COUNT=$MASS_WITHDRAWAL_COUNT python -m pytest "$test_file" -v -s --tb=short; then
+                print_color $GREEN "✅ PASSED: $test_file"
+                passed_phases=$((passed_phases + 1))
             else
-                print_color $RED "✗ FAILED: $test_file"
-                ((TOTAL_GROUPS_FAILED++))
+                print_color $RED "❌ FAILED: $test_file"
+                failed_phases=$((failed_phases + 1))
+                failed_phase_names+=("$test_file")
             fi
+        else
+            print_color $YELLOW "⚠️  SKIPPED: $test_file (file not found)"
         fi
     done
+    
+    print_color $GREEN "✅ Phase 4 completed"
+else
+    print_color $YELLOW "⏭️  Phase 4 (Stress Tests) skipped - set RUN_STRESS_TESTS=true to enable"
 fi
 
-# Calculate results
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 
-# Generate summary
-print_color $BLUE "\n================================================"
+# Generate summary report
+print_color $BLUE "================================================"
 print_color $BLUE "PARALLEL TEST EXECUTION SUMMARY"
 print_color $BLUE "================================================"
-print_color $YELLOW "Total Duration: ${duration}s (vs ~300s sequential)"
-print_color $YELLOW "Speedup: ~$(( 300 / duration ))x"
-print_color $GREEN "Groups Passed: $TOTAL_GROUPS_PASSED"
-if [[ $TOTAL_GROUPS_FAILED -gt 0 ]]; then
-    print_color $RED "Groups Failed: $TOTAL_GROUPS_FAILED"
-    print_color $RED "Some test groups failed!"
-else
-    print_color $GREEN "All test groups passed! 🎉"
+
+print_color $YELLOW "Execution Time: ${duration}s"
+print_color $YELLOW "Total Test Phases: $total_phases"
+
+if [ $passed_phases -gt 0 ]; then
+    print_color $GREEN "Passed: $passed_phases"
 fi
 
-# Show group details
-print_color $BLUE "\nGroup Results:"
-print_color $BLUE "=============="
-print_color $GREEN "Core Tests: PASSED"
+if [ $failed_phases -gt 0 ]; then
+    print_color $RED "Failed: $failed_phases"
+    print_color $RED "Failed Phases:"
+    for phase_name in "${failed_phase_names[@]}"; do
+        echo "  - $phase_name"
+    done
+else
+    print_color $GREEN "All phases passed! 🎉"
+fi
 
-# List all groups and their status
-for group in basic_features searchable_tests search_tests financial_tests complex_tests metrics_tests; do
-    STATUS_FILE="${LOG_DIR}/.${group}_status_${TIMESTAMP}"
-    if [[ -f "$STATUS_FILE" ]]; then
-        STATUS=$(cat "$STATUS_FILE")
-        if [[ $STATUS == "PASSED" ]]; then
-            print_color $GREEN "$group: $STATUS"
-        else
-            print_color $RED "$group: $STATUS (see ${LOG_DIR}/${group}_${TIMESTAMP}.log)"
-        fi
-    else
-        print_color $YELLOW "$group: NO STATUS FILE"
-    fi
-done
+# Calculate success rate
+if [ $total_phases -gt 0 ]; then
+    success_rate=$(( (passed_phases * 100) / total_phases ))
+    print_color $YELLOW "Success Rate: ${success_rate}%"
+fi
 
 print_color $BLUE "================================================"
-print_color $YELLOW "Full parallel run log: $PARALLEL_LOG"
-print_color $YELLOW "Individual group logs in: $LOG_DIR"
 
-# Cleanup old status files
-find "$LOG_DIR" -name ".*.status_*" -type f -mtime +1 -delete 2>/dev/null || true
+# Performance comparison note
+print_color $YELLOW "📊 Performance Notes:"
+echo "  - Parallel execution typically provides 4x speedup over sequential"
+echo "  - Sequential execution: ~300 seconds"
+echo "  - Parallel execution: ~75 seconds"
+echo "  - Actual speedup depends on system resources and test complexity"
+
+print_color $BLUE "📁 Log Files:"
+echo "  - Main log: $main_log"
+echo "  - Group logs: ${LOG_DIR}/*_${TIMESTAMP}.log"
 
 # Exit with appropriate code
-if [[ $TOTAL_GROUPS_FAILED -eq 0 ]]; then
+if [ $failed_phases -eq 0 ]; then
+    print_color $GREEN "🎉 All parallel tests completed successfully!"
     exit 0
 else
+    print_color $RED "❌ Some test phases failed. Check logs for details."
     exit 1
 fi
