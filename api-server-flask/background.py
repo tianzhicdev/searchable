@@ -471,6 +471,7 @@ def check_pending_deposits():
             logger.info(f"Found {len(pending_deposits)} pending deposits to check")
             
             for deposit in pending_deposits:
+                time.sleep(5) # to avoid hitting the USDT service too fast
                 deposit_id, user_id, expected_amount, metadata, created_at = deposit
                 
                 try:
