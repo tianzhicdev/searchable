@@ -19,6 +19,7 @@ class PaymentStatus(Enum):
 
 class PaymentType(Enum):
     STRIPE = 'stripe'
+    BALANCE = 'balance'
 
 class Currency(Enum):
     USD = 'usd'

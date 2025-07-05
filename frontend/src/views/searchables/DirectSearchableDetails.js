@@ -17,6 +17,7 @@ const DirectSearchableDetails = () => {
     SearchableItem, 
     isOwner, 
     createInvoice,
+    createBalancePayment,
     formatCurrency,
     publicData 
   } = useSearchableDetails();
@@ -97,6 +98,30 @@ const DirectSearchableDetails = () => {
     // For now, we just acknowledge the deposit address was created
   };
 
+  const handleBalancePayment = async () => {
+    if (!paymentAmount || paymentAmount <= 0) {
+      setPaymentError('Please enter a valid amount');
+      return;
+    }
+
+    setPaymentError(null);
+
+    try {
+      // Create balance payment with the selected amount
+      const invoiceData = {
+        selections: [{
+          amount: paymentAmount,
+          type: 'direct'
+        }],
+        total_price: paymentAmount
+      };
+
+      await createBalancePayment(invoiceData);
+    } catch (err) {
+      setPaymentError(err.message);
+    }
+  };
+
   // Render type-specific content for direct payment
   const renderDirectPaymentContent = ({ isOwner }) => (
     !isOwner && (
@@ -160,6 +185,7 @@ const DirectSearchableDetails = () => {
       renderTypeSpecificContent={renderDirectPaymentContent}
       onPayment={handlePayment}
       onDepositPayment={handleDepositPayment}
+      onBalancePayment={handleBalancePayment}
       totalPrice={paymentAmount}
       payButtonText="Pay"
       disabled={!paymentAmount || paymentAmount <= 0}

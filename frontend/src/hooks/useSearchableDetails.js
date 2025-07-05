@@ -25,6 +25,10 @@ const useSearchableDetails = () => {
   // Rating states
   const [searchableRating, setSearchableRating] = useState(null);
   const [loadingRatings, setLoadingRatings] = useState(true);
+  
+  // Balance state
+  const [userBalance, setUserBalance] = useState(0);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
   // Common data fetching functions
   const fetchSearchableDetails = async () => {
@@ -63,6 +67,24 @@ const useSearchableDetails = () => {
     } catch (err) {
       console.error("Error refreshing payments for searchable:", err);
       // Don't show an alert as this is a background operation
+    }
+  };
+
+  const fetchUserBalance = async () => {
+    if (!account || !account.user) {
+      return;
+    }
+    
+    setLoadingBalance(true);
+    try {
+      const response = await backend.get('balance');
+      // Balance response format: { "usd": 123.45 }
+      setUserBalance(response.data.usd || 0);
+    } catch (err) {
+      console.error("Error fetching user balance:", err);
+      setUserBalance(0);
+    } finally {
+      setLoadingBalance(false);
     }
   };
 
@@ -117,6 +139,38 @@ const useSearchableDetails = () => {
     }
   };
 
+  // Create balance payment
+  const createBalancePayment = async (invoiceData) => {
+    setCreatingInvoice(true);
+    try {
+      const payload = {
+        searchable_id: parseInt(id),
+        invoice_type: 'balance',
+        ...invoiceData
+      };
+
+      // Add address and tel for logged-in users
+      if (account?.user) {
+        payload.delivery_info = {
+          address: account.user.address || '',
+          tel: account.user.tel || ''
+        };
+      }
+
+      const response = await backend.post('v1/create-balance-invoice', payload);
+
+      if (response.data.success) {
+        // Payment successful - refresh balance and redirect
+        await fetchUserBalance();
+        window.location.href = `${window.location.origin}${window.location.pathname}?payment=success&type=balance`;
+      }
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message || 'Failed to process balance payment');
+    } finally {
+      setCreatingInvoice(false);
+    }
+  };
+
   // Common format currency function
   const formatCurrency = (amount) => {
     return `$${amount.toFixed(2)}`;
@@ -127,7 +181,13 @@ const useSearchableDetails = () => {
     fetchSearchableDetails();
     refreshPaymentsBySearchable();
     fetchRatings();
+    fetchUserBalance();
   }, [id]);
+  
+  // Refresh balance when account changes
+  useEffect(() => {
+    fetchUserBalance();
+  }, [account]);
 
   return {
     // State
@@ -139,6 +199,8 @@ const useSearchableDetails = () => {
     creatingInvoice,
     searchableRating,
     loadingRatings,
+    userBalance,
+    loadingBalance,
     
     // Computed values
     publicData: SearchableItem?.payloads?.public || {},
@@ -149,7 +211,9 @@ const useSearchableDetails = () => {
     refreshPaymentsBySearchable,
     handleRemoveItem,
     createInvoice,
+    createBalancePayment,
     formatCurrency,
+    fetchUserBalance,
     
     // Utils
     setError,

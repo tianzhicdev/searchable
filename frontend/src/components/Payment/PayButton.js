@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Menu,
@@ -11,6 +11,7 @@ import {
 import {
   CreditCard as CreditCardIcon,
   AccountBalanceWallet as WalletIcon,
+  AccountBalance as BalanceIcon,
   ExpandMore as ExpandMoreIcon
 } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
@@ -18,7 +19,7 @@ import DepositComponent from '../Deposit/DepositComponent';
 
 /**
  * PayButton Component
- * Provides two payment options: Credit Card (Stripe) and USDT Deposit
+ * Provides three payment options: Credit Card (Stripe), USDT Deposit, and Balance
  * Used across all searchable details pages
  */
 const PayButton = ({
@@ -26,6 +27,8 @@ const PayButton = ({
   processing = false,
   onCreditCardPayment,
   onDepositPayment,
+  onBalancePayment,
+  userBalance = 0,
   disabled = false,
   payButtonText = "Pay",
   showPaymentSummary = true,
@@ -64,11 +67,21 @@ const PayButton = ({
     setDepositDialogOpen(true);
   };
 
+  const handleBalanceClick = () => {
+    handleMenuClose();
+    if (onBalancePayment) {
+      onBalancePayment();
+    }
+  };
+
   const handleDepositCreated = (depositData) => {
     if (onDepositPayment) {
       onDepositPayment(depositData);
     }
   };
+
+  // Check if user can pay with balance
+  const canPayWithBalance = userBalance >= totalPrice;
 
   // If totalPrice is 0 or disabled, show disabled button
   if (totalPrice === 0 || disabled) {
@@ -103,8 +116,13 @@ const PayButton = ({
           </Typography>
           <Divider />
           <Typography variant="body1" className={classes.userText}>
-            Total to Pay: {formatCurrency(totalPrice * 1.035)}
+            Total with Card: {formatCurrency(totalPrice * 1.035)}
           </Typography>
+          {canPayWithBalance && (
+            <Typography variant="body2" className={classes.userText} color="primary">
+              Pay with Balance: {formatCurrency(totalPrice)} (No fees!)
+            </Typography>
+          )}
         </Box>
       )}
 
@@ -162,6 +180,20 @@ const PayButton = ({
             </Typography>
           </Box>
         </MenuItem>
+        
+        {canPayWithBalance && (
+          <MenuItem onClick={handleBalanceClick}>
+            <BalanceIcon />
+            <Box ml={1}>
+              <Typography variant="body2" className={classes.staticText}>
+                Pay with Balance
+              </Typography>
+              <Typography variant="caption" className={classes.userText}>
+                Available: {formatCurrency(userBalance)} (No fees!)
+              </Typography>
+            </Box>
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Deposit Dialog */}
