@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS invoice (
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
     currency TEXT NOT NULL CHECK (currency = 'usd'),
-    type TEXT NOT NULL CHECK (type = 'stripe'),
+    type TEXT NOT NULL CHECK (type IN ('stripe', 'balance')),
     external_id TEXT NOT NULL UNIQUE, -- Stripe session ID
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS payment (
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
     currency TEXT NOT NULL CHECK (currency = 'usd'),
-    type TEXT NOT NULL CHECK (type = 'stripe'),
+    type TEXT NOT NULL CHECK (type IN ('stripe', 'balance')),
     external_id TEXT, -- External payment ID if available
     status TEXT NOT NULL CHECK (status IN ('pending','complete', 'delayed', 'error')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -429,6 +429,7 @@ CREATE TABLE IF NOT EXISTS deposit (
     currency TEXT NOT NULL DEFAULT 'usdt',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     external_id TEXT UNIQUE,
+    tx_hash TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'complete', 'failed')),
     metadata JSONB NOT NULL DEFAULT '{}'
 );
@@ -441,10 +442,6 @@ CREATE INDEX IF NOT EXISTS idx_deposit_external_id ON deposit(external_id);
 
 -- Add comment explaining metadata fields
 COMMENT ON COLUMN deposit.metadata IS 'Contains: eth_address, private_key (encrypted), tx_hash, confirmations, expires_at, checked_at, error';
-
--- Add tx_hash column to deposit table
-ALTER TABLE deposit 
-ADD COLUMN IF NOT EXISTS tx_hash TEXT;
 
 -- Create unique index on tx_hash (excluding NULL values)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_deposit_tx_hash 
