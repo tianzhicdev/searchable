@@ -94,17 +94,19 @@ const PayButton = ({
   // If totalPrice is 0 or disabled, show disabled button
   if (totalPrice === 0 || disabled) {
     return (
-      <Button
-        variant={variant}
-        disabled={true}
-        fullWidth={fullWidth}
-        size={size}
-        startIcon={processing ? <CircularProgress size={20} /> : null}
-      >
-        <Typography variant="body2" className={classes.staticText}>
-          {processing ? 'Processing...' : payButtonText}
-        </Typography>
-      </Button>
+      <Box mt={2} display="flex" justifyContent="center">
+        <Button
+          variant={variant}
+          disabled={true}
+          fullWidth={fullWidth}
+          size={size}
+          startIcon={processing ? <CircularProgress size={20} /> : null}
+        >
+          <Typography variant="body2" className={classes.staticText}>
+            {processing ? 'Processing...' : payButtonText}
+          </Typography>
+        </Button>
+      </Box>
     );
   }
 
