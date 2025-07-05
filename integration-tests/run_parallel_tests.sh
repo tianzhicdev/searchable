@@ -50,6 +50,7 @@ run_test_group() {
         echo ""
         
         local group_failed=0
+        local failed_tests_in_group=()
         
         for test_file in "${tests[@]}"; do
             if [ -f "$test_file" ]; then
@@ -70,6 +71,7 @@ run_test_group() {
                     else
                         echo "❌ FAILED: $test_file"
                         group_failed=1
+                        failed_tests_in_group+=("$test_file")
                     fi
                 else
                     if python -m pytest "$test_file" -v -s --tb=short; then
@@ -77,6 +79,7 @@ run_test_group() {
                     else
                         echo "❌ FAILED: $test_file"
                         group_failed=1
+                        failed_tests_in_group+=("$test_file")
                     fi
                 fi
                 echo ""
@@ -93,6 +96,12 @@ run_test_group() {
         # Write status
         echo "$group_failed" > "$status_file"
         
+        # Write failed tests if any
+        if [ ${#failed_tests_in_group[@]} -gt 0 ]; then
+            local failed_tests_file="${LOG_DIR}/.${group_name}_failed_${TIMESTAMP}"
+            printf '%s\n' "${failed_tests_in_group[@]}" > "$failed_tests_file"
+        fi
+        
     } > "$group_log" 2>&1
 }
 
@@ -100,6 +109,7 @@ run_test_group() {
 wait_for_groups() {
     local group_names=("$@")
     local failed_groups=()
+    local failed_tests=()
     
     print_color $BLUE "Waiting for parallel test groups to complete..."
     
@@ -109,16 +119,45 @@ wait_for_groups() {
     # Check results
     for group_name in "${group_names[@]}"; do
         local status_file="${LOG_DIR}/.${group_name}_status_${TIMESTAMP}"
+        local failed_tests_file="${LOG_DIR}/.${group_name}_failed_${TIMESTAMP}"
+        
         if [ -f "$status_file" ]; then
             local status=$(cat "$status_file")
             if [ "$status" != "0" ]; then
                 failed_groups+=("$group_name")
+                failed_phase_names+=("$group_name")
+                
+                # Read failed test details if available
+                if [ -f "$failed_tests_file" ]; then
+                    local failed_test_list=$(cat "$failed_tests_file")
+                    failed_tests+=("$group_name: $failed_test_list")
+                fi
             fi
             rm -f "$status_file"
+            rm -f "$failed_tests_file"
         else
             failed_groups+=("$group_name (no status file)")
+            failed_phase_names+=("$group_name (no status file)")
         fi
     done
+    
+    # Display detailed failure information
+    if [ ${#failed_groups[@]} -gt 0 ]; then
+        print_color $RED "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        print_color $RED "❌ FAILED TEST GROUPS:"
+        for failed_group in "${failed_groups[@]}"; do
+            print_color $RED "   • $failed_group"
+        done
+        
+        if [ ${#failed_tests[@]} -gt 0 ]; then
+            print_color $RED ""
+            print_color $RED "FAILED TEST DETAILS:"
+            for failed_test in "${failed_tests[@]}"; do
+                print_color $RED "   $failed_test"
+            done
+        fi
+        print_color $RED "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    fi
     
     return ${#failed_groups[@]}
 }
@@ -260,7 +299,7 @@ if wait_for_groups "${parallel_groups[@]}"; then
     passed_phases=$((passed_phases + ${#parallel_groups[@]}))
 else
     failed_count=$?
-    print_color $RED "❌ $failed_count groups failed in Phase 2"
+    print_color $RED "❌ Phase 2 failed - $failed_count groups had test failures"
     failed_phases=$((failed_phases + failed_count))
     # Note: Individual group failures are recorded in wait_for_groups
 fi
@@ -292,7 +331,7 @@ if wait_for_groups "${complex_parallel_groups[@]}"; then
     passed_phases=$((passed_phases + ${#complex_parallel_groups[@]}))
 else
     failed_count=$?
-    print_color $RED "❌ $failed_count groups failed in Phase 3"
+    print_color $RED "❌ Phase 3 failed - $failed_count groups had test failures"
     failed_phases=$((failed_phases + failed_count))
 fi
 total_phases=$((total_phases + ${#complex_parallel_groups[@]}))
@@ -341,15 +380,31 @@ print_color $YELLOW "Execution Time: ${duration}s"
 print_color $YELLOW "Total Test Phases: $total_phases"
 
 if [ $passed_phases -gt 0 ]; then
-    print_color $GREEN "Passed: $passed_phases"
+    print_color $GREEN "✅ Passed: $passed_phases"
 fi
 
 if [ $failed_phases -gt 0 ]; then
-    print_color $RED "Failed: $failed_phases"
-    print_color $RED "Failed Phases:"
+    print_color $RED "❌ Failed: $failed_phases"
+    print_color $RED ""
+    print_color $RED "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color $RED "FAILED TEST GROUPS AND FILES:"
+    print_color $RED "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    
+    # Display failed groups with their log file locations
     for phase_name in "${failed_phase_names[@]}"; do
-        echo "  - $phase_name"
+        print_color $RED "❌ $phase_name"
+        local log_file="${LOG_DIR}/${phase_name}_${TIMESTAMP}.log"
+        if [ -f "$log_file" ]; then
+            # Extract failed test files from the log
+            local failed_tests=$(grep -E "❌ FAILED: test_.*\.py" "$log_file" | sed 's/❌ FAILED: /    • /')
+            if [ -n "$failed_tests" ]; then
+                print_color $YELLOW "$failed_tests"
+            fi
+            print_color $CYAN "   📄 Full log: $log_file"
+        fi
+        echo ""
     done
+    print_color $RED "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 else
     print_color $GREEN "All phases passed! 🎉"
 fi
@@ -357,7 +412,13 @@ fi
 # Calculate success rate
 if [ $total_phases -gt 0 ]; then
     success_rate=$(( (passed_phases * 100) / total_phases ))
-    print_color $YELLOW "Success Rate: ${success_rate}%"
+    if [ $success_rate -eq 100 ]; then
+        print_color $GREEN "Success Rate: ${success_rate}% ✨"
+    elif [ $success_rate -ge 75 ]; then
+        print_color $YELLOW "Success Rate: ${success_rate}%"
+    else
+        print_color $RED "Success Rate: ${success_rate}% ⚠️"
+    fi
 fi
 
 print_color $BLUE "================================================"
