@@ -33,6 +33,7 @@ CHECK_INVOICE_INTERVAL = 1  # Check invoices every 1 second
 WITHDRAWAL_SENDER_INTERVAL = 5  # Process pending withdrawals every 5 seconds
 STATUS_CHECKER_INTERVAL = 300  # Check delayed withdrawals every 5 minutes
 DEPOSIT_CHECK_INTERVAL = 30  # Check deposits every 30 seconds
+REFERRAL_CHECK_INTERVAL = 60  # Check referral rewards every 60 seconds
 MAX_INVOICE_AGE_HOURS = 24  # Only check invoices created in the last 24 hours
 
 # Timeout settings
@@ -592,6 +593,97 @@ def check_pending_deposits():
         logger.error(traceback.format_exc())
 
 
+def process_referral_rewards():
+    """
+    Check for unpaid referrals where referred user has created a searchable
+    and give the referrer $50 USDT reward
+    """
+    logger.info("Starting referral rewards check")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Find unpaid referrals where the referred user has created a searchable
+        execute_sql(cur, """
+            SELECT DISTINCT r.id, r.referrer_user_id, r.referred_user_id, r.invite_code_id,
+                   u.username as referred_username
+            FROM referrals r
+            JOIN users u ON u.id = r.referred_user_id
+            JOIN searchable s ON s.user_id = r.referred_user_id
+            WHERE r.referrer_reward_paid = FALSE
+            AND s.deleted_at IS NULL
+            ORDER BY r.created_at ASC
+            LIMIT 10
+        """)
+        
+        unpaid_referrals = cur.fetchall()
+        logger.info(f"Found {len(unpaid_referrals)} unpaid referrals to process")
+        
+        processed_count = 0
+        
+        for referral in unpaid_referrals:
+            referral_id, referrer_user_id, referred_user_id, invite_code_id, referred_username = referral
+            
+            try:
+                # Create a $50 USD reward for the referrer
+                execute_sql(cur, """
+                    INSERT INTO rewards (amount, currency, user_id, metadata) 
+                    VALUES (%s, %s, %s, %s) RETURNING id
+                """, params=(
+                    50.0,  # $50 USD reward
+                    'usd',
+                    referrer_user_id,
+                    Json({
+                        "type": "referral_reward",
+                        "referred_user_id": referred_user_id,
+                        "referred_username": referred_username,
+                        "referral_id": referral_id,
+                        "invite_code_id": invite_code_id
+                    })
+                ))
+                
+                referrer_reward_id = cur.fetchone()[0]
+                
+                # Update referral record to mark as paid
+                execute_sql(cur, """
+                    UPDATE referrals 
+                    SET referrer_reward_paid = TRUE,
+                        referrer_reward_id = %s,
+                        searchable_created_at = NOW()
+                    WHERE id = %s
+                """, params=(referrer_reward_id, referral_id))
+                
+                conn.commit()
+                processed_count += 1
+                
+                logger.info(f"Paid $50 referral reward to user {referrer_user_id} for referring user {referred_user_id}")
+                
+            except Exception as e:
+                logger.error(f"Error processing referral {referral_id}: {str(e)}")
+                conn.rollback()
+        
+        cur.close()
+        conn.close()
+        
+        logger.info(f"Referral rewards check completed: processed {processed_count} referrals")
+        
+    except Exception as e:
+        logger.error(f"Error in process_referral_rewards: {str(e)}")
+        logger.error(traceback.format_exc())
+
+
+def referral_check_thread():
+    """Thread function that periodically checks referral rewards"""
+    while True:
+        try:
+            process_referral_rewards()
+        except Exception as e:
+            logger.error(f"Error in referral check thread: {str(e)}")
+            logger.error(traceback.format_exc())
+        
+        time.sleep(REFERRAL_CHECK_INTERVAL)
+
+
 def start_background_threads():
     """Start all background processing threads"""
     logger.info("Starting background processing threads with optimized timing")
@@ -628,13 +720,22 @@ def start_background_threads():
     )
     status_thread.start()
     
+    # Start referral check thread
+    referral_thread = threading.Thread(
+        target=referral_check_thread,
+        daemon=True,
+        name="referral-check"
+    )
+    referral_thread.start()
+    
     logger.info("Background threads started:")
     logger.info(f"  - Invoice checker: every {CHECK_INVOICE_INTERVAL}s")
     logger.info(f"  - Withdrawal processor: every {WITHDRAWAL_SENDER_INTERVAL}s")
     logger.info(f"  - Deposit checker: every {DEPOSIT_CHECK_INTERVAL}s")
     logger.info(f"  - Delayed withdrawal checker: every {STATUS_CHECKER_INTERVAL}s")
+    logger.info(f"  - Referral rewards checker: every {REFERRAL_CHECK_INTERVAL}s")
     
-    return [invoice_thread, sender_thread, deposit_thread, status_thread]
+    return [invoice_thread, sender_thread, deposit_thread, status_thread, referral_thread]
 
 
 # This will be called when the module is imported

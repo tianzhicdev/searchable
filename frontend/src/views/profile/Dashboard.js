@@ -23,6 +23,9 @@ import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/S
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import DepositComponent from '../../components/Deposit/DepositComponent';
+
+import ReferralDashboard from '../../components/ReferralDashboard';
+
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -417,6 +420,11 @@ const Dashboard = () => {
       {/* Invoice History Section */}
       <Grid item xs={12} style={{ padding: '4px' }}>
         <UserInvoices />
+      </Grid>
+      
+      {/* Referral Program Section */}
+      <Grid item xs={12} style={{ padding: '4px' }}>
+        <ReferralDashboard />
       </Grid>
       
       {/* USDT Withdrawal Dialog */}
