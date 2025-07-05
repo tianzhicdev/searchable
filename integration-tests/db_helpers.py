@@ -43,7 +43,7 @@ def execute_db_command(sql_command):
         ]
         return subprocess.run(cmd_parts, check=True, capture_output=True, text=True)
 
-def insert_invite_code(code, active=True, description="test code"):
+def insert_invite_code(code, active=True, description="test code", creator_user_id=None):
     """
     Insert an invite code into the database.
     
@@ -51,6 +51,7 @@ def insert_invite_code(code, active=True, description="test code"):
         code: The invite code (6 uppercase letters)
         active: Whether the code is active (default True)
         description: Description for metadata
+        creator_user_id: User ID who created the code (None for legacy codes)
         
     Returns:
         bool: True if successful, False otherwise
@@ -61,7 +62,10 @@ def insert_invite_code(code, active=True, description="test code"):
         metadata_dict = {"description": description}
         metadata_json = json.dumps(metadata_dict).replace("'", "''")  # Escape single quotes for SQL
         
-        sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, '{metadata_json}'::jsonb) ON CONFLICT (code) DO NOTHING;"
+        # Handle creator_user_id
+        creator_value = "NULL" if creator_user_id is None else str(creator_user_id)
+        
+        sql_command = f"INSERT INTO invite_code (code, active, metadata, creator_user_id, times_used, created_at) VALUES ('{code}', {str(active).lower()}, '{metadata_json}'::jsonb, {creator_value}, 0, NOW()) ON CONFLICT (code) DO NOTHING;"
         
         execute_db_command(sql_command)
         return True
@@ -98,17 +102,18 @@ def check_reward_exists(user_id, amount=5.0, currency='usd'):
 
 def check_invite_code_used(code, expected_user_id=None):
     """
-    Check if an invite code has been used.
+    Check if an invite code has been used (compatible with new multi-use system).
     
     Args:
         code: The invite code
         expected_user_id: The expected user ID who used it (optional)
         
     Returns:
-        dict: {'is_used': bool, 'used_by_user_id': int|None, 'active': bool}
+        dict: {'is_used': bool, 'used_by_user_id': int|None, 'active': bool, 'times_used': int}
     """
     try:
-        sql_command = f"SELECT active, used_by_user_id FROM invite_code WHERE code = '{code}';"
+        # First check the invite_code table
+        sql_command = f"SELECT active, used_by_user_id, times_used, creator_user_id FROM invite_code WHERE code = '{code}';"
         result = execute_db_command(sql_command)
         
         # Parse the result
@@ -117,33 +122,67 @@ def check_invite_code_used(code, expected_user_id=None):
             # Look for data lines (skip headers and separators)
             if '|' in line and not line.strip().startswith('-') and 'active' not in line and ('t' in line or 'f' in line):
                 parts = line.split('|')
-                if len(parts) >= 2:
+                if len(parts) >= 3:
                     active_str = parts[0].strip()
                     used_by_str = parts[1].strip()
+                    times_used_str = parts[2].strip()
+                    creator_str = parts[3].strip() if len(parts) > 3 else ''
                     
                     active = active_str.lower() in ['t', 'true']
-                    used_by_user_id = None
-                    if used_by_str and used_by_str.strip().isdigit():
-                        used_by_user_id = int(used_by_str.strip())
+                    times_used = int(times_used_str) if times_used_str.isdigit() else 0
                     
-                    is_used = used_by_user_id is not None
-                    
-                    result_dict = {
-                        'is_used': is_used,
-                        'used_by_user_id': used_by_user_id,
-                        'active': active
-                    }
-                    
-                    # Verify expected user if provided
-                    if expected_user_id is not None and used_by_user_id != expected_user_id:
-                        print(f"Warning: Expected user {expected_user_id} but code was used by {used_by_user_id}")
-                    
-                    return result_dict
+                    # For new multi-use codes (with creator_user_id), check referrals table
+                    if creator_str and creator_str.isdigit():
+                        # This is a multi-use code, check if expected_user_id used it
+                        if expected_user_id:
+                            referral_sql = f"SELECT COUNT(*) FROM referrals WHERE invite_code_id = (SELECT id FROM invite_code WHERE code = '{code}') AND referred_user_id = {expected_user_id};"
+                            referral_result = execute_db_command(referral_sql)
+                            
+                            # Check if this user used the code
+                            used_by_this_user = False
+                            for rline in referral_result.stdout.strip().split('\n'):
+                                if rline.strip().isdigit() and int(rline.strip()) > 0:
+                                    used_by_this_user = True
+                                    break
+                            
+                            return {
+                                'is_used': times_used > 0,
+                                'used_by_user_id': expected_user_id if used_by_this_user else None,
+                                'active': active,
+                                'times_used': times_used
+                            }
+                        else:
+                            return {
+                                'is_used': times_used > 0,
+                                'used_by_user_id': None,  # Multi-use codes don't have single user
+                                'active': active,
+                                'times_used': times_used
+                            }
+                    else:
+                        # Legacy single-use code
+                        used_by_user_id = None
+                        if used_by_str and used_by_str.strip().isdigit():
+                            used_by_user_id = int(used_by_str.strip())
+                        
+                        is_used = used_by_user_id is not None
+                        
+                        result_dict = {
+                            'is_used': is_used,
+                            'used_by_user_id': used_by_user_id,
+                            'active': active,
+                            'times_used': times_used
+                        }
+                        
+                        # Verify expected user if provided
+                        if expected_user_id is not None and used_by_user_id != expected_user_id:
+                            print(f"Warning: Expected user {expected_user_id} but code was used by {used_by_user_id}")
+                        
+                        return result_dict
         
-        return {'is_used': False, 'used_by_user_id': None, 'active': False}
+        return {'is_used': False, 'used_by_user_id': None, 'active': False, 'times_used': 0}
     except subprocess.CalledProcessError as e:
         print(f"Failed to check invite code {code}: {e}")
-        return {'is_used': False, 'used_by_user_id': None, 'active': False}
+        return {'is_used': False, 'used_by_user_id': None, 'active': False, 'times_used': 0}
 
 def check_tables_exist():
     """
