@@ -82,6 +82,14 @@ const PayButton = ({
 
   // Check if user can pay with balance
   const canPayWithBalance = userBalance >= totalPrice;
+  
+  // Always show balance option if user is logged in
+  const showBalanceOption = onBalancePayment !== undefined;
+  
+  // Debug logging
+  console.log("PayButton - userBalance:", userBalance, "totalPrice:", totalPrice, "canPayWithBalance:", canPayWithBalance);
+  console.log("PayButton - onBalancePayment prop:", onBalancePayment);
+  console.log("PayButton - showBalanceOption:", showBalanceOption);
 
   // If totalPrice is 0 or disabled, show disabled button
   if (totalPrice === 0 || disabled) {
@@ -118,11 +126,12 @@ const PayButton = ({
           <Typography variant="body1" className={classes.userText}>
             Total with Card: {formatCurrency(totalPrice * 1.035)}
           </Typography>
-          {canPayWithBalance && (
-            <Typography variant="body2" className={classes.userText} color="primary">
-              Pay with Balance: {formatCurrency(totalPrice)} (No fees!)
+          <Box mt={1}>
+            <Typography variant="body2" className={classes.userText} color={canPayWithBalance ? "primary" : "textSecondary"}>
+              Your Balance: {formatCurrency(userBalance)}
+              {canPayWithBalance ? " ✓ Sufficient for this purchase" : " (Need " + formatCurrency(totalPrice - userBalance) + " more)"}
             </Typography>
-          )}
+          </Box>
         </Box>
       )}
 
@@ -181,18 +190,24 @@ const PayButton = ({
           </Box>
         </MenuItem>
         
-        {canPayWithBalance && (
-          <MenuItem onClick={handleBalanceClick}>
-            <BalanceIcon />
-            <Box ml={1}>
-              <Typography variant="body2" className={classes.staticText}>
-                Pay with Balance
-              </Typography>
-              <Typography variant="caption" className={classes.userText}>
-                Available: {formatCurrency(userBalance)} (No fees!)
-              </Typography>
-            </Box>
-          </MenuItem>
+        {showBalanceOption && (
+          <>
+            <Divider />
+            <MenuItem 
+              onClick={handleBalanceClick}
+              disabled={!canPayWithBalance}
+            >
+              <BalanceIcon color={canPayWithBalance ? "primary" : "disabled"} />
+              <Box ml={1}>
+                <Typography variant="body2" className={classes.staticText}>
+                  Pay with Balance
+                </Typography>
+                <Typography variant="caption" className={classes.userText}>
+                  Available: {formatCurrency(userBalance)} {canPayWithBalance ? '(No fees!)' : '(Insufficient)'}
+                </Typography>
+              </Box>
+            </MenuItem>
+          </>
         )}
       </Menu>
 

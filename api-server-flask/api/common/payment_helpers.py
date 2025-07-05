@@ -127,8 +127,8 @@ def create_balance_invoice_and_payment(buyer_id, seller_id, searchable_id, amoun
         get_balance_by_currency, 
         create_invoice as db_create_invoice, 
         create_payment as db_create_payment, 
-        update_invoice_paid,
-        get_db_connection
+        get_db_connection,
+        execute_sql
     )
     
     conn = None
@@ -140,7 +140,8 @@ def create_balance_invoice_and_payment(buyer_id, seller_id, searchable_id, amoun
         cur = conn.cursor()
         
         # Check user balance inside transaction to prevent race conditions
-        balance = get_balance_by_currency(buyer_id, currency)
+        balance_data = get_balance_by_currency(buyer_id)
+        balance = balance_data.get(currency.lower(), 0)
         logger.info(f"User {buyer_id} balance: {balance}, required: {amount}")
         
         if balance < amount:
@@ -157,12 +158,12 @@ def create_balance_invoice_and_payment(buyer_id, seller_id, searchable_id, amoun
             'amount': amount,
             'fee': 0,  # No platform fee for balance payments
             'currency': currency,
-            'type': PaymentType.BALANCE.value,
+            'invoice_type': PaymentType.BALANCE.value,  # Changed from 'type' to 'invoice_type'
             'external_id': external_id,
             'metadata': metadata or {}
         }
         
-        invoice = db_create_invoice(**invoice_data, connection=conn)
+        invoice = db_create_invoice(**invoice_data)
         
         if not invoice:
             raise Exception("Failed to create invoice")
@@ -170,28 +171,42 @@ def create_balance_invoice_and_payment(buyer_id, seller_id, searchable_id, amoun
         logger.info(f"Created balance invoice {invoice['id']} for user {buyer_id}")
         
         # Create payment record with status='complete' immediately
-        payment_data = {
-            'invoice_id': invoice['id'],
-            'amount': amount,
-            'fee': 0,  # No processing fee for balance payments
-            'currency': currency,
-            'type': PaymentType.BALANCE.value,
-            'external_id': external_id,
-            'status': PaymentStatus.COMPLETE.value,
-            'metadata': metadata or {}
-        }
+        # We need to use raw SQL here because create_payment doesn't support setting status
+        execute_sql(cur, """
+            INSERT INTO payment (invoice_id, amount, fee, currency, type, external_id, status, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
+        """, params=(
+            invoice['id'],
+            amount,
+            0,  # No processing fee for balance payments
+            currency,
+            PaymentType.BALANCE.value,
+            external_id,
+            PaymentStatus.COMPLETE.value,  # Set status to complete immediately
+            Json(metadata or {})
+        ), commit=False, connection=conn)
         
-        payment = db_create_payment(**payment_data, connection=conn)
+        row = cur.fetchone()
+        payment = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8].isoformat() if row[8] else None,
+            'metadata': row[9]
+        }
         
         if not payment:
             raise Exception("Failed to create payment")
         
         logger.info(f"Created balance payment {payment['id']} with status=complete")
         
-        # Update invoice as paid
-        update_invoice_paid(invoice['id'], connection=conn)
-        
-        # Commit transaction
+        # Commit transaction (payment with status=complete already marks invoice as paid)
         conn.commit()
         
         logger.info(f"Balance payment completed successfully for invoice {invoice['id']}")
@@ -241,7 +256,8 @@ def validate_balance_payment(buyer_id, amount, currency='usd'):
     from .data_helpers import get_balance_by_currency
     
     try:
-        balance = get_balance_by_currency(buyer_id, currency)
+        balance_data = get_balance_by_currency(buyer_id)
+        balance = balance_data.get(currency.lower(), 0)
         has_sufficient_balance = balance >= amount
         
         return {

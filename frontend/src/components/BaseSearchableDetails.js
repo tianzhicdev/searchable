@@ -52,6 +52,10 @@ const BaseSearchableDetails = ({
     history,
     location
   } = useSearchableDetails();
+  
+  // Debug logging
+  console.log("BaseSearchableDetails - userBalance:", userBalance);
+  console.log("BaseSearchableDetails - onBalancePayment prop:", onBalancePayment);
 
   // Custom loading component or default
   if (loading) {
