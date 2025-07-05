@@ -789,6 +789,20 @@ def get_balance_by_currency(user_id):
             WHERE w.user_id = %s
             AND w.status IN (%s, %s, %s)
             AND w.currency IN ('USD', 'USDT', 'usd', 'usdt')
+            
+            UNION ALL
+            
+            -- Balance payments (negative amounts) - purchases made with balance
+            SELECT 
+                'balance_payment' as source_type,
+                -i.amount as net_amount,
+                i.currency
+            FROM invoice i
+            JOIN payment p ON i.id = p.invoice_id
+            WHERE i.buyer_id = %s
+            AND p.type = 'balance'
+            AND p.status = %s
+            AND i.currency IN ('USD', 'USDT', 'usd', 'usdt')
         )
         SELECT 
             COALESCE(SUM(net_amount), 0) as total_balance
@@ -803,7 +817,9 @@ def get_balance_by_currency(user_id):
             user_id,  # for withdrawals
             PaymentStatus.COMPLETE.value,
             PaymentStatus.PENDING.value,
-            PaymentStatus.DELAYED.value
+            PaymentStatus.DELAYED.value,
+            user_id,  # for balance payments (buyer_id)
+            PaymentStatus.COMPLETE.value  # for balance payments status
         ))
         
         result = cur.fetchone()

@@ -72,14 +72,20 @@ const useSearchableDetails = () => {
 
   const fetchUserBalance = async () => {
     if (!account || !account.user) {
+      console.log("No account found, skipping balance fetch");
+      setUserBalance(0);
       return;
     }
     
+    console.log("Fetching user balance for user:", account.user._id);
     setLoadingBalance(true);
     try {
-      const response = await backend.get('balance');
-      // Balance response format: { "usd": 123.45 }
-      setUserBalance(response.data.usd || 0);
+      const response = await backend.get('/balance');
+      // Balance response format: { "balance": { "usd": 123.45 } }
+      const balance = response.data.balance?.usd || 0;
+      console.log("Balance fetched:", balance);
+      console.log("Full balance response:", response.data);
+      setUserBalance(balance);
     } catch (err) {
       console.error("Error fetching user balance:", err);
       setUserBalance(0);
@@ -178,6 +184,7 @@ const useSearchableDetails = () => {
 
   // Initialize data on mount
   useEffect(() => {
+    console.log("useSearchableDetails - Initializing for searchable ID:", id);
     fetchSearchableDetails();
     refreshPaymentsBySearchable();
     fetchRatings();

@@ -22,6 +22,9 @@ const DirectSearchableDetails = () => {
     publicData 
   } = useSearchableDetails();
   
+  console.log("DirectSearchableDetails - createBalancePayment:", createBalancePayment);
+  console.log("DirectSearchableDetails - typeof createBalancePayment:", typeof createBalancePayment);
+  
   // Direct payment specific states
   const [paymentAmount, setPaymentAmount] = useState(9.99);
   const [paymentError, setPaymentError] = useState(null);

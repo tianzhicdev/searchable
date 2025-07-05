@@ -48,8 +48,8 @@ def validate_payment_request(data):
     
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
-    if invoice_type and invoice_type not in ['stripe']:
-        raise ValueError("Invalid invoice_type. Must be 'stripe'")
+    if invoice_type and invoice_type not in ['stripe', 'balance']:
+        raise ValueError("Invalid invoice_type. Must be 'stripe' or 'balance'")
     
     return {
         'invoice_type': invoice_type, 
