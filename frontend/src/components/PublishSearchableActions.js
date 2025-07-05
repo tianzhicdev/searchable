@@ -20,7 +20,7 @@ const PublishSearchableActions = ({
         <Button 
           variant="contained"
           className={classes.button} 
-          onClick={() => navigateWithStack(history, '/landing')}
+          onClick={() => navigateWithStack(history, '/search')}
         >
           Cancel
         </Button>
