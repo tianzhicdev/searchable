@@ -69,7 +69,7 @@ const UserProfile = () => {
 
   const handleBackClick = () => {
     debugNavigationStack(location, 'UserProfile Back Click');
-    navigateBack(history, '/landing');
+    navigateBack(history, '/search');
   };
 
   if (loading) {
