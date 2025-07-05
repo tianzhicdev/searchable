@@ -26,9 +26,17 @@ const App = () => {
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <MockModeIndicator />
                 {/* <Box display="flex" justifyContent="center" width="100%"> */}
-                    <Container id="outer-container" maxWidth="md" style={{ margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Routes />
-
+                    <Container id="outer-container" maxWidth="md" style={{ 
+                        margin: '0 auto', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center',
+                        minHeight: '100vh',
+                        position: 'relative'
+                    }}>
+                        <Box style={{ flex: 1, width: '100%', paddingBottom: '80px' }}>
+                            <Routes />
+                        </Box>
                         <Footer  />
                     </Container>
                 {/* </Box> */}

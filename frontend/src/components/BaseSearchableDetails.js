@@ -23,6 +23,8 @@ const BaseSearchableDetails = ({
   
   // Type-specific handlers
   onPayment,
+  onDepositPayment,
+  onBalancePayment,
   
   // Type-specific props for price display
   totalPrice = 0,
@@ -45,10 +47,15 @@ const BaseSearchableDetails = ({
     searchableRating,
     loadingRatings,
     handleRemoveItem,
+    userBalance,
     id,
     history,
     location
   } = useSearchableDetails();
+  
+  // Debug logging
+  console.log("BaseSearchableDetails - userBalance:", userBalance);
+  console.log("BaseSearchableDetails - onBalancePayment prop:", onBalancePayment);
 
   // Custom loading component or default
   if (loading) {
@@ -131,6 +138,9 @@ const BaseSearchableDetails = ({
             totalPrice={totalPrice}
             processing={creatingInvoice}
             onPayButtonClick={onPayment}
+            onDepositPayment={onDepositPayment}
+            onBalancePayment={onBalancePayment}
+            userBalance={userBalance}
             isOwner={isOwner}
             onRemoveItem={handleRemoveItem}
             isRemoving={isRemoving}
