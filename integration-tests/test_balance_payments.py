@@ -4,8 +4,8 @@ Integration tests for balance payment functionality
 import pytest
 import uuid
 import time
-from api_client import SearchableAPIClient
-from config import TEST_USER_PREFIX, DEFAULT_PASSWORD
+from api_client import APIClient
+from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
 
 
 class TestBalancePayments:
@@ -14,7 +14,7 @@ class TestBalancePayments:
     @classmethod
     def setup_class(cls):
         """Set up test class with API client and test data"""
-        cls.client = SearchableAPIClient()
+        cls.client = APIClient()
         cls.test_id = str(uuid.uuid4())[:8]
         cls.test_password = DEFAULT_PASSWORD
     
@@ -22,14 +22,20 @@ class TestBalancePayments:
         """Test balance payment with insufficient balance"""
         # Register and login user
         username = f"balanceuser_{self.test_id}"
-        self.client.register(username, self.test_password)
-        login_resp = self.client.login(username, self.test_password)
-        assert login_resp.status_code == 200
+        email = f"{username}@{TEST_EMAIL_DOMAIN}"
+        register_resp = self.client.register(username, email, self.test_password)
+        
+        if register_resp.get('success'):
+            user_id = register_resp.get('userID')
+        
+        # Login
+        login_resp = self.client.login_user(email, self.test_password)
+        assert login_resp.get('success')
         
         # Check initial balance (should be 0)
-        balance_resp = self.client.api_request("GET", "/api/balance")
-        assert balance_resp.status_code == 200
-        initial_balance = balance_resp.json()['usd']
+        balance_resp = self.client.get_balance()
+        # Balance response is just {'balance': {'usd': 0.0}}
+        initial_balance = balance_resp.get('balance', {}).get('usd', 0)
         assert initial_balance == 0
         
         # Create a searchable item
@@ -44,9 +50,9 @@ class TestBalancePayments:
                 }
             }
         }
-        create_resp = self.client.api_request("POST", "/api/v1/publish-searchable", json=searchable_data)
-        assert create_resp.status_code == 200
-        searchable_id = create_resp.json()['id']
+        create_resp = self.client.create_searchable(searchable_data)
+        assert create_resp.get('success')
+        searchable_id = create_resp.get('searchableID')
         
         # Try balance payment without sufficient balance (should fail)
         balance_invoice_data = {
@@ -54,29 +60,43 @@ class TestBalancePayments:
             "invoice_type": "balance",
             "selections": [{"amount": 10.00, "type": "direct"}]
         }
-        balance_resp = self.client.api_request("POST", "/api/v1/create-balance-invoice", json=balance_invoice_data)
-        assert balance_resp.status_code == 400
-        assert "Insufficient balance" in balance_resp.json()['error']
+        
+        # Make raw request since client doesn't have balance invoice method
+        response = self.client.session.post(
+            f"{self.client.base_url}/v1/create-balance-invoice",
+            json=balance_invoice_data,
+            timeout=10
+        )
+        assert response.status_code == 400
+        assert "Insufficient balance" in response.json().get('error', '')
         
         print("✅ Insufficient balance test passed")
     
     def test_02_balance_payment_validation(self):
         """Test balance payment validation scenarios"""
-        # Try to make balance payment without authentication
-        self.client.logout()  # Clear any existing auth
+        # Clear any existing auth
+        self.client.token = None
+        self.client.session.headers.pop('authorization', None)
         
         no_auth_data = {
             "searchable_id": 999,
             "invoice_type": "balance",
             "selections": []
         }
-        no_auth_resp = self.client.api_request("POST", "/api/v1/create-balance-invoice", json=no_auth_data)
-        assert no_auth_resp.status_code == 401
+        
+        # Make request without auth
+        response = self.client.session.post(
+            f"{self.client.base_url}/v1/create-balance-invoice",
+            json=no_auth_data,
+            timeout=10
+        )
+        assert response.status_code == 401
         
         # Login for next tests
         username = f"validator_{self.test_id}"
-        self.client.register(username, self.test_password)
-        self.client.login(username, self.test_password)
+        email = f"{username}@{TEST_EMAIL_DOMAIN}"
+        self.client.register(username, email, self.test_password)
+        self.client.login_user(email, self.test_password)
         
         # Try with invalid searchable ID
         invalid_data = {
@@ -84,8 +104,12 @@ class TestBalancePayments:
             "invoice_type": "balance",
             "selections": []
         }
-        invalid_resp = self.client.api_request("POST", "/api/v1/create-balance-invoice", json=invalid_data)
-        assert invalid_resp.status_code == 404
+        response = self.client.session.post(
+            f"{self.client.base_url}/v1/create-balance-invoice",
+            json=invalid_data,
+            timeout=10
+        )
+        assert response.status_code == 404
         
         print("✅ Balance payment validation tests passed")
     
@@ -99,13 +123,14 @@ class TestBalancePayments:
         
         # For now, we just verify the endpoint exists and requires auth
         username = f"success_{self.test_id}"
-        self.client.register(username, self.test_password)
-        self.client.login(username, self.test_password)
+        email = f"{username}@{TEST_EMAIL_DOMAIN}"
+        self.client.register(username, email, self.test_password)
+        self.client.login_user(email, self.test_password)
         
         # Verify balance endpoint works
-        balance_resp = self.client.api_request("GET", "/api/balance")
-        assert balance_resp.status_code == 200
-        assert 'usd' in balance_resp.json()
+        balance_resp = self.client.get_balance()
+        assert 'balance' in balance_resp
+        assert 'usd' in balance_resp['balance']
         
         print("✅ Balance payment endpoint tests passed")
 
