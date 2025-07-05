@@ -1,10 +1,5 @@
 from .logging_config import setup_logger
 from .models import Currency, PaymentStatus, PaymentType
-from .data_helpers import (
-    get_balance_by_currency, create_invoice as db_create_invoice, 
-    create_payment as db_create_payment, update_invoice_paid,
-    execute_sql, get_db_connection
-)
 from psycopg2.extras import Json
 import uuid
 
@@ -127,6 +122,15 @@ def create_balance_invoice_and_payment(buyer_id, seller_id, searchable_id, amoun
         ValueError: If insufficient balance or invalid parameters
         Exception: If database transaction fails
     """
+    # Import here to avoid circular import
+    from .data_helpers import (
+        get_balance_by_currency, 
+        create_invoice as db_create_invoice, 
+        create_payment as db_create_payment, 
+        update_invoice_paid,
+        get_db_connection
+    )
+    
     conn = None
     cur = None
     
@@ -233,6 +237,9 @@ def validate_balance_payment(buyer_id, amount, currency='usd'):
     Returns:
         dict: Validation result with balance info
     """
+    # Import here to avoid circular import
+    from .data_helpers import get_balance_by_currency
+    
     try:
         balance = get_balance_by_currency(buyer_id, currency)
         has_sufficient_balance = balance >= amount
