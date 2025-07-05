@@ -123,15 +123,15 @@ class TestInviteCodes:
         assert data['active'] == False
     
     def test_register_with_already_used_code(self):
-        """Test registering with an already used invite code"""
+        """Test registering with a legacy single-use invite code"""
         # Generate a unique invite code for this test (6 uppercase letters only)
         import string
         # Convert timestamp to letters by using modulo on alphabet
         ts_suffix = ''.join([string.ascii_uppercase[int(d) % 26] for d in str(self.timestamp)[-3:]])
         test_code = f'TST{ts_suffix}'[:6].ljust(6, 'A')
         
-        # Insert the invite code into the database
-        if not insert_invite_code(test_code, active=True, description="test code"):
+        # Insert the invite code into the database as a legacy code (no creator_user_id)
+        if not insert_invite_code(test_code, active=True, description="test code", creator_user_id=None):
             pytest.fail(f"Failed to insert test invite code: {test_code}")
         
         # Register first user with the invite code
@@ -170,7 +170,7 @@ class TestInviteCodes:
         assert response2.status_code == 200
         data2 = response2.json()
         assert data2['success'] == True
-        # Second user should NOT get reward since code is already used
+        # Legacy single-use codes should not give reward to second user
         assert 'reward' not in data2['msg'].lower()
     
     def test_reward_created_with_valid_invite_code(self):
@@ -211,11 +211,17 @@ class TestInviteCodes:
         if not check_reward_exists(user_id, amount=5.0, currency='usd'):
             pytest.fail(f"No reward record found for user {user_id}")
         
-        # Verify the invite code is now marked as inactive/used
+        # Verify the invite code is now marked as used (for legacy codes)
         code_status = check_invite_code_used(test_code, expected_user_id=user_id)
         assert code_status['is_used'] == True, f"Invite code {test_code} should be marked as used"
-        assert code_status['used_by_user_id'] == user_id, f"Invite code should be used by user {user_id}"
-        assert code_status['active'] == False, f"Invite code {test_code} should be inactive"
+        # For legacy codes, it should be inactive after use
+        if code_status['used_by_user_id'] is not None:
+            # Legacy single-use code
+            assert code_status['used_by_user_id'] == user_id, f"Invite code should be used by user {user_id}"
+            assert code_status['active'] == False, f"Legacy invite code {test_code} should be inactive"
+        else:
+            # Multi-use code - just verify it was used
+            assert code_status['times_used'] > 0, f"Multi-use code should have times_used > 0"
         
         # Verify user's balance reflects the $5 reward
         login_response = self.api.login(email, self.test_password)
@@ -263,6 +269,46 @@ class TestInviteCodes:
                 print(f"Call {i+1}: Got invite code {data['invite_code']}")
             else:
                 print(f"Call {i+1}: No active codes available")
+    
+    def test_multi_use_invite_code(self):
+        """Test the new multi-use invite code functionality"""
+        # Generate a unique invite code for this test
+        import string
+        ts_suffix = ''.join([string.ascii_uppercase[int(d) % 26] for d in str(self.timestamp)[-3:]])
+        test_code = f'MUL{ts_suffix}'[:6].ljust(6, 'T')
+        
+        # Insert a multi-use invite code (with creator_user_id = 1 for testing)
+        if not insert_invite_code(test_code, active=True, description="multi-use test code", creator_user_id=1):
+            pytest.fail(f"Failed to insert multi-use invite code: {test_code}")
+        
+        # Register multiple users with the same code
+        users_created = []
+        for i in range(3):
+            username = f"{TEST_USER_PREFIX}multi{i}_{self.timestamp}"
+            email = f"{username}@{TEST_EMAIL_DOMAIN}"
+            
+            response = requests.post(
+                f"{API_BASE_URL}/users/register",
+                json={
+                    "username": username,
+                    "email": email,
+                    "password": self.test_password,
+                    "invite_code": test_code
+                }
+            )
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data['success'] == True
+            # All users should get reward with multi-use code
+            assert 'reward' in data['msg'].lower(), f"User {i+1} should get reward with multi-use code"
+            
+            users_created.append(data['userID'])
+        
+        # Verify the code is still active and has been used 3 times
+        code_status = check_invite_code_used(test_code)
+        assert code_status['active'] == True, "Multi-use code should still be active"
+        assert code_status['times_used'] == 3, f"Code should have been used 3 times, but was used {code_status['times_used']} times"
 
     def teardown_method(self):
         """Cleanup test data"""
