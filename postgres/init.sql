@@ -417,10 +417,6 @@ INSERT INTO tags (name, tag_type, description) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 
-
-
-
-
 -- Create deposit table for USDT deposits
 CREATE TABLE IF NOT EXISTS deposit (
     id SERIAL PRIMARY KEY,

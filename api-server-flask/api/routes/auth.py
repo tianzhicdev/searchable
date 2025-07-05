@@ -309,8 +309,8 @@ class Login(Resource):
             return {"success": False,
                     "msg": "Wrong credentials."}, 400
 
-        # create access token uwing JWT
-        token = jwt.encode({'email': _email, 'exp': datetime.utcnow() + timedelta(days=30)}, BaseConfig.SECRET_KEY)
+        # create access token using JWT
+        token = jwt.encode({'email': _email, 'exp': datetime.now(timezone.utc) + timedelta(days=30)}, BaseConfig.SECRET_KEY)
 
         user_exists.set_jwt_auth_active(True)
         user_exists.save()

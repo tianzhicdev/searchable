@@ -17,9 +17,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  makeStyles
+  Paper
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { Alert } from '@material-ui/lab';
 import ContentCopyIcon from '@material-ui/icons/FileCopy';
 import RefreshIcon from '@material-ui/icons/Refresh';

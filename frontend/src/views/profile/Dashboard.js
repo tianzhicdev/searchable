@@ -24,8 +24,6 @@ import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStac
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import DepositComponent from '../../components/Deposit/DepositComponent';
 
-import ReferralDashboard from '../../components/ReferralDashboard';
-
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -273,6 +271,12 @@ const Dashboard = () => {
             </MenuItem>
             <MenuItem onClick={() => {
               handleMenuClose();
+              navigateWithStack(history, '/referral-dashboard');
+            }}>
+              Referral Program
+            </MenuItem>
+            <MenuItem onClick={() => {
+              handleMenuClose();
               handleOpenDepositDialog();
             }}>
               Deposit USDT
@@ -420,11 +424,6 @@ const Dashboard = () => {
       {/* Invoice History Section */}
       <Grid item xs={12} style={{ padding: '4px' }}>
         <UserInvoices />
-      </Grid>
-      
-      {/* Referral Program Section */}
-      <Grid item xs={12} style={{ padding: '4px' }}>
-        <ReferralDashboard />
       </Grid>
       
       {/* USDT Withdrawal Dialog */}
