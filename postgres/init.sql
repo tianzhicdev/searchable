@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS invoice (
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
     currency TEXT NOT NULL CHECK (currency = 'usd'),
-    type TEXT NOT NULL CHECK (type = 'stripe'),
+    type TEXT NOT NULL CHECK (type IN ('stripe', 'balance')),
     external_id TEXT NOT NULL UNIQUE, -- Stripe session ID
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB NOT NULL DEFAULT '{}'
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS payment (
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
     currency TEXT NOT NULL CHECK (currency = 'usd'),
-    type TEXT NOT NULL CHECK (type = 'stripe'),
+    type TEXT NOT NULL CHECK (type IN ('stripe', 'balance')),
     external_id TEXT, -- External payment ID if available
     status TEXT NOT NULL CHECK (status IN ('pending','complete', 'delayed', 'error')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
