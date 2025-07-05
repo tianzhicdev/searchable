@@ -81,7 +81,8 @@ class CreateDeposit(Resource):
                 # Now get deterministic address using deposit ID
                 try:
                     usdt_response = requests.post(
-                        f"{USDT_SERVICE_URL}/receive",
+                        # f"{USDT_SERVICE_URL}/receive",
+                        f"{USDT_SERVICE_URL}/zero-balance-address",
                         json={'deposit_id': deposit_id},
                         timeout=10
                     )
@@ -94,6 +95,7 @@ class CreateDeposit(Resource):
                     
                     usdt_data = usdt_response.json()
                     eth_address = usdt_data['address']
+                    address_index = usdt_data['index']
                     
                 except Exception as e:
                     logger.error(f"Failed to contact USDT service: {str(e)}")
@@ -103,6 +105,7 @@ class CreateDeposit(Resource):
                 
                 # Prepare metadata
                 metadata = {
+                    'address_index': address_index,
                     'eth_address': eth_address,
                     'deposit_id': deposit_id,  # Store deposit ID for reference
                     'expires_at': expires_at.isoformat(),

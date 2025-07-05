@@ -339,10 +339,64 @@ app.post('/send', async (req, res) => {
       });
     }
   });
-
-
   // if failure, exhash -> delayed, no txhash -> failure 
+
+
+
+// Generate address with zero balance
+app.post('/zero-balance-address', async (req, res) => {
+  try {
+    const maxAttempts = 100; // Limit attempts to prevent infinite loops
+    let attempts = 0;
     
+    // HD wallet index must be less than 0x80000000 (2147483648)
+    const MAX_HD_INDEX = 2147483647; // 0x7FFFFFFF
+    const MIN_HD_INDEX = 10; // Use a large starting point to avoid collisions
+    
+    while (attempts < maxAttempts) {
+      // Generate a random index within the valid range
+      const randomIndex = Math.floor(Math.random() * (MAX_HD_INDEX - MIN_HD_INDEX)) + MIN_HD_INDEX;
+      
+      // Generate address
+      const addressInfo = hdWallet.generateAddress(randomIndex);
+      
+      // Check balance
+      try {
+        const balance = await usdtContract.methods
+          .balanceOf(addressInfo.address)
+          .call();
+        
+        const balanceInWei = typeof balance === 'bigint' ? balance.toString() : balance;
+        
+        if (balanceInWei === '0') {
+          console.log(`Found zero-balance address after ${attempts + 1} attempts: ${addressInfo.address} (index: ${randomIndex})`);
+          
+          return res.json({
+            address: addressInfo.address,
+            index: randomIndex,
+            attempts: attempts + 1
+          });
+        }
+      } catch (balanceError) {
+        console.error(`Error checking balance for address ${addressInfo.address}:`, balanceError);
+        // Continue to next attempt on balance check error
+      }
+      
+      attempts++;
+    }
+    
+    // If we've exhausted all attempts
+    console.error(`Failed to find zero-balance address after ${maxAttempts} attempts`);
+    res.status(500).json({ 
+      error: 'Could not find zero-balance address after maximum attempts',
+      attempts: maxAttempts
+    });
+    
+  } catch (error) {
+    console.error('Error generating zero-balance address:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
     
 
 // Get transaction status
