@@ -103,7 +103,7 @@ const useSearchableDetails = () => {
     setIsRemoving(true);
     try {
       await backend.put(`v1/searchable/remove/${id}`, {});
-      navigateWithStack(history, '/landing');
+      navigateWithStack(history, '/search');
     } catch (err) {
       setError(err.message || 'Failed to remove item');
     } finally {

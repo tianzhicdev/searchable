@@ -214,7 +214,7 @@ const Profile = () => {
             className={classes.iconButton}
             onClick={() => {
               debugNavigationStack(location, 'Profile Page Navigation');
-              navigateBack(history, '/landing');
+              navigateBack(history, '/search');
             }}
             title={getBackButtonText(location)}
           >
