@@ -28,6 +28,7 @@ const OfflineSearchableDetails = () => {
     loadingRatings,
     fetchRatings,
     createInvoice,
+    createBalancePayment,
     formatCurrency,
     id
   } = useSearchableDetails();
@@ -164,6 +165,51 @@ const OfflineSearchableDetails = () => {
       totalPrice,
       selectedItems
     });
+  };
+  
+  const handleBalancePayment = async () => {
+    // Check if price meets minimum payment requirement
+    if (totalPrice < 1) {
+      showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
+      return;
+    }
+    
+    // Validate if we have any item selections
+    const hasSelections = Object.values(selectedItems).some(count => count > 0);
+    
+    if (!hasSelections) {
+      showAlert("Please select at least one item to purchase", "warning");
+      return;
+    }
+    
+    try {
+      // Create selections array for balance payment
+      const selections = [];
+      Object.entries(selectedItems).forEach(([itemId, count]) => {
+        if (count > 0) {
+          const offlineItem = SearchableItem.payloads.public.offlineItems.find(
+            item => item.itemId.toString() === itemId
+          );
+          if (offlineItem) {
+            selections.push({
+              id: offlineItem.itemId,
+              name: offlineItem.name,
+              price: offlineItem.price,
+              count: count,
+              type: 'offline'
+            });
+          }
+        }
+      });
+      
+      await createBalancePayment({
+        selections,
+        total_price: totalPrice
+      });
+    } catch (err) {
+      console.error('Error creating balance payment:', err);
+      showAlert(err.message || 'Failed to process balance payment. Please try again.', 'error');
+    }
   };
   
   // Function to show alerts
@@ -331,6 +377,7 @@ const OfflineSearchableDetails = () => {
       renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
       onDepositPayment={handleDepositPayment}
+      onBalancePayment={handleBalancePayment}
       totalPrice={totalPrice}
       payButtonText="Pay"
       disabled={totalPrice === 0}

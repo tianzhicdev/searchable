@@ -24,6 +24,7 @@ const BaseSearchableDetails = ({
   // Type-specific handlers
   onPayment,
   onDepositPayment,
+  onBalancePayment,
   
   // Type-specific props for price display
   totalPrice = 0,
@@ -46,6 +47,7 @@ const BaseSearchableDetails = ({
     searchableRating,
     loadingRatings,
     handleRemoveItem,
+    userBalance,
     id,
     history,
     location
@@ -133,6 +135,8 @@ const BaseSearchableDetails = ({
             processing={creatingInvoice}
             onPayButtonClick={onPayment}
             onDepositPayment={onDepositPayment}
+            onBalancePayment={onBalancePayment}
+            userBalance={userBalance}
             isOwner={isOwner}
             onRemoveItem={handleRemoveItem}
             isRemoving={isRemoving}

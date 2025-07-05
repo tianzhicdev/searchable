@@ -8,6 +8,8 @@ const SearchableDetailsPriceDisplay = ({
   processing,
   onPayButtonClick,
   onDepositPayment,
+  onBalancePayment,
+  userBalance = 0,
   isOwner,
   onRemoveItem,
   isRemoving,
@@ -26,6 +28,8 @@ const SearchableDetailsPriceDisplay = ({
           processing={processing}
           onCreditCardPayment={onPayButtonClick}
           onDepositPayment={onDepositPayment}
+          onBalancePayment={onBalancePayment}
+          userBalance={userBalance}
           disabled={disabled}
           payButtonText={payButtonText}
           showPaymentSummary={showPaymentSummary}
