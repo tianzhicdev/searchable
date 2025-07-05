@@ -76,6 +76,7 @@ def check_invoice_payments():
         cur = conn.cursor()
         
         # Query for invoices without completed payments within the time window
+        # Exclude 'balance' type invoices as they are processed instantly
         execute_sql(cur, """
             SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
                    i.amount, i.currency, i.created_at, i.metadata
@@ -83,6 +84,7 @@ def check_invoice_payments():
             LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = %s
             WHERE i.created_at >= %s
             AND p.id IS NULL
+            AND i.type != 'balance'
         """, params=(PaymentStatus.COMPLETE.value, cutoff_time))
         
         invoices = cur.fetchall()

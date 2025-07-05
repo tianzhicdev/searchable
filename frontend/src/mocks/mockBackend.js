@@ -1,6 +1,7 @@
 import axios from 'axios';
 import configData from '../config';
 import * as mockData from './mockData';
+import { store } from '../store';
 
 // Create real backend instance directly here to avoid circular imports
 const realBackend = axios.create({
@@ -22,6 +23,26 @@ const createMockResponse = (data, delay = 300) => {
       resolve({ data, status: 200, statusText: 'OK' });
     }, delay);
   });
+};
+
+// Helper function to check if request is authenticated
+const isAuthenticated = (config) => {
+  // Check if auth token is passed in headers
+  if (config && config.headers && config.headers.authorization) {
+    return true;
+  }
+  
+  // Also check Redux store for auth status
+  const state = store.getState();
+  const account = state.account;
+  
+  if (account?.isLoggedIn && account?.token) {
+    console.log('[MOCK] User is authenticated from Redux store');
+    return true;
+  }
+  
+  console.log('[MOCK] User is not authenticated');
+  return false;
 };
 
 // Helper function to generate random usernames
@@ -696,7 +717,19 @@ const mockHandlers = {
     });
   },
   
-  'balance': () => createMockResponse(mockData.mockBalance),
+  '/balance': (url, config) => {
+    // For balance endpoint, we always check authentication in Redux
+    if (!isAuthenticated(config)) {
+      return Promise.reject({
+        response: {
+          status: 401,
+          data: { error: 'Authentication required' }
+        }
+      });
+    }
+    // Return the balance data in the correct format
+    return createMockResponse(mockData.mockBalance);
+  },
   
   // Deposit endpoints
   'v1/deposit/create': (url, config) => {

@@ -11,7 +11,6 @@ import {
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
-import QRCode from 'react-qr-code';
 import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
@@ -23,6 +22,7 @@ import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
+import DepositComponent from '../../components/Deposit/DepositComponent';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -44,13 +44,6 @@ const Dashboard = () => {
   
   // Add USDT deposit states
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
-  const [depositLoading, setDepositLoading] = useState(false);
-  const [depositError, setDepositError] = useState(null);
-  const [depositAddress, setDepositAddress] = useState('');
-  const [depositExpiresAt, setDepositExpiresAt] = useState(null);
-  const [depositId, setDepositId] = useState(null);
-  const [depositSuccess, setDepositSuccess] = useState(false);
-  const [copiedAddress, setCopiedAddress] = useState(false);
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -216,43 +209,16 @@ const Dashboard = () => {
   // Deposit functions
   const handleOpenDepositDialog = () => {
     setDepositDialogOpen(true);
-    setDepositError(null);
-    setDepositAddress('');
-    setDepositExpiresAt(null);
-    setDepositId(null);
   };
   
   const handleCloseDepositDialog = () => {
     setDepositDialogOpen(false);
-    setDepositAddress('');
-    setDepositExpiresAt(null);
-    setDepositId(null);
   };
-  
-  const handleCreateDeposit = async () => {
-    setDepositLoading(true);
-    setDepositError(null);
-    
-    try {
-      const response = await backend.post('v1/deposit/create', { amount: "0.01" });
-      
-      console.log('Deposit response:', response.data);
-      setDepositAddress(response.data.address);
-      setDepositExpiresAt(response.data.expires_at);
-      setDepositId(response.data.deposit_id);
-      setDepositSuccess(true);
-      
-    } catch (err) {
-      console.error('Error creating deposit:', err);
-      setDepositError(err.response?.data?.message || 'Failed to create deposit. Please try again.');
-    } finally {
-      setDepositLoading(false);
-    }
-  };
-  
-  const handleCopyAddress = (address) => {
-    navigator.clipboard.writeText(address);
-    setCopiedAddress(true);
+
+  const handleDepositCreated = (depositData) => {
+    console.log('Deposit created from dashboard:', depositData);
+    // Optionally refresh balance after deposit is created
+    fetchBalance();
   };
   
   return (
@@ -504,96 +470,14 @@ const Dashboard = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Deposit Dialog */}
-      <Dialog open={depositDialogOpen} onClose={handleCloseDepositDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Create USDT Deposit</DialogTitle>
-        <DialogContent>
-          {!depositAddress ? (
-            <>
-              <Typography variant="body1" gutterBottom>
-                Click "Create Deposit" to generate a unique Ethereum address for your USDT deposit.
-              </Typography>
-              <Typography variant="body2" >
-                • Send any amount of USDT to the generated address
-              </Typography>
-              <Typography variant="body2" >
-                • Deposits expire after 1 hour
-              </Typography>
-              <Typography variant="body2" >
-                • Funds will be credited once confirmed on blockchain
-              </Typography>
-              {depositError && (
-                <Typography color="error" variant="body2" style={{ marginTop: 16 }}>
-                  {depositError}
-                </Typography>
-              )}
-            </>
-          ) : (
-            <>
-              <Typography variant="h6" gutterBottom>
-                Send USDT to this address:
-              </Typography>
-              
-              {/* QR Code */}
-              <Box display="flex" justifyContent="center" style={{ marginBottom: 24 }}>
-                <Box style={{ background: 'black', padding: 16, borderRadius: 8 }}>
-                  <QRCode
-                    value={depositAddress}
-                    size={200}
-                    level="M"
-                    includeMargin={true}
-                    bgColor="black"
-                    fgColor={theme.palette.primary.main}
-                  />
-                </Box>
-              </Box>
-              
-              <Box 
-                style={{ 
-                  textAlign: 'center'
-                }}
-                onClick={() => handleCopyAddress(depositAddress)}
-              >
-                <Typography>
-                  {depositAddress}
-                </Typography>
-              </Box>
-              <Button
-                onClick={() => handleCopyAddress(depositAddress)}
-                variant="outlined"
-                fullWidth
-                style={{ marginBottom: 16 }}
-              >
-                Copy Address
-              </Button>
-              <Typography variant="body2" color="textSecondary">
-                • Send only USDT on Ethereum network
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                • Deposit will be credited once confirmed
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                • Expires: {depositExpiresAt && new Date(depositExpiresAt).toLocaleString()}
-              </Typography>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDepositDialog}>
-            {depositAddress ? 'Close' : 'Cancel'}
-          </Button>
-          {!depositAddress && (
-            <Button 
-              onClick={handleCreateDeposit} 
-              variant="contained"
-              color="primary"
-              disabled={depositLoading}
-            >
-              {depositLoading ? <CircularProgress size={24} /> : 'Create Deposit'}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      {/* Deposit Component */}
+      <DepositComponent
+        open={depositDialogOpen}
+        onClose={handleCloseDepositDialog}
+        onDepositCreated={handleDepositCreated}
+        title="Create USDT Deposit"
+        showInstructions={true}
+      />
       
       {/* Success Message */}
       <Snackbar 
@@ -607,29 +491,6 @@ const Dashboard = () => {
         </Alert>
       </Snackbar>
       
-      {/* Deposit Success Snackbar */}
-      <Snackbar 
-        open={depositSuccess && depositAddress} 
-        autoHideDuration={8000} 
-        onClose={() => setDepositSuccess(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setDepositSuccess(false)} severity="info">
-          Deposit address created! Send USDT to the displayed address.
-        </Alert>
-      </Snackbar>
-
-      {/* Copy Address Snackbar */}
-      <Snackbar 
-        open={copiedAddress} 
-        autoHideDuration={2000} 
-        onClose={() => setCopiedAddress(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setCopiedAddress(false)} severity="success">
-          Address copied to clipboard!
-        </Alert>
-      </Snackbar>
       
       {/* ProfileEditor component now has no props */}
       <ProfileEditor />

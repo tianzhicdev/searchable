@@ -27,6 +27,7 @@ const DownloadableSearchableDetails = () => {
     loadingRatings,
     fetchRatings,
     createInvoice,
+    createBalancePayment,
     formatCurrency,
     id
   } = useSearchableDetails();
@@ -156,6 +157,68 @@ const DownloadableSearchableDetails = () => {
     
     // Create payment
     handlePayment();
+  };
+
+  const handleDepositPayment = async (depositData) => {
+    // Check if price meets minimum payment requirement
+    if (totalPrice < 1) {
+      showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
+      return;
+    }
+
+    // For deposit payments, we show a success message and let the user know to deposit
+    showAlert(`Deposit address created! Send $${totalPrice.toFixed(2)} USDT to complete your purchase.`, "info");
+    
+    // Optionally, you can store the deposit information for tracking
+    console.log('Deposit created for downloadable files:', {
+      depositData,
+      totalPrice,
+      selectedFiles
+    });
+  };
+  
+  const handleBalancePayment = async () => {
+    // Check if price meets minimum payment requirement
+    if (totalPrice < 1) {
+      showAlert("Amount too low for payment. Minimum amount is $1.00", "warning");
+      return;
+    }
+    
+    // Validate if we have any file selections
+    const hasSelections = Object.values(selectedFiles).some(isSelected => isSelected);
+    
+    if (!hasSelections) {
+      showAlert("Please select at least one file to purchase", "warning");
+      return;
+    }
+    
+    try {
+      // Create selections array for balance payment
+      const selections = [];
+      Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
+        if (isSelected) {
+          const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
+            file => file.fileId && file.fileId.toString() === fileId
+          );
+          if (downloadable) {
+            selections.push({
+              id: downloadable.fileId,
+              name: downloadable.name,
+              price: downloadable.price,
+              type: 'downloadable'
+            });
+          }
+        }
+      });
+      
+      await createBalancePayment({
+        selections,
+        total_price: totalPrice
+      });
+    } catch (err) {
+      console.error('Error creating balance payment:', err);
+      showAlert(err.message || 'Failed to process balance payment. Please try again.', 'error');
+    }
   };
   
   // Function to show alerts
@@ -375,8 +438,10 @@ const DownloadableSearchableDetails = () => {
       renderReviewsContent={renderReviewsContent}
       renderReceiptsContent={renderReceiptsContent}
       onPayment={handleStripePayButtonClick}
-      totalPrice={totalPrice * 1.035}
-      payButtonText={`Pay ${formatCurrency(totalPrice * 1.035)}`}
+      onDepositPayment={handleDepositPayment}
+      onBalancePayment={handleBalancePayment}
+      totalPrice={totalPrice}
+      payButtonText="Pay"
       disabled={totalPrice === 0}
     />
   );

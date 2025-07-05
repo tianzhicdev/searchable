@@ -19,7 +19,11 @@ from ..common.data_helpers import (
     get_invoices,
     get_user_paid_files
 )
-from ..common.payment_helpers import calc_invoice
+from ..common.payment_helpers import (
+    calc_invoice,
+    create_balance_invoice_and_payment,
+    validate_balance_payment
+)
 from ..common.models import PaymentStatus, PaymentType, Currency
 from ..common.logging_config import setup_logger
 
@@ -44,8 +48,8 @@ def validate_payment_request(data):
     
     # Validate invoice_type if present
     invoice_type = data.get('invoice_type')
-    if invoice_type and invoice_type not in ['stripe']:
-        raise ValueError("Invalid invoice_type. Must be 'stripe'")
+    if invoice_type and invoice_type not in ['stripe', 'balance']:
+        raise ValueError("Invalid invoice_type. Must be 'stripe' or 'balance'")
     
     return {
         'invoice_type': invoice_type, 
@@ -313,6 +317,109 @@ class CreateInvoiceV1(Resource):
         except Exception as e:
             logger.error(f"Error creating invoice: {str(e)}")
             return {"error": str(e)}, 500 
+
+
+@rest_api.route('/api/v1/create-balance-invoice', methods=['POST'])
+class CreateBalanceInvoiceV1(Resource):
+    """
+    Create an invoice that will be paid using account balance.
+    Balance payments are processed instantly with no external payment processing.
+    """
+    require_auth = True  # Enable authentication
+    @token_required
+    @track_metrics('create_balance_invoice')
+    def post(self, current_user=None, visitor_id=None, request_origin='unknown'):
+        try:
+            logger.info("CreateBalanceInvoiceV1 called")
+            
+            # Get user ID - must be authenticated for balance payments
+            buyer_id = current_user.id if current_user else None
+            
+            if not buyer_id:
+                return {"error": "Authentication required for balance payments"}, 401
+            
+            # Parse request data
+            data = request.get_json()
+            
+            try:
+                validated_data = validate_payment_request(data)
+            except ValueError as e:
+                logger.error(f"Validation error: {str(e)}")
+                return {"error": str(e)}, 400
+            
+            searchable_id = validated_data['searchable_id']
+            selections = validated_data['selections']
+            
+            # Get searchable data
+            searchable_data = get_searchable(searchable_id)
+            
+            if not searchable_data:
+                return {"error": "Searchable item not found"}, 404
+            
+            # Get seller ID from searchable data
+            seller_id = searchable_data.get('user_id')
+            
+            if not seller_id:
+                return {"error": "Invalid searchable item - no seller found"}, 400
+            
+            # Calculate invoice details
+            invoice_details = calc_invoice(searchable_data, selections)
+            
+            if not invoice_details:
+                return {"error": "Failed to calculate invoice"}, 400
+            
+            total_amount = invoice_details['amount_usd']
+            description = invoice_details.get('description', 'Balance Payment')
+            
+            # Validate user has sufficient balance
+            balance_check = validate_balance_payment(buyer_id, total_amount, Currency.USD.value)
+            
+            if not balance_check['valid']:
+                return {
+                    "error": "Insufficient balance",
+                    "balance": balance_check['balance'],
+                    "required": balance_check['required'],
+                    "currency": balance_check['currency']
+                }, 400
+            
+            # Get delivery info if provided
+            delivery_info = data.get('delivery_info', {})
+            
+            # Prepare metadata
+            metadata = {
+                "address": delivery_info.get('address', ''),
+                "tel": delivery_info.get('tel', ''),
+                "description": description,
+                "selections": selections,
+                "payment_method": "balance"
+            }
+            
+            # Create balance invoice and payment atomically
+            result = create_balance_invoice_and_payment(
+                buyer_id=buyer_id,
+                seller_id=seller_id,
+                searchable_id=searchable_id,
+                amount=total_amount,
+                currency=Currency.USD.value,
+                metadata=metadata
+            )
+            
+            return {
+                'success': True,
+                'invoice_id': result['invoice']['id'],
+                'payment_id': result['payment']['id'],
+                'amount': total_amount,
+                'balance_remaining': balance_check['balance'] - total_amount,
+                'status': 'complete'
+            }, 200
+            
+        except ValueError as e:
+            logger.error(f"Balance payment error: {str(e)}")
+            return {"error": str(e)}, 400
+        except Exception as e:
+            logger.error(f"Unexpected error in balance payment: {str(e)}")
+            return {"error": "Failed to process balance payment"}, 500
+
 
 @rest_api.route('/api/v1/user-paid-files/<searchable_id>', methods=['GET'])
 class UserPaidFiles(Resource):
