@@ -40,6 +40,17 @@ const useStyles = makeStyles((theme) => ({
   },
   resultsCount: {
     color: theme.palette.text.secondary
+  },
+  columnLayout: {
+    columnCount: 2,
+    columnGap: theme.spacing(2),
+    [theme.breakpoints.down('xs')]: {
+      columnCount: 1
+    }
+  },
+  columnItem: {
+    breakInside: 'avoid',
+    marginBottom: theme.spacing(2)
   }
 }));
 
@@ -77,18 +88,18 @@ const UserSearchResults = ({
   
   return (
     <>
-      {/* Results in 2-column grid */}
-      <Grid container spacing={2}>
+      {/* Results in column layout - fills left column first, then right */}
+      <Box className={classes.columnLayout}>
         {users.map((user) => (
-          <Grid item xs={12} sm={6} key={user.id}>
+          <Box key={user.id} className={classes.columnItem}>
             <MiniProfile
               type="user"
               data={user}
               onClick={onUserClick}
             />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
       
       {/* Pagination */}
       {pagination && onPageChange && (
