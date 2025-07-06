@@ -42,8 +42,8 @@ const RefillBalanceDialog = ({
   };
   
   const handleDepositCreated = (depositData) => {
-    // Close both dialogs after successful deposit creation
-    setDepositDialogOpen(false);
+    // Don't close the deposit dialog - let the user see the QR code
+    // Only close the refill balance dialog
     onClose();
   };
   
