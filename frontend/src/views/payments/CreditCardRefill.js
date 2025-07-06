@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import {
   Grid,
   Paper,
@@ -21,10 +21,28 @@ import backend from '../utilities/Backend';
 const CreditCardRefill = () => {
   const classes = useComponentStyles();
   const history = useHistory();
+  const location = useLocation();
   
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // Check for deposit status in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const depositStatus = params.get('deposit');
+    
+    if (depositStatus === 'success') {
+      setSuccess('Deposit successful! Your balance will be updated shortly.');
+      // Optionally redirect to dashboard after a delay
+      setTimeout(() => {
+        history.push('/dashboard');
+      }, 3000);
+    } else if (depositStatus === 'cancelled') {
+      setError('Deposit cancelled. You can try again when ready.');
+    }
+  }, [location, history]);
   
   const handleAmountChange = (event) => {
     const value = event.target.value;
@@ -58,10 +76,17 @@ const CreditCardRefill = () => {
       setProcessing(true);
       setError('');
       
+      // Get current URL for success/cancel redirects
+      const currentUrl = window.location.origin + window.location.pathname;
+      const successUrl = `${currentUrl}?deposit=success`;
+      const cancelUrl = `${currentUrl}?deposit=cancelled`;
+      
       // Create a Stripe deposit
       const response = await backend.post('/v1/deposit/create', {
         amount: amountNum.toFixed(2),
-        type: 'stripe'
+        type: 'stripe',
+        success_url: successUrl,
+        cancel_url: cancelUrl
       });
       
       if (response.data.url) {
@@ -88,7 +113,7 @@ const CreditCardRefill = () => {
   const totalAmount = amount ? parseFloat(amount) + stripeFee : 0;
   
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={2} flexDirection={'column'} >
       <Grid item xs={12}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -116,17 +141,23 @@ const CreditCardRefill = () => {
             </Box>
           )}
           
+          {success && (
+            <Box mb={2}>
+              <Alert severity="success">{success}</Alert>
+            </Box>
+          )}
+          
           <Box mb={3}>
             <TextField
               fullWidth
-              label="Amount to Add"
+              // placeholder="Amount to Add"
               variant="outlined"
               value={amount}
               onChange={handleAmountChange}
               placeholder="0.00"
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
+              // InputProps={{
+              //   startAdornment: <InputAdornment position="start">$</InputAdornment>,
+              // }}
               helperText="Minimum: $1.00, Maximum: $10,000.00"
             />
           </Box>

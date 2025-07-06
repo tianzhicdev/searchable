@@ -399,10 +399,18 @@ class APIClient:
         return response.json()
     
     # Deposit Methods
-    def create_deposit(self, amount: str) -> Dict[str, Any]:
+    def create_deposit(self, amount: str = None, **kwargs) -> Dict[str, Any]:
         """Create a deposit request"""
         url = f"{self.base_url}/v1/deposit/create"
-        data = {"amount": amount}
+        
+        # Handle both old style (amount only) and new style (with kwargs)
+        if amount is not None and not kwargs:
+            data = {"amount": amount}
+        else:
+            data = kwargs
+            if amount is not None:
+                data["amount"] = amount
+        
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         return response.json()

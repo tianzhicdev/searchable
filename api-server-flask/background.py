@@ -463,12 +463,12 @@ def check_pending_deposits():
             # Get pending deposits that haven't expired
             # Stripe deposits don't expire like USDT deposits
             execute_sql(cur, """
-                SELECT id, user_id, amount, metadata, created_at, external_id
+                SELECT id, user_id, amount, metadata, created_at, external_id, type
                 FROM deposit
                 WHERE status = 'pending'
                 AND (
-                    (metadata->>'type' = 'usdt' AND created_at > NOW() - INTERVAL '1 hours')
-                    OR (metadata->>'type' = 'stripe')
+                    (type = 'usdt' AND created_at > NOW() - INTERVAL '1 hours')
+                    OR (type = 'stripe')
                 )
                 ORDER BY created_at ASC
             """)
@@ -478,8 +478,7 @@ def check_pending_deposits():
             
             for deposit in pending_deposits:
                 time.sleep(2) # Reduced delay since we're checking both USDT and Stripe
-                deposit_id, user_id, expected_amount, metadata, created_at, external_id = deposit
-                deposit_type = metadata.get('type', 'usdt')  # Default to USDT for backward compatibility
+                deposit_id, user_id, expected_amount, metadata, created_at, external_id, deposit_type = deposit
                 
                 try:
                     # Handle Stripe deposits

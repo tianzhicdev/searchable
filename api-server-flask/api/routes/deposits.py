@@ -41,21 +41,40 @@ class CreateDeposit(Resource):
             except:
                 data = {}
             
-            amount_str = data.get('amount', '0')
             deposit_type = data.get('type', 'usdt').lower()
+            success_url = data.get('success_url')
+            cancel_url = data.get('cancel_url')
             
             # Validate deposit type
             if deposit_type not in ['usdt', 'stripe']:
                 return {"error": "Invalid deposit type. Must be 'usdt' or 'stripe'"}, 400
             
-            # Validate amount if provided
-            try:
-                amount = Decimal(amount_str)
-                # Ensure minimum amount
-                if amount < Decimal('1.00'):
-                    return {"error": "Minimum deposit amount is $1.00"}, 400
-            except:
-                return {"error": "Invalid amount format"}, 400
+            # Validate URLs for Stripe deposits
+            if deposit_type == 'stripe' and (not success_url or not cancel_url):
+                return {"error": "success_url and cancel_url are required for Stripe deposits"}, 400
+            
+            # Handle amount based on deposit type
+            if deposit_type == 'stripe':
+                # Stripe requires an amount
+                amount_str = data.get('amount')
+                if not amount_str:
+                    return {"error": "Amount is required for Stripe deposits"}, 400
+                try:
+                    amount = Decimal(amount_str)
+                    if amount < Decimal('1.00'):
+                        return {"error": "Minimum deposit amount is $1.00"}, 400
+                except:
+                    return {"error": "Invalid amount format"}, 400
+            else:
+                # USDT deposits can have optional amount (user sends whatever they want)
+                amount_str = data.get('amount', '0')
+                try:
+                    amount = Decimal(amount_str)
+                    # For USDT, if amount is provided, it must be positive
+                    if amount_str != '0' and amount <= 0:
+                        return {"error": "Amount must be greater than 0"}, 400
+                except:
+                    return {"error": "Invalid amount format"}, 400
             
             # Create deposit record first to get the ID
             logger.info(f"Creating deposit record for user {current_user.id}")
@@ -69,16 +88,17 @@ class CreateDeposit(Resource):
                 # First, create deposit record with temporary external_id to get the ID
                 initial_metadata = {'type': deposit_type}
                 execute_sql(cur, """
-                    INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata, type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id, created_at
                 """, params=(
                     current_user.id,
                     amount,
-                    'usd' if deposit_type == 'stripe' else 'usdt',  # USD for Stripe, USDT for crypto
+                    'usd',  # Always use lowercase 'usd'
                     f'temp_{current_user.id}_{datetime.now().timestamp()}',  # Temporary unique ID
                     'pending',
-                    Json(initial_metadata)
+                    Json(initial_metadata),
+                    deposit_type  # Set the type field directly
                 ), commit=True, connection=conn)
                 
                 result = cur.fetchone()
@@ -108,8 +128,8 @@ class CreateDeposit(Resource):
                                 'quantity': 1,
                             }],
                             mode='payment',
-                            success_url=os.getenv('FRONTEND_URL', 'https://example.com') + '/dashboard?deposit=success',
-                            cancel_url=os.getenv('FRONTEND_URL', 'https://example.com') + '/credit-card-refill?deposit=cancelled',
+                            success_url=success_url,
+                            cancel_url=cancel_url,
                             metadata={
                                 'deposit_id': str(deposit_id),
                                 'user_id': str(current_user.id),
@@ -149,7 +169,7 @@ class CreateDeposit(Resource):
                             'amount': str(amount),
                             'stripe_fee': stripe_fee,
                             'total_charge': total_charge,
-                            'currency': 'USD',
+                            'currency': 'usd',
                             'status': 'pending',
                             'created_at': created_at.isoformat()
                         }, 200
@@ -243,7 +263,7 @@ class DepositStatus(Resource):
             try:
                 # Get deposit record
                 execute_sql(cur, """
-                    SELECT id, amount, currency, status, metadata, created_at, tx_hash
+                    SELECT id, amount, currency, status, metadata, created_at, tx_hash, type
                     FROM deposit
                     WHERE id = %s AND user_id = %s
                 """, params=(deposit_id, current_user.id))
@@ -252,7 +272,7 @@ class DepositStatus(Resource):
                 if not result:
                     return {"error": "Deposit not found"}, 404
                 
-                dep_id, amount, currency, status, metadata, created_at, tx_hash = result
+                dep_id, amount, currency, status, metadata, created_at, tx_hash, deposit_type = result
                 
                 # Extract address from metadata
                 eth_address = metadata.get('eth_address', '')
@@ -263,6 +283,7 @@ class DepositStatus(Resource):
                     'address': eth_address,
                     'amount': str(amount),
                     'status': status,
+                    'type': deposit_type,
                     'expires_at': expires_at,
                     'created_at': created_at.isoformat()
                 }
@@ -310,7 +331,7 @@ class ListDeposits(Resource):
                 
                 # Get deposits
                 execute_sql(cur, """
-                    SELECT id, amount, currency, status, metadata, created_at, tx_hash
+                    SELECT id, amount, currency, status, metadata, created_at, tx_hash, type
                     FROM deposit
                     WHERE user_id = %s
                     ORDER BY created_at DESC
@@ -319,10 +340,7 @@ class ListDeposits(Resource):
                 
                 deposits = []
                 for row in cur.fetchall():
-                    dep_id, amount, currency, status, metadata, created_at, tx_hash = row
-                    
-                    # Get deposit type from metadata
-                    deposit_type = metadata.get('type', 'usdt')  # Default to usdt for backward compatibility
+                    dep_id, amount, currency, status, metadata, created_at, tx_hash, deposit_type = row
                     
                     deposit_data = {
                         'deposit_id': dep_id,
