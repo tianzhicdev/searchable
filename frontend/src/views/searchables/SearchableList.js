@@ -8,6 +8,7 @@ import {
 
 import MiniProfile from '../../components/Profiles/MiniProfile';
 import Pagination from '../../components/Pagination/Pagination';
+import ColumnLayout from '../../components/Layout/ColumnLayout';
 import backend from '../utilities/Backend';
 import { navigateWithReferrer } from '../../utils/navigationUtils';
 
@@ -166,17 +167,19 @@ const SearchableList = ({ criteria }) => {
 
       {searchResults.length > 0 && (
         <>
-          {searchResults.map((item) => (
-            <Grid item xs={12} key={`${item.searchable_id}-${pagination.page}`}>
+          {/* Results in column layout - fills left column first, then right */}
+          <ColumnLayout columns={2}>
+            {searchResults.map((item) => (
               <MiniProfile 
+                key={`${item.searchable_id}-${pagination.page}`}
                 type="searchable"
                 data={item}
                 onClick={() => handleItemClick(item)} 
               />
-            </Grid>
-          ))}
+            ))}
+          </ColumnLayout>
 
-          <Grid item xs={12}>
+          <Box mt={2}>
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
@@ -184,7 +187,7 @@ const SearchableList = ({ criteria }) => {
               onPageChange={handlePageChange}
               disabled={loading}
             />
-          </Grid>
+          </Box>
         </>
       )}
 

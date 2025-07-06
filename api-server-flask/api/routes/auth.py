@@ -418,19 +418,34 @@ class CheckInviteCode(Resource):
 
 
 @rest_api.route('/api/v1/get-active-invite-code')
+@rest_api.route('/invite')
 class GetActiveInviteCode(Resource):
     """
     Get an active invite code
     """
     def get(self):
         try:
+            # Get optional promoter parameter
+            promoter = request.args.get('promoter')
+            
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Get a random active invite code
-            execute_sql(cur,
-                "SELECT code, metadata FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
-            )
+            # Build query based on whether promoter is specified
+            if promoter:
+                # Get invite codes with specific promoter in metadata
+                execute_sql(cur,
+                    """SELECT code, metadata FROM invite_code 
+                       WHERE active = TRUE 
+                       AND metadata->>'promoter' = %s 
+                       ORDER BY RANDOM() LIMIT 1""",
+                    params=(promoter,)
+                )
+            else:
+                # Get any random active invite code
+                execute_sql(cur,
+                    "SELECT code, metadata FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
+                )
             
             result = cur.fetchone()
             cur.close()
@@ -441,16 +456,28 @@ class GetActiveInviteCode(Resource):
                 metadata = result[1] if result[1] else {}
                 description = metadata.get('description', 'Join our platform with this invite code')
                 
-                return {
+                response_data = {
                     "success": True,
                     "invite_code": code,
                     "description": description
-                }, 200
+                }
+                
+                # Include promoter in response if present
+                if metadata.get('promoter'):
+                    response_data['promoter'] = metadata['promoter']
+                
+                return response_data, 200
             else:
-                return {
-                    "success": False,
-                    "message": "No active invite codes available"
-                }, 200
+                if promoter:
+                    return {
+                        "success": False,
+                        "message": f"No active invite codes available for promoter '{promoter}'"
+                    }, 200
+                else:
+                    return {
+                        "success": False,
+                        "message": "No active invite codes available"
+                    }, 200
                 
         except Exception as e:
             logger.error(f"Error getting active invite code: {e}")
