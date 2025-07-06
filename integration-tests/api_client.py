@@ -485,6 +485,8 @@ class APIClient:
             files = {'file': (filename or "test_image.png", file_path_or_data, 'image/png')}
             response = self.session.post(url, files=files, timeout=UPLOAD_TIMEOUT)
         
+        if response.status_code != 200:
+            print(f"Media upload failed: {response.status_code}, {response.text}")
         response.raise_for_status()
         return response.json()
 
