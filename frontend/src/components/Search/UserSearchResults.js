@@ -77,15 +77,18 @@ const UserSearchResults = ({
   
   return (
     <>
-      {/* Results */}
-      {users.map((user) => (
-        <MiniProfile
-          key={user.id}
-          type="user"
-          data={user}
-          onClick={onUserClick}
-        />
-      ))}
+      {/* Results in 2-column grid */}
+      <Grid container spacing={2}>
+        {users.map((user) => (
+          <Grid item xs={12} sm={6} key={user.id}>
+            <MiniProfile
+              type="user"
+              data={user}
+              onClick={onUserClick}
+            />
+          </Grid>
+        ))}
+      </Grid>
       
       {/* Pagination */}
       {pagination && onPageChange && (
