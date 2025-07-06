@@ -19,11 +19,11 @@ class APIClient:
         self.token = token
         self.session.headers.update({'authorization': token})
     
-    def register(self, username: str, email: str, password: str) -> Dict[str, Any]:
+    def register(self, username: str, email: str, password: str, invite_code: str = None) -> Dict[str, Any]:
         """Register a new user, handle existing user gracefully"""
-        return self.register_user(username, email, password)
+        return self.register_user(username, email, password, invite_code)
     
-    def register_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
+    def register_user(self, username: str, email: str, password: str, invite_code: str = None) -> Dict[str, Any]:
         """Register a new user, handle existing user gracefully"""
         url = f"{self.base_url}/users/register"
         data = {
@@ -31,6 +31,9 @@ class APIClient:
             "email": email,
             "password": password
         }
+        
+        if invite_code:
+            data["invite_code"] = invite_code
         
         response = self.session.post(url, json=data, timeout=REQUEST_TIMEOUT)
         
