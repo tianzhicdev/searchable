@@ -49,6 +49,7 @@ show_usage() {
     echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
+    echo "  ./exec.sh local unittests                   - Run unit tests for critical functions"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
     echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
@@ -81,6 +82,7 @@ show_usage() {
     echo "  ./exec.sh prod test --t invite_codes"
     echo "  ./exec.sh local test --t mass_withdrawals -n 10"
     echo "  ./exec.sh local test --parallel"
+    echo "  ./exec.sh local unittests"
     echo "  ./exec.sh local mock"
     echo "  ./exec.sh local cicd"
     echo "  ./exec.sh local cicd --sequential"
@@ -599,6 +601,26 @@ local_mock() {
     npm start
 }
 
+# Local unit tests for critical functions
+local_unittests() {
+    echo -e "${BLUE}🧪 Running unit tests for critical functions...${NC}"
+    
+    cd api-server-flask
+    
+    # Check if unit test runner exists
+    if [ ! -f "run_unit_tests.sh" ]; then
+        echo -e "${RED}❌ Unit test runner not found${NC}"
+        echo "Expected: api-server-flask/run_unit_tests.sh"
+        exit 1
+    fi
+    
+    # Make sure the runner is executable
+    chmod +x run_unit_tests.sh
+    
+    # Run the unit tests
+    ./run_unit_tests.sh
+}
+
 # Local CI/CD workflow - tear down everything, rebuild, and test
 local_cicd() {
     local parallel_flag=$1
@@ -1100,6 +1122,9 @@ case "$ENVIRONMENT" in
                 ;;
             "mock")
                 local_mock
+                ;;
+            "unittests")
+                local_unittests
                 ;;
             "cicd")
                 # Default to parallel mode for cicd
