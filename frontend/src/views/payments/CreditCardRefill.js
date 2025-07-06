@@ -90,8 +90,8 @@ const CreditCardRefill = () => {
       });
       
       if (response.data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = response.data.url;
+        // Redirect to Stripe checkout using replace to avoid back button issues
+        window.location.replace(response.data.url);
       } else {
         setError('Failed to create payment session');
       }
@@ -117,10 +117,10 @@ const CreditCardRefill = () => {
       <Grid item xs={12}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => history.goBack()}
+          onClick={() => history.push('/dashboard')}
           className={classes.backButton}
         >
-          Back
+          Back to Dashboard
         </Button>
       </Grid>
       

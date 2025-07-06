@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme) => ({
   },
   imageContainer: {
     width: '100%',
-    height: '200px',
+    // height: '200px',
     overflow: 'hidden',
     backgroundColor: theme.palette.grey[100]
   },

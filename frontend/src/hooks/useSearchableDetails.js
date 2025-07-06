@@ -133,10 +133,11 @@ const useSearchableDetails = () => {
 
       // Redirect to Stripe checkout
       if (response.data.url) {
-        window.location.href = response.data.url;
+        // Use replace to avoid back button issues with external URLs
+        window.location.replace(response.data.url);
       } else if (response.data.session_id) {
-        // For mock mode, redirect to success page
-        window.location.href = `${window.location.origin}${window.location.pathname}?payment=success`;
+        // For mock mode, use history API for internal navigation
+        history.push(`${location.pathname}?payment=success`);
       }
     } catch (err) {
       throw new Error(err.message || 'Failed to create payment invoice');
@@ -166,9 +167,8 @@ const useSearchableDetails = () => {
       const response = await backend.post('v1/create-balance-invoice', payload);
 
       if (response.data.success) {
-        // Payment successful - refresh balance and redirect
-        await fetchUserBalance();
-        window.location.href = `${window.location.origin}${window.location.pathname}?payment=success&type=balance`;
+        // Payment successful - refresh the page to show updated state
+        window.location.reload();
       }
     } catch (err) {
       throw new Error(err.response?.data?.error || err.message || 'Failed to process balance payment');
