@@ -419,8 +419,6 @@ ON CONFLICT (name) DO NOTHING;
 
 
 
-
-
 -- Create deposit table for USDT deposits
 CREATE TABLE IF NOT EXISTS deposit (
     id SERIAL PRIMARY KEY,
@@ -450,3 +448,20 @@ WHERE tx_hash IS NOT NULL;
 
 -- Add comment explaining the column
 COMMENT ON COLUMN deposit.tx_hash IS 'Ethereum transaction hash for the USDT deposit';
+
+-- Add type column to deposit table for cleaner code
+ALTER TABLE deposit ADD COLUMN IF NOT EXISTS type VARCHAR(20) DEFAULT 'usdt';
+
+-- Update existing deposits based on metadata
+UPDATE deposit 
+SET type = CASE 
+    WHEN metadata->>'type' = 'stripe' THEN 'stripe'
+    ELSE 'usdt'
+END
+WHERE type IS NULL;
+
+-- Make the column NOT NULL after population
+ALTER TABLE deposit ALTER COLUMN type SET NOT NULL;
+
+-- Add index on type for faster queries
+CREATE INDEX IF NOT EXISTS idx_deposit_type ON deposit(type);

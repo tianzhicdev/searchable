@@ -55,7 +55,10 @@ const DepositComponent = ({
     setDepositError(null);
     
     try {
-      const response = await backend.post('v1/deposit/create', { amount: "0.01" });
+      const response = await backend.post('v1/deposit/create', { 
+        type: 'usdt'
+        // No amount needed for USDT deposits - user sends whatever they want
+      });
       
       console.log('Deposit response:', response.data);
       setDepositAddress(response.data.address);
@@ -178,14 +181,13 @@ const DepositComponent = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button onClick={handleClose}>
             {depositAddress ? 'Close' : 'Cancel'}
           </Button>
           {!depositAddress && (
             <Button 
               onClick={handleCreateDeposit} 
               variant="contained"
-              color="primary"
               disabled={depositLoading}
               startIcon={depositLoading ? <CircularProgress size={20} /> : null}
             >
