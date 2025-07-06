@@ -753,7 +753,7 @@ def get_balance_by_currency(user_id):
             JOIN payment p ON i.id = p.invoice_id
             WHERE i.seller_id = %s
             AND p.status = %s
-            AND i.currency IN ('USD', 'USDT', 'usd', 'usdt')
+            AND i.currency = 'usd'
             
             UNION ALL
             
@@ -764,7 +764,7 @@ def get_balance_by_currency(user_id):
                 r.currency
             FROM rewards r
             WHERE r.user_id = %s
-            AND r.currency IN ('USD', 'USDT', 'usd', 'usdt')
+            AND r.currency = 'usd'
             
             UNION ALL
             
@@ -776,7 +776,7 @@ def get_balance_by_currency(user_id):
             FROM deposit d
             WHERE d.user_id = %s
             AND d.status = 'complete'
-            AND d.currency IN ('USDT', 'usdt')
+            AND d.currency = 'usd'
             
             UNION ALL
             
@@ -788,7 +788,7 @@ def get_balance_by_currency(user_id):
             FROM withdrawal w
             WHERE w.user_id = %s
             AND w.status IN (%s, %s, %s)
-            AND w.currency IN ('USD', 'USDT', 'usd', 'usdt')
+            AND w.currency = 'usd'
             
             UNION ALL
             
@@ -802,7 +802,7 @@ def get_balance_by_currency(user_id):
             WHERE i.buyer_id = %s
             AND p.type = 'balance'
             AND p.status = %s
-            AND i.currency IN ('USD', 'USDT', 'usd', 'usdt')
+            AND i.currency = 'usd'
         )
         SELECT 
             COALESCE(SUM(net_amount), 0) as total_balance
