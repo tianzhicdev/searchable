@@ -178,14 +178,13 @@ const DepositComponent = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          <Button onClick={handleClose}>
             {depositAddress ? 'Close' : 'Cancel'}
           </Button>
           {!depositAddress && (
             <Button 
               onClick={handleCreateDeposit} 
               variant="contained"
-              color="primary"
               disabled={depositLoading}
               startIcon={depositLoading ? <CircularProgress size={20} /> : null}
             >
