@@ -15,6 +15,7 @@ import {
 import QRCode from 'react-qr-code';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
+import { useHistory } from 'react-router-dom';
 
 /**
  * Reusable USDT Deposit Component
@@ -29,6 +30,7 @@ const DepositComponent = ({
 }) => {
   const classes = useComponentStyles();
   const theme = useTheme();
+  const history = useHistory();
   
   // Deposit states
   const [depositLoading, setDepositLoading] = useState(false);
@@ -165,8 +167,22 @@ const DepositComponent = ({
                 Copy Address
               </Button>
               
+              {/* Check Deposits Button */}
+              <Box mt={2}>
+                <Button
+                  onClick={() => {
+                    history.push('/dashboard?view=deposits');
+                    handleClose();
+                  }}
+                  variant="outlined"
+                  fullWidth
+                >
+                  Check My Deposits
+                </Button>
+              </Box>
+              
               {/* Instructions */}
-              <Box>
+              <Box mt={2}>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
                   • Send only USDT on Ethereum network
                 </Typography>
