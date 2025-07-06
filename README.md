@@ -11,9 +11,9 @@ Our vision is elegantly simple yet profoundly transformative: **to architect the
 We are proposing to build a system where all of the below can happen in one place, using stablecoins:
 
 - 🎵 **Music**: A musician receives $9.99 directly for each song downloaded
-- 📰 **Journalism**: A reader pays $0.50 for today's financial insights
+- 📰 **Journalism**: A reader pays $0.50 for today's financial news or analysis
 - 🎬 **Cinema**: A film streams for $3 per hour of entertainment
-- 📡 **Broadcasting**: A live broadcaster earns $0.30 per minute of engagement
+- 📡 **Broadcasting**: A live broadcaster charge $0.30 per minute to watch his streaming content
 - 🤖 **AI Services**: An AI interface charges $1.50 for five minutes of computational intelligence
 
 ## Our Philosophy
@@ -34,9 +34,10 @@ Articles, files, designs, music, movies—all exchangeable for precise value
 - Each moment monetized
 
 ### Hybrid Experiences
-- A livestreamer selling music downloads mid-broadcast
-- A UFC champion offering 20-second conversations post-match
-- A Japanese language instructor combining hourly consultations with downloadable materials
+- A livestreamer selling music downloads during his podcast 
+- A streaming Pay Per View UFC event offering 1-minute audience question to the winner for 10k 
+- A language instructor/online companion/professional comsultation combining hourly consultations with downloadable materials
+- A KOL live stream where audience can pay 0.5 dollar to send a message
 
 ## The Opportunity
 
