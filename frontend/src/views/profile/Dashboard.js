@@ -22,7 +22,7 @@ import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
-import DepositComponent from '../../components/Deposit/DepositComponent';
+import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -42,8 +42,8 @@ const Dashboard = () => {
   const [usdtWithdrawalLoading, setUsdtWithdrawalLoading] = useState(false);
   const [usdtWithdrawalError, setUsdtWithdrawalError] = useState(null);
   
-  // Add USDT deposit states
-  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  // Add refill balance dialog state
+  const [refillDialogOpen, setRefillDialogOpen] = useState(false);
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -206,18 +206,10 @@ const Dashboard = () => {
     }
   };
   
-  // Deposit functions
-  const handleOpenDepositDialog = () => {
-    setDepositDialogOpen(true);
-  };
-  
-  const handleCloseDepositDialog = () => {
-    setDepositDialogOpen(false);
-  };
-
-  const handleDepositCreated = (depositData) => {
-    console.log('Deposit created from dashboard:', depositData);
-    // Optionally refresh balance after deposit is created
+  // Refill balance functions
+  const handleCloseRefillDialog = () => {
+    setRefillDialogOpen(false);
+    // Refresh balance when dialog closes
     fetchBalance();
   };
   
@@ -270,9 +262,9 @@ const Dashboard = () => {
             </MenuItem>
             <MenuItem onClick={() => {
               handleMenuClose();
-              handleOpenDepositDialog();
+              setRefillDialogOpen(true);
             }}>
-              Deposit USDT
+              Refill Balance
             </MenuItem>
             {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {
@@ -470,13 +462,12 @@ const Dashboard = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Deposit Component */}
-      <DepositComponent
-        open={depositDialogOpen}
-        onClose={handleCloseDepositDialog}
-        onDepositCreated={handleDepositCreated}
-        title="Create USDT Deposit"
-        showInstructions={true}
+      {/* Refill Balance Dialog */}
+      <RefillBalanceDialog
+        open={refillDialogOpen}
+        onClose={handleCloseRefillDialog}
+        currentBalance={balance.usd || 0}
+        requiredAmount={0}
       />
       
       {/* Success Message */}
