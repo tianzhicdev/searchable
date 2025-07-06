@@ -7,3 +7,7 @@ api-server-flask/.secrets.env
 .files/*
 files/*
 logs/*
+
+# Virtual environments
+venv/
+api-server-flask/venv/
