@@ -43,7 +43,7 @@ def execute_db_command(sql_command):
         ]
         return subprocess.run(cmd_parts, check=True, capture_output=True, text=True)
 
-def insert_invite_code(code, active=True, description="test code"):
+def insert_invite_code(code, active=True, description="test code", promoter=None):
     """
     Insert an invite code into the database.
     
@@ -51,6 +51,7 @@ def insert_invite_code(code, active=True, description="test code"):
         code: The invite code (6 uppercase letters)
         active: Whether the code is active (default True)
         description: Description for metadata
+        promoter: Optional promoter name for the code
         
     Returns:
         bool: True if successful, False otherwise
@@ -59,6 +60,8 @@ def insert_invite_code(code, active=True, description="test code"):
         # Use proper PostgreSQL JSONB literal syntax
         import json
         metadata_dict = {"description": description}
+        if promoter:
+            metadata_dict["promoter"] = promoter
         metadata_json = json.dumps(metadata_dict).replace("'", "''")  # Escape single quotes for SQL
         
         sql_command = f"INSERT INTO invite_code (code, active, metadata) VALUES ('{code}', {str(active).lower()}, '{metadata_json}'::jsonb) ON CONFLICT (code) DO NOTHING;"

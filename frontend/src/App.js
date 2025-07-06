@@ -26,7 +26,7 @@ const App = () => {
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <MockModeIndicator />
                 {/* <Box display="flex" justifyContent="center" width="100%"> */}
-                    <Container id="outer-container" maxWidth="md" style={{ 
+                    <Container id="outer-container" maxWidth="xl" style={{ 
                         margin: '0 auto', 
                         display: 'flex', 
                         flexDirection: 'column', 

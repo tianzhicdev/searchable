@@ -13,11 +13,25 @@ const useStyles = makeStyles((theme) => ({
     cursor: 'pointer',
     transition: 'box-shadow 0.3s ease',
     width: '100%',
-    marginBottom: theme.spacing(1),
-    padding: theme.spacing(2),
+    padding: 0,
+    overflow: 'hidden',
     '&:hover': {
       boxShadow: theme.shadows[4]
     }
+  },
+  imageContainer: {
+    width: '100%',
+    height: '200px',
+    overflow: 'hidden',
+    backgroundColor: theme.palette.grey[100]
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+  contentContainer: {
+    padding: theme.spacing(2)
   },
   title: {
     fontWeight: 'bold',
@@ -29,16 +43,6 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(1),
     color: theme.palette.text.secondary
   },
-  imageContainer: {
-    marginLeft: theme.spacing(2),
-    flex: '0 0 auto'
-  },
-  image: {
-    maxWidth: '120px',
-    maxHeight: '120px',
-    objectFit: 'cover',
-    borderRadius: theme.shape.borderRadius
-  },
   tagsSection: {
     marginTop: theme.spacing(1.5)
   },
@@ -46,6 +50,15 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(0.5),
     color: theme.palette.text.secondary,
     fontSize: '0.875rem'
+  },
+  noImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.palette.grey[200],
+    color: theme.palette.text.secondary
   }
 }));
 
@@ -128,95 +141,94 @@ const MiniProfile = ({
   
   return (
     <Paper className={classes.profileCard} onClick={handleClick}>
-      <Box display="flex" flexDirection="row">
-        <Box flex="1 1 auto">
-          <Typography variant="h4" className={classes.title}>
-            {truncateText(title, 50)}
-          </Typography>
+      {/* Image at the top taking full width */}
+      <Box className={classes.imageContainer}>
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className={classes.image}
+          />
+        ) : (
+          <Box className={classes.noImagePlaceholder}>
+            <Typography variant="h6">
+              {type === 'user' ? 'No Profile Image' : 'No Image'}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+      
+      {/* Content below the image */}
+      <Box className={classes.contentContainer}>
+        <Typography variant="h4" className={classes.title}>
+          {truncateText(title, 50)}
+        </Typography>
 
-          <Divider />
-          
-          <Box>
-            {/* Meta information based on type */}
-            {type === 'searchable' && metaInfo.username && (
-              <Box className={classes.metaInfo}>
-                <PostedBy 
-                  username={metaInfo.username} 
-                  userId={metaInfo.userId} 
-                  maxLength={30}
-                />
-                
-                {metaInfo.searchableType && (
-                  <Typography variant="body2" style={{ fontWeight: 'bold' }}>
-                    Type: {getSearchableTypeLabel(metaInfo.searchableType)}
-                  </Typography>
-                )}
-                
-                {metaInfo.price && (
-                  <Typography variant="body2">
-                    Price: ${metaInfo.price}
-                  </Typography>
-                )}
-                
-                {metaInfo.category && (
-                  <Typography variant="body2">
-                    Category: {truncateText(metaInfo.category, 30)}
-                  </Typography>
-                )}
-              </Box>
-            )}
+        <Divider />
+        
+        {/* Meta information based on type */}
+        {type === 'searchable' && metaInfo.username && (
+          <Box className={classes.metaInfo}>
+            <PostedBy 
+              username={metaInfo.username} 
+              userId={metaInfo.userId} 
+              maxLength={30}
+            />
             
-            {type === 'user' && (
-              <Box className={classes.metaInfo}>
-                {metaInfo.username && title !== metaInfo.username && (
-                  <Typography variant="body2">
-                    @{metaInfo.username}
-                  </Typography>
-                )}
-                
-                {typeof metaInfo.searchableCount === 'number' && (
-                  <Typography variant="body2">
-                    Items: {metaInfo.searchableCount}
-                  </Typography>
-                )}
-                
-                {typeof metaInfo.rating === 'number' && (
-                  <Typography variant="body2">
-                    Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings || 0} reviews)
-                  </Typography>
-                )}
-              </Box>
-            )}
-            
-            {/* Description */}
-            {description && (
-              <Typography variant="body2" className={classes.description}>
-                {type === 'searchable' ? 'Description: ' : ''}
-                {truncateText(description, 150)}
+            {metaInfo.searchableType && (
+              <Typography variant="body2" style={{ fontWeight: 'bold' }}>
+                Type: {getSearchableTypeLabel(metaInfo.searchableType)}
               </Typography>
             )}
             
-            {/* Tags Section */}
-            {tags && tags.length > 0 && (
-              <Box className={classes.tagsSection}>
-                <TagsOnProfile tags={tags} />
-              </Box>
+            {metaInfo.price && (
+              <Typography variant="body2">
+                Price: ${metaInfo.price}
+              </Typography>
+            )}
+            
+            {metaInfo.category && (
+              <Typography variant="body2">
+                Category: {truncateText(metaInfo.category, 30)}
+              </Typography>
             )}
           </Box>
-        </Box>
+        )}
         
-        {/* Image */}
-        {imageUrl && (
-          <Box className={classes.imageContainer}>
-            <Paper elevation={1}>
-              <Box display="flex" justifyContent="center" p={0.5}>
-                <img 
-                  src={imageUrl} 
-                  alt={title}
-                  className={classes.image}
-                />
-              </Box>
-            </Paper>
+        {type === 'user' && (
+          <Box className={classes.metaInfo}>
+            {metaInfo.username && title !== metaInfo.username && (
+              <Typography variant="body2">
+                @{metaInfo.username}
+              </Typography>
+            )}
+            
+            {typeof metaInfo.searchableCount === 'number' && (
+              <Typography variant="body2">
+                Items: {metaInfo.searchableCount}
+              </Typography>
+            )}
+            
+            {typeof metaInfo.rating === 'number' && (
+              <Typography variant="body2">
+                Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings || 0} reviews)
+              </Typography>
+            )}
+          </Box>
+        )}
+        
+        {/* Description */}
+        {description && (
+          <Typography variant="body2" className={classes.description}>
+            {type === 'searchable' ? 'Description: ' : ''}
+            {truncateText(description, 150)}
+          </Typography>
+        )}
+        
+        {/* Tags Section */}
+        {tags && tags.length > 0 && (
+          <Box className={classes.tagsSection}>
+            <TagsOnProfile tags={tags} />
           </Box>
         )}
       </Box>
