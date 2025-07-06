@@ -18,6 +18,7 @@ import {
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
 import RefillBalanceDialog from './RefillBalanceDialog';
+import BalancePaymentDialog from './BalancePaymentDialog';
 
 /**
  * PayButton Component
@@ -45,6 +46,7 @@ const PayButton = ({
   const [anchorEl, setAnchorEl] = useState(null);
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [refillDialogOpen, setRefillDialogOpen] = useState(false);
+  const [balanceConfirmOpen, setBalanceConfirmOpen] = useState(false);
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
@@ -73,6 +75,10 @@ const PayButton = ({
 
   const handleBalanceClick = () => {
     handleMenuClose();
+    setBalanceConfirmOpen(true);
+  };
+  
+  const handleBalanceConfirm = () => {
     if (onBalancePayment) {
       onBalancePayment();
     }
@@ -151,6 +157,16 @@ const PayButton = ({
             </Typography>
           </Button>
         </Box>
+        
+        {/* Balance Payment Confirmation Dialog */}
+        <BalancePaymentDialog
+          open={balanceConfirmOpen}
+          onClose={() => setBalanceConfirmOpen(false)}
+          onConfirm={handleBalanceConfirm}
+          totalPrice={totalPrice}
+          userBalance={userBalance}
+          processing={processing}
+        />
       </>
     );
   }
