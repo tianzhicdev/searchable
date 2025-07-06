@@ -26,7 +26,7 @@ import Invoice from '../payments/Invoice';
 import RewardComponent from '../../components/Reward/RewardComponent';
 import useComponentStyles from '../../themes/componentStyles';
 
-const UserInvoices = () => {
+const UserInvoices = ({ initialView }) => {
   const classes = useComponentStyles();
   const theme = useTheme();
   const [invoices, setInvoices] = useState([]);
@@ -37,7 +37,20 @@ const UserInvoices = () => {
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  
+  // Map view names to tab indices
+  const getInitialTab = () => {
+    switch (initialView) {
+      case 'purchases': return 0;
+      case 'sales': return 1;
+      case 'withdrawals': return 2;
+      case 'deposits': return 3;
+      case 'rewards': return 4;
+      default: return 0; // Default to purchases
+    }
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [anchorEl, setAnchorEl] = useState(null);
   const [stats, setStats] = useState({
     totalSpent: 0,
@@ -58,6 +71,11 @@ const UserInvoices = () => {
     fetchUserRewards();
     fetchUserDeposits();
   }, []);
+  
+  // Update active tab when initialView changes
+  useEffect(() => {
+    setActiveTab(getInitialTab());
+  }, [initialView]);
 
   const fetchUserInvoices = async () => {
     try {
@@ -464,27 +482,31 @@ const UserInvoices = () => {
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                         <Box flex={1}>
-                          <Chip 
-                            label={deposit.status.toUpperCase()}
-                            color={deposit.status === 'complete' ? 'primary' : 'default'}
-                            size="small"
-                          />
+                          <Box display="flex" gap={1} mb={1}>
+                            <Chip 
+                              label={deposit.status.toUpperCase()}
+                              color={deposit.status === 'complete' ? 'primary' : 'default'}
+                              size="small"
+                            />
+                          </Box>
                           <Typography variant="h6" className={classes.staticText}>
                             Deposit #{deposit.deposit_id}
                           </Typography>
                           <Typography variant="body2" className={classes.systemText}>
                             {new Date(deposit.created_at).toLocaleDateString()} at {new Date(deposit.created_at).toLocaleTimeString()}
                           </Typography>
-                          <Typography variant="body2" className={classes.systemText}>
-                            Address: {deposit.address}
-                          </Typography>
+                          {deposit.type !== 'stripe' && deposit.address && (
+                            <Typography variant="body2" className={classes.systemText}>
+                              Address: {deposit.address}
+                            </Typography>
+                          )}
                           {deposit.tx_hash && (
                             <Typography variant="body2" className={classes.systemText}>
                               TX: {deposit.tx_hash}
                             </Typography>
                           )}
                           <Typography variant="h6" className={classes.userText} style={{ marginTop: 8 }}>
-                            {deposit.amount === '0.00000000' ? 'Pending' : `$${deposit.amount} USDT`}
+                            {deposit.amount === '0.00000000' ? 'Pending' : `$${deposit.amount} ${deposit.type === 'stripe' ? 'USD' : 'USDT'}`}
                           </Typography>
                         </Box>
                       </Box>

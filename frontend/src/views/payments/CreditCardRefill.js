@@ -33,13 +33,7 @@ const CreditCardRefill = () => {
     const params = new URLSearchParams(location.search);
     const depositStatus = params.get('deposit');
     
-    if (depositStatus === 'success') {
-      setSuccess('Deposit successful! Your balance will be updated shortly.');
-      // Optionally redirect to dashboard after a delay
-      setTimeout(() => {
-        history.push('/dashboard');
-      }, 3000);
-    } else if (depositStatus === 'cancelled') {
+    if (depositStatus === 'cancelled') {
       setError('Deposit cancelled. You can try again when ready.');
     }
   }, [location, history]);
@@ -76,10 +70,9 @@ const CreditCardRefill = () => {
       setProcessing(true);
       setError('');
       
-      // Get current URL for success/cancel redirects
-      const currentUrl = window.location.origin + window.location.pathname;
-      const successUrl = `${currentUrl}?deposit=success`;
-      const cancelUrl = `${currentUrl}?deposit=cancelled`;
+      // Set success URL to dashboard with deposits view
+      const successUrl = `${window.location.origin}/dashboard?view=deposits`;
+      const cancelUrl = `${window.location.origin}${window.location.pathname}?deposit=cancelled`;
       
       // Create a Stripe deposit
       const response = await backend.post('/v1/deposit/create', {
