@@ -52,6 +52,10 @@ const Dashboard = () => {
   const history = useHistory();
   const location = useLocation();
   
+  // Parse view parameter from URL
+  const searchParams = new URLSearchParams(location.search);
+  const currentView = searchParams.get('view') || 'overview'; // default to overview
+  
   useEffect(() => {
     fetchBalance();
     fetchProfileData();
@@ -406,9 +410,9 @@ const Dashboard = () => {
         </Paper>
       </Grid>
       
-      {/* Invoice History Section */}
+      {/* Invoice History Section with view parameter */}
       <Grid item xs={12} style={{ padding: '4px' }}>
-        <UserInvoices />
+        <UserInvoices initialView={currentView} />
       </Grid>
       
       {/* USDT Withdrawal Dialog */}
