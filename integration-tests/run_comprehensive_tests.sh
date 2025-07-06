@@ -153,6 +153,7 @@ test_files=(
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
     "test_deposits.py"                       # Simple USDT deposit functionality
+    "test_stripe_deposits.py"                # Stripe deposit functionality
     "test_withdrawals.py"                   # Withdrawal operations
     "test_mass_withdrawals.py"              # Mass withdrawal stress testing
     "test_ratings.py"                       # Rating system

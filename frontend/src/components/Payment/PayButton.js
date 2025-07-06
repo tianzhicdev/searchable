@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   Button,
   Menu,
@@ -16,6 +17,7 @@ import {
 } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
+import RefillBalanceDialog from './RefillBalanceDialog';
 
 /**
  * PayButton Component
@@ -37,10 +39,12 @@ const PayButton = ({
   size = "medium"
 }) => {
   const classes = useComponentStyles();
+  const history = useHistory();
   
   // Menu states
   const [anchorEl, setAnchorEl] = useState(null);
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [refillDialogOpen, setRefillDialogOpen] = useState(false);
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
@@ -110,6 +114,94 @@ const PayButton = ({
     );
   }
 
+  // If user has sufficient balance, show "Buy with Balance" button
+  if (showBalanceOption && canPayWithBalance) {
+    return (
+      <>
+        {/* Payment Summary */}
+        {showPaymentSummary && totalPrice > 0 && (
+          <Box mt={2} p={2}>
+            <Typography variant="subtitle2" className={classes.staticText} gutterBottom>
+              Payment Summary:
+            </Typography>
+            <Typography variant="body2" className={classes.userText}>
+              Amount: {formatCurrency(totalPrice)}
+            </Typography>
+            <Typography >
+              Your Balance: {formatCurrency(userBalance)} ✓
+            </Typography>
+            <Typography >
+              No fees when paying with balance!
+            </Typography>
+          </Box>
+        )}
+
+        {/* Buy with Balance Button */}
+        <Box mt={2} display="flex" justifyContent="center">
+          <Button
+            variant={variant}
+            onClick={handleBalanceClick}
+            disabled={processing}
+            fullWidth={fullWidth}
+            size={size}
+            startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
+          >
+            <Typography variant="body2" className={classes.staticText}>
+              {processing ? 'Processing...' : `Buy with Balance ${formatCurrency(totalPrice)}`}
+            </Typography>
+          </Button>
+        </Box>
+      </>
+    );
+  }
+
+  // If user doesn't have sufficient balance, show "Refill Balance" button
+  if (showBalanceOption && !canPayWithBalance) {
+    return (
+      <>
+        {/* Payment Summary */}
+        {showPaymentSummary && totalPrice > 0 && (
+          <Box mt={2} p={2} bgcolor="background.paper">
+            <Typography variant="subtitle2" className={classes.staticText} gutterBottom>
+              Payment Summary:
+            </Typography>
+            <Typography variant="body2" className={classes.userText}>
+              Amount: {formatCurrency(totalPrice)}
+            </Typography>
+            <Typography variant="body2" className={classes.userText} color="textSecondary">
+              Your Balance: {formatCurrency(userBalance)} (Need {formatCurrency(totalPrice - userBalance)} more)
+            </Typography>
+          </Box>
+        )}
+
+        {/* Refill Balance Button */}
+        <Box mt={2} display="flex" justifyContent="center">
+          <Button
+            variant={variant}
+            onClick={() => setRefillDialogOpen(true)}
+            disabled={processing}
+            fullWidth={fullWidth}
+            size={size}
+            startIcon={processing ? <CircularProgress size={20} /> : null}
+          >
+            <Typography variant="body2" className={classes.staticText}>
+              {processing ? 'Processing...' : 'Refill Balance'}
+            </Typography>
+          </Button>
+        </Box>
+        
+        {/* Refill Balance Dialog */}
+        <RefillBalanceDialog
+          open={refillDialogOpen}
+          onClose={() => setRefillDialogOpen(false)}
+          currentBalance={userBalance}
+          requiredAmount={totalPrice}
+        />
+      </>
+    );
+  }
+
+  // For non-logged-in users, show regular payment dropdown
   return (
     <>
       {/* Payment Summary */}
@@ -128,12 +220,6 @@ const PayButton = ({
           <Typography variant="body1" className={classes.userText}>
             Total with Card: {formatCurrency(totalPrice * 1.035)}
           </Typography>
-          <Box mt={1}>
-            <Typography variant="body2" className={classes.userText} color={canPayWithBalance ? "primary" : "textSecondary"}>
-              Your Balance: {formatCurrency(userBalance)}
-              {canPayWithBalance ? " ✓ Sufficient for this purchase" : " (Need " + formatCurrency(totalPrice - userBalance) + " more)"}
-            </Typography>
-          </Box>
         </Box>
       )}
 
@@ -199,7 +285,7 @@ const PayButton = ({
               onClick={handleBalanceClick}
               disabled={!canPayWithBalance}
             >
-              <BalanceIcon color={canPayWithBalance ? "primary" : "disabled"} />
+              <BalanceIcon color={canPayWithBalance ? "inherit" : "disabled"} />
               <Box ml={1}>
                 <Typography variant="body2" className={classes.staticText}>
                   Pay with Balance

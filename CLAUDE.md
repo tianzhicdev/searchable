@@ -41,6 +41,7 @@ Searchable is a declarative framework for building information deposit and retri
 2. **Button styling** - Always use `variant="contained"` for all buttons throughout the application
 3. **Mock mode for UI testing** - Always verify UI changes with mock data
 4. **Restart services after changes** - Verify functionality using `./exec.sh local deploy-all` and `cd integration-tests && ./run_comprehensive_tests.sh` before declaring success
+5. **Currency Standardization** - ALWAYS use lowercase 'usd' in the database for all currency fields. USDT is only for UI display purposes.
 
 ## Architecture Overview
 
