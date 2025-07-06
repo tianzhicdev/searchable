@@ -141,22 +141,16 @@ const MiniProfile = ({
   
   return (
     <Paper className={classes.profileCard} onClick={handleClick}>
-      {/* Image at the top taking full width */}
-      <Box className={classes.imageContainer}>
-        {imageUrl ? (
+      {/* Image at the top taking full width - only show if image exists */}
+      {imageUrl && (
+        <Box className={classes.imageContainer}>
           <img 
             src={imageUrl} 
             alt={title}
             className={classes.image}
           />
-        ) : (
-          <Box className={classes.noImagePlaceholder}>
-            <Typography variant="h6">
-              {type === 'user' ? 'No Profile Image' : 'No Image'}
-            </Typography>
-          </Box>
-        )}
-      </Box>
+        </Box>
+      )}
       
       {/* Content below the image */}
       <Box className={classes.contentContainer}>
