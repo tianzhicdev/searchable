@@ -367,6 +367,32 @@ const mockHandlers = {
     return createMockResponse({ success: true });
   },
   
+  'users/change-password': (url, config) => {
+    console.log('[MOCK] Change password');
+    const data = JSON.parse(config.data || '{}');
+    
+    // Simulate validation of current password
+    if (!data.current_password) {
+      return createMockResponse({
+        success: false,
+        msg: 'Current password is required'
+      });
+    }
+    
+    // For mock, any current password is accepted
+    if (!data.new_password || data.new_password.length < 4) {
+      return createMockResponse({
+        success: false,
+        msg: 'New password must be at least 4 characters'
+      });
+    }
+    
+    return createMockResponse({
+      success: true,
+      msg: 'Password changed successfully'
+    });
+  },
+  
   // Tag endpoints
   'v1/tags': (url) => {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
