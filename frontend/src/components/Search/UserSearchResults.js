@@ -9,6 +9,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import MiniProfile from '../Profiles/MiniProfile';
 import Pagination from '../Pagination/Pagination';
+import ColumnLayout from '../Layout/ColumnLayout';
 
 const useStyles = makeStyles((theme) => ({
   resultsContainer: {
@@ -40,17 +41,6 @@ const useStyles = makeStyles((theme) => ({
   },
   resultsCount: {
     color: theme.palette.text.secondary
-  },
-  columnLayout: {
-    columnCount: 2,
-    columnGap: theme.spacing(2),
-    [theme.breakpoints.down('xs')]: {
-      columnCount: 1
-    }
-  },
-  columnItem: {
-    breakInside: 'avoid',
-    marginBottom: theme.spacing(2)
   }
 }));
 
@@ -89,17 +79,16 @@ const UserSearchResults = ({
   return (
     <>
       {/* Results in column layout - fills left column first, then right */}
-      <Box className={classes.columnLayout}>
+      <ColumnLayout columns={2}>
         {users.map((user) => (
-          <Box key={user.id} className={classes.columnItem}>
-            <MiniProfile
-              type="user"
-              data={user}
-              onClick={onUserClick}
-            />
-          </Box>
+          <MiniProfile
+            key={user.id}
+            type="user"
+            data={user}
+            onClick={onUserClick}
+          />
         ))}
-      </Box>
+      </ColumnLayout>
       
       {/* Pagination */}
       {pagination && onPageChange && (
