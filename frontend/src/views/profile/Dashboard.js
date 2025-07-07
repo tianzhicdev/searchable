@@ -24,6 +24,7 @@ import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStac
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
+import AIContentStatus from '../../components/AIContentStatus';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -430,6 +431,11 @@ const Dashboard = () => {
             </Box>
           )}
         </Paper>
+      </Grid>
+      
+      {/* AI Content Status Section */}
+      <Grid item xs={12} style={{ padding: '4px' }}>
+        <AIContentStatus />
       </Grid>
       
       {/* Invoice History Section with view parameter */}

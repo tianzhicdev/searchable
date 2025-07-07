@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
 6. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them - leave them running so developer can manually verify
 7. **currency consistency** we only use 'usd' in the databse and USDT for displaying on the UI.
+8. **use existing style** before implementing any code, always scan the codebase to use existing patterns and styles.
 
 ### Development Flow Pattern
 ```
