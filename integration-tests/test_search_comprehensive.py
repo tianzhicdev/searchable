@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import from test utilities
 from api_client import SearchableAPIClient
-from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
+from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR
 
 def generate_test_username(base_name):
     """Generate a unique test username"""
@@ -25,7 +25,7 @@ def generate_test_username(base_name):
     timestamp = str(int(time.time() * 1000))
     return f"{base_name}_{timestamp}"
 
-def generate_test_searchable_data(title="Test Item", type="article", price=10.0):
+def generate_test_searchable_data(title="Test Item", type="article", price=10.0, file_id=None):
     """Generate test searchable data"""
     return {
         "payloads": {
@@ -38,12 +38,20 @@ def generate_test_searchable_data(title="Test Item", type="article", price=10.0)
                     {
                         "name": title,
                         "price": price,
-                        "fileId": f"test-file-{title.lower().replace(' ', '-')}",
-                        "fileName": "test_file.pdf",
-                        "fileType": "application/pdf",
+                        "fileId": file_id if file_id else 1,  # Use real file ID or placeholder
+                        "fileName": "test_file.txt",
+                        "fileType": "text/plain",
                         "fileSize": 1024
                     }
-                ],
+                ] if file_id else [],  # Only include files if file_id provided
+                "selectables": [
+                    {
+                        "id": file_id if file_id else 1,
+                        "type": "downloadable",
+                        "name": title,
+                        "price": price
+                    }
+                ] if file_id else [],  # Only include selectables if file_id provided
                 "visibility": {
                     "udf": "always_true",
                     "data": {}

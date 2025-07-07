@@ -7,7 +7,7 @@ import os
 import threading
 import uuid
 import concurrent.futures
-from config import API_BASE_URL, TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
+from config import API_BASE_URL, TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR
 from api_client import SearchableAPIClient
 
 class TestMassWithdrawals:
@@ -91,6 +91,19 @@ class TestMassWithdrawals:
     def _create_sales_to_generate_balance(self, target_amount):
         """Create sales to generate sufficient balance for withdrawals"""
         try:
+            # First upload a real file
+            test_file_path = os.path.join(TEST_FILES_DIR, 'sample.txt')
+            if not os.path.exists(test_file_path):
+                # Create a sample file if it doesn't exist
+                with open(test_file_path, 'w') as f:
+                    f.write('Test content for mass withdrawal test')
+            
+            upload_response = self.api.upload_file(test_file_path)
+            print(f"   📤 Uploaded file: {upload_response}")
+            assert upload_response['success'] is True
+            assert 'file_id' in upload_response
+            file_id = upload_response['file_id']
+            
             # Create a high-value searchable item
             searchable_data = {
                 'payloads': {
@@ -103,10 +116,18 @@ class TestMassWithdrawals:
                             {
                                 'name': 'Test File',
                                 'price': target_amount + 20,  # Price higher than needed to account for fees
-                                'fileId': 'mass-test-file-id',
-                                'fileName': 'mass_test_file.zip',
-                                'fileType': 'application/zip',
+                                'fileId': file_id,
+                                'fileName': 'mass_test_file.txt',
+                                'fileType': 'text/plain',
                                 'fileSize': 1024
+                            }
+                        ],
+                        'selectables': [
+                            {
+                                'id': file_id,
+                                'type': 'downloadable',
+                                'name': 'Test File',
+                                'price': target_amount + 20
                             }
                         ],
                         'visibility': {
@@ -135,13 +156,23 @@ class TestMassWithdrawals:
             assert buyer_login['success'], f"Failed to login buyer: {buyer_login}"
             print(f"   👤 Created buyer user: {buyer_username}")
             
-            # Buyer creates invoice
-            selections = [{
-                'id': 'mass-test-file-id', 
-                'type': 'downloadable', 
-                'name': 'Test File', 
-                'price': target_amount + 20
-            }]
+            # Get searchable to find selectables
+            searchable_info = self.api.get_searchable(searchable_id)
+            public_data = searchable_info['payloads']['public']
+            
+            # Get the actual selectables from the searchable
+            if 'selectables' in public_data and len(public_data['selectables']) > 0:
+                selections = public_data['selectables']
+            else:
+                # Fallback to constructing selections from downloadableFiles
+                selections = []
+                for file_info in public_data.get('downloadableFiles', []):
+                    selections.append({
+                        'id': file_info['fileId'],
+                        'type': 'downloadable',
+                        'name': file_info['name'],
+                        'price': file_info['price']
+                    })
             
             invoice_response = buyer_api.create_invoice(searchable_id, selections, "stripe")
             assert 'session_id' in invoice_response, f"Failed to create invoice: {invoice_response}"
