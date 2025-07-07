@@ -230,7 +230,7 @@ class EmployeeGetAIContentDetail(Resource):
     def get(self, ai_content_id):
         """Get specific AI content with full details (employee endpoint)"""
         try:
-            ai_content = get_ai_content_by_id(ai_content_id, include_user_info=True)
+            ai_content = get_ai_content_by_id(ai_content_id, include_user_info=True, include_file_uris=True)
             
             if not ai_content:
                 return {"success": False, "msg": "AI content not found"}, 404
@@ -304,7 +304,7 @@ class EmployeeExportAIContents(Resource):
             status = request.args.get('status', 'submitted')  # Default to submitted
             include_files = request.args.get('include_files', 'true').lower() == 'true'
             
-            ai_contents = get_all_ai_contents(status=status, limit=1000)
+            ai_contents = get_all_ai_contents(status=status, limit=1000, include_file_uris=True)
             
             # Format for export
             export_data = []
@@ -313,6 +313,7 @@ class EmployeeExportAIContents(Resource):
                     "id": content['id'],
                     "user_id": content['user_id'],
                     "username": content.get('username', 'Unknown'),
+                    "user_email": content.get('email', 'Unknown'),
                     "title": content['title'],
                     "instructions": content['instructions'],
                     "status": content['status'],

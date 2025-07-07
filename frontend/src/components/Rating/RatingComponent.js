@@ -117,7 +117,6 @@ const RatingComponent = ({
         </Box>
 
         <TextField
-          label="Review (optional)"
           multiline
           rows={4}
           value={review}

@@ -79,7 +79,7 @@ def get_user_ai_contents(user_id):
             conn.close()
 
 
-def get_ai_content_by_id(ai_content_id, include_user_info=False):
+def get_ai_content_by_id(ai_content_id, include_user_info=False, include_file_uris=False):
     """Get specific AI content by ID"""
     conn = None
     cursor = None
@@ -103,6 +103,26 @@ def get_ai_content_by_id(ai_content_id, include_user_info=False):
         
         cursor.execute(query, (ai_content_id,))
         result = cursor.fetchone()
+        
+        # If requested, enrich file data with URIs
+        if result and include_file_uris and result.get('metadata') and result['metadata'].get('files'):
+            files = result['metadata']['files']
+            file_ids = [f['fileId'] for f in files if 'fileId' in f]
+            
+            if file_ids:
+                # Get file URIs from database
+                file_query = """
+                    SELECT file_id, uri
+                    FROM files
+                    WHERE file_id = ANY(%s)
+                """
+                cursor.execute(file_query, (file_ids,))
+                file_uris = {row['file_id']: row['uri'] for row in cursor.fetchall()}
+                
+                # Add URIs to files
+                for file_info in files:
+                    if 'fileId' in file_info and file_info['fileId'] in file_uris:
+                        file_info['uri'] = file_uris[file_info['fileId']]
         
         return result
         
@@ -151,7 +171,7 @@ def delete_ai_content(ai_content_id, user_id):
             conn.close()
 
 
-def get_all_ai_contents(status=None, limit=100, offset=0):
+def get_all_ai_contents(status=None, limit=100, offset=0, include_file_uris=False):
     """Get all AI content submissions (for employees)"""
     conn = None
     cursor = None
@@ -161,7 +181,7 @@ def get_all_ai_contents(status=None, limit=100, offset=0):
         
         if status:
             query = """
-                SELECT ac.*, u.username
+                SELECT ac.*, u.username, u.email
                 FROM ai_content ac
                 LEFT JOIN users u ON ac.user_id = u.id
                 WHERE ac.status = %s
@@ -171,7 +191,7 @@ def get_all_ai_contents(status=None, limit=100, offset=0):
             cursor.execute(query, (status, limit, offset))
         else:
             query = """
-                SELECT ac.*, u.username
+                SELECT ac.*, u.username, u.email
                 FROM ai_content ac
                 LEFT JOIN users u ON ac.user_id = u.id
                 ORDER BY ac.created_at DESC
@@ -180,6 +200,34 @@ def get_all_ai_contents(status=None, limit=100, offset=0):
             cursor.execute(query, (limit, offset))
         
         results = cursor.fetchall()
+        
+        # If requested, enrich file data with URIs
+        if include_file_uris:
+            # Collect all file IDs
+            all_file_ids = []
+            for content in results:
+                if content.get('metadata') and content['metadata'].get('files'):
+                    for f in content['metadata']['files']:
+                        if 'fileId' in f:
+                            all_file_ids.append(f['fileId'])
+            
+            if all_file_ids:
+                # Get all file URIs in one query
+                file_query = """
+                    SELECT file_id, uri
+                    FROM files
+                    WHERE file_id = ANY(%s)
+                """
+                cursor.execute(file_query, (all_file_ids,))
+                file_uris = {row['file_id']: row['uri'] for row in cursor.fetchall()}
+                
+                # Add URIs to files in each content
+                for content in results:
+                    if content.get('metadata') and content['metadata'].get('files'):
+                        for file_info in content['metadata']['files']:
+                            if 'fileId' in file_info and file_info['fileId'] in file_uris:
+                                file_info['uri'] = file_uris[file_info['fileId']]
+        
         return results
         
     except Exception as e:

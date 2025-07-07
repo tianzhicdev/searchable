@@ -99,17 +99,34 @@ download_file() {
     local file_id=$1
     local file_name=$2
     local output_path=$3
+    local file_uri=$4
     
     echo -e "${YELLOW}  Downloading: $file_name${NC}"
     
-    # Download from file server
-    local download_url="$FILE_SERVER_URL/v1/files/download/$file_id"
-    
-    if curl -s -f -o "$output_path/$file_name" "$download_url"; then
-        echo -e "${GREEN}  ✓ Downloaded: $file_name${NC}"
-        return 0
+    if [ -n "$file_uri" ]; then
+        # Extract UUID from URI if present
+        # URI format: "http://fileserver/api/file/download?file_id=uuid"
+        local uuid=$(echo "$file_uri" | sed -n 's/.*file_id=\([^&]*\).*/\1/p')
+        
+        if [ -n "$uuid" ]; then
+            # Download from file server using UUID
+            local download_url="$FILE_SERVER_URL/api/file/download?file_id=$uuid"
+            
+            if curl -s -f -o "$output_path/$file_name" "$download_url"; then
+                echo -e "${GREEN}  ✓ Downloaded: $file_name${NC}"
+                return 0
+            else
+                echo -e "${RED}  ✗ Failed to download: $file_name${NC}"
+                return 1
+            fi
+        else
+            echo -e "${RED}  ✗ No UUID found in URI: $file_uri${NC}"
+            return 1
+        fi
     else
-        echo -e "${RED}  ✗ Failed to download: $file_name${NC}"
+        echo -e "${YELLOW}  No URI available for file ID: $file_id${NC}"
+        # Record for manual download
+        echo "$file_id|$file_name|NO_URI" >> "$output_path/files_to_download.txt"
         return 1
     fi
 }
@@ -121,11 +138,14 @@ process_ai_content() {
     local title=$(echo "$content" | jq -r '.title')
     local status=$(echo "$content" | jq -r '.status')
     local username=$(echo "$content" | jq -r '.username')
+    local user_id=$(echo "$content" | jq -r '.user_id // "unknown"')
+    local user_email=$(echo "$content" | jq -r '.user_email // "unknown"')
     local instructions=$(echo "$content" | jq -r '.instructions')
-    local files=$(echo "$content" | jq -c '.files')
+    local files=$(echo "$content" | jq -c '.metadata.files // .files // []')
     
     echo -e "${BLUE}Processing AI Content #$id: $title${NC}"
-    echo "  User: $username"
+    echo "  User: $username (ID: $user_id)"
+    echo "  Email: $user_email"
     echo "  Status: $status"
     
     # Create directory for this AI content
@@ -137,7 +157,9 @@ process_ai_content() {
 {
     "id": $id,
     "title": "$title",
+    "user_id": "$user_id",
     "username": "$username",
+    "user_email": "$user_email",
     "status": "$status",
     "downloaded_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 }
@@ -159,20 +181,24 @@ EOF
             local file=$(echo "$files" | jq -r ".[$i]")
             local file_id=$(echo "$file" | jq -r '.fileId')
             local file_name=$(echo "$file" | jq -r '.fileName')
+            local file_uri=$(echo "$file" | jq -r '.uri // empty')
             
-            if download_file "$file_id" "$file_name" "$content_dir/files"; then
+            if download_file "$file_id" "$file_name" "$content_dir/files" "$file_uri"; then
                 ((success_count++))
             fi
         done
         
         echo -e "${GREEN}  Downloaded $success_count/$file_count files${NC}"
+        if [ "$success_count" -lt "$file_count" ]; then
+            echo -e "${YELLOW}  Note: Failed downloads recorded in files_to_download.txt${NC}"
+        fi
     fi
     
     # Update status if requested
     if [ "$UPDATE_STATUS" = true ] && [ "$status" = "submitted" ]; then
         echo -e "${YELLOW}  Updating status to 'processed'...${NC}"
         
-        local update_response=$(curl -s -X PUT "$API_URL/v1/employee/ai-content/$id" \
+        local update_response=$(curl -s -X PUT "$API_URL/api/v1/employee/ai-content/$id" \
             -H "Content-Type: application/json" \
             -d '{"status": "processed", "notes": "Downloaded by script", "processed_by": "download-script"}')
         
@@ -191,10 +217,11 @@ if [ -n "$SPECIFIC_ID" ]; then
     # Download specific AI content
     echo -e "${YELLOW}Fetching AI Content #$SPECIFIC_ID...${NC}"
     
-    response=$(curl -s "$API_URL/v1/employee/ai-content/$SPECIFIC_ID")
+    response=$(curl -s "$API_URL/api/v1/employee/ai-content/$SPECIFIC_ID")
     
     if echo "$response" | jq -e '.success' > /dev/null; then
-        content=$(echo "$response" | jq '.data')
+        # API returns content fields directly in response, not under 'data'
+        content=$(echo "$response" | jq 'del(.success)')
         process_ai_content "$content"
     else
         echo -e "${RED}Failed to fetch AI Content #$SPECIFIC_ID${NC}"
@@ -210,11 +237,11 @@ else
         query_params="$query_params&status=$STATUS_FILTER"
     fi
     
-    response=$(curl -s "$API_URL/v1/employee/ai-content/export?$query_params")
+    response=$(curl -s "$API_URL/api/v1/employee/ai-content/export?$query_params")
     
     if echo "$response" | jq -e '.success' > /dev/null; then
-        contents=$(echo "$response" | jq -c '.data.ai_contents[]')
-        total=$(echo "$response" | jq '.data.total')
+        contents=$(echo "$response" | jq -c '.ai_contents[]')
+        total=$(echo "$response" | jq '.total')
         
         echo -e "${GREEN}Found $total AI content items${NC}"
         echo ""

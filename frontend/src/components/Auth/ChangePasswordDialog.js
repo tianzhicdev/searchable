@@ -230,7 +230,6 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           >
             <TextField
               id="current-password"
-              label="Current Password"
               type={showCurrentPassword ? 'text' : 'password'}
               value={formValues.currentPassword}
               name="currentPassword"
@@ -268,7 +267,6 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           >
             <TextField
               id="new-password"
-              label="New Password"
               type={showNewPassword ? 'text' : 'password'}
               value={formValues.newPassword}
               name="newPassword"

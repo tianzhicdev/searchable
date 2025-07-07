@@ -105,12 +105,12 @@ const AIContentStatus = () => {
         </Box>
       ) : (
         <TableContainer>
-          <Table className={classes.table} size="small">
-            <TableHead>
-              <TableRow>
+          <Table fullwidth>
+            <TableHead fullwidth>
+              <TableRow fullwidth>
                 <TableCell>Title</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="right">Created</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Created</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
