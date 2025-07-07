@@ -200,7 +200,6 @@ const PublishAIContent = () => {
         <Box className={classes.form}>
           <TextField
             fullWidth
-            label="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter a descriptive title"
@@ -212,7 +211,6 @@ const PublishAIContent = () => {
 
           <TextField
             fullWidth
-            label="Instructions"
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
             placeholder="Provide detailed instructions for processing these files..."
@@ -275,13 +273,9 @@ const PublishAIContent = () => {
                         <Box>
                           <Chip 
                             label={formatFileSize(file.fileSize)} 
-                            size="small" 
-                            className={classes.fileChip}
                           />
                           <Chip 
                             label={file.mimeType} 
-                            size="small" 
-                            variant="outlined"
                           />
                         </Box>
                       }
