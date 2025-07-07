@@ -2,6 +2,7 @@ import axios from 'axios';
 import configData from '../config';
 import * as mockData from './mockData';
 import { store } from '../store';
+import { getUserAIContents, getAIContentById, createAIContent } from './mockAIContent';
 
 // Create real backend instance directly here to avoid circular imports
 const realBackend = axios.create({
@@ -1460,6 +1461,35 @@ const mockHandlers = {
         total_pages: totalPages
       }
     });
+  },
+  
+  // AI Content endpoints
+  'v1/ai-content': (url, config) => {
+    console.log('[MOCK] AI Content endpoint called:', url);
+    
+    // Handle GET requests
+    if (!config?.data) {
+      // Check if getting specific AI content
+      const idMatch = url.match(/v1\/ai-content\/(\d+)/);
+      if (idMatch) {
+        const id = idMatch[1];
+        return createMockResponse(getAIContentById(id));
+      }
+      
+      // Otherwise return user's AI contents
+      return createMockResponse(getUserAIContents());
+    }
+    
+    // Handle POST request (create new AI content)
+    try {
+      const data = JSON.parse(config.data);
+      return createMockResponse(createAIContent(data));
+    } catch (error) {
+      return createMockResponse({
+        success: false,
+        msg: 'Invalid request data'
+      });
+    }
   },
   
   // Default handler for unmatched routes
