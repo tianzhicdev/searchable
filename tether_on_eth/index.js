@@ -399,6 +399,115 @@ app.post('/zero-balance-address', async (req, res) => {
 });
     
 
+// Get ETH balance
+app.get('/eth-balance/:address', async (req, res) => {
+  try {
+    if (!web3.utils.isAddress(req.params.address)) {
+      return res.status(400).json({ error: 'Invalid Ethereum address format' });
+    }
+    
+    await rateLimit();
+    const balance = await web3.eth.getBalance(req.params.address);
+    
+    res.json({ 
+      address: req.params.address,
+      balance: balance.toString(),
+      balanceEth: web3.utils.fromWei(balance, 'ether')
+    });
+  } catch (error) {
+    console.error('ETH Balance Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Send ETH for gas funding
+app.post('/fund-gas', async (req, res) => {
+  const { to, amount } = req.body;
+  const request_id = `gas_${Date.now()}`;
+  
+  try {
+    console.log(`[${request_id}] Funding gas to ${to}, Amount: ${amount} wei`);
+    
+    if (!web3.utils.isAddress(to)) {
+      return res.status(400).json({ error: 'Invalid recipient address' });
+    }
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    
+    await rateLimit();
+    
+    // Check master wallet ETH balance
+    const masterBalance = await web3.eth.getBalance(account.address);
+    if (BigInt(masterBalance) < BigInt(amount)) {
+      return res.status(400).json({ 
+        error: 'Insufficient ETH in master wallet',
+        required: amount,
+        available: masterBalance.toString()
+      });
+    }
+    
+    // Get gas price and nonce
+    const gasPrice = await getGasPrice();
+    const nonce = getNextNonce();
+    
+    // ETH transfer gas limit
+    const gas = 21000;
+    
+    // Sign and send transaction
+    const txObject = {
+      to: to,
+      value: amount,
+      gas: gas,
+      gasPrice: gasPrice,
+      nonce: nonce,
+      from: account.address
+    };
+    
+    const signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
+    console.log(`[${request_id}] Sending ${amount} wei to ${to}`);
+    
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    
+    console.log(`[${request_id}] Gas funding complete - TxHash: ${receipt.transactionHash}`);
+    
+    res.json({
+      success: true,
+      txHash: receipt.transactionHash,
+      from: account.address,
+      to: to,
+      amount: amount,
+      gasUsed: receipt.gasUsed.toString()
+    });
+    
+  } catch (error) {
+    console.error(`[${request_id}] Gas Funding Error:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get master wallet info
+app.get('/master-wallet', async (req, res) => {
+  try {
+    await rateLimit();
+    
+    const ethBalance = await web3.eth.getBalance(account.address);
+    const usdtBalance = await usdtContract.methods.balanceOf(account.address).call();
+    
+    res.json({
+      address: account.address,
+      ethBalance: ethBalance.toString(),
+      ethBalanceEth: web3.utils.fromWei(ethBalance, 'ether'),
+      usdtBalance: usdtBalance.toString(),
+      usdtBalanceUsdt: (Number(usdtBalance) / 1000000).toFixed(6)
+    });
+  } catch (error) {
+    console.error('Master Wallet Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get transaction status
 app.get('/tx-status/:txHash', async (req, res) => {
   const { txHash } = req.params;
@@ -515,9 +624,9 @@ app.get('/tx-status/:txHash', async (req, res) => {
 // we dont mark failure from lookup
 // complete, delayed (can become complete), failed.
 
-// Transfer from deposit address to main wallet
+// Transfer from deposit address to main wallet or specified destination
 app.post('/sweep', async (req, res) => {
-  const { from_address, deposit_id, amount } = req.body;
+  const { from_address, deposit_id, amount, to } = req.body;
   
   try {
     await rateLimit();
@@ -541,6 +650,14 @@ app.post('/sweep', async (req, res) => {
       return res.status(400).json({ error: 'Address does not match deposit ID' });
     }
     
+    // Use provided destination or default to main wallet
+    const destinationAddress = to || account.address;
+    
+    // Validate destination address if provided
+    if (to && !web3.utils.isAddress(to)) {
+      return res.status(400).json({ error: 'Invalid destination address' });
+    }
+    
     // Get private key from HD wallet
     const privateKey = hdWallet.getPrivateKey(depositId);
     const depositAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
@@ -548,11 +665,10 @@ app.post('/sweep', async (req, res) => {
     // Add account to wallet to sign transactions
     web3.eth.accounts.wallet.add(depositAccount);
     
-    const mainWallet = account.address;
-    console.log(`Sweeping ${amount} USDT from ${from_address} to ${mainWallet}`);
+    console.log(`Sweeping ${amount} USDT from ${from_address} to ${destinationAddress}`);
     
     // Build transaction
-    const tx = usdtContract.methods.transfer(mainWallet, amount.toString());
+    const tx = usdtContract.methods.transfer(destinationAddress, amount.toString());
     
     // Get gas estimates
     const gasPrice = await getGasPrice();
@@ -572,7 +688,7 @@ app.post('/sweep', async (req, res) => {
       success: true,
       txHash: receipt.transactionHash,
       from: from_address,
-      to: mainWallet,
+      to: destinationAddress,
       amount: amount.toString()
     });
     
