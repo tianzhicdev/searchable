@@ -120,7 +120,7 @@ const PayButton = ({
     );
   }
 
-  // If user has sufficient balance, show "Buy with Balance" button
+  // If user has sufficient balance, show both "Buy with Balance" and "Pay with Stripe" buttons
   if (showBalanceOption && canPayWithBalance) {
     return (
       <>
@@ -142,18 +142,31 @@ const PayButton = ({
           </Box>
         )}
 
-        {/* Buy with Balance Button */}
-        <Box mt={2} display="flex" justifyContent="center">
+        {/* Payment Buttons Container */}
+        <Box mt={2} display="flex" flexDirection="row" gap={2} justifyContent="center">
+          {/* Buy with Balance Button */}
           <Button
             variant={variant}
             onClick={handleBalanceClick}
             disabled={processing}
-            fullWidth={fullWidth}
             size={size}
             startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : `Buy with Balance ${formatCurrency(totalPrice)}`}
+            </Typography>
+          </Button>
+          
+          {/* Pay with Stripe Button */}
+          <Button
+            variant="outlined"
+            onClick={handleCreditCardClick}
+            disabled={processing}
+            size={size}
+            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+          >
+            <Typography variant="body2" className={classes.staticText}>
+              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
             </Typography>
           </Button>
         </Box>
@@ -167,11 +180,20 @@ const PayButton = ({
           userBalance={userBalance}
           processing={processing}
         />
+        
+        {/* Deposit Dialog */}
+        <DepositComponent
+          open={depositDialogOpen}
+          onClose={() => setDepositDialogOpen(false)}
+          onDepositCreated={handleDepositCreated}
+          title="Pay with USDT Deposit"
+          showInstructions={true}
+        />
       </>
     );
   }
 
-  // If user doesn't have sufficient balance, show "Refill Balance" button
+  // If user doesn't have sufficient balance, show "Refill Balance" and "Pay with Stripe" buttons
   if (showBalanceOption && !canPayWithBalance) {
     return (
       <>
@@ -190,15 +212,28 @@ const PayButton = ({
           </Box>
         )}
 
-        {/* Refill Balance Button */}
-        <Box mt={2} display="flex" justifyContent="center">
+        {/* Payment Buttons Container */}
+        <Box mt={2} display="flex" flexDirection="row" gap={2} justifyContent="center">
+          {/* Pay with Stripe Button */}
           <Button
             variant={variant}
+            onClick={handleCreditCardClick}
+            disabled={processing}
+            size={size}
+            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+          >
+            <Typography variant="body2" className={classes.staticText}>
+              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
+            </Typography>
+          </Button>
+          
+          {/* Refill Balance Button */}
+          <Button
+            variant="outlined"
             onClick={() => setRefillDialogOpen(true)}
             disabled={processing}
-            fullWidth={fullWidth}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : null}
+            startIcon={processing ? <CircularProgress size={20} /> : <WalletIcon />}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : 'Refill Balance'}
@@ -212,6 +247,15 @@ const PayButton = ({
           onClose={() => setRefillDialogOpen(false)}
           currentBalance={userBalance}
           requiredAmount={totalPrice}
+        />
+        
+        {/* Deposit Dialog */}
+        <DepositComponent
+          open={depositDialogOpen}
+          onClose={() => setDepositDialogOpen(false)}
+          onDepositCreated={handleDepositCreated}
+          title="Pay with USDT Deposit"
+          showInstructions={true}
         />
       </>
     );
