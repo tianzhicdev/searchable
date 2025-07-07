@@ -2,8 +2,9 @@ import pytest
 import uuid
 import time
 import json
+import os
 from api_client import SearchableAPIClient
-from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD
+from config import TEST_USER_PREFIX, TEST_EMAIL_DOMAIN, DEFAULT_PASSWORD, TEST_FILES_DIR
 
 
 class TestWithdrawalOperations:
@@ -107,7 +108,20 @@ class TestWithdrawalOperations:
     def test_02_create_earnings_simulation(self):
         """Create a sale to simulate earnings that can be withdrawn"""
         
-        # Create a simple searchable item
+        # First upload a real file
+        test_file_path = os.path.join(TEST_FILES_DIR, 'sample.txt')
+        if not os.path.exists(test_file_path):
+            # Create a sample file if it doesn't exist
+            with open(test_file_path, 'w') as f:
+                f.write('Test content for withdrawal test')
+        
+        upload_response = self.client.upload_file(test_file_path)
+        print(f"[RESPONSE] Upload file: {upload_response}")
+        assert upload_response['success'] is True
+        assert 'file_id' in upload_response
+        file_id = upload_response['file_id']
+        
+        # Create a simple searchable item with the uploaded file
         searchable_data = {
             'payloads': {
                 'public': {
@@ -119,10 +133,18 @@ class TestWithdrawalOperations:
                         {
                             'name': 'Test File',
                             'price': 100.00,  # $100 item
-                            'fileId': 'test-file-id',
-                            'fileName': 'test_file.zip',
-                            'fileType': 'application/zip',
+                            'fileId': file_id,
+                            'fileName': 'test_file.txt',
+                            'fileType': 'text/plain',
                             'fileSize': 1024
+                        }
+                    ],
+                    'selectables': [
+                        {
+                            'id': file_id,
+                            'type': 'downloadable',
+                            'name': 'Test File',
+                            'price': 100.00
                         }
                     ],
                     'visibility': {
@@ -174,7 +196,21 @@ class TestWithdrawalOperations:
         public_data = searchable_info['payloads']['public']
         assert isinstance(public_data, dict)
         
-        selections = [{'id': 'test-file-id', 'type': 'downloadable', 'name': 'Test File', 'price': 100.00}]
+        # Get the actual selectables from the searchable
+        if 'selectables' in public_data and len(public_data['selectables']) > 0:
+            selections = public_data['selectables']
+        else:
+            # Fallback to constructing selections from downloadableFiles
+            selections = []
+            for file_info in public_data.get('downloadableFiles', []):
+                selections.append({
+                    'id': file_info['fileId'],
+                    'type': 'downloadable',
+                    'name': file_info['name'],
+                    'price': file_info['price']
+                })
+        
+        assert len(selections) > 0, "No selectable items found in searchable"
 
         invoice_response = buyer_client.create_invoice(
             searchable_id,

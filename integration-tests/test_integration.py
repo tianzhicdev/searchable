@@ -410,11 +410,22 @@ class TestSearchableIntegration:
         
         assert self.client.token is not None
         
-        # Test profile data
+        # Upload a real profile image
+        profile_image_path = os.path.join(TEST_FILES_DIR, 'profile_pic.jpg')
+        if not os.path.exists(profile_image_path):
+            # Use test_image.jpg as fallback
+            profile_image_path = os.path.join(TEST_FILES_DIR, 'test_image.jpg')
+        
+        # Upload the image to media endpoint
+        media_response = self.client.upload_media(profile_image_path)
+        assert media_response['success'] is True
+        assert 'media_uri' in media_response
+        
+        # Test profile data with real image URI
         profile_data = {
             "username": self.username,
             "introduction": f"Integration test profile for {self.username}",
-            "profile_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+            "profile_image_url": media_response['media_uri']
         }
         
         response = self.client.update_profile(profile_data)  # Use update_profile instead
