@@ -23,6 +23,8 @@ import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/S
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
+import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
+import AIContentStatus from '../../components/AIContentStatus';
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
   const theme = useTheme();
@@ -44,6 +46,10 @@ const Dashboard = () => {
   
   // Add refill balance dialog state
   const [refillDialogOpen, setRefillDialogOpen] = useState(false);
+  
+  // Add change password dialog state
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -217,6 +223,20 @@ const Dashboard = () => {
     fetchBalance();
   };
   
+  const handleChangePasswordClick = () => {
+    setChangePasswordDialogOpen(true);
+    handleMenuClose();
+  };
+  
+  const handleCloseChangePasswordDialog = () => {
+    setChangePasswordDialogOpen(false);
+  };
+  
+  const handlePasswordChangeSuccess = (message) => {
+    setSuccessMessage(message);
+    setWithdrawalSuccess(true); // Reuse existing success message system
+  };
+  
   return (
     <Grid container className={classes.container}>
       {/* Header Section with updated styles */}
@@ -283,6 +303,9 @@ const Dashboard = () => {
               handleEditClick();
             }}>
               Edit Profile
+            </MenuItem>
+            <MenuItem onClick={handleChangePasswordClick}>
+              Change Password
             </MenuItem>
           </Menu>
         </div>
@@ -410,6 +433,11 @@ const Dashboard = () => {
         </Paper>
       </Grid>
       
+      {/* AI Content Status Section */}
+      <Grid item xs={12} style={{ padding: '4px' }}>
+        <AIContentStatus />
+      </Grid>
+      
       {/* Invoice History Section with view parameter */}
       <Grid item xs={12} style={{ padding: '4px' }}>
         <UserInvoices initialView={currentView} />
@@ -474,6 +502,13 @@ const Dashboard = () => {
         requiredAmount={0}
       />
       
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={changePasswordDialogOpen}
+        onClose={handleCloseChangePasswordDialog}
+        onSuccess={handlePasswordChangeSuccess}
+      />
+      
       {/* Success Message */}
       <Snackbar 
         open={withdrawalSuccess} 
@@ -482,7 +517,7 @@ const Dashboard = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={handleCloseSuccessMessage} severity="success">
-          Withdrawal successful! Your funds have been sent.
+          {successMessage || 'Withdrawal successful! Your funds have been sent.'}
         </Alert>
       </Snackbar>
       

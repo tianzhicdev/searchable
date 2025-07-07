@@ -11,3 +11,6 @@ logs/*
 # Virtual environments
 venv/
 api-server-flask/venv/
+
+# AI Content Downloads
+ai_content_downloads/

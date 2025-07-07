@@ -149,6 +149,7 @@ test_files=(
     "test_offline_searchables.py"           # Offline searchable functionality
     "test_direct_searchables.py"            # Direct payment searchable functionality
     "test_comprehensive_scenarios.py"       # Complex multi-user scenarios
+    "test_ai_content.py"                    # AI Content Manager functionality
     "test_social_media_profiles.py"         # Social media profile functionality
     "test_my_downloads.py"                  # My Downloads functionality
     "test_invite_codes.py"                  # Invite code functionality
@@ -297,6 +298,7 @@ summary_file="${LOG_DIR}/test_summary_${TIMESTAMP}.txt"
     echo "✅ USDT Deposits (HD wallet, address generation, balance tracking, sweep)"
     echo "✅ Withdrawal Operations (USDT withdrawals)"
     echo "✅ Rating System (submit, retrieve, eligibility)"
+    echo "✅ AI Content Manager (create, retrieve, employee endpoints, status updates)"
     echo "✅ Invoice Notes (create, retrieve, permissions)"
     echo "✅ Payment Refresh (individual, bulk)"
     echo "✅ Complex Multi-user Scenarios"

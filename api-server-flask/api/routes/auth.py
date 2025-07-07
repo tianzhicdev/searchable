@@ -40,6 +40,10 @@ user_edit_model = rest_api.model('UserEditModel', {"userID": fields.String(requi
                                                    "email": fields.String(required=True, min_length=4, max_length=64)
                                                    })
 
+change_password_model = rest_api.model('ChangePasswordModel', {"current_password": fields.String(required=True, min_length=4, max_length=16),
+                                                              "new_password": fields.String(required=True, min_length=4, max_length=16)
+                                                              })
+
 
 """
    Helper function for JWT token required
@@ -314,6 +318,35 @@ class EditUser(Resource):
         self.save()
 
         return {"success": True}, 200
+
+
+@rest_api.route('/api/users/change-password')
+class ChangePassword(Resource):
+    """
+       Changes user's password by taking 'change_password_model' input
+    """
+
+    @rest_api.expect(change_password_model, validate=True)
+    @token_required
+    def post(self, current_user):
+        req_data = request.get_json()
+
+        _current_password = req_data.get("current_password")
+        _new_password = req_data.get("new_password")
+
+        # Verify current password
+        if not current_user.check_password(_current_password):
+            return {"success": False,
+                    "msg": "Current password is incorrect"}, 400
+
+        # Set new password
+        current_user.set_password(_new_password)
+        current_user.save()
+
+        logger.info(f"Password changed successfully for user {current_user.username}")
+
+        return {"success": True,
+                "msg": "Password changed successfully"}, 200
 
 
 @rest_api.route('/api/users/logout')
