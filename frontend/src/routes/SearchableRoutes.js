@@ -5,6 +5,7 @@ import AuthGuard from './../utils/route-guard/AuthGuard';
 import PublishDownloadableSearchable from '../views/searchables/PublishDownloadableSearchable';
 import PublishOfflineSearchable from '../views/searchables/PublishOfflineSearchable';
 import PublishDirectSearchable from '../views/searchables/PublishDirectSearchable';
+import PublishAIContent from '../views/publish/PublishAIContent';
 import Dashboard from '../views/profile/Dashboard';
 import PurchaseRatings from '../views/ratings/PurchaseRatings';
 import Search from '../views/search/Search';
@@ -21,7 +22,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -33,6 +34,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/publish-searchables" component={PublishDownloadableSearchable} />
                     <Route exact path="/publish-offline-searchables" component={PublishOfflineSearchable} />
                     <Route exact path="/publish-direct-searchables" component={PublishDirectSearchable} />
+                    <Route exact path="/publish/ai-content" component={PublishAIContent} />
                     <Route exact path="/dashboard" component={Dashboard} />
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />

@@ -65,7 +65,6 @@ const PublishSearchableCommon = ({
           onTagsChange={onTagsChange}
           maxTags={3}
           placeholder="Select tags..."
-          label=""
         />
       </Grid>
       

@@ -420,7 +420,6 @@ const ProfileEditor = () => {
                   onTagsChange={handleTagsChange}
                   maxTags={10}
                   placeholder="Select tags that describe you..."
-                  label=""
                 />
               </Box>
 

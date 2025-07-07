@@ -17,7 +17,8 @@ import {
   Add as AddIcon,
   GetApp as GetAppIcon,
   Storefront as StorefrontIcon,
-  Payment as PaymentIcon
+  Payment as PaymentIcon,
+  CloudUpload as CloudUploadIcon
 } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { useLogout } from '../../components/LogoutHandler';
@@ -98,6 +99,11 @@ const SearchCommon = ({
 
   const handlePublishDirect = () => {
     navigateWithStack(history, '/publish-direct-searchables');
+    handleMenuClose();
+  };
+
+  const handlePublishAIContent = () => {
+    navigateWithStack(history, '/publish/ai-content');
     handleMenuClose();
   };
 
@@ -202,6 +208,12 @@ const SearchCommon = ({
                     <PaymentIcon />
                   </ListItemIcon>
                   <ListItemText primary="Direct Payment Item" />
+                </MenuItem>
+                <MenuItem onClick={handlePublishAIContent}>
+                  <ListItemIcon>
+                    <CloudUploadIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="AI Content Manager" />
                 </MenuItem>
               </Menu>
             </Box>
