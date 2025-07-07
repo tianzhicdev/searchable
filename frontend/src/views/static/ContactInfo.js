@@ -14,7 +14,7 @@ const ContactInfo = () => {
                 {/* Header */}
                 <Box>
                     <Typography variant="h2" gutterBottom>
-                        Contact Information
+                        Contact Information test
                     </Typography>
                 </Box>
                 <Divider />
