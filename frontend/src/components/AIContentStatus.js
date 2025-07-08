@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(2),
   },
   table: {
-    minWidth: 650,
+    width: '100%',
   },
   statusChip: {
     fontWeight: 'bold',
@@ -105,9 +105,9 @@ const AIContentStatus = () => {
         </Box>
       ) : (
         <TableContainer>
-          <Table fullwidth>
-            <TableHead fullwidth>
-              <TableRow fullwidth>
+          <Table className={classes.table}>
+            <TableHead>
+              <TableRow>
                 <TableCell>Title</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Created</TableCell>
