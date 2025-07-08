@@ -237,14 +237,17 @@ const Onboarding5_1 = () => {
       // Clear session storage
       sessionStorage.removeItem('onboarding_donation_data');
       
-      // Redirect to the created searchable
+      // Store searchable info for congrats page
+      sessionStorage.setItem('onboarding_success', JSON.stringify({
+        type: 'direct',
+        storeName: donationData.title,
+        redirectPath: `/direct-item/${searchableResponse.data.searchable_id}`
+      }));
+      
+      // Redirect to congratulations page
       setTimeout(() => {
-        if (searchableResponse.data.searchable_id) {
-          history.push(`/direct-item/${searchableResponse.data.searchable_id}`);
-        } else {
-          history.push('/profile');
-        }
-      }, 2000);
+        history.push('/onboarding-congrats');
+      }, 1500);
       
     } catch (err) {
       console.error('Error:', err);
