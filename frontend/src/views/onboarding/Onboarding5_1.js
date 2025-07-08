@@ -219,7 +219,7 @@ const Onboarding5_1 = () => {
             description: `Donation page by ${formData.username}`,
             currency: 'usd',
             type: 'direct',
-            defaultPrice: parseFloat(donationData.defaultAmount),
+            defaultAmount: parseFloat(donationData.defaultAmount),
             visibility: {
               udf: "always_true",
               data: {}

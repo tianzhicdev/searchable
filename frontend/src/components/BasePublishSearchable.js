@@ -36,6 +36,11 @@ const BasePublishSearchable = ({
   
   // Additional form validation
   isFormValid = () => true,
+  
+  // Minimal mode for onboarding
+  isMinimalMode = false,
+  hideBackButton = false,
+  initialFormData = {},
 }) => {
   const classes = useComponentStyles();
   
@@ -56,7 +61,8 @@ const BasePublishSearchable = ({
     customValidation,
     customRedirectPath,
     onSuccess,
-    onError
+    onError,
+    initialFormData
   });
 
   // Handle form submission with type-specific payload
@@ -79,15 +85,17 @@ const BasePublishSearchable = ({
   return (
     <Grid container className={classes.container}>
       {/* Back button */}
-      <Grid item xs={12} className={classes.header}>
-        <Button 
-          variant="contained" 
-          onClick={navigateBack}
-          startIcon={<ArrowBackIcon />}
-        >
-          Back to Searchables
-        </Button>
-      </Grid>
+      {!hideBackButton && (
+        <Grid item xs={12} className={classes.header}>
+          <Button 
+            variant="contained" 
+            onClick={navigateBack}
+            startIcon={<ArrowBackIcon />}
+          >
+            Back to Searchables
+          </Button>
+        </Grid>
+      )}
       
       {/* Error message */}
       {error && (
@@ -136,6 +144,7 @@ const BasePublishSearchable = ({
                 onError={setError}
                 imageDescription={imageDescription}
                 showCurrency={showCurrency}
+                isMinimalMode={isMinimalMode}
               />
               
               {/* Type-specific content */}
