@@ -7,12 +7,12 @@ import AddIcon from '@material-ui/icons/Add';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 import useComponentStyles from '../../themes/componentStyles';
 
-const PublishOfflineSearchable = () => {
+const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onSuccess, submitText }) => {
   console.log("PublishOfflineSearchable component is being rendered");
   const classes = useComponentStyles();
   
   // State for offline items (menu items)
-  const [offlineItems, setOfflineItems] = useState([]);
+  const [offlineItems, setOfflineItems] = useState(initialData.items || []);
   const [newItem, setNewItem] = useState({ 
     name: '', 
     description: '', 
@@ -120,16 +120,18 @@ const PublishOfflineSearchable = () => {
             size="small"
             style={{ marginBottom: 8 }}
           />
-          <TextField
-            placeholder="Description (Optional)"
-            value={newItem.description}
-            onChange={handleItemDataChange}
-            name="description"
-            fullWidth
-            variant="outlined"
-            size="small"
-            style={{ marginBottom: 8 }}
-          />
+          {!isMinimalMode && (
+            <TextField
+              placeholder="Description (Optional)"
+              value={newItem.description}
+              onChange={handleItemDataChange}
+              name="description"
+              fullWidth
+              variant="outlined"
+              size="small"
+              style={{ marginBottom: 8 }}
+            />
+          )}
           <Button
             variant="contained"
             color="primary"
@@ -173,14 +175,19 @@ const PublishOfflineSearchable = () => {
   return (
     <BasePublishSearchable
       searchableType="offline"
-      title="Publish Offline Item"
-      subtitle="Create an item for offline orders or services"
+      title={isMinimalMode ? "Create Your Catalog" : "Publish Offline Item"}
+      subtitle={isMinimalMode ? "Add items to your catalog" : "Create an item for offline orders or services"}
       renderTypeSpecificContent={renderOfflineContent}
       getTypeSpecificPayload={getTypeSpecificPayload}
       isFormValid={isFormValid}
       customValidation={customValidation}
       showCurrency={false}
       imageDescription="Add up to 10 images"
+      isMinimalMode={isMinimalMode}
+      hideBackButton={isMinimalMode}
+      initialFormData={initialData}
+      onSuccess={onSuccess}
+      submitText={submitText}
     />
   );
 };

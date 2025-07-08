@@ -13,6 +13,7 @@ const PublishSearchableCommon = ({
   imageDescription = "Add up to 10 images",
   selectedTags = [],
   onTagsChange,
+  isMinimalMode = false,
 }) => {
   const classes = useComponentStyles();
 
@@ -52,33 +53,37 @@ const PublishSearchableCommon = ({
         />
       </Grid>
       
-      <Grid item xs={12} className={classes.formGroup}>
-        <Typography variant="subtitle1" className={classes.formLabel}>
-          Tags (Optional)
-        </Typography>
-        <Typography variant="body2" color="textSecondary" style={{ marginBottom: 8 }}>
-          Add up to 3 tags to help users find your content
-        </Typography>
-        <TagSelector
-          tagType="searchable"
-          selectedTags={selectedTags}
-          onTagsChange={onTagsChange}
-          maxTags={3}
-          placeholder="Select tags..."
-        />
-      </Grid>
-      
-      <Grid item xs={12} className={classes.formGroup}>
-        <ImageUploader
-          images={images.map(uri => ({ uri, preview: uri }))}
-          onImagesChange={onImagesChange}
-          maxImages={10}
-          title="Preview Images (Optional)"
-          description={imageDescription}
-          imageSize={100}
-          onError={onError}
-        />
-      </Grid>
+      {!isMinimalMode && (
+        <>
+          <Grid item xs={12} className={classes.formGroup}>
+            <Typography variant="subtitle1" className={classes.formLabel}>
+              Tags (Optional)
+            </Typography>
+            <Typography variant="body2" color="textSecondary" style={{ marginBottom: 8 }}>
+              Add up to 3 tags to help users find your content
+            </Typography>
+            <TagSelector
+              tagType="searchable"
+              selectedTags={selectedTags}
+              onTagsChange={onTagsChange}
+              maxTags={3}
+              placeholder="Select tags..."
+            />
+          </Grid>
+          
+          <Grid item xs={12} className={classes.formGroup}>
+            <ImageUploader
+              images={images.map(uri => ({ uri, preview: uri }))}
+              onImagesChange={onImagesChange}
+              maxImages={10}
+              title="Preview Images (Optional)"
+              description={imageDescription}
+              imageSize={100}
+              onError={onError}
+            />
+          </Grid>
+        </>
+      )}
     </>
   );
 };

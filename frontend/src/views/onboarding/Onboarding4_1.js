@@ -143,7 +143,7 @@ const Onboarding4_1 = () => {
     setFormErrors(prev => ({ ...prev, [name]: error }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleRegistrationSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
@@ -211,7 +211,7 @@ const Onboarding4_1 = () => {
       // Small delay to ensure Redux state is propagated
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Step 3: Create the offline searchable
+      // Step 3: Create the offline searchable directly
       const searchablePayload = {
         payloads: {
           public: {
@@ -219,7 +219,8 @@ const Onboarding4_1 = () => {
             description: `Store catalog by ${formData.username}`,
             currency: 'usd',
             type: 'offline',
-            items: catalogData.items.map(item => ({
+            offlineItems: catalogData.items.map(item => ({
+              itemId: `item_${item.id}`,
               name: item.name,
               price: parseFloat(item.price),
               description: ''
@@ -244,7 +245,7 @@ const Onboarding4_1 = () => {
       // Redirect to the created searchable
       setTimeout(() => {
         if (searchableResponse.data.searchable_id) {
-          history.push(`/searchable-item/${searchableResponse.data.searchable_id}`);
+          history.push(`/offline-item/${searchableResponse.data.searchable_id}`);
         } else {
           history.push('/profile');
         }
@@ -257,6 +258,7 @@ const Onboarding4_1 = () => {
       setRegistrationSuccess(false);
     }
   };
+
 
   if (!catalogData) {
     return (
@@ -271,137 +273,136 @@ const Onboarding4_1 = () => {
   }
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
-          {(isSubmitting || registrationSuccess) && (
-            <Box className={classes.loadingOverlay}>
-              <Box textAlign="center">
-                {registrationSuccess ? (
-                  <>
-                    <Store className={classes.successIcon} />
-                    <Typography variant="h6">
-                      Creating your store catalog...
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <CircularProgress />
-                    <Typography variant="h6" style={{ marginTop: 16 }}>
-                      Setting up your account...
-                    </Typography>
-                  </>
-                )}
+      <Box className={classes.root}>
+        <Container maxWidth="md">
+          <Paper className={classes.paper} elevation={3}>
+            {(isSubmitting || registrationSuccess) && (
+              <Box className={classes.loadingOverlay}>
+                <Box textAlign="center">
+                  {registrationSuccess ? (
+                    <>
+                      <Store className={classes.successIcon} />
+                      <Typography variant="h6">
+                        Creating your store catalog...
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <CircularProgress />
+                      <Typography variant="h6" style={{ marginTop: 16 }}>
+                        Setting up your account...
+                      </Typography>
+                    </>
+                  )}
+                </Box>
               </Box>
-            </Box>
-          )}
-          
-          <IconButton className={classes.backButton} onClick={handleBack}>
-            <ArrowBack />
-          </IconButton>
-          
-          <Typography variant="h3" gutterBottom>
-            Create Your Account
-          </Typography>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
-            Final step! Set up your account to open "{catalogData.storeName}"
-          </Typography>
+            )}
+            
+            <IconButton className={classes.backButton} onClick={handleBack}>
+              <ArrowBack />
+            </IconButton>
+            
+            <Typography variant="h3" gutterBottom>
+              Create Your Account
+            </Typography>
+            <Typography variant="h6" color="textSecondary" gutterBottom>
+              Set up your account for "{catalogData.storeName}"
+            </Typography>
 
-          <form onSubmit={handleSubmit} className={classes.form}>
-            <FormControl 
-              fullWidth 
-              error={Boolean(touched.username && formErrors.username)}
-              className={classes.formField}
-            >
-              <TextField
-                name="username"
-                label="Username"
-                variant="outlined"
-                value={formData.username}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
+            <form onSubmit={handleRegistrationSubmit} className={classes.form}>
+              <FormControl 
+                fullWidth 
                 error={Boolean(touched.username && formErrors.username)}
-                helperText={touched.username && formErrors.username}
-                disabled={isSubmitting}
-              />
-            </FormControl>
+                className={classes.formField}
+              >
+                <TextField
+                  name="username"
+                  label="Username"
+                  variant="outlined"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  error={Boolean(touched.username && formErrors.username)}
+                  helperText={touched.username && formErrors.username}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
 
-            <FormControl 
-              fullWidth 
-              error={Boolean(touched.email && formErrors.email)}
-              className={classes.formField}
-            >
-              <TextField
-                name="email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                value={formData.email}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
+              <FormControl 
+                fullWidth 
                 error={Boolean(touched.email && formErrors.email)}
-                helperText={touched.email && formErrors.email}
-                disabled={isSubmitting}
-              />
-            </FormControl>
+                className={classes.formField}
+              >
+                <TextField
+                  name="email"
+                  label="Email"
+                  type="email"
+                  variant="outlined"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  error={Boolean(touched.email && formErrors.email)}
+                  helperText={touched.email && formErrors.email}
+                  disabled={isSubmitting}
+                />
+              </FormControl>
 
-            <FormControl 
-              fullWidth 
-              error={Boolean(touched.password && formErrors.password)}
-              className={classes.formField}
-            >
-              <TextField
-                name="password"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                variant="outlined"
-                value={formData.password}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
+              <FormControl 
+                fullWidth 
                 error={Boolean(touched.password && formErrors.password)}
-                helperText={(touched.password && formErrors.password) || 'At least 8 characters'}
+                className={classes.formField}
+              >
+                <TextField
+                  name="password"
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  variant="outlined"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  error={Boolean(touched.password && formErrors.password)}
+                  helperText={(touched.password && formErrors.password) || 'At least 8 characters'}
+                  disabled={isSubmitting}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </FormControl>
+
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                fullWidth
+                className={classes.submitButton}
                 disabled={isSubmitting}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </FormControl>
+              >
+                Create Account
+              </Button>
+            </form>
+          </Paper>
 
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              size="large"
-              fullWidth
-              className={classes.submitButton}
-              disabled={isSubmitting || registrationSuccess}
-              startIcon={<Store />}
-            >
-              Open My Store
-            </Button>
-          </form>
-        </Paper>
-
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError('')}
-        >
-          <Alert onClose={() => setError('')} severity="error">
-            {error}
-          </Alert>
-        </Snackbar>
-      </Container>
-    </Box>
+          <Snackbar
+            open={!!error}
+            autoHideDuration={6000}
+            onClose={() => setError('')}
+          >
+            <Alert onClose={() => setError('')} severity="error">
+              {error}
+            </Alert>
+          </Snackbar>
+        </Container>
+      </Box>
   );
 };
 
