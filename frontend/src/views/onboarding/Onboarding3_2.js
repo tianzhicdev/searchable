@@ -245,14 +245,17 @@ const Onboarding3_2 = () => {
       sessionStorage.removeItem('onboarding_files');
       sessionStorage.removeItem('onboarding_store_data');
       
-      // Redirect to the created searchable
+      // Store searchable info for congrats page
+      sessionStorage.setItem('onboarding_success', JSON.stringify({
+        type: 'downloadable',
+        storeName: storeData.title,
+        redirectPath: `/searchable-item/${searchableResponse.data.searchable_id}`
+      }));
+      
+      // Redirect to congratulations page
       setTimeout(() => {
-        if (searchableResponse.data.searchable_id) {
-          history.push(`/searchable-item/${searchableResponse.data.searchable_id}`);
-        } else {
-          history.push('/profile');
-        }
-      }, 2000);
+        history.push('/onboarding-congrats');
+      }, 1500);
       
     } catch (err) {
       console.error('Error:', err);

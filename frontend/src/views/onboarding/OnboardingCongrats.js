@@ -9,7 +9,7 @@ import {
 } from '@material-ui/core';
 import { CheckCircle, Store, ShoppingCart, MonetizationOn } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
-import confetti from 'canvas-confetti';
+// import confetti from 'canvas-confetti'; // Uncomment when library is installed
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -85,7 +85,9 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
   const history = useHistory();
 
   React.useEffect(() => {
-    // Trigger confetti animation
+    // Confetti animation placeholder
+    // Uncomment the code below when canvas-confetti is installed
+    /*
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -113,6 +115,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
     }, 250);
 
     return () => clearInterval(interval);
+    */
   }, []);
 
   const handleEnter = () => {
