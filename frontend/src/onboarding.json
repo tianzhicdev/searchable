@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "allowBackNavigation": true,
+    "persistProgress": true,
+    "trackAnalytics": true
+  },
+  "steps": {
+    "1": {
+      "id": "user-type",
+      "title": "Welcome to Searchable!",
+      "text": "Let's get you started. Are you here to:",
+      "type": "selection",
+      "validation": null,
+      "required": true,
+      "options": [
+        {
+          "text": "Create & Sell Digital Content",
+          "value": "creator",
+          "goto": "step:2",
+          "icon": "create",
+          "description": "Share your digital products, courses, or content"
+        },
+        {
+          "text": "Browse & Shop",
+          "value": "shopper",
+          "goto": "complete:shopper",
+          "icon": "shopping_cart",
+          "description": "Discover and purchase digital content"
+        }
+      ]
+    },
+    "2": {
+      "id": "creator-intent",
+      "title": "What would you like to sell?",
+      "text": "Choose the type of content you'll be offering:",
+      "type": "selection",
+      "validation": null,
+      "required": true,
+      "options": [
+        {
+          "text": "Digital Downloads",
+          "value": "digital_downloads",
+          "goto": "step:3",
+          "icon": "cloud_download",
+          "description": "PDFs, templates, graphics, music, etc."
+        },
+        {
+          "text": "Online Courses",
+          "value": "courses",
+          "goto": "step:3",
+          "icon": "school",
+          "description": "Video lessons, tutorials, educational content"
+        },
+        {
+          "text": "Software & Tools",
+          "value": "software",
+          "goto": "step:3",
+          "icon": "code",
+          "description": "Apps, plugins, themes, code"
+        },
+        {
+          "text": "Other Digital Content",
+          "value": "other",
+          "goto": "step:3",
+          "icon": "category",
+          "description": "Any other type of digital product"
+        }
+      ]
+    },
+    "3": {
+      "id": "file-upload",
+      "title": "Upload Your First Product",
+      "text": "Let's add your first digital product. You can add more later.",
+      "type": "component",
+      "component": "FileUpload",
+      "validation": {
+        "required": true,
+        "maxSize": "100MB",
+        "allowedTypes": ["pdf", "zip", "mp4", "mp3", "png", "jpg", "jpeg"]
+      },
+      "skipOption": {
+        "text": "I'll upload later",
+        "goto": "step:4"
+      },
+      "nextButton": {
+        "text": "Continue",
+        "goto": "step:4"
+      }
+    },
+    "4": {
+      "id": "store-setup",
+      "title": "Set Up Your Store",
+      "text": "Let's create your storefront where customers can browse your products.",
+      "type": "component",
+      "component": "StoreSetup",
+      "validation": {
+        "storeName": {
+          "required": true,
+          "minLength": 3,
+          "maxLength": 50
+        },
+        "storeDescription": {
+          "required": false,
+          "maxLength": 500
+        }
+      },
+      "nextButton": {
+        "text": "Continue",
+        "goto": "step:5"
+      }
+    },
+    "5": {
+      "id": "pricing-setup",
+      "title": "Set Your Pricing",
+      "text": "How would you like to price your products?",
+      "type": "component",
+      "component": "PricingSetup",
+      "validation": {
+        "currency": {
+          "required": true,
+          "default": "usd"
+        },
+        "defaultPrice": {
+          "required": false,
+          "min": 0.99
+        }
+      },
+      "nextButton": {
+        "text": "Continue",
+        "goto": "step:6"
+      }
+    },
+    "6": {
+      "id": "registration",
+      "title": "Create Your Account",
+      "text": "Last step! Create your account to save your progress and start selling.",
+      "type": "component",
+      "component": "Registration",
+      "validation": {
+        "email": {
+          "required": true,
+          "type": "email"
+        },
+        "password": {
+          "required": true,
+          "minLength": 8
+        }
+      },
+      "nextButton": {
+        "text": "Create Account & Finish",
+        "goto": "complete:creator"
+      }
+    }
+  },
+  "completions": {
+    "shopper": {
+      "redirect": "/search",
+      "message": "Welcome! Start exploring amazing digital content."
+    },
+    "creator": {
+      "redirect": "/profile",
+      "message": "Congratulations! Your store is ready. Start adding more products to grow your business."
+    }
+  }
+}
