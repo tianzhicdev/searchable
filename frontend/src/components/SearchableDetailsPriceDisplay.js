@@ -1,7 +1,9 @@
-import React from 'react';
-import { Typography, Box, Button, CircularProgress } from '@material-ui/core';
+import React, { useState } from 'react';
+import { Typography, Box, Button, CircularProgress, Grid } from '@material-ui/core';
+import { Share, Edit, Delete } from '@material-ui/icons';
 import useComponentStyles from '../themes/componentStyles';
 import PayButton from './Payment/PayButton';
+import ShareDialog from './ShareDialog';
 
 const SearchableDetailsPriceDisplay = ({
   totalPrice,
@@ -12,12 +14,16 @@ const SearchableDetailsPriceDisplay = ({
   userBalance = 0,
   isOwner,
   onRemoveItem,
+  onEditItem,
   isRemoving,
   payButtonText = "Pay",
   showPaymentSummary = true,
-  disabled = false
+  disabled = false,
+  searchableId,
+  searchableTitle
 }) => {
   const classes = useComponentStyles();
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
   // Debug logging
   console.log("SearchableDetailsPriceDisplay - onBalancePayment:", onBalancePayment);
@@ -43,20 +49,57 @@ const SearchableDetailsPriceDisplay = ({
         />
       )}
       
-      {/* Remove Button for Owner */}
-      {isOwner && onRemoveItem && (
-        <Box mt={2} display="flex" justifyContent="center">
-          <Button
-            variant="contained"
-            onClick={onRemoveItem}
-            disabled={isRemoving}
-            fullWidth
-            startIcon={isRemoving ? <CircularProgress size={20} /> : null}
-          >
-            {isRemoving ? 'Removing...' : 'Remove Item'}
-          </Button>
+      {/* Owner Actions - Share, Edit, Delete */}
+      {isOwner && (
+        <Box mt={2}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setShareDialogOpen(true)}
+                fullWidth
+                startIcon={<Share />}
+                disabled={processing}
+              >
+                Share
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button
+                variant="contained"
+                color="default"
+                onClick={onEditItem}
+                fullWidth
+                startIcon={<Edit />}
+                disabled={processing}
+              >
+                Edit
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={onRemoveItem}
+                disabled={isRemoving || processing}
+                fullWidth
+                startIcon={isRemoving ? <CircularProgress size={20} /> : <Delete />}
+              >
+                {isRemoving ? 'Deleting...' : 'Delete'}
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
       )}
+
+      {/* Share Dialog */}
+      <ShareDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        searchableId={searchableId}
+        title={searchableTitle}
+      />
     </Box>
   );
 };
