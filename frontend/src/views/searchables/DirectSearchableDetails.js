@@ -8,6 +8,7 @@ import Alert from '@material-ui/lab/Alert';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
 import { formatUSD } from '../../utils/searchableUtils';
+import InvoiceList from '../payments/InvoiceList';
 
 const DirectSearchableDetails = () => {
   const location = useLocation();
@@ -19,7 +20,8 @@ const DirectSearchableDetails = () => {
     createInvoice,
     createBalancePayment,
     formatCurrency,
-    publicData 
+    publicData,
+    fetchRatings 
   } = useSearchableDetails();
   
   console.log("DirectSearchableDetails - createBalancePayment:", createBalancePayment);
@@ -36,7 +38,7 @@ const DirectSearchableDetails = () => {
   useEffect(() => {
     // Three flavours of pricing:
     // 1. URL parameter 'amount' - fixed amount, no choice
-    // 2. Default amount from searchable data - fixed amount, no choice
+    // 2. Default amount from searchable data - suggested amount, but user can modify
     // 3. Neither - show 4.99, 9.99, 14.99 options
     
     const params = new URLSearchParams(location.search);
@@ -48,9 +50,9 @@ const DirectSearchableDetails = () => {
       setPaymentAmount(fixedAmount);
       setIsAmountFixed(true); // Amount is fixed from URL
     } else if (publicData?.defaultAmount) {
-      // Flavour 2: Default amount from searchable data
+      // Flavour 2: Default amount from searchable data - user can still modify
       setPaymentAmount(publicData.defaultAmount);
-      setIsAmountFixed(true); // Amount is fixed from default
+      setIsAmountFixed(false); // Amount can be modified
     } else {
       // Flavour 3: No fixed amount, use middle option as default
       setPaymentAmount(9.99); // Default to middle option
@@ -183,9 +185,20 @@ const DirectSearchableDetails = () => {
     )
   );
 
+  // Render receipts content
+  const renderReceiptsContent = ({ id }) => (
+    <InvoiceList 
+      searchableId={id} 
+      onRatingSubmitted={() => {
+        fetchRatings();
+      }}
+    />
+  );
+
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderDirectPaymentContent}
+      renderReceiptsContent={renderReceiptsContent}
       onPayment={handlePayment}
       onDepositPayment={handleDepositPayment}
       onBalancePayment={handleBalancePayment}

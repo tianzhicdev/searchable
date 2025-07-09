@@ -18,6 +18,8 @@ from ..common.data_helpers import (
     get_searchable,
     get_downloadable_items_by_user_id,
     get_rewards,
+    get_db_connection,
+    execute_sql,
 )
 from ..common.tag_helpers import get_user_tags
 from ..common.logging_config import setup_logger
@@ -84,6 +86,41 @@ def validate_and_process_profile_image(image_data):
         logger.error(f"Error validating profile image: {str(e)}")
         return None
 
+def get_seller_rating(user_id):
+    """
+    Get seller rating and total ratings for a user
+    
+    Args:
+        user_id: The user's ID
+        
+    Returns:
+        tuple: (avg_rating, total_ratings)
+    """
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, """
+            SELECT 
+                COALESCE(AVG(r.rating), 0) as avg_rating,
+                COALESCE(COUNT(*), 0) as total_ratings
+            FROM rating r
+            JOIN invoice i ON r.invoice_id = i.id
+            WHERE i.seller_id = %s
+        """, params=(user_id,))
+        
+        result = cur.fetchone()
+        avg_rating, total_ratings = result if result else (0, 0)
+        
+        cur.close()
+        conn.close()
+        
+        return float(avg_rating) if avg_rating else 0.0, total_ratings or 0
+        
+    except Exception as e:
+        logger.error(f"Error getting seller rating for user {user_id}: {str(e)}")
+        return 0.0, 0
+
 @rest_api.route('/api/v1/profile/<int:user_id>', methods=['GET'])
 class GetUserProfile(Resource):
     """
@@ -101,10 +138,15 @@ class GetUserProfile(Resource):
             # Get user's tags
             user_tags = get_user_tags(user_id)
             
-            # Add tags to profile
-            profile['tags'] = user_tags
+            # Get seller rating
+            avg_rating, total_ratings = get_seller_rating(user_id)
             
-            # Return profile with tags only
+            # Add tags and rating to profile
+            profile['tags'] = user_tags
+            profile['seller_rating'] = avg_rating
+            profile['seller_total_ratings'] = total_ratings
+            
+            # Return profile with tags and rating
             return {
                 "profile": profile
             }, 200
@@ -139,10 +181,15 @@ class GetMyProfile(Resource):
             # Get user's tags
             user_tags = get_user_tags(user_id)
             
-            # Add tags to profile
-            profile['tags'] = user_tags
+            # Get seller rating
+            avg_rating, total_ratings = get_seller_rating(user_id)
             
-            # Return profile with tags only
+            # Add tags and rating to profile
+            profile['tags'] = user_tags
+            profile['seller_rating'] = avg_rating
+            profile['seller_total_ratings'] = total_ratings
+            
+            # Return profile with tags and rating
             return {
                 "profile": profile
             }, 200
