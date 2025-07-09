@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import SearchCommon from './SearchCommon';
 import UserSearchResults from '../../components/Search/UserSearchResults';
 import Backend from '../utilities/Backend';
@@ -8,17 +8,23 @@ import { navigateWithStack } from '../../utils/navigationUtils';
 
 const SearchByUser = () => {
   const history = useHistory();
+  const location = useLocation();
+  
+  // Get initial values from URL
+  const urlParams = new URLSearchParams(location.search);
   
   // Search state
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(urlParams.get('searchTerm') || '');
   const [selectedTags, setSelectedTags] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(parseInt(urlParams.get('page')) || 1);
   
   const handleSearch = async (page = 1) => {
     setLoading(true);
+    setCurrentPage(page);
     
     try {
       // Build search parameters
@@ -46,6 +52,15 @@ const SearchByUser = () => {
         setUsers([]);
         setPagination(null);
       }
+      
+      // Update URL with current page
+      const urlParams = new URLSearchParams(location.search);
+      urlParams.set('page', page.toString());
+      if (searchTerm.trim()) urlParams.set('searchTerm', searchTerm);
+      if (selectedTags.length > 0) {
+        urlParams.set('tags', selectedTags.map(tag => tag.id).join(','));
+      }
+      history.replace(`${location.pathname}?${urlParams.toString()}`);
     } catch (error) {
       console.error('Error searching users:', error);
       setUsers([]);
@@ -58,11 +73,22 @@ const SearchByUser = () => {
   const handleClearSearch = () => {
     setSearchTerm('');
     setSelectedTags([]);
+    setCurrentPage(1);
+    // Clear URL parameters
+    history.replace(location.pathname);
   };
   
   const handleUserClick = (user) => {
     navigateWithStack(history, `/profile/${user.id}`);
   };
+  
+  // Load initial search if page is specified in URL
+  useEffect(() => {
+    const page = parseInt(urlParams.get('page')) || 1;
+    if (page > 1 || searchTerm || urlParams.get('tags')) {
+      handleSearch(page);
+    }
+  }, []);
   
   return (
     <SearchCommon
@@ -74,7 +100,7 @@ const SearchByUser = () => {
       loading={loading}
       showFilters={showFilters}
       setShowFilters={setShowFilters}
-      onSearch={handleSearch}
+      onSearch={() => handleSearch(1)}
       onClearSearch={handleClearSearch}
     >
       <UserSearchResults

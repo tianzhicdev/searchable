@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { 
   Grid, Typography, Paper, Box, CircularProgress
 } from '@material-ui/core';
@@ -10,24 +10,30 @@ import MiniProfile from '../../components/Profiles/MiniProfile';
 import Pagination from '../../components/Pagination/Pagination';
 import ColumnLayout from '../../components/Layout/ColumnLayout';
 import backend from '../utilities/Backend';
-import { navigateWithReferrer } from '../../utils/navigationUtils';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const SearchableList = ({ criteria }) => {
     
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
+
+  const account = useSelector((state) => state.account);
+  const history = useHistory();
+  const location = useLocation();
+  
+  // Get page from URL or fallback to localStorage
+  const urlParams = new URLSearchParams(location.search);
+  const urlPage = parseInt(urlParams.get('page')) || parseInt(localStorage.getItem('searchablesPage')) || 1;
+  
   const [pagination, setPagination] = useState({
-    page: parseInt(localStorage.getItem('searchablesPage')) || 1,
+    page: urlPage,
     pageSize: 10,
     totalCount: 0,
     totalPages: 0
   });
-  const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
-
-  const account = useSelector((state) => state.account);
-  const history = useHistory();
 
   // Calculate optimal page size based on viewport height
   const calculateOptimalPageSize = () => {
@@ -62,11 +68,11 @@ const SearchableList = ({ criteria }) => {
 
   // Load initial items on mount
   useEffect(() => {
-    const savedPage = localStorage.getItem('searchablesPage');
-    const pageToLoad = savedPage ? parseInt(savedPage) : 1;
+    const urlParams = new URLSearchParams(location.search);
+    const pageToLoad = parseInt(urlParams.get('page')) || parseInt(localStorage.getItem('searchablesPage')) || 1;
     console.log('[SEARCHABLE LIST] Initial load - loading page:', pageToLoad);
     handleSearch(pageToLoad);
-  }, []);
+  }, [location.search]);
 
   // Handle search trigger from parent
   useEffect(() => {
@@ -115,9 +121,14 @@ const SearchableList = ({ criteria }) => {
       });
       setInitialItemsLoaded(true);
       
-      // Save current search state to localStorage
+      // Save current search state to localStorage as fallback
       localStorage.setItem('searchablesPage', pagination.current_page || page);
       localStorage.setItem('searchablesTerm', criteria.searchTerm);
+      
+      // Update URL with current page
+      const params = new URLSearchParams(location.search);
+      params.set('page', page.toString());
+      history.replace(`${location.pathname}?${params.toString()}`);
     } catch (err) {
       console.error("Error searching:", err);
       setError("An error occurred while searching. Please try again.");
@@ -139,11 +150,11 @@ const SearchableList = ({ criteria }) => {
     // Use the type field from the backend if available, fallback to payload type
     const itemType = item.type || item.payloads?.public?.type || 'downloadable';
     if (itemType === 'offline') {
-      navigateWithReferrer(history, `/offline-item/${item.searchable_id}`, '/search');
+      navigateWithStack(history, `/offline-item/${item.searchable_id}`);
     } else if (itemType === 'direct') {
-      navigateWithReferrer(history, `/direct-item/${item.searchable_id}`, '/search');
+      navigateWithStack(history, `/direct-item/${item.searchable_id}`);
     } else {
-      navigateWithReferrer(history, `/searchable-item/${item.searchable_id}`, '/search');
+      navigateWithStack(history, `/searchable-item/${item.searchable_id}`);
     }
   };
 
