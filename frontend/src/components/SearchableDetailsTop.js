@@ -40,6 +40,8 @@ const SearchableDetailsTop = ({
         username={searchableItem.username} 
         userId={searchableItem.user_id} 
         maxLength={30}
+        rating={searchableItem.seller_rating}
+        totalRatings={searchableItem.seller_total_ratings}
       />
 
       <Divider />
