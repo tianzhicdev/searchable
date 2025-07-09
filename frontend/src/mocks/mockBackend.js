@@ -285,7 +285,29 @@ const generateMockSearchables = () => {
         };
       });
     } else if (type === 'direct') {
-      searchable.payloads.public.defaultAmount = Math.floor(Math.random() * 50) + 0.99; // Random amount from 0.99 to 50.99
+      // Generate random pricing mode for mock data
+      const pricingModes = ['fixed', 'preset', 'flexible'];
+      const randomMode = pricingModes[Math.floor(Math.random() * pricingModes.length)];
+      
+      if (randomMode === 'fixed') {
+        const fixedAmount = Math.floor(Math.random() * 50) + 0.99;
+        searchable.payloads.public.pricingMode = 'fixed';
+        searchable.payloads.public.fixedAmount = fixedAmount;
+        searchable.payloads.public.defaultAmount = fixedAmount; // Backward compatibility
+      } else if (randomMode === 'preset') {
+        const presetCount = Math.floor(Math.random() * 3) + 1; // 1-3 preset amounts
+        const presetAmounts = [];
+        for (let j = 0; j < presetCount; j++) {
+          presetAmounts.push(Math.floor(Math.random() * 30) + 0.99);
+        }
+        presetAmounts.sort((a, b) => a - b); // Sort ascending
+        searchable.payloads.public.pricingMode = 'preset';
+        searchable.payloads.public.presetAmounts = presetAmounts;
+        searchable.payloads.public.defaultAmount = presetAmounts[0]; // Backward compatibility
+      } else {
+        searchable.payloads.public.pricingMode = 'flexible';
+        searchable.payloads.public.defaultAmount = null; // No default for flexible
+      }
     } else if (type === 'offline') {
       const itemCount = Math.floor(Math.random() * 10) + 1; // 1-10 items
       const offlineProductNames = [

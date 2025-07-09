@@ -453,7 +453,10 @@ export const mockDirectSearchableItem = {
       images: [mockImage1, mockImage2],
       imageUrls: [mockImage1, mockImage2],
       currency: "usd",
-      defaultAmount: 9.99,
+      // New pricing structure - flexible mode
+      pricingMode: "flexible",
+      // Keep backward compatibility
+      defaultAmount: null,
       visibility: {
         udf: "always_true",
         data: {}
@@ -477,6 +480,10 @@ export const mockDirectSearchableItem2 = {
       images: [mockImage2],
       imageUrls: [mockImage2],
       currency: "usd",
+      // New pricing structure - preset options
+      pricingMode: "preset",
+      presetAmounts: [2.99, 4.99, 9.99],
+      // Keep backward compatibility
       defaultAmount: 4.99,
       visibility: {
         udf: "always_true",
@@ -501,6 +508,10 @@ export const mockDirectSearchableItem3 = {
       images: [mockImage1],
       imageUrls: [mockImage1],
       currency: "usd",
+      // New pricing structure - fixed price
+      pricingMode: "fixed",
+      fixedAmount: 19.99,
+      // Keep backward compatibility
       defaultAmount: 19.99,
       visibility: {
         udf: "always_true",
