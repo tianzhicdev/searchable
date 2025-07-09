@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Grid,
@@ -48,10 +48,7 @@ const SearchCommon = ({
   const navigationOpen = Boolean(navigationAnchorEl);
   const open = Boolean(anchorEl);
 
-  // Auto-search when tags change
-  useEffect(() => {
-    onSearch(1);
-  }, [selectedTags]);
+  // Removed auto-search on tag change - parent component handles this
 
   // Navigation menu handlers
   const handleNavigationMenu = (event) => {

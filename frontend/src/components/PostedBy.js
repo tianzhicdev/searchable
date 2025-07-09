@@ -3,7 +3,7 @@ import { Typography, Link } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { navigateWithStack } from '../utils/navigationUtils';
 
-const PostedBy = ({ username, userId, maxLength = 30 }) => {
+const PostedBy = ({ username, userId, maxLength = 30, rating, totalRatings }) => {
   const history = useHistory();
 
   // Helper function to truncate text
@@ -34,6 +34,9 @@ const PostedBy = ({ username, userId, maxLength = 30 }) => {
       >
         {truncateText(username, maxLength)}
       </Link>
+      {typeof rating === 'number' && totalRatings > 0 && (
+        <span> ★ {rating.toFixed(1)}({totalRatings})</span>
+      )}
     </Typography>
   );
 };
