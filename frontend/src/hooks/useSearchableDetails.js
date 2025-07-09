@@ -120,22 +120,25 @@ const useSearchableDetails = () => {
     
     switch (itemType) {
       case 'downloadable':
-        editPath = '/publish-downloadable';
+        editPath = '/publish-searchables';
         break;
       case 'offline':
-        editPath = '/publish-offline';
+        editPath = '/publish-offline-searchables';
         break;
       case 'direct':
-        editPath = '/publish-direct';
+        editPath = '/publish-direct-searchables';
         break;
       default:
-        editPath = '/publish-downloadable';
+        editPath = '/publish-searchables';
     }
     
     // Navigate to edit page with current data
+    console.log('Navigating to edit with data:', SearchableItem);
     navigateWithStack(history, editPath, {
-      editMode: true,
-      editData: SearchableItem
+      additionalState: {
+        editMode: true,
+        editData: SearchableItem
+      }
     });
   };
 
