@@ -2,7 +2,7 @@ import os
 import time
 import stripe
 from psycopg2.extras import Json
-from .database import get_db_connection, execute_sql
+from .database import get_db_connection, execute_sql, db_transaction
 from .logging_config import setup_logger
 from .models import PaymentStatus, PaymentType, Currency
 from .payment_helpers import calc_invoice
@@ -55,39 +55,31 @@ def get_searchable(searchable_id):
         dict: The searchable data including the searchable_id, or None if not found
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        execute_sql(cur, """
-            SELECT searchable_id, type, searchable_data, user_id
-            FROM searchables
-            WHERE searchable_id = %s
-            AND removed = FALSE
-        """, params=(searchable_id,))
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
-        
-        if not result:
-            return None
+        with db_transaction() as (conn, cur):
+            execute_sql(cur, """
+                SELECT searchable_id, type, searchable_data, user_id
+                FROM searchables
+                WHERE searchable_id = %s
+                AND removed = FALSE
+            """, params=(searchable_id,))
             
-        searchable_id, searchable_type, searchable_data, user_id = result
-        
-        # Add searchable_id, type, and user_id to the data object for convenience
-        item_data = dict(searchable_data)
-        item_data['searchable_id'] = searchable_id
-        item_data['type'] = searchable_type
-        item_data['user_id'] = user_id
-        
-        return item_data
-        
+            result = cur.fetchone()
+            
+            if not result:
+                return None
+                
+            searchable_id, searchable_type, searchable_data, user_id = result
+            
+            # Add searchable_id, type, and user_id to the data object for convenience
+            item_data = dict(searchable_data)
+            item_data['searchable_id'] = searchable_id
+            item_data['type'] = searchable_type
+            item_data['user_id'] = user_id
+            
+            return item_data
+            
     except Exception as e:
         logger.error(f"Error retrieving searchable item {searchable_id}: {str(e)}")
-        # Ensure connection is closed even if an error occurs
-        if 'conn' in locals() and conn:
-            conn.close()
         return None
 
 def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=None, status=None):
@@ -96,93 +88,85 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
     Note: Status is now determined by related payment records
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        # Use the new query builders
+        from .query_builders import build_invoice_query_conditions, build_invoice_query_with_payment_status
         
-        # Build query dynamically
-        conditions = []
-        params = []
-        
-        if buyer_id is not None:
-            if isinstance(buyer_id, list):
-                placeholders = ','.join(['%s'] * len(buyer_id))
-                conditions.append(f"i.buyer_id IN ({placeholders})")
-                params.extend([str(b) for b in buyer_id])
-            else:
-                conditions.append(f"i.buyer_id = %s")
-                params.append(str(buyer_id))
-        
-        if seller_id is not None:
-            if isinstance(seller_id, list):
-                placeholders = ','.join(['%s'] * len(seller_id))
-                conditions.append(f"i.seller_id IN ({placeholders})")
-                params.extend([str(s) for s in seller_id])
-            else:
-                conditions.append(f"i.seller_id = %s")
-                params.append(str(seller_id))
-        
-        if searchable_id is not None:
-            if isinstance(searchable_id, list):
-                placeholders = ','.join(['%s'] * len(searchable_id))
-                conditions.append(f"i.searchable_id IN ({placeholders})")
-                params.extend([str(s) for s in searchable_id])
-            else:
-                conditions.append(f"i.searchable_id = %s")
-                params.append(str(searchable_id))
-        
-        if external_id:
-            conditions.append(f"i.external_id = %s")
-            params.append(external_id)
-        
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
-        # Join with payment table to get status
-        query = f"""
-            SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.fee, i.currency, 
-                   i.type, i.external_id, i.created_at, i.metadata,
-                   COALESCE(p.status, 'pending') as status
-            FROM invoice i 
-            LEFT JOIN payment p ON i.id = p.invoice_id
-            WHERE {where_clause}
-        """
-        
-        # Add status filter if provided
-        if status:
+        with db_transaction() as (conn, cur):
+            # Build conditions and parameters
+            conditions, params = build_invoice_query_conditions(
+                buyer_id=buyer_id,
+                seller_id=seller_id,
+                searchable_id=searchable_id,
+                external_id=external_id
+            )
+            
+            # Handle status filtering
             if status == 'pending':
-                query += " AND p.status IS NULL"
+                # For pending status, we need invoices without payment records
+                where_clause = " AND ".join(conditions) if conditions else "1=1"
+                query = f"""
+                    SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.fee, i.currency, 
+                           i.type, i.external_id, i.created_at, i.metadata,
+                           'pending' as status
+                    FROM invoice i 
+                    LEFT JOIN payment p ON i.id = p.invoice_id
+                    WHERE {where_clause} AND p.status IS NULL
+                    ORDER BY i.created_at DESC
+                """
             else:
-                query += " AND p.status = %s"
-                params.append(status)
-        
-        query += " ORDER BY i.created_at DESC"
-        
-        execute_sql(cur, query, params=params if params else None)
-        
-        results = []
-        for row in cur.fetchall():
-            invoice = {
-                'id': row[0],
-                'buyer_id': row[1],
-                'seller_id': row[2],
-                'searchable_id': row[3],
-                'amount': float(row[4]),
-                'fee': float(row[5]),
-                'currency': row[6],
-                'type': row[7],
-                'external_id': row[8],
-                'created_at': row[9].isoformat() if row[9] else None,
-                'metadata': row[10],
-                'status': row[11]  # Status from payment or 'pending'
-            }
-            results.append(invoice)
-        
-        cur.close()
-        conn.close()
-        return results
+                # Use the query builder for other statuses
+                query, params = build_invoice_query_with_payment_status(conditions, params, status)
+                # Simplify the query for basic invoice retrieval
+                query = f"""
+                    SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.fee, i.currency, 
+                           i.type, i.external_id, i.created_at, i.metadata,
+                           COALESCE(p.status, 'pending') as status
+                    FROM invoice i 
+                    LEFT JOIN payment p ON i.id = p.invoice_id
+                    WHERE {" AND ".join(conditions) if conditions else "1=1"}
+                    {f"AND p.status = %s" if status and status != 'pending' else ""}
+                    ORDER BY i.created_at DESC
+                """
+                if status and status != 'pending':
+                    params.append(status)
+            
+            execute_sql(cur, query, params=params if params else None)
+            
+            return _build_invoice_results(cur.fetchall())
         
     except Exception as e:
         logger.error(f"Error retrieving invoices: {str(e)}")
         return []
+
+
+def _build_invoice_results(rows):
+    """
+    Helper function to build invoice results from database rows
+    
+    Args:
+        rows: Database result rows
+        
+    Returns:
+        list: List of invoice dictionaries
+    """
+    results = []
+    for row in rows:
+        invoice = {
+            'id': row[0],
+            'buyer_id': row[1],
+            'seller_id': row[2],
+            'searchable_id': row[3],
+            'amount': float(row[4]),
+            'fee': float(row[5]),
+            'currency': row[6],
+            'type': row[7],
+            'external_id': row[8],
+            'created_at': row[9].isoformat() if row[9] else None,
+            'metadata': row[10],
+            'status': row[11]  # Status from payment or 'pending'
+        }
+        results.append(invoice)
+    return results
 
 def get_payments(invoice_id=None, invoice_ids=None, status=None):
     """
@@ -735,114 +719,9 @@ def get_balance_by_currency(user_id):
     """
     Get user balance from payments and withdrawals using new table structure
     """
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        logger.info(f"Calculating balance for user_id: {user_id}")
-        
-        # Single query to calculate the entire balance
-        query = """
-        WITH balance_sources AS (
-            -- Income from sales (seller earnings after fees)
-            SELECT 
-                'sale' as source_type,
-                (i.amount - i.fee) as net_amount,
-                i.currency
-            FROM invoice i
-            JOIN payment p ON i.id = p.invoice_id
-            WHERE i.seller_id = %s
-            AND p.status = %s
-            AND i.currency = 'usd'
-            
-            UNION ALL
-            
-            -- Rewards
-            SELECT 
-                'reward' as source_type,
-                r.amount as net_amount,
-                r.currency
-            FROM rewards r
-            WHERE r.user_id = %s
-            AND r.currency = 'usd'
-            
-            UNION ALL
-            
-            -- Completed deposits
-            SELECT 
-                'deposit' as source_type,
-                d.amount as net_amount,
-                d.currency
-            FROM deposit d
-            WHERE d.user_id = %s
-            AND d.status = 'complete'
-            AND d.currency = 'usd'
-            
-            UNION ALL
-            
-            -- Withdrawals (negative amounts)
-            SELECT 
-                'withdrawal' as source_type,
-                -w.amount as net_amount,
-                w.currency
-            FROM withdrawal w
-            WHERE w.user_id = %s
-            AND w.status IN (%s, %s, %s)
-            AND w.currency = 'usd'
-            
-            UNION ALL
-            
-            -- Balance payments (negative amounts) - purchases made with balance
-            SELECT 
-                'balance_payment' as source_type,
-                -i.amount as net_amount,
-                i.currency
-            FROM invoice i
-            JOIN payment p ON i.id = p.invoice_id
-            WHERE i.buyer_id = %s
-            AND p.type = 'balance'
-            AND p.status = %s
-            AND i.currency = 'usd'
-        )
-        SELECT 
-            COALESCE(SUM(net_amount), 0) as total_balance
-        FROM balance_sources
-        """
-        
-        execute_sql(cur, query, params=(
-            user_id,  # for sales
-            PaymentStatus.COMPLETE.value,
-            user_id,  # for rewards
-            user_id,  # for deposits
-            user_id,  # for withdrawals
-            PaymentStatus.COMPLETE.value,
-            PaymentStatus.PENDING.value,
-            PaymentStatus.DELAYED.value,
-            user_id,  # for balance payments (buyer_id)
-            PaymentStatus.COMPLETE.value  # for balance payments status
-        ))
-        
-        result = cur.fetchone()
-        total_balance = float(result[0]) if result and result[0] else 0.0
-        
-        cur.close()
-        conn.close()
-        
-        balance_by_currency = {
-            'usd': total_balance
-        }
-        
-        logger.info(f"Final balance for user {user_id}: {balance_by_currency}")
-        return balance_by_currency
-        
-    except Exception as e:
-        logger.error(f"Error calculating balance for user {user_id}: {str(e)}")
-        raise e
-    finally:
-        if 'cur' in locals() and cur:
-            cur.close()
-        if 'conn' in locals() and conn:
-            conn.close()
+    # Import here to avoid circular import
+    from .balance_utils import get_balance_by_currency as get_balance_util
+    return get_balance_util(user_id)
 
 def get_ratings(invoice_id=None, user_id=None):
     """

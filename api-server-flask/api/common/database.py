@@ -1,6 +1,7 @@
 import os
 import psycopg2
 from psycopg2.extras import Json
+from contextlib import contextmanager
 from .logging_config import setup_logger
 
 # Create a logger for this file
@@ -39,4 +40,37 @@ def execute_sql(cursor, sql, params=None, commit=False, connection=None):
     return cursor
 
 # Re-export Json for convenience
-__all__ = ['get_db_connection', 'execute_sql', 'Json'] 
+__all__ = ['get_db_connection', 'execute_sql', 'db_transaction', 'Json']
+
+@contextmanager
+def db_transaction(commit=True):
+    """
+    Context manager for database transactions
+    
+    Usage:
+        with db_transaction() as (conn, cur):
+            cur.execute("SELECT * FROM table")
+            results = cur.fetchall()
+        # Connection is automatically closed
+    
+    Args:
+        commit (bool): Whether to commit the transaction on success
+    """
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        yield conn, cur
+        if commit:
+            conn.commit()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error(f"Database transaction error: {str(e)}")
+        raise
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
