@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Typography, Box, Button, CircularProgress, Grid } from '@material-ui/core';
-import { Share, Edit, Delete } from '@material-ui/icons';
+import { Share as ShareIcon, Edit as EditIcon, Delete as DeleteIcon } from '@material-ui/icons';
 import useComponentStyles from '../themes/componentStyles';
 import PayButton from './Payment/PayButton';
 import ShareDialog from './ShareDialog';
@@ -59,7 +59,7 @@ const SearchableDetailsPriceDisplay = ({
                 color="primary"
                 onClick={() => setShareDialogOpen(true)}
                 fullWidth
-                startIcon={<Share />}
+                startIcon={<ShareIcon />}
                 disabled={processing}
               >
                 Share
@@ -68,10 +68,9 @@ const SearchableDetailsPriceDisplay = ({
             <Grid item xs={12} sm={4}>
               <Button
                 variant="contained"
-                color="default"
                 onClick={onEditItem}
                 fullWidth
-                startIcon={<Edit />}
+                startIcon={<EditIcon />}
                 disabled={processing}
               >
                 Edit
@@ -84,7 +83,7 @@ const SearchableDetailsPriceDisplay = ({
                 onClick={onRemoveItem}
                 disabled={isRemoving || processing}
                 fullWidth
-                startIcon={isRemoving ? <CircularProgress size={20} /> : <Delete />}
+                startIcon={isRemoving ? <CircularProgress size={20} /> : <DeleteIcon />}
               >
                 {isRemoving ? 'Deleting...' : 'Delete'}
               </Button>
