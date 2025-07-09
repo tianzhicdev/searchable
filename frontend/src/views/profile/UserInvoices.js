@@ -90,8 +90,8 @@ const UserInvoices = ({ initialView }) => {
       setSales(data.sales || []);
       
       // Calculate statistics
-      const totalSpent = data.purchases.reduce((sum, invoice) => sum + invoice.amount, 0);
-      const totalEarned = data.sales.reduce((sum, invoice) => sum + invoice.amount, 0);
+      const totalSpent = data.purchases?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
+      const totalEarned = data.sales?.reduce((sum, invoice) => sum + (invoice.amount || 0), 0) || 0;
       
       setStats(prevStats => ({
         ...prevStats,
