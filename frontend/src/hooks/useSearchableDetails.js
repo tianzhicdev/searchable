@@ -34,6 +34,7 @@ const useSearchableDetails = () => {
   const fetchSearchableDetails = async () => {
     try {
       const response = await backend.get(`v1/searchable/${id}`);
+      // The backend returns the searchable data directly (not wrapped)
       setSearchableItem(response.data);
       
       // Check if current user is the owner
