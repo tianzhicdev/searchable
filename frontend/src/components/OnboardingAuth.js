@@ -167,7 +167,7 @@ const OnboardingAuth = ({
           >
             <TextField
               name="username"
-              label="Username"
+              placeholder="Username"
               variant="outlined"
               value={formData.username}
               onChange={handleInputChange}
@@ -186,7 +186,7 @@ const OnboardingAuth = ({
         >
           <TextField
             name="email"
-            label="Email"
+            placeholder="Email"
             type="email"
             variant="outlined"
             value={formData.email}
@@ -205,7 +205,7 @@ const OnboardingAuth = ({
         >
           <TextField
             name="password"
-            label="Password"
+            placeholder="Password"
             type={showPassword ? 'text' : 'password'}
             variant="outlined"
             value={formData.password}

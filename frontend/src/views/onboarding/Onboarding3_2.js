@@ -168,12 +168,14 @@ const Onboarding3_2 = () => {
             <ArrowBack />
           </IconButton>
           
-          <OnboardingAuth
-            onSuccess={handleAuthSuccess}
-            submitButtonText={isCreatingStore ? "Creating..." : "Open My Store"}
-            submitButtonIcon={<Store />}
-            contextText={`open "${storeData.title}"`}
-          />
+          <Box style={{ paddingTop: 48 }}>
+            <OnboardingAuth
+              onSuccess={handleAuthSuccess}
+              submitButtonText={isCreatingStore ? "Creating..." : "Open My Store"}
+              submitButtonIcon={<Store />}
+              contextText={`open "${storeData.title}"`}
+            />
+          </Box>
         </Paper>
 
         <Snackbar

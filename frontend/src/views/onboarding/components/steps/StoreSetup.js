@@ -120,7 +120,7 @@ const StoreSetup = ({ stepConfig }) => {
     <Box>
       <Box className={classes.form}>
         <TextField
-          label="Store Name"
+          placeholder="Store Name"
           value={storeName}
           onChange={handleStoreNameChange}
           error={!!errors.storeName}
@@ -131,7 +131,7 @@ const StoreSetup = ({ stepConfig }) => {
         />
 
         <TextField
-          label="Store URL"
+          placeholder="Store URL"
           value={storeSlug}
           onChange={handleSlugChange}
           error={!!errors.storeSlug}
@@ -149,7 +149,7 @@ const StoreSetup = ({ stepConfig }) => {
         />
 
         <TextField
-          label="Store Description"
+          placeholder="Store Description"
           value={storeDescription}
           onChange={(e) => setStoreDescription(e.target.value)}
           error={!!errors.storeDescription}

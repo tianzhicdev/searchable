@@ -122,9 +122,11 @@ const Onboarding4 = () => {
             <ArrowBack />
           </IconButton>
           
-          <Typography variant="h3" gutterBottom>
-            Create Your Catalog
-          </Typography>
+          <Box style={{ paddingTop: 48 }}>
+            <Typography variant="h3" gutterBottom>
+              Create Your Catalog
+            </Typography>
+          </Box>
           <Typography variant="h6" color="textSecondary" gutterBottom>
             Set up your store catalog with items and prices
           </Typography>
@@ -132,7 +134,6 @@ const Onboarding4 = () => {
           <form className={classes.form}>
             <TextField
               fullWidth
-              label="Store Name"
               variant="outlined"
               value={storeName}
               onChange={(e) => setStoreName(e.target.value)}
@@ -147,7 +148,6 @@ const Onboarding4 = () => {
               
               <Box className={classes.itemRow}>
                 <TextField
-                  label="Item Name"
                   variant="outlined"
                   size="small"
                   value={newItem.name}
@@ -156,7 +156,6 @@ const Onboarding4 = () => {
                   style={{ flex: 2 }}
                 />
                 <TextField
-                  label="Price (USD)"
                   variant="outlined"
                   size="small"
                   type="number"

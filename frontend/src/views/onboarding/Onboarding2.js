@@ -9,10 +9,9 @@ import {
   CardActionArea,
   CardContent,
   Box,
-  Icon,
   IconButton
 } from '@material-ui/core';
-import { ArrowBack } from '@material-ui/icons';
+import { ArrowBack, CloudDownload, Store, Favorite } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 
 const useStyles = makeStyles((theme) => ({
@@ -72,19 +71,19 @@ const Onboarding2 = () => {
     {
       title: 'Sell my digital content',
       description: 'Upload and sell files like PDFs, music, videos, or software',
-      icon: 'cloud_download',
+      icon: <CloudDownload className={classes.icon} />,
       path: '/onboarding-3'
     },
     {
       title: 'Create catalog for my store',
       description: 'Build a product catalog with multiple items and categories',
-      icon: 'store',
+      icon: <Store className={classes.icon} />,
       path: '/onboarding-4'
     },
     {
       title: 'Create a donation page',
       description: 'Accept donations and tips from supporters',
-      icon: 'favorite',
+      icon: <Favorite className={classes.icon} />,
       path: '/onboarding-5'
     }
   ];
@@ -101,32 +100,36 @@ const Onboarding2 = () => {
             <ArrowBack />
           </IconButton>
           
-          <Typography variant="h3" className={classes.title}>
-            What would you like to create?
-          </Typography>
+          <Box style={{ paddingTop: 48 }}>
+            <Typography variant="h3" className={classes.title}>
+              What would you like to create?
+            </Typography>
+          </Box>
           <Typography variant="h6" gutterBottom color="textSecondary">
             Choose how you want to start selling
           </Typography>
           
-          <Grid container spacing={3} style={{ marginTop: 32 }}>
-            {options.map((option, index) => (
-              <Grid item xs={12} key={index}>
-                <Card className={classes.optionCard} elevation={2}>
-                  <CardActionArea onClick={() => handleOptionClick(option.path)}>
-                    <CardContent className={classes.cardContent}>
-                      <Icon className={classes.icon}>{option.icon}</Icon>
-                      <Typography variant="h5" className={classes.optionTitle}>
-                        {option.title}
-                      </Typography>
-                      <Typography variant="body1" className={classes.optionDescription}>
-                        {option.description}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          <Box style={{ marginTop: 32 }}>
+            <Grid container spacing={3}>
+              {options.map((option, index) => (
+                <Grid item xs={12} key={index}>
+                  <Card className={classes.optionCard} elevation={2}>
+                    <CardActionArea onClick={() => handleOptionClick(option.path)}>
+                      <CardContent className={classes.cardContent}>
+                        {option.icon}
+                        <Typography variant="h5" className={classes.optionTitle}>
+                          {option.title}
+                        </Typography>
+                        <Typography variant="body1" className={classes.optionDescription}>
+                          {option.description}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Paper>
       </Container>
     </Box>
