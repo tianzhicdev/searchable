@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useHistory, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { TextField } from '@material-ui/core';
-import configData from '../../../../config';
 
 // material-ui
 import {
@@ -14,12 +13,9 @@ import {
     InputAdornment,
 } from '@material-ui/core';
 
-// third party
-import axios from 'axios';
-
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
-import { ACCOUNT_INITIALIZE } from './../../../../store/actions';
+import { performLogin } from '../../../../services/authService';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -111,34 +107,20 @@ const RestLogin = (props, { ...others }) => {
         }
         
         try {
-            const response = await axios.post(configData.API_SERVER + 'users/login', {
-                password: formValues.password,
-                email: formValues.email
-            });
+            await performLogin(dispatcher, formValues.email, formValues.password);
             
-            if (response.data.success) {
-                console.log("Login successful", response.data);
-                // Clear the logout flag since user is now logged in
-                sessionStorage.removeItem('userLoggedOut');
-                dispatcher({
-                    type: ACCOUNT_INITIALIZE,
-                    payload: { isLoggedIn: true, user: response.data.user, token: response.data.token }
-                });
-                
-                // Redirect to intended destination
-                const intendedDestination = location.state?.from || '/';
-                console.log('Login: Redirecting to', intendedDestination);
-                history.push(intendedDestination);
-                
-                if (scriptedRef.current) {
-                    setIsSubmitting(false);
-                }
-            } else {
-                setSubmitError(response.data.msg);
+            console.log("Login successful");
+            
+            // Redirect to intended destination
+            const intendedDestination = location.state?.from || '/';
+            console.log('Login: Redirecting to', intendedDestination);
+            history.push(intendedDestination);
+            
+            if (scriptedRef.current) {
                 setIsSubmitting(false);
             }
         } catch (error) {
-            setSubmitError(error.response?.data?.msg || error.message);
+            setSubmitError(error.message || 'Login failed');
             setIsSubmitting(false);
         }
     };
