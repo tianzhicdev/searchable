@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import SearchCommon from './SearchCommon';
 import SearchableList from '../searchables/SearchableList';
@@ -6,87 +6,102 @@ import SearchableList from '../searchables/SearchableList';
 const SearchByContent = () => {
   const history = useHistory();
   const location = useLocation();
+  const isInitialMount = useRef(true);
   
-  // State variables
-  const [searchTerm, setSearchTerm] = useState(() => {
-    const urlParams = new URLSearchParams(location.search);
-    return urlParams.get('searchTerm') || localStorage.getItem('searchTerm') || '';
-  });
-
-  const [filters, setFilters] = useState(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const urlFilters = urlParams.get('filters');
+  // State derived from URL
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({});
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [loading] = useState(false);
+  
+  // Sync state with URL on mount and URL changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
     
+    // Update search term
+    const urlSearchTerm = params.get('searchTerm') || '';
+    setSearchTerm(urlSearchTerm);
+    
+    // Update page
+    const urlPage = parseInt(params.get('page')) || 1;
+    setCurrentPage(urlPage);
+    
+    // Update filters
+    const urlFilters = params.get('filters');
     if (urlFilters) {
       try {
-        return JSON.parse(decodeURIComponent(urlFilters));
+        const parsedFilters = JSON.parse(decodeURIComponent(urlFilters));
+        setFilters(parsedFilters);
+        
+        // Extract tags from filters for UI
+        if (parsedFilters.tags && Array.isArray(parsedFilters.tags)) {
+          // Convert tag IDs back to tag objects for the UI
+          setSelectedTags(parsedFilters.tags.map(id => ({ id })));
+        } else {
+          setSelectedTags([]);
+        }
       } catch (e) {
         console.error("Error parsing filters from URL:", e);
+        setFilters({});
+        setSelectedTags([]);
       }
+    } else {
+      setFilters({});
+      setSelectedTags([]);
     }
     
-    const storedFilters = localStorage.getItem('searchablesFilters');
-    if (storedFilters) {
-      try {
-        return JSON.parse(storedFilters);
-      } catch (e) {
-        console.error("Error parsing filters from localStorage:", e);
-      }
+    // After initial mount, we don't need to track this anymore
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
     }
-    
-    return {};
-  });
+  }, [location.search]);
 
-  // State for tag filtering
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchTrigger, setSearchTrigger] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  // Handle search
-  const handleSearch = () => {
-    // Create new filters object, removing tags from existing filters
+  // Handle search - updates URL which triggers the effect above
+  const handleSearch = (resetToFirstPage = true) => {
+    // Create new filters object
     const { tags, ...otherFilters } = filters;
     
     // Only add tags if there are selected tags
     const tagFilters = selectedTags.length > 0 ? { tags: selectedTags.map(tag => tag.id) } : {};
     const updatedFilters = { ...otherFilters, ...tagFilters };
     
-    localStorage.setItem('searchTerm', searchTerm);
-    localStorage.setItem('searchablesFilters', JSON.stringify(updatedFilters));
-    localStorage.removeItem('searchablesPage'); // Reset to page 1 on new search
-    
-    // Update URL with search parameters (reset to page 1)
+    // Build URL parameters
     const params = new URLSearchParams();
     params.set('tab', 'content');
     if (searchTerm) params.set('searchTerm', searchTerm);
     if (Object.keys(updatedFilters).length > 0) {
       params.set('filters', encodeURIComponent(JSON.stringify(updatedFilters)));
     }
-    params.set('page', '1');
-    history.push(`/search?${params.toString()}`);
+    params.set('page', resetToFirstPage ? '1' : currentPage.toString());
     
-    setFilters(updatedFilters);
-    setSearchTrigger(prev => prev + 1); // Trigger a new search
+    // Update URL - use replace to maintain navigation stack
+    history.replace(`/search?${params.toString()}`, location.state);
+  };
+
+  // Handle pagination - updates URL without resetting filters
+  const handlePageChange = (newPage) => {
+    console.log('[SEARCH BY CONTENT] handlePageChange called with:', newPage);
+    const params = new URLSearchParams(location.search);
+    params.set('page', newPage.toString());
+    const newUrl = `/search?${params.toString()}`;
+    console.log('[SEARCH BY CONTENT] Updating URL to:', newUrl);
+    history.replace(newUrl, location.state);
   };
 
   // Handle clear search
   const handleClearSearch = () => {
+    // Reset local state
     setSearchTerm('');
     setSelectedTags([]);
-    const clearedFilters = {};
-    
-    localStorage.setItem('searchTerm', '');
-    localStorage.setItem('searchablesFilters', JSON.stringify(clearedFilters));
-    localStorage.removeItem('searchablesPage');
+    setFilters({});
     
     // Clear URL parameters
     const params = new URLSearchParams();
     params.set('tab', 'content');
-    history.push(`/search?${params.toString()}`);
-    
-    setFilters(clearedFilters);
-    setSearchTrigger(prev => prev + 1);
+    params.set('page', '1');
+    history.replace(`/search?${params.toString()}`, location.state);
   };
 
   return (
@@ -99,15 +114,16 @@ const SearchByContent = () => {
       loading={loading}
       showFilters={showFilters}
       setShowFilters={setShowFilters}
-      onSearch={handleSearch}
+      onSearch={() => handleSearch(true)}
       onClearSearch={handleClearSearch}
     >
       <SearchableList 
         criteria={{
           searchTerm: searchTerm,
           filters: filters,
-          searchTrigger: searchTrigger
+          currentPage: currentPage
         }}
+        onPageChange={handlePageChange}
       />
     </SearchCommon>
   );

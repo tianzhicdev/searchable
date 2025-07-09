@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { 
   Grid, Typography, Paper, Box, CircularProgress
@@ -12,24 +10,18 @@ import ColumnLayout from '../../components/Layout/ColumnLayout';
 import backend from '../utilities/Backend';
 import { navigateWithStack } from '../../utils/navigationUtils';
 
-const SearchableList = ({ criteria }) => {
+const SearchableList = ({ criteria, onPageChange }) => {
     
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
-  const [initialItemsLoaded, setInitialItemsLoaded] = useState(false);
 
-  const account = useSelector((state) => state.account);
   const history = useHistory();
   const location = useLocation();
   
-  // Get page from URL or fallback to localStorage
-  const urlParams = new URLSearchParams(location.search);
-  const urlPage = parseInt(urlParams.get('page')) || parseInt(localStorage.getItem('searchablesPage')) || 1;
-  
   const [pagination, setPagination] = useState({
-    page: urlPage,
+    page: criteria.currentPage || 1,
     pageSize: 10,
     totalCount: 0,
     totalPages: 0
@@ -64,86 +56,72 @@ const SearchableList = ({ criteria }) => {
   useEffect(() => {
     const newPageSize = calculateOptimalPageSize();
     setPagination(prev => ({...prev, pageSize: newPageSize}));
-  }, [viewportHeight]);
+  }, [viewportHeight]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load initial items on mount
+  // Handle search when parent tells us to via criteria changes
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const pageToLoad = parseInt(urlParams.get('page')) || parseInt(localStorage.getItem('searchablesPage')) || 1;
-    console.log('[SEARCHABLE LIST] Initial load - loading page:', pageToLoad);
-    handleSearch(pageToLoad);
-  }, [location.search]);
+    const performSearch = async () => {
+      setLoading(true);
+      setError(null);
 
-  // Handle search trigger from parent
-  useEffect(() => {
-    if (criteria.searchTrigger && criteria.searchTrigger > 0) {
-      handleSearch(1); // Always start from page 1 on new search
-    }
-  }, [criteria.searchTrigger]);
+      try {
+        const pageSize = calculateOptimalPageSize();
+        const page = criteria.currentPage || 1;
+        
+        console.log('[SEARCHABLE LIST] Performing search:', { 
+          page, 
+          pageSize, 
+          searchTerm: criteria.searchTerm,
+          filters: criteria.filters 
+        });
+        
+        // Extract tags from filters to send as separate parameter
+        const { tags, ...otherFilters } = criteria.filters || {};
+        
+        const response = await backend.get('v1/searchable/search', {
+          params: {
+            page: page,
+            page_size: pageSize,
+            q: criteria.searchTerm || '',
+            filters: JSON.stringify(otherFilters),
+            tags: tags ? tags.join(',') : ''
+          }
+        });
 
-  // Function to handle search
-  const handleSearch = async (page = 1) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const pageSize = calculateOptimalPageSize();
-      console.log('[SEARCHABLE LIST] Requesting page:', page, 'pageSize:', pageSize);
-      console.log('[SEARCHABLE LIST] Criteria:', criteria);
-      
-      // Extract tags from filters to send as separate parameter
-      const { tags, ...otherFilters } = criteria.filters || {};
-      
-      const response = await backend.get('v1/searchable/search', {
-        params: {
-          page: page,
-          page_size: pageSize,
-          q: criteria.searchTerm || '',
-          filters: JSON.stringify(otherFilters),
-          tags: tags ? tags.join(',') : ''
-        }
-      });
-
-      console.log('[SEARCHABLE LIST] Response received:', response.data);
-      
-      // Ensure results is always an array
-      const results = response.data.results || [];
-      console.log('[SEARCHABLE LIST] Setting search results:', results.length, 'items');
-      setSearchResults(results);
-      
-      // Ensure pagination exists
-      const pagination = response.data.pagination || {};
-      setPagination({
-        page: pagination.current_page || 1,
-        pageSize: pagination.page_size || 10,
-        totalCount: pagination.total_count || 0,
-        totalPages: pagination.total_pages || 1
-      });
-      setInitialItemsLoaded(true);
-      
-      // Save current search state to localStorage as fallback
-      localStorage.setItem('searchablesPage', pagination.current_page || page);
-      localStorage.setItem('searchablesTerm', criteria.searchTerm);
-      
-      // Update URL with current page
-      const params = new URLSearchParams(location.search);
-      params.set('page', page.toString());
-      history.replace(`${location.pathname}?${params.toString()}`);
-    } catch (err) {
-      console.error("Error searching:", err);
-      setError("An error occurred while searching. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log('[SEARCHABLE LIST] Response received:', response.data);
+        
+        // Ensure results is always an array
+        const results = response.data.results || [];
+        setSearchResults(results);
+        
+        // Ensure pagination exists
+        const paginationData = response.data.pagination || {};
+        setPagination({
+          page: paginationData.current_page || 1,
+          pageSize: paginationData.page_size || 10,
+          totalCount: paginationData.total_count || 0,
+          totalPages: paginationData.total_pages || 1
+        });
+      } catch (err) {
+        console.error("Error searching:", err);
+        setError("An error occurred while searching. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Perform search
+    performSearch();
+  }, [criteria.searchTerm, criteria.filters, criteria.currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Function to handle page change
   const handlePageChange = (newPage) => {
     console.log('[SEARCHABLE LIST] Page change requested:', newPage);
-    handleSearch(newPage);
+    if (onPageChange) {
+      // Let parent handle the page change
+      onPageChange(newPage);
+    }
   };
-
-
 
   // Handle clicking on an item
   const handleItemClick = (item) => {
@@ -176,7 +154,7 @@ const SearchableList = ({ criteria }) => {
         </Grid>
       )}
 
-      {searchResults.length > 0 && (
+      {!loading && searchResults.length > 0 && (
         <>
           {/* Results in column layout - fills left column first, then right */}
           <ColumnLayout columns={2}>
@@ -191,6 +169,12 @@ const SearchableList = ({ criteria }) => {
           </ColumnLayout>
 
           <Box mt={2}>
+            {console.log('[SEARCHABLE LIST] Rendering pagination:', { 
+              currentPage: pagination.page, 
+              totalPages: pagination.totalPages,
+              totalItems: pagination.totalCount,
+              loading: loading 
+            })}
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
@@ -202,13 +186,11 @@ const SearchableList = ({ criteria }) => {
         </>
       )}
 
-      {!loading && searchResults.length === 0 && initialItemsLoaded && (
+      {!loading && searchResults.length === 0 && criteria.searchTerm !== undefined && (
         <Grid item xs={12}>
           <Paper elevation={2}>
             <Typography variant="body1">
-              {pagination.totalCount === 0 ? 
-                "No items found." : 
-                "Use the search button to find items."}
+              No items found.
             </Typography>
           </Paper>
         </Grid>
@@ -217,4 +199,4 @@ const SearchableList = ({ criteria }) => {
   );
 };
 
-export default SearchableList; 
+export default SearchableList;

@@ -30,6 +30,7 @@ export const navigateWithStack = (history, targetPath, options = {}) => {
   
   // Include query parameters in the current path
   const currentPath = history.location.pathname + history.location.search;
+  console.log(`navigateWithStack: currentPath=${currentPath}`);
   let navigationStack = getNavigationStack(history.location);
   
   if (replaceStack) {
@@ -78,6 +79,7 @@ export const navigateBack = (history, fallbackPath = '/search') => {
       break;
     }
   }
+  console.log(`navigateBack: currentPath=${currentPath}, targetPath=${targetPath}, navigationStack=${navigationStack}`);
   
   if (targetPath) {
     // Remove the pages from stack up to and including the target
