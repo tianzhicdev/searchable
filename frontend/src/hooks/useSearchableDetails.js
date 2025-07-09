@@ -97,7 +97,7 @@ const useSearchableDetails = () => {
 
   // Common remove item function
   const handleRemoveItem = async () => {
-    if (!window.confirm('Are you sure you want to remove this item?')) {
+    if (!window.confirm('Are you sure you want to delete this item?')) {
       return;
     }
 
@@ -106,10 +106,41 @@ const useSearchableDetails = () => {
       await backend.put(`v1/searchable/remove/${id}`, {});
       navigateWithStack(history, '/search');
     } catch (err) {
-      setError(err.message || 'Failed to remove item');
+      setError(err.message || 'Failed to delete item');
     } finally {
       setIsRemoving(false);
     }
+  };
+
+  // Edit item function - navigates to appropriate publish page
+  const handleEditItem = () => {
+    if (!SearchableItem) return;
+    
+    const itemType = SearchableItem.type;
+    let editPath;
+    
+    switch (itemType) {
+      case 'downloadable':
+        editPath = '/publish-searchables';
+        break;
+      case 'offline':
+        editPath = '/publish-offline-searchables';
+        break;
+      case 'direct':
+        editPath = '/publish-direct-searchables';
+        break;
+      default:
+        editPath = '/publish-searchables';
+    }
+    
+    // Navigate to edit page with current data
+    console.log('Navigating to edit with data:', SearchableItem);
+    navigateWithStack(history, editPath, {
+      additionalState: {
+        editMode: true,
+        editData: SearchableItem
+      }
+    });
   };
 
   // Common create invoice function - can be extended by specific types
@@ -218,6 +249,7 @@ const useSearchableDetails = () => {
     fetchRatings,
     refreshPaymentsBySearchable,
     handleRemoveItem,
+    handleEditItem,
     createInvoice,
     createBalancePayment,
     formatCurrency,

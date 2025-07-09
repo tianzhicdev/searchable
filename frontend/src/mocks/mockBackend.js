@@ -1746,6 +1746,13 @@ const createMockResponse = (data) => {
 
 // Export the mock backend interceptor
 const mockBackend = {
+  // Add defaults property to match axios structure
+  defaults: {
+    headers: {
+      common: {}
+    }
+  },
+  
   get: (url, config) => {
     console.log('[MOCK] GET request:', url, config);
     

@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Grid, Typography, Box, TextField, Button, IconButton, CircularProgress
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
+import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
@@ -11,6 +12,11 @@ import backend from '../utilities/Backend';
 const PublishDownloadableSearchable = () => {
   console.log("PublishDownloadableSearchable component is being rendered");
   const theme = useTheme();
+  const location = useLocation();
+  
+  // Check if we're in edit mode
+  const editMode = location.state?.editMode || false;
+  const editData = location.state?.editData || null;
   
   // State for downloadable files
   const [downloadableFiles, setDownloadableFiles] = useState([]);
@@ -18,6 +24,27 @@ const PublishDownloadableSearchable = () => {
   const [fileLoading, setFileLoading] = useState(false);
   
   const downloadableFileInputRef = useRef(null);
+
+  // Initialize downloadable files if in edit mode
+  useEffect(() => {
+    if (editMode && editData) {
+      const downloadableFilesData = editData.payloads?.public?.downloadableFiles || editData.downloadableFiles;
+      if (downloadableFilesData) {
+        console.log('Initializing downloadable files for edit mode:', downloadableFilesData);
+        setDownloadableFiles(downloadableFilesData.map((file, index) => ({
+          id: file.id || Date.now() + index,
+          fileId: file.fileId,
+          uuid: file.uuid,
+          name: file.name,
+          description: file.description || '',
+          price: file.price || 0,
+          fileName: file.fileName || file.name,
+          fileType: file.fileType || '',
+          fileSize: file.fileSize || 0
+        })));
+      }
+    }
+  }, [editMode, editData]);
 
   // Handle downloadable file selection
   const handleFileUpload = (e) => {
@@ -264,14 +291,16 @@ const PublishDownloadableSearchable = () => {
   return (
     <BasePublishSearchable
       searchableType="downloadable"
-      title="Publish Downloadable Item"
-      subtitle="Create an item with files that customers can download after purchase"
+      title={editMode ? "Edit Downloadable Item" : "Publish Downloadable Item"}
+      subtitle={editMode ? "Update your downloadable item details" : "Create an item with files that customers can download after purchase"}
       renderTypeSpecificContent={renderDownloadableContent}
       getTypeSpecificPayload={getTypeSpecificPayload}
       isFormValid={isFormValid}
       customValidation={customValidation}
       showCurrency={true}
       imageDescription="Add up to 10 images"
+      submitText={editMode ? "Update" : "Publish"}
+      loadingText={editMode ? "Updating..." : "Publishing..."}
     />
   );
 };

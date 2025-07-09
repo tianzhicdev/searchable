@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Grid, Typography, TextField, InputAdornment, FormControlLabel, Box,
   FormControl, FormLabel, RadioGroup, Radio, Button, IconButton
 } from '@material-ui/core';
+import { useLocation } from 'react-router-dom';
 import { Delete } from '@material-ui/icons';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 
 const PublishDirectSearchable = () => {
   console.log("PublishDirectSearchable component is being rendered");
+  const location = useLocation();
+  
+  // Check if we're in edit mode
+  const editMode = location.state?.editMode || false;
+  const editData = location.state?.editData || null;
   
   // State for pricing mode and amounts
   const [pricingMode, setPricingMode] = useState('flexible'); // 'fixed', 'preset', 'flexible'
   const [fixedAmount, setFixedAmount] = useState(9.99);
   const [presetAmounts, setPresetAmounts] = useState([4.99, 9.99, 14.99]); // Up to 3 preset amounts
+
+  // Initialize state if in edit mode
+  useEffect(() => {
+    if (editMode && editData) {
+      console.log('Initializing direct payment for edit mode:', editData);
+      const publicPayload = editData.payloads?.public || {};
+      
+      // Check for new pricing mode structure
+      if (publicPayload.pricingMode) {
+        setPricingMode(publicPayload.pricingMode);
+        
+        if (publicPayload.pricingMode === 'fixed' && publicPayload.fixedAmount) {
+          setFixedAmount(publicPayload.fixedAmount);
+        } else if (publicPayload.pricingMode === 'preset' && publicPayload.presetAmounts) {
+          setPresetAmounts(publicPayload.presetAmounts);
+        }
+      } else {
+        // Backward compatibility: if old defaultAmount exists, treat as fixed price
+        const defaultAmountValue = publicPayload.defaultAmount ?? editData.defaultAmount;
+        if (defaultAmountValue !== null && defaultAmountValue !== undefined) {
+          setPricingMode('fixed');
+          setFixedAmount(defaultAmountValue);
+        }
+      }
+    }
+  }, [editMode, editData]);
 
   // Create type-specific payload for direct searchable
   const getTypeSpecificPayload = (formData) => {
@@ -189,12 +221,14 @@ const PublishDirectSearchable = () => {
   return (
     <BasePublishSearchable
       searchableType="direct"
-      title="Publish Direct Payment Item"
-      subtitle="Create an item where buyers can choose or enter their payment amount"
+      title={editMode ? "Edit Direct Payment Item" : "Publish Direct Payment Item"}
+      subtitle={editMode ? "Update your direct payment item details" : "Create an item where buyers can choose or enter their payment amount"}
       renderTypeSpecificContent={renderDirectPaymentOptions}
       getTypeSpecificPayload={getTypeSpecificPayload}
       customRedirectPath={customRedirectPath}
       isFormValid={isFormValid}
+      submitText={editMode ? "Update" : "Publish"}
+      loadingText={editMode ? "Updating..." : "Publishing..."}
     />
   );
 };

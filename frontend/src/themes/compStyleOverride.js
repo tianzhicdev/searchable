@@ -31,15 +31,7 @@ export function componentStyleOverrides(theme) {
         },
         MuiGrid: {
             styleOverrides: {
-                root: {
-                    padding: '8px'
-                },
-                container: {
-                    padding: '8px'
-                },
-                item: {
-                    padding: '8px'
-                }
+                // Removed padding overrides to fix Grid spacing issues
             }
         },
         MuiCheckbox: {
