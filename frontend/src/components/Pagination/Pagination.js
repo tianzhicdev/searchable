@@ -45,7 +45,9 @@ const Pagination = ({
   };
   
   const handleNextPage = () => {
+    console.log('[PAGINATION] Next clicked - current:', currentPage, 'total:', totalPages, 'disabled:', disabled);
     if (currentPage < totalPages && !disabled) {
+      console.log('[PAGINATION] Calling onPageChange with:', currentPage + 1);
       onPageChange(currentPage + 1);
     }
   };

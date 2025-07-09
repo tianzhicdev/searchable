@@ -102,7 +102,9 @@ const MiniProfile = ({
       userId: data.user_id,
       price: publicData.price,
       category: publicData.category,
-      searchableType: publicData.type
+      searchableType: publicData.type,
+      rating: data.avg_rating,
+      totalRatings: data.total_ratings
     };
     
     // Determine click path based on searchable type
@@ -166,6 +168,8 @@ const MiniProfile = ({
               username={metaInfo.username} 
               userId={metaInfo.userId} 
               maxLength={30}
+              rating={data.seller_rating}
+              totalRatings={data.seller_total_ratings}
             />
             
             {metaInfo.searchableType && (
@@ -185,6 +189,12 @@ const MiniProfile = ({
                 Category: {truncateText(metaInfo.category, 30)}
               </Typography>
             )}
+            
+            {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
+              <Typography variant="body2">
+                Item Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings} reviews)
+              </Typography>
+            )}
           </Box>
         )}
         
@@ -202,9 +212,9 @@ const MiniProfile = ({
               </Typography>
             )}
             
-            {typeof metaInfo.rating === 'number' && (
+            {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
               <Typography variant="body2">
-                Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings || 0} reviews)
+                Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings} reviews)
               </Typography>
             )}
           </Box>

@@ -813,8 +813,8 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
                        up.metadata->>'display_name' as display_name,
                        up.profile_image_url, 
                        up.introduction,
-                       COALESCE((SELECT AVG(r.rating) FROM rating r WHERE r.user_id = u.id), 0) as rating,
-                       COALESCE((SELECT COUNT(*) FROM rating r WHERE r.user_id = u.id), 0) as total_ratings,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as total_ratings,
                        COALESCE((SELECT COUNT(*) FROM searchables s WHERE s.user_id = u.id AND s.removed = FALSE), 0) as searchable_count
                 FROM users u
                 LEFT JOIN user_profile up ON u.id = up.user_id
@@ -848,8 +848,8 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
                        up.metadata->>'display_name' as display_name,
                        up.profile_image_url, 
                        up.introduction,
-                       COALESCE((SELECT AVG(r.rating) FROM rating r WHERE r.user_id = u.id), 0) as rating,
-                       COALESCE((SELECT COUNT(*) FROM rating r WHERE r.user_id = u.id), 0) as total_ratings,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as total_ratings,
                        COALESCE((SELECT COUNT(*) FROM searchables s WHERE s.user_id = u.id AND s.removed = FALSE), 0) as searchable_count
                 FROM users u
                 LEFT JOIN user_profile up ON u.id = up.user_id
