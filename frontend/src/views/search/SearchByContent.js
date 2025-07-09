@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import SearchCommon from './SearchCommon';
 import SearchableList from '../searchables/SearchableList';
 
 const SearchByContent = () => {
   const history = useHistory();
+  const location = useLocation();
   
   // State variables
   const [searchTerm, setSearchTerm] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     return urlParams.get('searchTerm') || localStorage.getItem('searchTerm') || '';
   });
 
   const [filters, setFilters] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const urlFilters = urlParams.get('filters');
     
     if (urlFilters) {
@@ -55,6 +56,16 @@ const SearchByContent = () => {
     localStorage.setItem('searchablesFilters', JSON.stringify(updatedFilters));
     localStorage.removeItem('searchablesPage'); // Reset to page 1 on new search
     
+    // Update URL with search parameters (reset to page 1)
+    const params = new URLSearchParams();
+    params.set('tab', 'content');
+    if (searchTerm) params.set('searchTerm', searchTerm);
+    if (Object.keys(updatedFilters).length > 0) {
+      params.set('filters', encodeURIComponent(JSON.stringify(updatedFilters)));
+    }
+    params.set('page', '1');
+    history.push(`/search?${params.toString()}`);
+    
     setFilters(updatedFilters);
     setSearchTrigger(prev => prev + 1); // Trigger a new search
   };
@@ -68,6 +79,11 @@ const SearchByContent = () => {
     localStorage.setItem('searchTerm', '');
     localStorage.setItem('searchablesFilters', JSON.stringify(clearedFilters));
     localStorage.removeItem('searchablesPage');
+    
+    // Clear URL parameters
+    const params = new URLSearchParams();
+    params.set('tab', 'content');
+    history.push(`/search?${params.toString()}`);
     
     setFilters(clearedFilters);
     setSearchTrigger(prev => prev + 1);
