@@ -243,6 +243,8 @@ const generateMockSearchables = () => {
       searchable.payloads.public.downloadableFiles = Array(fileCount).fill(null).map((_, idx) => {
         const fileIndex = (i * 5 + idx) % fileNames.length;
         return {
+          fileId: `file-${i}-${idx}`,
+          id: `file-${i}-${idx}`, // Keep for backward compatibility
           name: fileNames[fileIndex],
           price: Math.floor(Math.random() * 100) + 0.99 // Random price from 0.99 to 100.99
         };
@@ -288,9 +290,10 @@ const generateMockSearchables = () => {
       searchable.payloads.public.offlineItems = Array(itemCount).fill(null).map((_, idx) => {
         const itemIndex = (i * 10 + idx) % offlineProductNames.length;
         return {
-          id: `offline-item-${i}-${idx}`,
+          itemId: `offline-item-${i}-${idx}`,
+          id: `offline-item-${i}-${idx}`, // Keep for backward compatibility
           name: offlineProductNames[itemIndex],
-          price: (Math.floor(Math.random() * 50) + 0.99).toFixed(2), // Random price from 0.99 to 50.99
+          price: Math.floor(Math.random() * 50) + 0.99, // Random price from 0.99 to 50.99
           description: `Fresh, high-quality ${offlineProductNames[itemIndex].toLowerCase()}`
         };
       });
@@ -581,51 +584,48 @@ const mockHandlers = {
     let searchable = allMockSearchables.find(s => s.searchable_id === searchableId);
     
     if (!searchable) {
-      // Create a default searchable for testing
+      // Create a default searchable for testing - matching backend structure
       searchable = {
-        searchable: {
-          searchable_id: searchableId,
-          terminal: {
-            username: 'mock_creator',
-            profile_image_url: '/api/v1/media/profile-mock-1'
-          },
-          payloads: {
-            public: {
-              title: 'Mock Searchable Item',
-              description: 'This is a mock searchable item for testing purposes.',
-              type: 'downloadable',
-              currency: 'usd',
-              images: [mockImage1, mockImage2],
-              downloadableFiles: [
-                { name: 'Test_File_1.zip', price: 9.99, id: 'file-1' },
-                { name: 'Test_File_2.pdf', price: 4.99, id: 'file-2' }
-              ]
-            }
-          },
-          created_at: new Date().toISOString(),
-          tags: [
-            { id: 23, name: 'art', tag_type: 'searchable' },
-            { id: 29, name: 'templates', tag_type: 'searchable' }
-          ]
-        },
-        average_rating: 4.5,
-        ratings_count: 25
-      };
-    } else {
-      // Transform to match expected format
-      searchable = {
-        searchable: {
-          ...searchable,
-          terminal: {
-            username: searchable.username || 'mock_creator',
-            profile_image_url: '/api/v1/media/profile-mock-1'
+        searchable_id: searchableId,
+        user_id: '1',
+        payloads: {
+          public: {
+            title: 'Mock Searchable Item',
+            description: 'This is a mock searchable item for testing purposes.',
+            type: 'downloadable',
+            currency: 'usd',
+            images: [mockImage1, mockImage2],
+            downloadableFiles: [
+              { fileId: 'file-1', name: 'Test_File_1.zip', price: 9.99, id: 'file-1' },
+              { fileId: 'file-2', name: 'Test_File_2.pdf', price: 4.99, id: 'file-2' }
+            ]
           }
         },
-        average_rating: 4.5,
-        ratings_count: Math.floor(Math.random() * 100)
+        created_at: new Date().toISOString(),
+        username: 'mock_creator',
+        seller_rating: 4.5,
+        seller_total_ratings: 10,
+        tags: [
+          { id: 23, name: 'art', tag_type: 'searchable' },
+          { id: 29, name: 'templates', tag_type: 'searchable' }
+        ]
       };
+    } else {
+      // Enrich with seller info to match backend response
+      const user = allMockUsers.find(u => u.id.toString() === searchable.user_id.toString());
+      searchable.username = searchable.username || user?.username || 'unknown_user';
+      searchable.seller_rating = user?.rating || 4.0;
+      searchable.seller_total_ratings = user?.totalRatings || 0;
     }
     
+    console.log('[MOCK] Returning searchable:', {
+      hasPayloads: !!searchable.payloads,
+      hasPublic: !!searchable.payloads?.public,
+      type: searchable.payloads?.public?.type,
+      searchable_id: searchable.searchable_id
+    });
+    
+    // Return the searchable data directly, NOT wrapped in { searchable: ... }
     return createMockResponse(searchable);
   },
   
@@ -711,6 +711,16 @@ const mockHandlers = {
         available: 123.45,
         pending: 10.00,
         currency: 'usd'
+      }
+    });
+  },
+  
+  'balance': () => {
+    console.log('[MOCK] Fetching balance (legacy)');
+    
+    return createMockResponse({
+      balance: {
+        usd: 123.45
       }
     });
   },
@@ -949,35 +959,20 @@ const mockHandlers = {
     
     // In mock mode, show a mix that includes the user's own items to simulate logged-in experience
     console.log('[MOCK] Fetching all searchables list (logged-in user view)');
+    // Get some searchables from the generated list instead of hard-coding
+    const sampleSearchables = allMockSearchables.slice(0, 10);
+    
     return createMockResponse({
       searchables: [
         // Include user's own searchables
         ...mockUserSearchables.searchables,
         // Include other users' searchables
-        {
-          _id: 'mock-item-3',
-          searchable_id: 'mock-item-3',
-          user_id: '2',
-          payloads: {
-            public: {
-              title: 'Professional Design Kit',
-              description: 'High-quality design templates and resources for professional projects',
-              type: 'downloadable',
-              currency: 'usd',
-              downloadableFiles: [
-                { name: 'Logo Templates', price: 19.99 },
-                { name: 'Business Card Designs', price: 14.99 }
-              ]
-            }
-          },
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          username: 'designer_pro'
-        }
+        ...sampleSearchables.filter(s => s.user_id !== '1') // Exclude user's own items
       ],
       pagination: {
         page: 1,
         pageSize: 10,
-        totalCount: 3,
+        totalCount: mockUserSearchables.searchables.length + sampleSearchables.length,
         totalPages: 1
       }
     });
@@ -1261,6 +1256,74 @@ const mockHandlers = {
   },
   
   // User invoices endpoints
+  'v1/user/invoices': (url) => {
+    console.log('[MOCK] Fetching user invoices (new endpoint)');
+    
+    const mockPurchases = [
+      {
+        invoice_id: 'inv-purchase-1',
+        searchable_id: 'mock-item-2',
+        amount: 19.99,
+        currency: 'usd',
+        status: 'paid',
+        payment_status: 'complete',
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+        paid_at: new Date(Date.now() - 170000000).toISOString(),
+        type: 'outgoing',
+        other_party_username: 'seller456',
+        item_title: 'Professional Templates',
+        is_incoming: false,
+        user_role: 'buyer'
+      },
+      {
+        invoice_id: 'inv-purchase-2',
+        searchable_id: 'mock-item-4',
+        amount: 39.99,
+        currency: 'usd',
+        status: 'paid',
+        payment_status: 'complete',
+        created_at: new Date(Date.now() - 259200000).toISOString(),
+        paid_at: new Date(Date.now() - 259000000).toISOString(),
+        type: 'outgoing',
+        other_party_username: 'designer_pro',
+        item_title: 'UI Kit Components',
+        is_incoming: false,
+        user_role: 'buyer'
+      }
+    ];
+    
+    const mockSales = [
+      {
+        invoice_id: 'inv-sale-1',
+        searchable_id: 'mock-item-1',
+        amount: 29.99,
+        currency: 'usd',
+        status: 'paid',
+        payment_status: 'complete',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        paid_at: new Date(Date.now() - 80000000).toISOString(),
+        type: 'incoming',
+        other_party_username: 'buyer123',
+        item_title: 'Premium Digital Asset Bundle',
+        is_incoming: true,
+        user_role: 'seller'
+      }
+    ];
+    
+    const allInvoices = [...mockPurchases, ...mockSales].sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+    
+    return createMockResponse({
+      invoices: allInvoices,
+      purchases: mockPurchases,
+      sales: mockSales,
+      total_count: allInvoices.length,
+      purchases_count: mockPurchases.length,
+      sales_count: mockSales.length
+    });
+  },
+  
   'v1/user-invoices': (url) => {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
     const page = parseInt(urlParams.get('page')) || 1;
@@ -1451,6 +1514,221 @@ const mockHandlers = {
       success: true,
       note_id: `note-${Date.now()}`,
       msg: 'Note added successfully!'
+    });
+  },
+  
+  // Invoices by searchable endpoint
+  'v1/invoices-by-searchable/': (url) => {
+    const searchableId = url.split('/').pop();
+    console.log('[MOCK] Fetching invoices for searchable:', searchableId);
+    
+    // Find the searchable to determine user role
+    const searchable = allMockSearchables.find(s => s.searchable_id === searchableId);
+    const userRole = searchable && searchable.user_id === '1' ? 'seller' : 'buyer';
+    
+    // Generate some mock invoices
+    const mockInvoices = [];
+    
+    if (userRole === 'buyer') {
+      // User has bought this item
+      mockInvoices.push({
+        id: `inv-${searchableId}-1`,
+        invoice_id: `inv-${searchableId}-1`,
+        searchable_id: searchableId,
+        amount: 29.99,
+        currency: 'usd',
+        status: 'paid',
+        payment_status: 'complete',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+        paid_at: new Date(Date.now() - 86000000).toISOString(),
+        buyer_id: '1',
+        seller_id: searchable?.user_id || '2',
+        other_party_username: searchable?.username || 'seller_user',
+        metadata: {
+          selections: (() => {
+            const type = searchable?.payloads?.public?.type;
+            if (type === 'downloadable') {
+              return searchable?.payloads?.public?.downloadableFiles?.map(f => ({
+                id: f.fileId,
+                type: 'downloadable',
+                name: f.name,
+                price: f.price
+              })) || [];
+            } else if (type === 'offline') {
+              return searchable?.payloads?.public?.offlineItems?.slice(0, 2).map(item => ({
+                id: item.itemId,
+                type: 'offline',
+                name: item.name,
+                price: item.price,
+                count: 1
+              })) || [];
+            } else if (type === 'direct') {
+              return [{
+                id: 'direct-payment',
+                type: 'direct',
+                name: 'Direct Payment',
+                price: searchable?.payloads?.public?.defaultAmount || 25.00
+              }];
+            }
+            return [];
+          })()
+        }
+      });
+    } else {
+      // User is selling this item - show sales
+      mockInvoices.push({
+        id: `inv-${searchableId}-2`,
+        invoice_id: `inv-${searchableId}-2`,
+        searchable_id: searchableId,
+        amount: 49.99,
+        currency: 'usd',
+        status: 'paid',
+        payment_status: 'complete',
+        created_at: new Date(Date.now() - 172800000).toISOString(),
+        paid_at: new Date(Date.now() - 172000000).toISOString(),
+        buyer_id: '3',
+        seller_id: '1',
+        other_party_username: 'buyer_user',
+        metadata: {}
+      });
+    }
+    
+    return createMockResponse({
+      invoices: mockInvoices,
+      user_role: userRole
+    });
+  },
+  
+  // Withdrawals endpoint
+  'v1/withdrawals': () => {
+    console.log('[MOCK] Fetching withdrawals');
+    
+    return createMockResponse({
+      withdrawals: [
+        {
+          id: 'withdrawal-1',
+          amount: 50.00,
+          currency: 'usd',
+          status: 'completed',
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+          completed_at: new Date(Date.now() - 172000000).toISOString(),
+          type: 'bank_transfer',
+          metadata: {
+            bank_name: 'Mock Bank',
+            last_four: '1234'
+          }
+        },
+        {
+          id: 'withdrawal-2',
+          amount: 30.00,
+          currency: 'usd',
+          status: 'pending',
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          type: 'paypal',
+          metadata: {
+            email: 'user@example.com'
+          }
+        }
+      ],
+      total: 2
+    });
+  },
+  
+  // Deposits endpoint
+  'v1/deposits': () => {
+    console.log('[MOCK] Fetching deposits');
+    
+    return createMockResponse({
+      deposits: [
+        {
+          id: 'deposit-1',
+          amount: 100.00,
+          currency: 'usd',
+          status: 'completed',
+          created_at: new Date(Date.now() - 432000000).toISOString(),
+          completed_at: new Date(Date.now() - 431000000).toISOString(),
+          type: 'credit_card',
+          metadata: {
+            last_four: '4242'
+          }
+        },
+        {
+          id: 'deposit-2',
+          amount: 50.00,
+          currency: 'usd',
+          status: 'completed',
+          created_at: new Date(Date.now() - 864000000).toISOString(),
+          completed_at: new Date(Date.now() - 863000000).toISOString(),
+          type: 'bank_transfer',
+          metadata: {}
+        }
+      ],
+      total: 2
+    });
+  },
+  
+  // User profile endpoint (for dashboard)
+  'v1/profile': () => {
+    console.log('[MOCK] Fetching user profile for dashboard');
+    
+    return createMockResponse({
+      profile: {
+        user_id: '1',
+        username: 'test_user',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        profile_image_url: '/api/v1/media/profile-mock-1',
+        introduction: 'Welcome to my store! I create digital assets and templates.',
+        created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+        seller_rating: 4.5,
+        seller_total_ratings: 25,
+        buyer_rating: 4.8,
+        buyer_total_ratings: 15,
+        total_sales: 45,
+        total_purchases: 23,
+        metadata: {
+          verified: true,
+          location: 'United States',
+          languages: ['English', 'Spanish']
+        }
+      }
+    });
+  },
+  
+  // AI Content endpoint
+  'v1/ai-content': () => {
+    console.log('[MOCK] Fetching AI content');
+    
+    return createMockResponse({
+      success: true,
+      ai_contents: [
+        {
+          id: 'ai-content-1',
+          title: 'AI Generated Blog Post',
+          status: 'processed',
+          type: 'blog_post',
+          created_at: new Date(Date.now() - 86400000).toISOString(),
+          processed_at: new Date(Date.now() - 82800000).toISOString(),
+          content_preview: 'This is an AI generated blog post about digital marketing...',
+          metadata: {
+            word_count: 1500,
+            language: 'en'
+          }
+        },
+        {
+          id: 'ai-content-2',
+          title: 'Product Description Generator',
+          status: 'processed',
+          type: 'product_description',
+          created_at: new Date(Date.now() - 172800000).toISOString(),
+          processed_at: new Date(Date.now() - 169200000).toISOString(),
+          content_preview: 'Professional product descriptions for your e-commerce store...',
+          metadata: {
+            word_count: 300,
+            language: 'en'
+          }
+        }
+      ]
     });
   }
 };
