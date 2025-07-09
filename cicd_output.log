@@ -1,9 +1,0 @@
-[0;34m🔄 Starting full CI/CD workflow...[0m
-[1;33mThis will:[0m
-  1. 🗑️  Stop and remove all Docker containers
-  2. 🧹 Remove all Docker volumes and networks
-  3. 🏗️  Rebuild and start all containers
-  4. ⏳ Wait for services to be ready
-  5. 🧪 Run comprehensive integration tests
-
-Continue with CI/CD workflow? (y/N): 
