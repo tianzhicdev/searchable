@@ -61,8 +61,7 @@ const DepositComponent = ({
         type: 'usdt'
         // No amount needed for USDT deposits - user sends whatever they want
       });
-      
-      console.log('Deposit response:', response.data);
+
       setDepositAddress(response.data.address);
       setDepositExpiresAt(response.data.expires_at);
       setDepositId(response.data.deposit_id);

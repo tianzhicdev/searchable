@@ -11,7 +11,6 @@ import {
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
-import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
@@ -77,8 +76,7 @@ const Dashboard = () => {
     try {
       // Fetch balance directly from the balance endpoint
       const balanceResponse = await backend.get('balance');
-      console.log("Balance response:", balanceResponse.data);
-      
+
       // Update to store USD value from the response
       setBalance({
         usd: balanceResponse.data.balance?.usd || 0
@@ -99,8 +97,7 @@ const Dashboard = () => {
     try {
       // Terminal endpoint removed - profile data now comes from user_profile
       const response = await backend.get('v1/profile');
-      
-      console.log("Profile data response:", response.data);
+
       setProfileData(response.data.profile || {});
     } catch (err) {
       console.error('Error fetching user profile data:', err);
@@ -116,7 +113,7 @@ const Dashboard = () => {
     
     try {
       const response = await backend.get('v1/profile');
-      console.log("User profile response:", response.data);
+      
       setUserProfile(response.data.profile);
     } catch (err) {
       console.error('Error fetching user profile:', err);
@@ -192,8 +189,7 @@ const Dashboard = () => {
           amount: parseFloat(usdtWithdrawalAmount)
         }
       );
-      
-      console.log('USDT Withdrawal response:', response.data);
+
       setWithdrawalSuccess(true);
       setUsdtWithdrawDialogOpen(false);
       
@@ -520,8 +516,7 @@ const Dashboard = () => {
           {successMessage || 'Withdrawal successful! Your funds have been sent.'}
         </Alert>
       </Snackbar>
-      
-      
+
       {/* ProfileEditor component now has no props */}
       <ProfileEditor />
     </Grid>

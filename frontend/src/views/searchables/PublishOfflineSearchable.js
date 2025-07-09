@@ -8,7 +8,7 @@ import BasePublishSearchable from '../../components/BasePublishSearchable';
 import useComponentStyles from '../../themes/componentStyles';
 
 const PublishOfflineSearchable = () => {
-  console.log("PublishOfflineSearchable component is being rendered");
+  
   const classes = useComponentStyles();
   
   // State for offline items (menu items)

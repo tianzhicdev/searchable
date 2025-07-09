@@ -10,13 +10,13 @@ let backend;
 if (isMockMode) {
   const mockBackend = require('../../mocks/mockBackend').default;
   backend = mockBackend;
-  console.log('[BACKEND] Using mock backend');
+  
 } else {
   // Create an Axios instance for real backend
   backend = axios.create({
     baseURL: configData.API_SERVER,
   });
-  console.log('[BACKEND] Using real backend:', configData.API_SERVER);
+  
 }
 
 // Only add interceptors for real backend, not mock backend
@@ -27,23 +27,17 @@ if (!isMockMode) {
       // Get current state from Redux store
       const state = store.getState();
       const account = state.account;
-      
-      console.log('[AUTH DEBUG] Redux state account:', account);
-      console.log('[AUTH DEBUG] isLoggedIn:', account?.isLoggedIn);
-      console.log('[AUTH DEBUG] token exists:', !!account?.token);
-      console.log('[AUTH DEBUG] token length:', account?.token?.length);
-      
+
       // Also check localStorage for debugging
       const persistedData = localStorage.getItem('persist:ungovernable-account');
-      console.log('[AUTH DEBUG] Persisted data exists:', !!persistedData);
 
       if (account?.isLoggedIn && account?.token) {
-        console.log("[AUTH DEBUG] Setting auth token in headers from Redux state");
+        
         // Backend expects lowercase 'authorization' header
         config.headers.authorization = account.token;
-        console.log('[AUTH DEBUG] Final headers:', config.headers);
+        
       } else {
-        console.log('[AUTH DEBUG] Not setting auth - isLoggedIn:', account?.isLoggedIn, 'token:', !!account?.token);
+        
       }
 
       return config;

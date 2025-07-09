@@ -9,7 +9,7 @@ import BasePublishSearchable from '../../components/BasePublishSearchable';
 import backend from '../utilities/Backend';
 
 const PublishDownloadableSearchable = () => {
-  console.log("PublishDownloadableSearchable component is being rendered");
+  
   const theme = useTheme();
   
   // State for downloadable files

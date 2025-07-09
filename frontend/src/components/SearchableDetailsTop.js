@@ -16,7 +16,6 @@ const SearchableDetailsTop = ({
   if (!searchableItem) return null;
 
   const publicData = searchableItem.payloads?.public || {};
-  console.log('SearchableDetailsTop', searchableItem, searchableRating);
 
   return (
     <Box>

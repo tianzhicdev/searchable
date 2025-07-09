@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { 
@@ -64,7 +63,7 @@ const SearchableList = ({ criteria }) => {
   useEffect(() => {
     const savedPage = localStorage.getItem('searchablesPage');
     const pageToLoad = savedPage ? parseInt(savedPage) : 1;
-    console.log('[SEARCHABLE LIST] Initial load - loading page:', pageToLoad);
+    
     handleSearch(pageToLoad);
   }, []);
 
@@ -82,9 +81,7 @@ const SearchableList = ({ criteria }) => {
 
     try {
       const pageSize = calculateOptimalPageSize();
-      console.log('[SEARCHABLE LIST] Requesting page:', page, 'pageSize:', pageSize);
-      console.log('[SEARCHABLE LIST] Criteria:', criteria);
-      
+
       // Extract tags from filters to send as separate parameter
       const { tags, ...otherFilters } = criteria.filters || {};
       
@@ -98,11 +95,9 @@ const SearchableList = ({ criteria }) => {
         }
       });
 
-      console.log('[SEARCHABLE LIST] Response received:', response.data);
-      
       // Ensure results is always an array
       const results = response.data.results || [];
-      console.log('[SEARCHABLE LIST] Setting search results:', results.length, 'items');
+      
       setSearchResults(results);
       
       // Ensure pagination exists
@@ -128,11 +123,9 @@ const SearchableList = ({ criteria }) => {
 
   // Function to handle page change
   const handlePageChange = (newPage) => {
-    console.log('[SEARCHABLE LIST] Page change requested:', newPage);
+    
     handleSearch(newPage);
   };
-
-
 
   // Handle clicking on an item
   const handleItemClick = (item) => {

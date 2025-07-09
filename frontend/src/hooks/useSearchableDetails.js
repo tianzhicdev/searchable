@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
 import backend from '../views/utilities/Backend';
 import { navigateWithStack } from '../utils/navigationUtils';
+import { formatUSD } from '../utils/searchableUtils';
 
 /**
  * Custom hook for shared SearchableDetails logic
@@ -72,19 +73,17 @@ const useSearchableDetails = () => {
 
   const fetchUserBalance = async () => {
     if (!account || !account.user) {
-      console.log("No account found, skipping balance fetch");
+      
       setUserBalance(0);
       return;
     }
-    
-    console.log("Fetching user balance for user:", account.user._id);
+
     setLoadingBalance(true);
     try {
       const response = await backend.get('/balance');
       // Balance response format: { "balance": { "usd": 123.45 } }
       const balance = response.data.balance?.usd || 0;
-      console.log("Balance fetched:", balance);
-      console.log("Full balance response:", response.data);
+
       setUserBalance(balance);
     } catch (err) {
       console.error("Error fetching user balance:", err);
@@ -177,14 +176,9 @@ const useSearchableDetails = () => {
     }
   };
 
-  // Common format currency function
-  const formatCurrency = (amount) => {
-    return `$${amount.toFixed(2)}`;
-  };
-
   // Initialize data on mount
   useEffect(() => {
-    console.log("useSearchableDetails - Initializing for searchable ID:", id);
+    
     fetchSearchableDetails();
     refreshPaymentsBySearchable();
     fetchRatings();
@@ -219,7 +213,7 @@ const useSearchableDetails = () => {
     handleRemoveItem,
     createInvoice,
     createBalancePayment,
-    formatCurrency,
+    formatUSD,
     fetchUserBalance,
     
     // Utils

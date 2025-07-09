@@ -36,7 +36,7 @@ const MyDownloads = () => {
     
     try {
       const response = await backend.get('v1/downloadable-items-by-user');
-      console.log('Downloadable items response:', response.data);
+      
       setDownloadableItems(response.data.downloadable_items || []);
     } catch (err) {
       console.error('Error fetching downloadable items:', err);
@@ -48,8 +48,7 @@ const MyDownloads = () => {
 
   const handleDownload = async (file, downloadableItem) => {
     try {
-      console.log('Downloading file:', file.name, 'from item:', downloadableItem.searchable_title);
-      
+
       // Make request to download endpoint
       const response = await backend.get(file.download_url, { 
         responseType: 'blob' 

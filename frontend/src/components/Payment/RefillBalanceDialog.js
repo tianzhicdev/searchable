@@ -21,6 +21,7 @@ import {
 import { useHistory } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
+import { formatUSD } from '../../utils/searchableUtils';
 
 const RefillBalanceDialog = ({
   open,
@@ -47,10 +48,6 @@ const RefillBalanceDialog = ({
     onClose();
   };
   
-  const formatCurrency = (amount) => {
-    return `$${amount.toFixed(2)}`;
-  };
-  
   const neededAmount = Math.max(0, requiredAmount - currentBalance);
   
   return (
@@ -75,13 +72,13 @@ const RefillBalanceDialog = ({
         <DialogContent>
           <Box mb={3}>
             <Typography variant="body1" className={classes.userText} gutterBottom>
-              Current Balance: {formatCurrency(currentBalance)}
+              Current Balance: {formatUSD(currentBalance)}
             </Typography>
             <Typography variant="body1" className={classes.userText} gutterBottom>
-              Required Amount: {formatCurrency(requiredAmount)}
+              Required Amount: {formatUSD(requiredAmount)}
             </Typography>
             <Typography variant="body1" className={classes.userText} style={{color: '#1976d2'}}>
-              Need to refill: {formatCurrency(neededAmount)}
+              Need to refill: {formatUSD(neededAmount)}
             </Typography>
           </Box>
           

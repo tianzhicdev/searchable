@@ -198,10 +198,7 @@ export const getFallbackPath = (location) => {
 export const debugNavigationStack = (location, label = 'Navigation Stack') => {
   const navigationStack = getNavigationStack(location);
   const currentPath = location.pathname;
-  console.log(`${label}:`, {
-    currentPath,
-    navigationStack,
-    referrer: getReferrer(location),
+  ,
     origin: getOriginPath(location)
   });
 };

@@ -101,7 +101,7 @@ const ProfileEditor = () => {
       } catch (profileErr) {
         // If profile doesn't exist, use defaults
         if (profileErr.response?.status === 404) {
-          console.log('User profile not found, using defaults');
+          
           setProfileData({
             username: account.user.username || '',
             introduction: '',

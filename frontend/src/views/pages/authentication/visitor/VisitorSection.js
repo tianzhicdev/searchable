@@ -42,8 +42,7 @@ const VisitorSection = () => {
      */
     const handleVisitAsGuest = async () => {
         setIsCreatingGuest(true);
-        console.log('VisitorSection: Creating guest account');
-        
+
         try {
             const guestCredentials = generateGuestCredentials();
             
@@ -62,12 +61,7 @@ const VisitorSection = () => {
                 });
                 
                 if (loginResponse.data.success) {
-                    console.log('VisitorSection: Guest account created and logged in successfully', {
-                        username: guestCredentials.username,
-                        email: guestCredentials.email,
-                        redirectTo: intendedDestination
-                    });
-                    
+
                     // Clear the logout flag since user is now logged in
                     sessionStorage.removeItem('userLoggedOut');
                     
