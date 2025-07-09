@@ -45,16 +45,21 @@ const SearchByUser = () => {
     }
   }, [location.search]);
   
-  // Trigger search when URL changes
+  // Trigger search when URL changes or on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const urlSearchTerm = params.get('searchTerm') || '';
-    const urlPage = parseInt(params.get('page')) || 1;
-    const urlTags = params.get('tags') || '';
+    const tab = params.get('tab');
     
-    // Perform search with current URL state
-    performSearch(urlSearchTerm, urlPage, urlTags);
-  }, [location.search]);
+    // Only perform search if we're on the creators tab
+    if (tab === 'creators') {
+      const urlSearchTerm = params.get('searchTerm') || '';
+      const urlPage = parseInt(params.get('page')) || 1;
+      const urlTags = params.get('tags') || '';
+      
+      // Perform search with current URL state
+      performSearch(urlSearchTerm, urlPage, urlTags);
+    }
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Perform the actual search
   const performSearch = async (term, page, tags) => {
@@ -62,7 +67,7 @@ const SearchByUser = () => {
     try {
       const params = {
         page: page,
-        limit: 20
+        limit: 10  // Reduced to show more pages
       };
       
       // Add search term if provided
@@ -82,14 +87,17 @@ const SearchByUser = () => {
         params: params
       });
 
-      setSearchResults(response.data.users || response.data.results || []);
+      const users = response.data.users || response.data.results || [];
+      
+      setSearchResults(users);
       const paginationData = response.data.pagination || {};
-      setPagination({
+      const paginationState = {
         page: paginationData.page || paginationData.current_page || 1,
         pageSize: paginationData.limit || paginationData.page_size || 20,
         totalCount: paginationData.total || paginationData.total_count || 0,
         totalPages: paginationData.pages || paginationData.total_pages || 1
-      });
+      };
+      setPagination(paginationState);
     } catch (error) {
       console.error('Error searching users:', error);
       setSearchResults([]);
@@ -117,7 +125,12 @@ const SearchByUser = () => {
   const handlePageChange = (newPage) => {
     const params = new URLSearchParams(location.search);
     params.set('page', newPage.toString());
-    history.replace(`/search?${params.toString()}`, location.state);
+    // Ensure tab parameter is preserved
+    if (!params.has('tab')) {
+      params.set('tab', 'creators');
+    }
+    const newUrl = `/search?${params.toString()}`;
+    history.replace(newUrl, location.state);
   };
 
   // Handle clear search
@@ -130,9 +143,10 @@ const SearchByUser = () => {
   };
   
   // Handle navigation to user profile
-  const handleNavigateToProfile = (username) => {
-    navigateWithStack(history, `/terminal/${username}`);
+  const handleNavigateToProfile = (user) => {
+    navigateWithStack(history, `/profile/${user.id}`);
   };
+
 
   return (
     <SearchCommon
@@ -151,7 +165,7 @@ const SearchByUser = () => {
         users={searchResults}
         loading={loading}
         pagination={pagination}
-        onUserClick={(user) => handleNavigateToProfile(user.username)}
+        onUserClick={(user) => handleNavigateToProfile(user)}
         onPageChange={handlePageChange}
       />
     </SearchCommon>
