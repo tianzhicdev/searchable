@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Grid, Typography, Box, TextField, Button, IconButton
 } from '@material-ui/core';
+import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AddIcon from '@material-ui/icons/Add';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
@@ -10,6 +11,11 @@ import useComponentStyles from '../../themes/componentStyles';
 const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onSuccess, submitText }) => {
   console.log("PublishOfflineSearchable component is being rendered");
   const classes = useComponentStyles();
+  const location = useLocation();
+  
+  // Check if we're in edit mode
+  const editMode = location.state?.editMode || false;
+  const editData = location.state?.editData || null;
   
   // State for offline items (menu items)
   const [offlineItems, setOfflineItems] = useState(initialData.items || []);
@@ -18,6 +24,22 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
     description: '', 
     price: ''
   });
+
+  // Initialize offline items if in edit mode
+  useEffect(() => {
+    if (editMode && editData) {
+      const offlineItemsData = editData.payloads?.public?.offlineItems || editData.offlineItems;
+      if (offlineItemsData) {
+        console.log('Initializing offline items for edit mode:', offlineItemsData);
+        setOfflineItems(offlineItemsData.map((item, index) => ({
+          itemId: item.itemId || Date.now() + index + Math.random(),
+          name: item.name,
+          description: item.description || '',
+          price: item.price || 0
+        })));
+      }
+    }
+  }, [editMode, editData]);
   
   // Handle offline item data changes
   const handleItemDataChange = (e) => {
@@ -175,8 +197,8 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
   return (
     <BasePublishSearchable
       searchableType="offline"
-      title={isMinimalMode ? "Create Your Catalog" : "Publish Offline Item"}
-      subtitle={isMinimalMode ? "Add items to your catalog" : "Create an item for offline orders or services"}
+      title={isMinimalMode ? "Create Your Catalog" : (editMode ? "Edit Offline Item" : "Publish Offline Item")}
+      subtitle={isMinimalMode ? "Add items to your catalog" : (editMode ? "Update your offline item details" : "Create an item for offline orders or services")}
       renderTypeSpecificContent={renderOfflineContent}
       getTypeSpecificPayload={getTypeSpecificPayload}
       isFormValid={isFormValid}
@@ -187,7 +209,8 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
       hideBackButton={isMinimalMode}
       initialFormData={initialData}
       onSuccess={onSuccess}
-      submitText={submitText}
+      submitText={submitText || (editMode ? "Update" : "Publish")}
+      loadingText={editMode ? "Updating..." : "Publishing..."}
     />
   );
 };

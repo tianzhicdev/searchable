@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Grid, Typography, TextField, InputAdornment, Switch, FormControlLabel, Box
 } from '@material-ui/core';
+import { useLocation } from 'react-router-dom';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 
 const PublishDirectSearchable = () => {
   console.log("PublishDirectSearchable component is being rendered");
+  const location = useLocation();
+  
+  // Check if we're in edit mode
+  const editMode = location.state?.editMode || false;
+  const editData = location.state?.editData || null;
   
   // State for default amount and price setting
   const [hasDefaultAmount, setHasDefaultAmount] = useState(false);
   const [defaultAmount, setDefaultAmount] = useState(9.99);
+
+  // Initialize state if in edit mode
+  useEffect(() => {
+    if (editMode && editData) {
+      console.log('Initializing direct payment for edit mode:', editData);
+      const defaultAmountValue = editData.payloads?.public?.defaultAmount ?? editData.defaultAmount;
+      if (defaultAmountValue !== null && defaultAmountValue !== undefined) {
+        setHasDefaultAmount(true);
+        setDefaultAmount(defaultAmountValue);
+      }
+    }
+  }, [editMode, editData]);
 
   // Create type-specific payload for direct searchable
   const getTypeSpecificPayload = (formData) => ({
@@ -67,12 +85,14 @@ const PublishDirectSearchable = () => {
   return (
     <BasePublishSearchable
       searchableType="direct"
-      title="Publish Direct Payment Item"
-      subtitle="Create an item where buyers can choose or enter their payment amount"
+      title={editMode ? "Edit Direct Payment Item" : "Publish Direct Payment Item"}
+      subtitle={editMode ? "Update your direct payment item details" : "Create an item where buyers can choose or enter their payment amount"}
       renderTypeSpecificContent={renderDirectPaymentOptions}
       getTypeSpecificPayload={getTypeSpecificPayload}
       customRedirectPath={customRedirectPath}
       isFormValid={isFormValid}
+      submitText={editMode ? "Update" : "Publish"}
+      loadingText={editMode ? "Updating..." : "Publishing..."}
     />
   );
 };
