@@ -46,7 +46,10 @@ export const handleSuccessfulAuth = (dispatch, responseData) => {
   sessionStorage.removeItem('userLoggedOut');
   
   // Configure backend with token (use lowercase 'authorization')
-  backend.defaults.headers.common['authorization'] = token;
+  // Check if backend has defaults property (axios instance)
+  if (backend.defaults && backend.defaults.headers) {
+    backend.defaults.headers.common['authorization'] = token;
+  }
   
   // Update Redux store with the full user object from response
   const reduxPayload = { 

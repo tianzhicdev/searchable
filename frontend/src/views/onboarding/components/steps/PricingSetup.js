@@ -172,7 +172,7 @@ const PricingSetup = ({ stepConfig }) => {
 
       {pricingModel === 'fixed' && (
         <TextField
-          label="Default Product Price"
+          placeholder="Default Product Price"
           type="number"
           value={defaultPrice}
           onChange={(e) => setDefaultPrice(e.target.value)}
@@ -189,7 +189,7 @@ const PricingSetup = ({ stepConfig }) => {
 
       {pricingModel === 'pwyw' && (
         <TextField
-          label="Minimum Price (Optional)"
+          placeholder="Minimum Price (Optional)"
           type="number"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}

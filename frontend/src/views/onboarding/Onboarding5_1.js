@@ -160,12 +160,14 @@ const Onboarding5_1 = () => {
             <ArrowBack />
           </IconButton>
           
-          <OnboardingAuth
-            onSuccess={handleAuthSuccess}
-            submitButtonText={isCreatingPage ? "Creating..." : "Create Donation Page"}
-            submitButtonIcon={<MonetizationOn />}
-            contextText={`create "${donationData.title}"`}
-          />
+          <Box style={{ paddingTop: 48 }}>
+            <OnboardingAuth
+              onSuccess={handleAuthSuccess}
+              submitButtonText={isCreatingPage ? "Creating..." : "Create Donation Page"}
+              submitButtonIcon={<MonetizationOn />}
+              contextText={`create "${donationData.title}"`}
+            />
+          </Box>
         </Paper>
 
         <Snackbar

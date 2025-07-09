@@ -198,7 +198,7 @@ const Registration = ({ stepConfig }) => {
 
           <Box className={classes.form}>
             <TextField
-              label="Email Address"
+              placeholder="Email Address"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -210,7 +210,7 @@ const Registration = ({ stepConfig }) => {
             />
 
             <TextField
-              label="Password"
+              placeholder="Password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -234,7 +234,7 @@ const Registration = ({ stepConfig }) => {
             />
 
             <TextField
-              label="Confirm Password"
+              placeholder="Confirm Password"
               type={showPassword ? 'text' : 'password'}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

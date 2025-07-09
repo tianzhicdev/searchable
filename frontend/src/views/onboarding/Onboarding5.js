@@ -51,7 +51,7 @@ const Onboarding5 = () => {
   const history = useHistory();
   
   const [title, setTitle] = useState('');
-  const [defaultAmount, setDefaultAmount] = useState('10.00');
+  const [defaultAmount, setDefaultAmount] = useState('9.99');
   const [error, setError] = useState('');
 
   const handleBack = () => {
@@ -95,9 +95,11 @@ const Onboarding5 = () => {
             <ArrowBack />
           </IconButton>
           
-          <Typography variant="h3" gutterBottom>
-            Create Your Donation Page
-          </Typography>
+          <Box style={{ paddingTop: 48 }}>
+            <Typography variant="h3" gutterBottom>
+              Create Your Donation Page
+            </Typography>
+          </Box>
           <Typography variant="h6" color="textSecondary" gutterBottom>
             Set up a simple way to receive donations
           </Typography>
@@ -105,7 +107,6 @@ const Onboarding5 = () => {
           <form className={classes.form}>
             <TextField
               fullWidth
-              label="Donation Page Title"
               variant="outlined"
               value={title}
               onChange={(e) => {
@@ -118,7 +119,6 @@ const Onboarding5 = () => {
 
             <TextField
               fullWidth
-              label="Default Donation Amount"
               variant="outlined"
               type="number"
               value={defaultAmount}
@@ -126,6 +126,7 @@ const Onboarding5 = () => {
                 setDefaultAmount(e.target.value);
                 setError('');
               }}
+              placeholder="Default donation amount"
               margin="normal"
               InputProps={{
                 startAdornment: (

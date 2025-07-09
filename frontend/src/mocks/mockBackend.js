@@ -1501,6 +1501,13 @@ const mockHandlers = {
 
 // Create mock backend wrapper
 const mockBackend = {
+  // Add defaults property to match axios structure
+  defaults: {
+    headers: {
+      common: {}
+    }
+  },
+  
   get: (url, config) => {
     if (!isMockMode) {
       console.log(`[MOCK] Redirecting to real backend: GET ${url}`);

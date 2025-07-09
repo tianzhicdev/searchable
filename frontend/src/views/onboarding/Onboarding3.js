@@ -179,9 +179,11 @@ const Onboarding3 = () => {
             <ArrowBack />
           </IconButton>
           
-          <Typography variant="h3" gutterBottom>
-            Upload Your Digital Content
-          </Typography>
+          <Box style={{ paddingTop: 48 }}>
+            <Typography variant="h3" gutterBottom>
+              Upload Your Digital Content
+            </Typography>
+          </Box>
           <Typography variant="h6" color="textSecondary" gutterBottom>
             Upload the files you want to sell in your store
           </Typography>

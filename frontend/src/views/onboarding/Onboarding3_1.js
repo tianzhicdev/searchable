@@ -143,9 +143,11 @@ const Onboarding3_1 = () => {
             <ArrowBack />
           </IconButton>
           
-          <Typography variant="h3" gutterBottom>
-            Set Up Your Store
-          </Typography>
+          <Box style={{ paddingTop: 48 }}>
+            <Typography variant="h3" gutterBottom>
+              Set Up Your Store
+            </Typography>
+          </Box>
           <Typography variant="h6" color="textSecondary" gutterBottom>
             Name your store and set prices for your products
           </Typography>
@@ -153,7 +155,6 @@ const Onboarding3_1 = () => {
           <Box className={classes.section}>
             <TextField
               fullWidth
-              label="Store Title"
               variant="outlined"
               value={storeTitle}
               onChange={(e) => setStoreTitle(e.target.value)}
