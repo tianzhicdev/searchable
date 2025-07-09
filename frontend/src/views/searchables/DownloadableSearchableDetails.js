@@ -170,7 +170,11 @@ const DownloadableSearchableDetails = () => {
     showAlert(`Deposit address created! Send $${totalPrice.toFixed(2)} USDT to complete your purchase.`, "info");
     
     // Optionally, you can store the deposit information for tracking
-    
+    console.log('Deposit created for downloadable files:', {
+      depositData,
+      totalPrice,
+      selectedFiles
+    });
   };
   
   const handleBalancePayment = async () => {

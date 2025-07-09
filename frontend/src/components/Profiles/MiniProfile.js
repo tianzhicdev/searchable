@@ -66,7 +66,7 @@ const MiniProfile = ({
   data,
   onClick
 }) => {
-  
+  console.log('MiniProfile data:', data);
   const classes = useStyles();
   const history = useHistory();
   
@@ -128,6 +128,8 @@ const MiniProfile = ({
     clickPath = `/profile/${data.user_id || data.id}`;
   }
 
+  console.log('MiniProfile metaInfo:', metaInfo);
+  
   const handleClick = () => {
     if (onClick) {
       onClick(data);

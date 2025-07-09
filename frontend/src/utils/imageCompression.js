@@ -72,7 +72,7 @@ export const compressImage = async (file, maxSizeKB = 50) => {
               const scaleFactor = 0.8;
               width = Math.floor(width * scaleFactor);
               height = Math.floor(height * scaleFactor);
-              
+              console.log(`Resizing to ${width}x${height} to maintain aspect ratio`);
             }
             compress(); // Try again with new settings
           }

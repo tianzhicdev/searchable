@@ -18,7 +18,8 @@ export const mockAccount = {
 // Function to inject mock auth into Redux store
 export const setupMockAuth = () => {
   if (isMockMode) {
-
+    console.log('[MOCK] Setting up mock authentication...');
+    
     // Dispatch ACCOUNT_INITIALIZE action to set up the mock user in Redux
     store.dispatch({
       type: ACCOUNT_INITIALIZE,
@@ -28,8 +29,9 @@ export const setupMockAuth = () => {
         user: mockAccount.user
       }
     });
-
-    .account);
+    
+    console.log('[MOCK] Mock authentication dispatched to Redux store');
+    console.log('[MOCK] Current Redux state:', store.getState().account);
   }
 };
 

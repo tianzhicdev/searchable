@@ -21,7 +21,10 @@ const DirectSearchableDetails = () => {
     formatCurrency,
     publicData 
   } = useSearchableDetails();
-
+  
+  console.log("DirectSearchableDetails - createBalancePayment:", createBalancePayment);
+  console.log("DirectSearchableDetails - typeof createBalancePayment:", typeof createBalancePayment);
+  
   // Direct payment specific states
   const [paymentAmount, setPaymentAmount] = useState(9.99);
   const [paymentError, setPaymentError] = useState(null);
@@ -89,7 +92,11 @@ const DirectSearchableDetails = () => {
     setPaymentError(null);
     
     // For deposit payments, we show a success message and let the user know to deposit
-
+    console.log('Deposit created for direct payment:', {
+      depositData,
+      paymentAmount
+    });
+    
     // You could implement deposit-based payment logic here if needed
     // For now, we just acknowledge the deposit address was created
   };

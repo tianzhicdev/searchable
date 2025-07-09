@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
+import axios from 'axios';
 import configData from '../config';
 import { LOGOUT } from '../store/actions';
 import { isGuestUser } from '../utils/guestUtils';
@@ -14,7 +15,8 @@ export const useLogout = () => {
     const account = useSelector((state) => state.account);
 
     const handleLogout = () => {
-
+        console.log('Logging out user:', account.user?.email);
+        
         // Check if user is a guest user
         const userIsGuest = account.user && isGuestUser(account.user.email);
         
@@ -27,12 +29,12 @@ export const useLogout = () => {
         sessionStorage.setItem('userLoggedOut', 'true');
         
         if (userIsGuest) {
-            
+            console.log('Guest user logout - clearing state and redirecting to login');
             // For guest users, just clear the state immediately
             dispatch({ type: LOGOUT });
             history.push('/login');
         } else {
-            
+            console.log('Regular user logout - calling backend');
             // For regular users, call the backend logout endpoint
             axios
                 .post(configData.API_SERVER + 'users/logout', 
@@ -44,7 +46,7 @@ export const useLogout = () => {
                     history.push('/login');
                 })
                 .catch(function (error) {
-                    
+                    console.log('Logout error - ', error);
                     dispatch({ type: LOGOUT }); // log out anyway
                     history.push('/login');
                 });

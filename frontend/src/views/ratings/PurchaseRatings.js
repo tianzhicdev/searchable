@@ -94,7 +94,8 @@ const PurchaseRatings = () => {
       await fetchPurchases();
       
       // Show success message (you might want to add a snackbar for this)
-
+      console.log('Rating submitted successfully');
+      
     } catch (err) {
       throw err; // Re-throw to be handled by RatingComponent
     } finally {

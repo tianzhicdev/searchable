@@ -160,7 +160,11 @@ const OfflineSearchableDetails = () => {
     showAlert(`Deposit address created! Send $${totalPrice.toFixed(2)} USDT to complete your purchase.`, "info");
     
     // Optionally, you can store the deposit information for tracking
-    
+    console.log('Deposit created for offline items:', {
+      depositData,
+      totalPrice,
+      selectedItems
+    });
   };
   
   const handleBalancePayment = async () => {

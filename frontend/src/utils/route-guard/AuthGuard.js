@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { LOGOUT, ACCOUNT_INITIALIZE } from '../../store/actions';
 import { isMockMode } from '../../mocks/mockBackend';
 
+
 //-----------------------|| AUTH GUARD ||-----------------------//
 
 /**
@@ -18,14 +19,20 @@ const AuthGuard = ({ children }) => {
     const { isLoggedIn, token, isInitialized } = account;
     // In mock mode, always allow access
     if (isMockMode) {
-        .toISOString()
+        console.log('AuthGuard: Mock mode - allowing access', { 
+            path: window.location.pathname,
+            timestamp: new Date().toISOString()
         });
         return children;
     }    
-
+    console.log('[AUTH GUARD DEBUG] Account state:', account);
+    console.log('[AUTH GUARD DEBUG] isLoggedIn:', isLoggedIn);
+    console.log('[AUTH GUARD DEBUG] token exists:', !!token);
+    console.log('[AUTH GUARD DEBUG] isInitialized:', isInitialized);
+    
     // Wait for Redux persist to load
     // if (!isInitialized) {
-    //     
+    //     console.log('[AUTH GUARD DEBUG] Waiting for Redux persist to initialize...');
     //     return <Redirect to="/login" />;
     // }
 
@@ -39,20 +46,28 @@ const AuthGuard = ({ children }) => {
             const expiryTime = decodedPayload.exp * 1000; // Convert to milliseconds
             return Date.now() > expiryTime;
         } catch (e) {
-            
+            console.log('[AUTH GUARD DEBUG] Token parsing error:', e);
             return true; // If token is malformed, consider it expired
         }
     };
 
     const tokenExpired = isTokenExpired(token);
 
+
+
     // Log user authentication attempt
-    .toISOString(),
+    console.log('AuthGuard: Authentication check', { 
+        isLoggedIn, 
+        tokenExpired,
+        timestamp: new Date().toISOString(),
         path: window.location.pathname
     });
 
+
     if (!isLoggedIn || tokenExpired || !isInitialized) { 
-        .toISOString(),
+        console.log('AuthGuard: User not authenticated', {
+            reason: !isLoggedIn ? 'user not logged in' : 'token expired',
+            timestamp: new Date().toISOString(),
             path: window.location.pathname
         });
         
@@ -60,14 +75,17 @@ const AuthGuard = ({ children }) => {
         // const userLoggedOut = sessionStorage.getItem('userLoggedOut');
         
         // if (userLoggedOut === 'true') {
-        //     
+        //     console.log('AuthGuard: User explicitly logged out, redirecting to login');
         //     // Clear the flag for future visits
         //     sessionStorage.removeItem('userLoggedOut');
         //     return <Redirect to="/login" />;
         // }
         
         // Redirect to visitor section, passing the current path as intended destination
-
+        console.log('AuthGuard: Redirecting to visitor section', {
+            from: window.location.pathname
+        });
+        
         return (
             <Redirect 
                 to={{

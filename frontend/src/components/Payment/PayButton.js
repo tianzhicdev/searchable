@@ -19,7 +19,6 @@ import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
 import RefillBalanceDialog from './RefillBalanceDialog';
 import BalancePaymentDialog from './BalancePaymentDialog';
-import { formatUSD } from '../../utils/searchableUtils';
 
 /**
  * PayButton Component
@@ -48,6 +47,11 @@ const PayButton = ({
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [refillDialogOpen, setRefillDialogOpen] = useState(false);
   const [balanceConfirmOpen, setBalanceConfirmOpen] = useState(false);
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return `$${amount.toFixed(2)}`;
+  };
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -93,6 +97,9 @@ const PayButton = ({
   const showBalanceOption = onBalancePayment !== undefined;
   
   // Debug logging
+  console.log("PayButton - userBalance:", userBalance, "totalPrice:", totalPrice, "canPayWithBalance:", canPayWithBalance);
+  console.log("PayButton - onBalancePayment prop:", onBalancePayment);
+  console.log("PayButton - showBalanceOption:", showBalanceOption);
 
   // If totalPrice is 0 or disabled, show disabled button
   if (totalPrice === 0 || disabled) {
@@ -124,10 +131,10 @@ const PayButton = ({
               Payment Summary:
             </Typography>
             <Typography variant="body2" className={classes.userText}>
-              Amount: {formatUSD(totalPrice)}
+              Amount: {formatCurrency(totalPrice)}
             </Typography>
             <Typography >
-              Your Balance: {formatUSD(userBalance)} ✓
+              Your Balance: {formatCurrency(userBalance)} ✓
             </Typography>
             <Typography >
               No fees when paying with balance!
@@ -146,7 +153,7 @@ const PayButton = ({
             startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
           >
             <Typography variant="body2" className={classes.staticText}>
-              {processing ? 'Processing...' : `Buy with Balance ${formatUSD(totalPrice)}`}
+              {processing ? 'Processing...' : `Buy with Balance ${formatCurrency(totalPrice)}`}
             </Typography>
           </Button>
           
@@ -159,7 +166,7 @@ const PayButton = ({
             startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
           >
             <Typography variant="body2" className={classes.staticText}>
-              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatUSD(totalPrice * 1.035)}`}
+              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
             </Typography>
           </Button>
         </Box>
@@ -197,10 +204,10 @@ const PayButton = ({
               Payment Summary:
             </Typography>
             <Typography variant="body2" className={classes.userText}>
-              Amount: {formatUSD(totalPrice)}
+              Amount: {formatCurrency(totalPrice)}
             </Typography>
             <Typography variant="body2" className={classes.userText} color="textSecondary">
-              Your Balance: {formatUSD(userBalance)} (Need {formatUSD(totalPrice - userBalance)} more)
+              Your Balance: {formatCurrency(userBalance)} (Need {formatCurrency(totalPrice - userBalance)} more)
             </Typography>
           </Box>
         )}
@@ -216,7 +223,7 @@ const PayButton = ({
             startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
           >
             <Typography variant="body2" className={classes.staticText}>
-              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatUSD(totalPrice * 1.035)}`}
+              {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
             </Typography>
           </Button>
           
@@ -264,14 +271,14 @@ const PayButton = ({
             Payment Summary:
           </Typography>
           <Typography variant="body2" className={classes.userText}>
-            Subtotal: {formatUSD(totalPrice)}
+            Subtotal: {formatCurrency(totalPrice)}
           </Typography>
           <Typography variant="body2" className={classes.userText}>
-            Stripe Fee (3.5%): {formatUSD(totalPrice * 0.035)}
+            Stripe Fee (3.5%): {formatCurrency(totalPrice * 0.035)}
           </Typography>
           <Divider />
           <Typography variant="body1" className={classes.userText}>
-            Total with Card: {formatUSD(totalPrice * 1.035)}
+            Total with Card: {formatCurrency(totalPrice * 1.035)}
           </Typography>
         </Box>
       )}
@@ -288,7 +295,7 @@ const PayButton = ({
           startIcon={processing ? <CircularProgress size={20} /> : null}
         >
           <Typography variant="body2" className={classes.staticText}>
-            {processing ? 'Processing...' : `${payButtonText} ${formatUSD(totalPrice * 1.035)}`}
+            {processing ? 'Processing...' : `${payButtonText} ${formatCurrency(totalPrice * 1.035)}`}
           </Typography>
         </Button>
       </Box>
@@ -344,7 +351,7 @@ const PayButton = ({
                   Pay with Balance
                 </Typography>
                 <Typography variant="caption" className={classes.userText}>
-                  Available: {formatUSD(userBalance)} {canPayWithBalance ? '(No fees!)' : '(Insufficient)'}
+                  Available: {formatCurrency(userBalance)} {canPayWithBalance ? '(No fees!)' : '(Insufficient)'}
                 </Typography>
               </Box>
             </MenuItem>

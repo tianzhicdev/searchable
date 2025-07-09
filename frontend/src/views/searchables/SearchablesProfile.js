@@ -12,6 +12,8 @@ const SearchablesProfile = ({ item, onClick }) => {
   const privateData = item.payloads?.private || {};
 
   // Debug logging
+  console.log('[SearchablesProfile] Item:', item);
+  console.log('[SearchablesProfile] Public data:', publicData);
 
   // Helper function to truncate text
   const truncateText = (text, maxLength) => {

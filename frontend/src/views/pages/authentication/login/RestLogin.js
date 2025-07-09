@@ -117,7 +117,7 @@ const RestLogin = (props, { ...others }) => {
             });
             
             if (response.data.success) {
-                
+                console.log("Login successful", response.data);
                 // Clear the logout flag since user is now logged in
                 sessionStorage.removeItem('userLoggedOut');
                 dispatcher({
@@ -127,7 +127,7 @@ const RestLogin = (props, { ...others }) => {
                 
                 // Redirect to intended destination
                 const intendedDestination = location.state?.from || '/';
-                
+                console.log('Login: Redirecting to', intendedDestination);
                 history.push(intendedDestination);
                 
                 if (scriptedRef.current) {

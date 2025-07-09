@@ -12,6 +12,11 @@ const realBackend = axios.create({
 // Check if we're in mock mode (only use environment variable)
 const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true';
 
+console.log('[MOCK BACKEND] Mock mode check:', {
+  env: process.env.REACT_APP_MOCK_MODE,
+  isMockMode
+});
+
 // Mock response generator
 const createMockResponse = (data, delay = 300) => {
   return new Promise((resolve) => {
@@ -33,10 +38,11 @@ const isAuthenticated = (config) => {
   const account = state.account;
   
   if (account?.isLoggedIn && account?.token) {
-    
+    console.log('[MOCK] User is authenticated from Redux store');
     return true;
   }
-
+  
+  console.log('[MOCK] User is not authenticated');
   return false;
 };
 
@@ -317,7 +323,7 @@ let allMockSearchables = [];
 try {
   allMockUsers = generateMockUsers();
   allMockSearchables = generateMockSearchables();
-  
+  console.log('[MOCK] Initialized mock data - Users:', allMockUsers.length, 'Searchables:', allMockSearchables.length);
 } catch (error) {
   console.error('[MOCK] Error initializing mock data:', error);
 }
@@ -327,7 +333,7 @@ const mockHandlers = {
   // Authentication endpoints
   'users/login': (url, config) => {
     const data = JSON.parse(config.data);
-    
+    console.log('[MOCK] Login attempt with:', data);
     return createMockResponse({
       success: true,
       token: 'mock-jwt-token-12345',
@@ -341,7 +347,8 @@ const mockHandlers = {
   
   'users/register': (url, config) => {
     const data = JSON.parse(config.data);
-
+    console.log('[MOCK] Register attempt with:', data);
+    
     let msg = 'User registered successfully';
     if (data.invite_code) {
       const validCodes = ['ABCDEF', 'TESTME', 'MOCK01', 'REWARD'];
@@ -357,12 +364,12 @@ const mockHandlers = {
   },
   
   'users/logout': () => {
-    
+    console.log('[MOCK] Logout');
     return createMockResponse({ success: true });
   },
   
   'users/change-password': (url, config) => {
-    
+    console.log('[MOCK] Change password');
     const data = JSON.parse(config.data || '{}');
     
     // Simulate validation of current password
@@ -392,7 +399,9 @@ const mockHandlers = {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
     const tagType = urlParams.get('type');
     const activeOnly = urlParams.get('active') !== 'false';
-
+    
+    console.log('[MOCK] Getting tags, type:', tagType, 'active:', activeOnly);
+    
     const mockTags = [
       // User tags
       { id: 1, name: 'artist', tag_type: 'user', description: 'Visual artists, digital artists, painters, sculptors', is_active: true, created_at: '2024-01-01T00:00:00Z' },
@@ -450,7 +459,9 @@ const mockHandlers = {
     const tagNames = params['tags[]'] || [];
     const page = parseInt(params.page) || 1;
     const limit = parseInt(params.limit) || 20;
-
+    
+    console.log('[MOCK] Searching users:', { username, tagNames, page, limit });
+    
     let filteredUsers = [...allMockUsers];
     
     // Filter by username if provided
@@ -494,7 +505,9 @@ const mockHandlers = {
     const searchTerm = urlParams.get('q') || '';
     const page = parseInt(urlParams.get('page')) || 1;
     const pageSize = parseInt(urlParams.get('page_size')) || 10;
-
+    
+    console.log('[MOCK] Searching searchables with tags:', tags, 'search term:', searchTerm, 'page:', page);
+    
     let results = [...allMockSearchables];
 
     // Filter by tags if provided
@@ -533,10 +546,11 @@ const mockHandlers = {
       }
     });
   },
-
+  
+  
   'v1/searchable/create': (url, config) => {
     const data = JSON.parse(config.data);
-    
+    console.log('[MOCK] Creating searchable:', data);
     return createMockResponse({
       success: true,
       searchable_id: 'mock-created-item-' + Date.now(),
@@ -547,7 +561,8 @@ const mockHandlers = {
   'v1/searchable/': (url) => {
     if (url.includes('v1/searchable/')) {
       const searchableId = url.split('/').pop();
-
+      console.log(`[MOCK] Fetching searchable: ${searchableId}`);
+      
       // Try to find the searchable in our generated data
       const foundSearchable = allMockSearchables.find(s => s.searchable_id === searchableId);
       
@@ -610,15 +625,17 @@ const mockHandlers = {
       
       // Remove imageUrls from the response
       delete mockItem.payloads.public.imageUrls;
-
-      );
+      
+      console.log('[MOCK] Returning searchable item with images:', mockItem.payloads.public.images);
+      console.log('[MOCK] Images length:', mockItem.payloads.public.images.length);
+      console.log('[MOCK] First image:', mockItem.payloads.public.images[0]?.substring(0, 50));
       return createMockResponse(mockItem);
     }
   },
   
   // File upload endpoint
   'v1/files/upload': () => {
-    
+    console.log('[MOCK] File upload');
     return createMockResponse({
       success: true,
       file_id: 'mock-file-id-' + Date.now(),
@@ -632,7 +649,7 @@ const mockHandlers = {
   
   // User purchases and ratings
   'v1/user/purchases': () => {
-    
+    console.log('[MOCK] Fetching user purchases');
     return createMockResponse({
       purchases: [
         {
@@ -661,7 +678,7 @@ const mockHandlers = {
   
   'v1/rating/submit': (url, config) => {
     const data = JSON.parse(config.data);
-    
+    console.log('[MOCK] Submitting rating:', data);
     return createMockResponse({
       success: true,
       message: 'Rating submitted successfully'
@@ -679,7 +696,7 @@ const mockHandlers = {
   
   // Media upload endpoint
   'v1/media/upload': () => {
-    
+    console.log('[MOCK] Media upload');
     const mockMediaId = `mock-media-${Date.now()}`;
     return createMockResponse({
       success: true,
@@ -694,7 +711,8 @@ const mockHandlers = {
   // Media retrieval endpoint - handle any media ID
   'v1/media/': (url) => {
     const mediaId = url.split('/').pop();
-
+    console.log('[MOCK] Media retrieval for:', mediaId);
+    
     // Map mock media IDs to actual image files
     const mediaMap = {
       'profile-mock-1': mockData.mockImage1,
@@ -743,7 +761,7 @@ const mockHandlers = {
   // Deposit endpoints
   'v1/deposit/create': (url, config) => {
     const data = JSON.parse(config.data || '{}');
-    
+    console.log('[MOCK] Creating deposit:', data);
     const depositId = Date.now();  // Use number to match backend
     return createMockResponse({
       deposit_id: depositId,
@@ -758,7 +776,7 @@ const mockHandlers = {
   
   'v1/deposit/status/': (url) => {
     const depositId = url.split('/').pop();
-    
+    console.log('[MOCK] Getting deposit status:', depositId);
     return createMockResponse({
       deposit_id: depositId,
       status: 'pending',
@@ -770,14 +788,14 @@ const mockHandlers = {
   },
   
   'v1/deposits': () => {
-    
+    console.log('[MOCK] Getting user deposits');
     return createMockResponse(mockData.mockDeposits);
   },
   
   // Withdrawal endpoint
   'v1/withdrawal-usd': (url, config) => {
     const data = JSON.parse(config.data);
-    
+    console.log('[MOCK] Processing USDT withdrawal:', data);
     return createMockResponse({
       success: true,
       transaction_id: 'mock-txn-' + Date.now(),
@@ -791,7 +809,8 @@ const mockHandlers = {
   // Create invoice (simulate Stripe redirect)
   'v1/create-invoice': (url, config) => {
     const payload = JSON.parse(config.data);
-
+    console.log('[MOCK] Creating invoice:', payload);
+    
     // Handle direct payments
     if (payload.selections && payload.selections.some(s => s.type === 'direct')) {
       const directSelection = payload.selections.find(s => s.type === 'direct');
@@ -818,6 +837,7 @@ const mockHandlers = {
     return createMockResponse({ success: true });
   },
 
+  
   // Refresh payment status
   'v1/refresh-payment': () => createMockResponse({ status: 'complete' }),
   
@@ -827,7 +847,7 @@ const mockHandlers = {
   // Invoices by searchable item endpoint
   'v1/invoices-by-searchable/': (url) => {
     const searchableId = url.split('/').pop();
-    
+    console.log(`[MOCK] Fetching invoices for searchable: ${searchableId}`);
     return createMockResponse({
       invoices: mockData.mockInvoices.invoices.filter(invoice => 
         invoice.searchable_id === searchableId
@@ -837,7 +857,7 @@ const mockHandlers = {
   
   // User invoices endpoint with purchases and sales
   'v1/user/invoices': () => {
-    ');
+    console.log('[MOCK] Fetching user invoices (purchases/sales)');
     return createMockResponse({
       invoices: mockData.mockInvoices.invoices,
       purchases: [
@@ -1052,22 +1072,25 @@ const mockHandlers = {
       sales_count: 2
     });
   },
-
+  
+  
   // User withdrawals endpoint
   'v1/withdrawals': () => {
-    
+    console.log('[MOCK] Fetching user withdrawals');
     return createMockResponse(mockData.mockWithdrawals);
   },
   
   // User rewards endpoint
   'v1/rewards': () => {
-    
+    console.log('[MOCK] Fetching user rewards');
     return createMockResponse(mockData.mockRewards);
   },
-
+  
+  
   'v1/profile/': (url) => {
     const identifier = url.split('/').pop();
-
+    console.log('[MOCK] Fetching user profile by identifier:', identifier);
+    
     // Create different profiles based on identifier
     let profileData = {
       username: 'test_user',
@@ -1193,7 +1216,8 @@ const mockHandlers = {
   // Invite code validation endpoint
   'v1/is_active/': (url) => {
     const code = url.split('v1/is_active/')[1];
-
+    console.log('[MOCK] Checking invite code:', code);
+    
     // Mock some valid codes
     const validCodes = ['ABCDEF', 'TESTME', 'MOCK01', 'REWARD'];
     const isActive = validCodes.includes(code);
@@ -1203,7 +1227,8 @@ const mockHandlers = {
 
   // Get active invite code endpoint
   'v1/get-active-invite-code': () => {
-
+    console.log('[MOCK] Getting active invite code');
+    
     // Return a random active invite code
     const activeCodes = [
       { code: 'TESTME', description: 'Test invite code for demo purposes' },
@@ -1227,12 +1252,12 @@ const mockHandlers = {
     
     if (userId) {
       // Return user's own searchables for publish-searchables page
-      
+      console.log('[MOCK] Fetching user searchables for user:', userId);
       return createMockResponse(mockData.mockUserSearchables);
     }
     
     // In mock mode, show a mix that includes the user's own items to simulate logged-in experience
-    ');
+    console.log('[MOCK] Fetching all searchables list (logged-in user view)');
     return createMockResponse({
       searchables: [
         // Include user's own searchables
@@ -1269,7 +1294,7 @@ const mockHandlers = {
   
   // User downloadable items endpoint
   'v1/downloadable-items-by-user': () => {
-    
+    console.log('[MOCK] Fetching user downloadable items');
     return createMockResponse({
       downloadable_items: [
         {
@@ -1373,7 +1398,10 @@ const mockHandlers = {
     const searchTerm = params.q || '';
     const filters = typeof params.filters === 'string' ? JSON.parse(params.filters || '{}') : params.filters || {};
     const tags = params.tags || '';
-
+    
+    console.log('[MOCK] Searchable search:', { page, pageSize, searchTerm, filters, tags });
+    console.log('[MOCK] Total mock searchables available:', allMockSearchables.length);
+    
     // Filter searchables based on search criteria
     let filteredSearchables = [...allMockSearchables];
     
@@ -1412,7 +1440,18 @@ const mockHandlers = {
     
     // Get page of results
     const results = filteredSearchables.slice(startIndex, endIndex);
-
+    
+    console.log('[MOCK] Search results:', { 
+      totalCount, 
+      totalPages, 
+      currentPage: page,
+      resultsCount: results.length,
+      startIndex,
+      endIndex,
+      firstItemId: results[0]?.searchable_id,
+      lastItemId: results[results.length - 1]?.searchable_id
+    });
+    
     return createMockResponse({
       results,
       pagination: {
@@ -1426,7 +1465,8 @@ const mockHandlers = {
   
   // AI Content endpoints
   'v1/ai-content': (url, config) => {
-
+    console.log('[MOCK] AI Content endpoint called:', url);
+    
     // Handle GET requests
     if (!config?.data) {
       // Check if getting specific AI content
@@ -1463,10 +1503,13 @@ const mockHandlers = {
 const mockBackend = {
   get: (url, config) => {
     if (!isMockMode) {
-      
+      console.log(`[MOCK] Redirecting to real backend: GET ${url}`);
       return realBackend.get(url, config);
     }
-
+    
+    console.log(`[MOCK] GET ${url}`, config);
+    console.log(`[MOCK] Config params:`, config?.params);
+    
     // Find matching handler - sort patterns by length descending for more specific matches first
     const sortedPatterns = Object.entries(mockHandlers)
       .filter(([pattern]) => pattern !== 'default')
@@ -1474,17 +1517,20 @@ const mockBackend = {
       
     for (const [pattern, handler] of sortedPatterns) {
       if (url.includes(pattern)) {
-        
+        console.log(`[MOCK] Found handler for pattern: ${pattern}`);
         return handler(url, config);
       }
     }
-
+    
+    console.log(`[MOCK] No handler found, using default for: ${url}`);
     return mockHandlers.default(url);
   },
   
   post: (url, data, config) => {
     if (!isMockMode) return realBackend.post(url, data, config);
-
+    
+    console.log(`[MOCK] POST ${url}`, data);
+    
     // Find matching handler - sort patterns by length descending for more specific matches first
     const sortedPatterns = Object.entries(mockHandlers)
       .filter(([pattern]) => pattern !== 'default')
@@ -1492,7 +1538,7 @@ const mockBackend = {
       
     for (const [pattern, handler] of sortedPatterns) {
       if (url.includes(pattern)) {
-        
+        console.log(`[MOCK] Found POST handler for pattern: ${pattern}`);
         return handler(url, { ...config, data: JSON.stringify(data) });
       }
     }
@@ -1502,13 +1548,15 @@ const mockBackend = {
   
   put: (url, data, config) => {
     if (!isMockMode) return realBackend.put(url, data, config);
-
+    
+    console.log(`[MOCK] PUT ${url}`, data);
     return createMockResponse({ success: true });
   },
   
   delete: (url, config) => {
     if (!isMockMode) return realBackend.delete(url, config);
-
+    
+    console.log(`[MOCK] DELETE ${url}`);
     return createMockResponse({ success: true });
   }
 };

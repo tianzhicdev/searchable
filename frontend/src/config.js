@@ -1,5 +1,6 @@
 
 // Log all environment variables for debugging
+console.log('All process.env:', process.env);
 
 let BACKEND_SERVER = null;
 
@@ -54,6 +55,8 @@ if (process.env.REACT_APP_ENV === 'local' || APP_BRANDING === 'local') {
 } else {
   BACKEND_SERVER = `https://${branding_config.domain}/api/`;
 }
+console.log('BACKEND_SERVER:', BACKEND_SERVER);
+
 
 const config = {
     // basename: only at build time to set, and don't add '/' at end off BASENAME for breadcrumbs, also don't put only '/' use blank('') instead,
@@ -71,5 +74,7 @@ const config = {
 };
 
 // Log the configuration for debugging purposes
+console.log('Application config:', config);
+
 
 export default config;

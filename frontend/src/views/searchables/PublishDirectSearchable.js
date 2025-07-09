@@ -5,7 +5,8 @@ import {
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 
 const PublishDirectSearchable = () => {
-
+  console.log("PublishDirectSearchable component is being rendered");
+  
   // State for default amount and price setting
   const [hasDefaultAmount, setHasDefaultAmount] = useState(false);
   const [defaultAmount, setDefaultAmount] = useState(9.99);
