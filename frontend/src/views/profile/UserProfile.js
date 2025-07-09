@@ -169,6 +169,15 @@ const UserProfile = () => {
               </Box>
             )}
 
+            {/* Seller Rating */}
+            {typeof profileData.seller_rating === 'number' && profileData.seller_total_ratings > 0 && (
+              <Box mt={1}>
+                <Typography variant="body1">
+                  ★ {profileData.seller_rating.toFixed(1)} ({profileData.seller_total_ratings} reviews)
+                </Typography>
+              </Box>
+            )}
+
             {/* Member since */}
             {profileData.created_at && (
               <Typography variant="body2" color="textSecondary">

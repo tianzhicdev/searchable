@@ -60,7 +60,7 @@ class GetSearchableItem(Resource):
             return {"error": str(e)}, 500
 
     def _enrich_searchable_with_username(self, searchable_data):
-        """Add username information to a single searchable item"""
+        """Add username and seller rating information to a single searchable item"""
         try:
             user_id = searchable_data.get('user_id')
             if not user_id:
@@ -69,21 +69,27 @@ class GetSearchableItem(Resource):
             conn = get_db_connection()
             cur = conn.cursor()
             
-            # Query username for this user_id
+            # Query username and seller rating for this user_id
             execute_sql(cur, """
-                SELECT username FROM users WHERE id = %s
+                SELECT u.username,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_total_ratings
+                FROM users u
+                WHERE u.id = %s
             """, params=(user_id,))
             
             result = cur.fetchone()
             if result:
-                username = result[0]
+                username, seller_rating, seller_total_ratings = result
                 searchable_data['username'] = username
+                searchable_data['seller_rating'] = float(seller_rating) if seller_rating else 0.0
+                searchable_data['seller_total_ratings'] = seller_total_ratings or 0
             
             cur.close()
             conn.close()
             
         except Exception as e:
-            logger.error(f"Error enriching searchable with username: {str(e)}")
+            logger.error(f"Error enriching searchable with username and rating: {str(e)}")
             # Continue without username rather than failing
 
 @rest_api.route('/api/v1/searchable/create', methods=['POST'])
@@ -237,10 +243,14 @@ class SearchSearchables(Resource):
             # Calculate offset for pagination
             offset = (page_number - 1) * page_size
             
-            # Base query with username join
+            # Base query with username join and ratings
             base_query = """
                 SELECT DISTINCT s.searchable_id, s.type, s.searchable_data, s.user_id, 
-                       u.username, s.created_at
+                       u.username, s.created_at,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as avg_rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as total_ratings,
+                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_rating,
+                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_total_ratings
                 FROM searchables s
                 LEFT JOIN users u ON s.user_id = u.id
             """
@@ -312,14 +322,18 @@ class SearchSearchables(Resource):
             searchable_map = {}
             
             for result in results:
-                searchable_id, searchable_type, searchable_data, user_id, username, created_at = result
+                searchable_id, searchable_type, searchable_data, user_id, username, created_at, avg_rating, total_ratings, seller_rating, seller_total_ratings = result
                 searchable_ids.append(searchable_id)
                 searchable_map[searchable_id] = {
                     'type': searchable_type,
                     'data': searchable_data,
                     'user_id': user_id,
                     'username': username,
-                    'created_at': created_at
+                    'created_at': created_at,
+                    'avg_rating': float(avg_rating) if avg_rating else 0.0,
+                    'total_ratings': total_ratings or 0,
+                    'seller_rating': float(seller_rating) if seller_rating else 0.0,
+                    'seller_total_ratings': seller_total_ratings or 0
                 }
             
             # Fetch tags for all searchables in batch
@@ -360,6 +374,10 @@ class SearchSearchables(Resource):
                 item_data['user_id'] = searchable_info['user_id']
                 item_data['username'] = searchable_info['username']
                 item_data['tags'] = searchable_tags_map.get(searchable_id, [])
+                item_data['avg_rating'] = searchable_info['avg_rating']
+                item_data['total_ratings'] = searchable_info['total_ratings']
+                item_data['seller_rating'] = searchable_info['seller_rating']
+                item_data['seller_total_ratings'] = searchable_info['seller_total_ratings']
                 
                 # No relevance score with simple LIKE search
                 
