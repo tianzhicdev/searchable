@@ -95,8 +95,8 @@ const UserSearchResults = ({
         <Box mt={2}>
           <Pagination
             currentPage={pagination.page || pagination.current_page || 1}
-            totalPages={pagination.pages || pagination.total_pages || 1}
-            totalItems={pagination.total || pagination.total_count || 0}
+            totalPages={pagination.totalPages || pagination.pages || pagination.total_pages || 1}
+            totalItems={pagination.totalCount || pagination.total || pagination.total_count || 0}
             onPageChange={onPageChange}
             disabled={loading}
           />
