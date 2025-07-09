@@ -10,13 +10,13 @@ import useSearchableDetails from '../../hooks/useSearchableDetails';
 import { formatUSD } from '../../utils/searchableUtils';
 import InvoiceList from '../payments/InvoiceList';
 
+
 const DirectSearchableDetails = () => {
   const location = useLocation();
   
   // Use the shared hook for common functionality
   const { 
     SearchableItem, 
-    isOwner, 
     createInvoice,
     createBalancePayment,
     formatCurrency,
@@ -30,33 +30,56 @@ const DirectSearchableDetails = () => {
   // Direct payment specific states
   const [paymentAmount, setPaymentAmount] = useState(9.99);
   const [paymentError, setPaymentError] = useState(null);
-  const [isAmountFixed, setIsAmountFixed] = useState(false); // Whether amount is fixed from URL or default
-
-  // Quick amount options
-  const quickAmounts = [4.99, 9.99, 14.99];
+  const [isAmountFixed, setIsAmountFixed] = useState(false); // Whether amount is fixed from URL or pricing mode
+  const [availableAmounts, setAvailableAmounts] = useState([4.99, 9.99, 14.99]); // Available amounts based on pricing mode
+  const [allowCustomAmount, setAllowCustomAmount] = useState(true); // Whether custom amount input is allowed
 
   useEffect(() => {
-    // Three flavours of pricing:
-    // 1. URL parameter 'amount' - fixed amount, no choice
-    // 2. Default amount from searchable data - suggested amount, but user can modify
-    // 3. Neither - show 4.99, 9.99, 14.99 options
-    
     const params = new URLSearchParams(location.search);
     const amountParam = params.get('amount');
     
     if (amountParam && !isNaN(parseFloat(amountParam))) {
-      // Flavour 1: Amount from URL parameter
+      // URL parameter takes precedence - fixed amount, no choice
       const fixedAmount = parseFloat(amountParam);
       setPaymentAmount(fixedAmount);
-      setIsAmountFixed(true); // Amount is fixed from URL
+      setIsAmountFixed(true);
+      setAllowCustomAmount(false);
+      setAvailableAmounts([fixedAmount]);
+    } else if (publicData?.pricingMode) {
+      // Handle new pricing modes
+      if (publicData.pricingMode === 'fixed') {
+        // Fixed pricing - one amount, no choice
+        const fixedAmount = publicData.fixedAmount || publicData.defaultAmount || 9.99;
+        setPaymentAmount(fixedAmount);
+        setIsAmountFixed(true);
+        setAllowCustomAmount(false);
+        setAvailableAmounts([fixedAmount]);
+      } else if (publicData.pricingMode === 'preset') {
+        // Preset options - specific amounts only, no custom input
+        const amounts = publicData.presetAmounts || [4.99, 9.99, 14.99];
+        setAvailableAmounts(amounts);
+        setPaymentAmount(amounts[0]); // Default to first option
+        setIsAmountFixed(false);
+        setAllowCustomAmount(false);
+      } else if (publicData.pricingMode === 'flexible') {
+        // Flexible pricing - default amounts plus custom input
+        setAvailableAmounts([4.99, 9.99, 14.99]);
+        setPaymentAmount(9.99);
+        setIsAmountFixed(false);
+        setAllowCustomAmount(true);
+      }
     } else if (publicData?.defaultAmount) {
-      // Flavour 2: Default amount from searchable data - user can still modify
+      // Legacy: Default amount from searchable data - treat as fixed for backward compatibility
       setPaymentAmount(publicData.defaultAmount);
-      setIsAmountFixed(false); // Amount can be modified
+      setIsAmountFixed(true);
+      setAllowCustomAmount(false);
+      setAvailableAmounts([publicData.defaultAmount]);
     } else {
-      // Flavour 3: No fixed amount, use middle option as default
-      setPaymentAmount(9.99); // Default to middle option
-      setIsAmountFixed(false); // Amount can be modified
+      // Legacy: No pricing data - show flexible mode
+      setAvailableAmounts([4.99, 9.99, 14.99]);
+      setPaymentAmount(9.99);
+      setIsAmountFixed(false);
+      setAllowCustomAmount(true);
     }
   }, [location.search, SearchableItem, publicData]);
 
@@ -132,7 +155,7 @@ const DirectSearchableDetails = () => {
     !isOwner && (
       <Box>
         {isAmountFixed ? (
-          // For fixed amounts (from URL param or default amount), just show the amount
+          // For fixed amounts (from URL param or fixed pricing mode), just show the amount
           <Box textAlign="center" my={3}>
             <Typography variant="subtitle1" color="textSecondary" gutterBottom>
               Payment Amount
@@ -142,15 +165,15 @@ const DirectSearchableDetails = () => {
             </Typography>
           </Box>
         ) : (
-          // For flexible amounts, show the selection UI
+          // For flexible/preset amounts, show the selection UI
           <Box>
             <Typography variant="h6" gutterBottom>
-              Choose Payment Amount
+              {publicData?.pricingMode === 'preset' ? 'Choose Payment Amount' : 'Choose or Enter Payment Amount'}
             </Typography>
 
-            {/* Quick amount buttons */}
+            {/* Amount selection buttons */}
             <ButtonGroup fullWidth>
-              {quickAmounts.map((amount) => (
+              {availableAmounts.map((amount) => (
                 <Button
                   key={amount}
                   variant={paymentAmount === amount ? 'contained' : 'outlined'}
@@ -162,17 +185,22 @@ const DirectSearchableDetails = () => {
               ))}
             </ButtonGroup>
 
-            {/* Custom amount input */}
-            <TextField
-              type="number"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-              fullWidth
-              inputProps={{ min: 0.01, step: 0.01 }}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              }}
-            />
+            {/* Custom amount input - only show if allowed */}
+            {allowCustomAmount && (
+              <Box mt={2}>
+                <TextField
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  fullWidth
+                  inputProps={{ min: 0.01, step: 0.01 }}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  helperText="Enter any amount you'd like to pay"
+                />
+              </Box>
+            )}
           </Box>
         )}
 
