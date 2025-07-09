@@ -173,120 +173,136 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
     Retrieves payments from the payment table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        conditions = []
-        params = []
-        
-        if invoice_id is not None:
-            conditions.append("invoice_id = %s")
-            params.append(invoice_id)
-        
-        if invoice_ids is not None:
-            # Create placeholder for each invoice ID
-            placeholders = ','.join(['%s'] * len(invoice_ids))
-            conditions.append(f"invoice_id IN ({placeholders})")
-            params.extend(invoice_ids)
-        
-        if status:
-            conditions.append("status = %s")
-            params.append(status)
-        
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
-        query = f"""
-            SELECT id, invoice_id, amount, fee, currency, type, external_id, 
-                   status, created_at, metadata
-            FROM payment
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-        """
-        
-        execute_sql(cur, query, params=params if params else None)
-        
-        results = []
-        for row in cur.fetchall():
-            payment = {
-                'id': row[0],
-                'invoice_id': row[1],
-                'amount': float(row[2]),
-                'fee': float(row[3]),
-                'currency': row[4],
-                'type': row[5],
-                'external_id': row[6],
-                'status': row[7],
-                'created_at': row[8].isoformat() if row[8] else None,
-                'metadata': row[9]
-            }
-            results.append(payment)
-        
-        cur.close()
-        conn.close()
-        return results
+        with db_transaction() as (conn, cur):
+            conditions = []
+            params = []
+            
+            if invoice_id is not None:
+                conditions.append("invoice_id = %s")
+                params.append(invoice_id)
+            
+            if invoice_ids is not None:
+                # Create placeholder for each invoice ID
+                placeholders = ','.join(['%s'] * len(invoice_ids))
+                conditions.append(f"invoice_id IN ({placeholders})")
+                params.extend(invoice_ids)
+            
+            if status:
+                conditions.append("status = %s")
+                params.append(status)
+            
+            where_clause = " AND ".join(conditions) if conditions else "1=1"
+            
+            query = f"""
+                SELECT id, invoice_id, amount, fee, currency, type, external_id, 
+                       status, created_at, metadata
+                FROM payment
+                WHERE {where_clause}
+                ORDER BY created_at DESC
+            """
+            
+            execute_sql(cur, query, params=params if params else None)
+            
+            return _build_payment_results(cur.fetchall())
         
     except Exception as e:
         logger.error(f"Error retrieving payments: {str(e)}")
         return []
+
+
+def _build_payment_results(rows):
+    """
+    Helper function to build payment results from database rows
+    
+    Args:
+        rows: Database result rows
+        
+    Returns:
+        list: List of payment dictionaries
+    """
+    results = []
+    for row in rows:
+        payment = {
+            'id': row[0],
+            'invoice_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8].isoformat() if row[8] else None,
+            'metadata': row[9]
+        }
+        results.append(payment)
+    return results
 
 def get_withdrawals(user_id=None, status=None, currency=None):
     """
     Retrieves withdrawals from the withdrawal table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        conditions = []
-        params = []
-        
-        if user_id is not None:
-            conditions.append("user_id = %s")
-            params.append(user_id)
-        
-        if status:
-            conditions.append("status = %s")
-            params.append(status)
-        
-        if currency:
-            conditions.append("currency = %s")
-            params.append(currency)
-        
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
-        query = f"""
-            SELECT id, user_id, amount, fee, currency, type, external_id, 
-                   status, created_at, metadata
-            FROM withdrawal
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-        """
-        
-        execute_sql(cur, query, params=params if params else None)
-        
-        results = []
-        for row in cur.fetchall():
-            withdrawal = {
-                'id': row[0],
-                'user_id': row[1],
-                'amount': float(row[2]),
-                'fee': float(row[3]),
-                'currency': row[4],
-                'type': row[5],
-                'external_id': row[6],
-                'status': row[7],
-                'created_at': row[8].isoformat() if row[8] else None,
-                'metadata': row[9]
-            }
-            results.append(withdrawal)
-        
-        cur.close()
-        conn.close()
-        return results
+        with db_transaction() as (conn, cur):
+            conditions = []
+            params = []
+            
+            if user_id is not None:
+                conditions.append("user_id = %s")
+                params.append(user_id)
+            
+            if status:
+                conditions.append("status = %s")
+                params.append(status)
+            
+            if currency:
+                conditions.append("currency = %s")
+                params.append(currency)
+            
+            where_clause = " AND ".join(conditions) if conditions else "1=1"
+            
+            query = f"""
+                SELECT id, user_id, amount, fee, currency, type, external_id, 
+                       status, created_at, metadata
+                FROM withdrawal
+                WHERE {where_clause}
+                ORDER BY created_at DESC
+            """
+            
+            execute_sql(cur, query, params=params if params else None)
+            
+            return _build_withdrawal_results(cur.fetchall())
         
     except Exception as e:
         logger.error(f"Error retrieving withdrawals: {str(e)}")
         return []
+
+
+def _build_withdrawal_results(rows):
+    """
+    Helper function to build withdrawal results from database rows
+    
+    Args:
+        rows: Database result rows
+        
+    Returns:
+        list: List of withdrawal dictionaries
+    """
+    results = []
+    for row in rows:
+        withdrawal = {
+            'id': row[0],
+            'user_id': row[1],
+            'amount': float(row[2]),
+            'fee': float(row[3]),
+            'currency': row[4],
+            'type': row[5],
+            'external_id': row[6],
+            'status': row[7],
+            'created_at': row[8].isoformat() if row[8] else None,
+            'metadata': row[9]
+        }
+        results.append(withdrawal)
+    return results
 
 def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, metadata=None):
     """
@@ -294,37 +310,33 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, in
     Note: Status is now determined by related payment records, not stored in invoice
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        metadata = metadata or {}
-        
-        execute_sql(cur, """
-            INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
-        """, params=(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, Json(metadata)), commit=True, connection=conn)
-        
-        row = cur.fetchone()
-        
-        invoice = {
-            'id': row[0],
-            'buyer_id': row[1],
-            'seller_id': row[2],
-            'searchable_id': row[3],
-            'amount': float(row[4]),
-            'fee': float(row[5]),
-            'currency': row[6],
-            'type': row[7],
-            'external_id': row[8],
-            'created_at': row[9].isoformat() if row[9] else None,
-            'metadata': row[10],
-            'status': 'pending'  # New invoices start as pending
-        }
-        
-        cur.close()
-        conn.close()
-        return invoice
+        with db_transaction() as (conn, cur):
+            metadata = metadata or {}
+            
+            execute_sql(cur, """
+                INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
+            """, params=(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, Json(metadata)), commit=True, connection=conn)
+            
+            row = cur.fetchone()
+            
+            invoice = {
+                'id': row[0],
+                'buyer_id': row[1],
+                'seller_id': row[2],
+                'searchable_id': row[3],
+                'amount': float(row[4]),
+                'fee': float(row[5]),
+                'currency': row[6],
+                'type': row[7],
+                'external_id': row[8],
+                'created_at': row[9].isoformat() if row[9] else None,
+                'metadata': row[10],
+                'status': 'pending'  # New invoices start as pending
+            }
+            
+            return invoice
         
     except Exception as e:
         logger.error(f"Error creating invoice: {str(e)}")
