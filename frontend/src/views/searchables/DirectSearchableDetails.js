@@ -7,7 +7,6 @@ import { AttachMoney } from '@material-ui/icons';
 import Alert from '@material-ui/lab/Alert';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
-import { formatUSD } from '../../utils/searchableUtils';
 
 const DirectSearchableDetails = () => {
   const location = useLocation();
@@ -15,10 +14,8 @@ const DirectSearchableDetails = () => {
   // Use the shared hook for common functionality
   const { 
     SearchableItem, 
-    isOwner, 
     createInvoice,
     createBalancePayment,
-    formatCurrency,
     publicData 
   } = useSearchableDetails();
   
