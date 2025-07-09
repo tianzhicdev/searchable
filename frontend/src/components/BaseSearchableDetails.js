@@ -47,6 +47,7 @@ const BaseSearchableDetails = ({
     searchableRating,
     loadingRatings,
     handleRemoveItem,
+    handleEditItem,
     userBalance,
     id,
     history,
@@ -143,10 +144,13 @@ const BaseSearchableDetails = ({
             userBalance={userBalance}
             isOwner={isOwner}
             onRemoveItem={handleRemoveItem}
+            onEditItem={handleEditItem}
             isRemoving={isRemoving}
             payButtonText={payButtonText}
             showPaymentSummary={true}
             disabled={disabled}
+            searchableId={id}
+            searchableTitle={SearchableItem?.payloads?.public?.title || 'Untitled'}
           />
         </Paper>
       </Grid>

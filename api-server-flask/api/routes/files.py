@@ -29,8 +29,7 @@ class UploadFile(Resource):
     """
     Endpoint for users to upload files
     """
-    @token_required
-    def post(self, current_user, request_origin='unknown'):
+    def post(self, request_origin='unknown'):
         try:
             # Check if file was provided
             if 'file' not in request.files:
@@ -56,8 +55,25 @@ class UploadFile(Resource):
                     logger.error("Invalid metadata JSON format")
                     return {"error": "Invalid metadata format"}, 400
             
-            # Add user_id to metadata
-            metadata['user_id'] = current_user.id
+            # Add user_id to metadata if available (optional for onboarding)
+            # Check if user is authenticated by checking Authorization header
+            auth_header = request.headers.get('authorization') or request.headers.get('Authorization')
+            if auth_header:
+                try:
+                    import jwt
+                    from ..common.config import BaseConfig
+                    from ..common.models import Users
+                    
+                    token = auth_header.split(' ')[1] if ' ' in auth_header else auth_header
+                    data = jwt.decode(token, BaseConfig.SECRET_KEY, algorithms=["HS256"])
+                    current_user = Users.get_by_email(data["email"])
+                    if current_user:
+                        metadata['user_id'] = current_user.id
+                except Exception as e:
+                    # Token invalid or not provided, continue without user_id
+                    logger.debug(f"No valid auth token for file upload: {str(e)}")
+                    pass
+            
             metadata['original_filename'] = file.filename
             
             # Forward the file to the file server

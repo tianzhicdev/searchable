@@ -18,10 +18,13 @@ import './mocks/mockAuth'; // Setup mock auth if in mock mode
 
 const App = () => {
     const customization = useSelector((state) => state.customization);
+    
+    // Default theme to prevent undefined theme errors
+    const defaultTheme = theme(customization || {});
 
     return (
         <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={theme(customization)}>
+            <ThemeProvider theme={defaultTheme}>
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <MockModeIndicator />
