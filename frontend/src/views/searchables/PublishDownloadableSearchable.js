@@ -1,17 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress
+  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress, Paper
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/styles';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 import backend from '../utilities/Backend';
+import { detailPageStyles } from '../../utils/detailPageSpacing';
+
+// Create styles for publish downloadable
+const useStyles = makeStyles((theme) => ({
+  fileInput: {
+    ...detailPageStyles.formField(theme),
+  },
+  fileItem: {
+    ...detailPageStyles.card(theme),
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(2),
+  },
+  fileList: {
+    ...detailPageStyles.itemContainer(theme),
+  },
+  addFileSection: {
+    ...detailPageStyles.subSection(theme),
+  },
+  buttonGroup: {
+    ...detailPageStyles.buttonGroup(theme),
+  }
+}));
 
 const PublishDownloadableSearchable = () => {
   console.log("PublishDownloadableSearchable component is being rendered");
   const theme = useTheme();
+  const classes = useStyles();
   const location = useLocation();
   
   // Check if we're in edit mode
@@ -186,8 +211,8 @@ const PublishDownloadableSearchable = () => {
         Add files that customers can download after purchase
       </Typography>
       
-      <Box mt={2}>
-        <Box display="flex" alignItems="center" mb={1}>
+      <Box className={classes.addFileSection}>
+        <Box display="flex" alignItems="center" mb={2}>
           <Button
             variant="contained"
             component="label"
@@ -216,10 +241,10 @@ const PublishDownloadableSearchable = () => {
           value={newFile.description}
           onChange={handleFileDataChange}
           fullWidth
-          style={{ marginBottom: 8 }}
+          className={classes.fileInput}
         />
         
-        <Box display="flex" alignItems="center">
+        <Box className={classes.buttonGroup}>
           <TextField
             placeholder="Price (USD)"
             type="number"
@@ -227,7 +252,7 @@ const PublishDownloadableSearchable = () => {
             name="price"
             value={newFile.price}
             onChange={handleFileDataChange}
-            style={{ marginRight: 16, flex: 1 }}
+            style={{ flex: 1 }}
           />
           <Button 
             variant="contained" 
@@ -241,16 +266,12 @@ const PublishDownloadableSearchable = () => {
         </Box>
       </Box>
       
-      <Box mt={2}>
+      <Box className={classes.fileList}>
         {downloadableFiles.length > 0 ? (
           downloadableFiles.map((item) => (
-            <Box 
+            <Paper 
               key={item.id} 
-              display="flex" 
-              alignItems="center" 
-              p={2} 
-              mb={1}
-              border={`1px solid ${theme.palette.primary.main}`}
+              className={classes.fileItem}
             >
               <Box style={{ flex: 3 }}>
                 <Typography variant="body2" style={{ fontWeight: 'bold' }}>
@@ -273,11 +294,10 @@ const PublishDownloadableSearchable = () => {
               <IconButton 
                 size="small" 
                 onClick={() => removeDownloadableFile(item.id)}
-                style={{ marginLeft: 8 }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
-            </Box>
+            </Paper>
           ))
         ) : (
           <Typography variant="body2" color="textSecondary">

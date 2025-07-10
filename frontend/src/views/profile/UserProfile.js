@@ -7,6 +7,7 @@ import { useTheme } from '@material-ui/core/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PersonIcon from '@material-ui/icons/Person';
 import useComponentStyles from '../../themes/componentStyles';
+import { componentSpacing, spacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
@@ -130,20 +131,35 @@ const UserProfile = () => {
       </Grid>
 
       {/* Profile Information */}
-      <Grid item xs={12} className={classes.gridItem}>
-        <Paper elevation={3} className={classes.paper}>
+      <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
+        <Paper elevation={3} sx={componentSpacing.card(theme)}>
           <Box display="flex" flexDirection="column" alignItems="center" textAlign="center">
             {/* Profile Image */}
-            <Box mb={2}>
+            <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
               {profileData.profile_image_url ? (
                 <Avatar 
                   src={getMediaUrl(profileData.profile_image_url)} 
                   alt={profileData.username}
-                  style={{ width: 100, height: 100 }}
+                  sx={{ 
+                    width: 100, 
+                    height: 100,
+                    [theme.breakpoints.down('sm')]: {
+                      width: 80,
+                      height: 80
+                    }
+                  }}
                 />
               ) : (
-                <Avatar style={{ width: 100, height: 100, backgroundColor: theme.palette.secondary.main }}>
-                  <PersonIcon style={{ fontSize: 60 }} />
+                <Avatar sx={{ 
+                  width: 100, 
+                  height: 100, 
+                  backgroundColor: theme.palette.secondary.main,
+                  [theme.breakpoints.down('sm')]: {
+                    width: 80,
+                    height: 80
+                  }
+                }}>
+                  <PersonIcon sx={{ fontSize: 60, [theme.breakpoints.down('sm')]: { fontSize: 48 } }} />
                 </Avatar>
               )}
             </Box>
@@ -162,7 +178,15 @@ const UserProfile = () => {
 
             {/* Introduction */}
             {profileData.introduction && (
-              <Box mb={2} maxWidth="600px">
+              <Box sx={{ 
+                mb: theme.spacing(spacing.element.md), 
+                maxWidth: '600px',
+                px: theme.spacing(2),
+                [theme.breakpoints.down('sm')]: { 
+                  mb: theme.spacing(spacing.element.xs),
+                  px: theme.spacing(1)
+                }
+              }}>
                 <Typography variant="body1" color="textSecondary">
                   {profileData.introduction}
                 </Typography>
@@ -217,12 +241,17 @@ const UserProfile = () => {
 
       {/* Additional Images Section */}
       {profileData.metadata?.additional_images && profileData.metadata.additional_images.length > 0 && (
-        <Grid item xs={12} className={classes.gridItem}>
-          <Paper elevation={3} className={classes.paper}>
+        <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
+          <Paper elevation={3} sx={componentSpacing.card(theme)}>
             <Typography variant="h6" gutterBottom>
               Gallery
             </Typography>
-            <Box display="flex" flexWrap="wrap" gap={2}>
+            <Box display="flex" flexWrap="wrap" gap={2} sx={{ 
+              [theme.breakpoints.down('sm')]: { 
+                gap: 1,
+                justifyContent: 'center' 
+              } 
+            }}>
               {processMediaUrls(profileData.metadata.additional_images).map((imageUrl, index) => (
                 <ZoomableImage 
                   key={index}
@@ -234,6 +263,12 @@ const UserProfile = () => {
                     objectFit: 'cover',
                     borderRadius: 4
                   }}
+                  sx={{
+                    [theme.breakpoints.down('sm')]: {
+                      width: 150,
+                      height: 150
+                    }
+                  }}
                 />
               ))}
             </Box>
@@ -242,7 +277,8 @@ const UserProfile = () => {
       )}
 
       {/* Published Items Section */}
-      <Grid item xs={12} className={classes.gridItem}>
+      <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
+        <Paper elevation={3} sx={componentSpacing.card(theme)}>
           <Typography variant="h6" gutterBottom>
             Published Items
           </Typography>
@@ -254,6 +290,7 @@ const UserProfile = () => {
               Loading published items...
             </Typography>
           )}
+        </Paper>
       </Grid>
     </Grid>
   );

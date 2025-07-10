@@ -1,0 +1,207 @@
+// ===========================
+// SEARCHABLE THEME CONFIGURATION
+// Single source of truth for all design tokens
+// ===========================
+
+// Core Colors (5 main + additions) - CYBERPUNK THEME
+$primary: #ff00ff;        // Neon magenta/pink
+$secondary: #00ffff;      // Neon cyan
+
+$error: #ff0040;          // Neon red
+$warning: #ffaa00;        // Neon amber
+$success: #00ff88;        // Neon green
+
+// Background Colors - Dark with subtle purple tint
+$bg-primary: #0a0012;     // Deep dark purple-black
+$bg-secondary: #1a0f2e;   // Dark purple for cards
+$bg-hover: #2d1b4e;       // Purple hover states
+$bg-elevated: #241640;    // Elevated purple
+
+// Border Colors - Neon accents
+$border-color: #ff00ff;   // Neon magenta border
+$border-light: #00ffff;   // Cyan borders
+$border-dark: #3d2f5f;    // Dark purple borders
+$border-focus: #00ffff;   // Cyan focus
+
+// Text Colors - High contrast neon
+$text-primary: #ffffff;   // Pure white for readability
+$text-secondary: #b8a3ff; // Light purple
+$text-disabled: #6b5b8c;  // Muted purple
+$text-inverse: #0a0012;   // Dark for light backgrounds
+
+// Gradient Colors - Cyberpunk neon gradients
+$gradient-primary-start: #ff00ff;     // Magenta
+$gradient-primary-end: #00ffff;       // Cyan
+$gradient-secondary-start: #00ff88;   // Green
+$gradient-secondary-end: #00bcd4;
+
+// Typography
+$font-primary: "FreePixel", "Courier New", monospace;
+$font-code: "Courier New", monospace;
+
+// Font Sizes
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 30px;
+$font-size-4xl: 36px;
+$font-size-5xl: 48px;
+
+// Font Weights
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// Spacing Scale (8px base)
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+// Component Defaults
+$border-radius: 0px;      // Pixelated/retro look
+$border-width: 1px;
+$border-style: solid;
+
+// Transitions
+$transition-speed: 200ms;
+$transition-speed-slow: 300ms;
+$transition-easing: ease-in-out;
+
+// Shadows - Neon glow effects for cyberpunk
+$shadow-sm: 0 0 10px rgba(255, 0, 255, 0.3);
+$shadow-md: 0 0 20px rgba(255, 0, 255, 0.5);
+$shadow-lg: 0 0 30px rgba(0, 255, 255, 0.6);
+
+// Z-index Scale
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// Breakpoints (matching Material-UI)
+$breakpoint-xs: 0;
+$breakpoint-sm: 600px;
+$breakpoint-md: 960px;
+$breakpoint-lg: 1280px;
+$breakpoint-xl: 1920px;
+
+// Component Specific
+$button-min-height: 44px;
+$input-min-height: 44px;
+$chip-height: 24px;
+$avatar-size: 40px;
+$icon-size: 24px;
+$icon-size-sm: 20px;
+$icon-size-lg: 32px;
+
+// Special Effects
+$hover-brightness: 1.2;
+$disabled-opacity: 0.6;
+
+// Export for JavaScript usage
+:export {
+  // Colors
+  primary: $primary;
+  secondary: $secondary;
+  error: $error;
+  warning: $warning;
+  success: $success;
+  
+  // Backgrounds
+  bgPrimary: $bg-primary;
+  bgSecondary: $bg-secondary;
+  bgHover: $bg-hover;
+  bgElevated: $bg-elevated;
+  
+  // Borders
+  borderColor: $border-color;
+  borderLight: $border-light;
+  borderDark: $border-dark;
+  borderFocus: $border-focus;
+  
+  // Text
+  textPrimary: $text-primary;
+  textSecondary: $text-secondary;
+  textDisabled: $text-disabled;
+  textInverse: $text-inverse;
+  
+  // Gradients
+  gradientPrimaryStart: $gradient-primary-start;
+  gradientPrimaryEnd: $gradient-primary-end;
+  gradientSecondaryStart: $gradient-secondary-start;
+  gradientSecondaryEnd: $gradient-secondary-end;
+  
+  // Typography
+  fontPrimary: $font-primary;
+  fontCode: $font-code;
+  
+  // Font Sizes
+  fontSizeXs: $font-size-xs;
+  fontSizeSm: $font-size-sm;
+  fontSizeBase: $font-size-base;
+  fontSizeLg: $font-size-lg;
+  fontSizeXl: $font-size-xl;
+  fontSize2xl: $font-size-2xl;
+  fontSize3xl: $font-size-3xl;
+  fontSize4xl: $font-size-4xl;
+  fontSize5xl: $font-size-5xl;
+  
+  // Font Weights
+  fontWeightNormal: $font-weight-normal;
+  fontWeightMedium: $font-weight-medium;
+  fontWeightSemibold: $font-weight-semibold;
+  fontWeightBold: $font-weight-bold;
+  
+  // Line Heights
+  lineHeightTight: $line-height-tight;
+  lineHeightNormal: $line-height-normal;
+  lineHeightRelaxed: $line-height-relaxed;
+  
+  // Spacing
+  spacingXs: $spacing-xs;
+  spacingSm: $spacing-sm;
+  spacingMd: $spacing-md;
+  spacingLg: $spacing-lg;
+  spacingXl: $spacing-xl;
+  spacing2xl: $spacing-2xl;
+  spacing3xl: $spacing-3xl;
+  
+  // Component Defaults
+  borderRadius: $border-radius;
+  borderWidth: $border-width;
+  borderStyle: $border-style;
+  
+  // Transitions
+  transitionSpeed: $transition-speed;
+  transitionSpeedSlow: $transition-speed-slow;
+  transitionEasing: $transition-easing;
+  
+  // Component Specific
+  buttonMinHeight: $button-min-height;
+  inputMinHeight: $input-min-height;
+  chipHeight: $chip-height;
+  avatarSize: $avatar-size;
+  iconSize: $icon-size;
+  iconSizeSm: $icon-size-sm;
+  iconSizeLg: $icon-size-lg;
+  
+  // Effects
+  hoverBrightness: $hover-brightness;
+  disabledOpacity: $disabled-opacity;
+}

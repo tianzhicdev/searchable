@@ -9,15 +9,16 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
+import { componentSpacing, touchTargets } from '../../../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(3),
+    ...componentSpacing.formContainer(theme),
   },
   field: {
-    marginBottom: theme.spacing(2),
+    // Handled by formContainer now
   },
   helperText: {
     marginTop: theme.spacing(1),
@@ -25,6 +26,7 @@ const useStyles = makeStyles((theme) => ({
   },
   continueButton: {
     marginTop: theme.spacing(3),
+    ...componentSpacing.button(theme),
   },
   preview: {
     marginTop: theme.spacing(3),
@@ -128,6 +130,9 @@ const StoreSetup = ({ stepConfig }) => {
           fullWidth
           required
           className={classes.field}
+          InputProps={{
+            style: { minHeight: touchTargets.input.mobileHeight }
+          }}
         />
 
         <TextField
@@ -140,6 +145,7 @@ const StoreSetup = ({ stepConfig }) => {
           required
           className={classes.field}
           InputProps={{
+            style: { minHeight: touchTargets.input.mobileHeight },
             startAdornment: (
               <InputAdornment position="start">
                 searchable.com/store/
@@ -158,6 +164,9 @@ const StoreSetup = ({ stepConfig }) => {
           multiline
           rows={4}
           className={classes.field}
+          InputProps={{
+            style: { minHeight: touchTargets.input.mobileHeight }
+          }}
         />
       </Box>
 

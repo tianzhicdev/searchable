@@ -1,130 +1,107 @@
 /**
- * Typography used in theme
- * @param {JsonObject} theme theme customization object
+ * Typography configuration using centralized theme config
  */
-export function themeTypography(theme) {
+import themeConfig from './themeLoader';
+
+export const themeTypography = (theme) => {
     return {
-        // ENFORCE FREEPIXEL FONT EVERYWHERE
-        fontFamily: '"FreePixel", "Courier New", monospace',
-        h6: {
-            fontWeight: 500,
-            color: theme.heading,
-            fontSize: '0.75rem'
-        },
-        h5: {
-            fontSize: '0.875rem',
-            color: theme.heading,
-            fontWeight: 500
-        },
-        h4: {
-            fontSize: '1rem',
-            color: theme.heading,
-            fontWeight: 600
-        },
-        h3: {
-            fontSize: '1.25rem',
-            color: theme.heading,
-            fontWeight: 600
+        fontFamily: themeConfig.fontPrimary,
+        fontSize: parseInt(themeConfig.fontSizeBase),
+        fontWeightLight: 300,
+        fontWeightRegular: parseInt(themeConfig.fontWeightNormal),
+        fontWeightMedium: parseInt(themeConfig.fontWeightMedium),
+        fontWeightBold: parseInt(themeConfig.fontWeightBold),
+        h1: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightBold),
+            fontSize: themeConfig.fontSize5xl,
+            lineHeight: parseFloat(themeConfig.lineHeightTight),
+            color: themeConfig.textPrimary
         },
         h2: {
-            fontSize: '1.5rem',
-            color: theme.heading,
-            fontWeight: 700
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightBold),
+            fontSize: themeConfig.fontSize4xl,
+            lineHeight: parseFloat(themeConfig.lineHeightTight),
+            color: themeConfig.textPrimary
         },
-        h1: {
-            fontSize: '2.125rem',
-            color: theme.heading,
-            fontWeight: 700
+        h3: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightSemibold),
+            fontSize: themeConfig.fontSize3xl,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textPrimary
+        },
+        h4: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightSemibold),
+            fontSize: themeConfig.fontSize2xl,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textPrimary
+        },
+        h5: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightSemibold),
+            fontSize: themeConfig.fontSizeXl,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textPrimary
+        },
+        h6: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightSemibold),
+            fontSize: themeConfig.fontSizeLg,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textPrimary
         },
         subtitle1: {
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: theme.textDark
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightNormal),
+            fontSize: themeConfig.fontSizeLg,
+            lineHeight: parseFloat(themeConfig.lineHeightRelaxed),
+            color: themeConfig.textSecondary
         },
         subtitle2: {
-            fontSize: '0.75rem',
-            fontWeight: 400,
-            color: theme.darkTextSecondary
-        },
-        caption: {
-            fontSize: '0.75rem',
-            color: theme.darkTextSecondary,
-            fontWeight: 400
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightMedium),
+            fontSize: themeConfig.fontSizeBase,
+            lineHeight: parseFloat(themeConfig.lineHeightRelaxed),
+            color: themeConfig.textSecondary
         },
         body1: {
-            fontSize: '0.875rem',
-            fontWeight: 400,
-            lineHeight: '1.334em'
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightNormal),
+            fontSize: themeConfig.fontSizeBase,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textPrimary
         },
         body2: {
-            letterSpacing: '0em',
-            fontWeight: 400,
-            lineHeight: '1.5em',
-            color: theme.darkTextPrimary
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightNormal),
+            fontSize: themeConfig.fontSizeSm,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            color: themeConfig.textSecondary
         },
-        customInput: {
-            marginTop: 8,
-            marginBottom: 8,
-            '& > label': {
-                top: '23px',
-                left: 0,
-                color: theme.grey500,
-                '&[data-shrink="false"]': {
-                    top: '5px'
-                }
-            },
-            '& > div > input': {
-                padding: '30.5px 14px 11.5px !important'
-            },
-            '& legend': {
-                display: 'none'
-            },
-            '& fieldset': {
-                top: 0
-            }
+        button: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightMedium),
+            fontSize: themeConfig.fontSizeSm,
+            lineHeight: parseFloat(themeConfig.lineHeightNormal),
+            textTransform: 'uppercase'
         },
-        mainContent: {
-            backgroundColor: theme.background,
-            width: '100%',
-            minHeight: 'calc(100vh - 88px)',
-            flexGrow: 1,
-            padding: '20px',
-            marginTop: '88px',
-            marginRight: '20px',
-            borderRadius: theme.customization.borderRadius + 'px'
+        caption: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightNormal),
+            fontSize: themeConfig.fontSizeXs,
+            lineHeight: parseFloat(themeConfig.lineHeightRelaxed),
+            color: themeConfig.textSecondary
         },
-        menuCaption: {
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: theme.heading,
-            padding: '6px',
-            textTransform: 'capitalize',
-            marginTop: '10px'
-        },
-        subMenuCaption: {
-            fontSize: '0.6875rem',
-            fontWeight: 500,
-            color: theme.darkTextSecondary,
-            textTransform: 'capitalize'
-        },
-        commonAvatar: {
-            cursor: 'pointer',
-            borderRadius: '8px'
-        },
-        smallAvatar: {
-            width: '22px',
-            height: '22px',
-            fontSize: '1rem'
-        },
-        mediumAvatar: {
-            width: '34px',
-            height: '34px',
-            fontSize: '1.2rem'
-        },
-        largeAvatar: {
-            width: '44px',
-            height: '44px',
-            fontSize: '1.5rem'
+        overline: {
+            fontFamily: themeConfig.fontPrimary,
+            fontWeight: parseInt(themeConfig.fontWeightNormal),
+            fontSize: themeConfig.fontSizeXs,
+            lineHeight: parseFloat(themeConfig.lineHeightRelaxed),
+            textTransform: 'uppercase',
+            color: themeConfig.textSecondary
         }
     };
-}
+};

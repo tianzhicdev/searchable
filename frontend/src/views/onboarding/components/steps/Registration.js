@@ -17,12 +17,13 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import backend from '../../../../views/utilities/Backend';
+import { componentSpacing, touchTargets } from '../../../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
+    ...componentSpacing.formContainer(theme),
   },
   passwordRequirements: {
     marginTop: theme.spacing(2),
@@ -45,6 +46,7 @@ const useStyles = makeStyles((theme) => ({
   },
   continueButton: {
     marginTop: theme.spacing(3),
+    ...componentSpacing.button(theme),
   },
   successMessage: {
     marginTop: theme.spacing(2),
@@ -207,6 +209,9 @@ const Registration = ({ stepConfig }) => {
               fullWidth
               required
               disabled={isLoading}
+              InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight }
+              }}
             />
 
             <TextField
@@ -220,6 +225,7 @@ const Registration = ({ stepConfig }) => {
               required
               disabled={isLoading}
               InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight },
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -243,6 +249,9 @@ const Registration = ({ stepConfig }) => {
               fullWidth
               required
               disabled={isLoading}
+              InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight }
+              }}
             />
           </Box>
 

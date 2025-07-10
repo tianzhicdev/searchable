@@ -1,13 +1,35 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, Button } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
+import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../themes/componentStyles';
 import { Box } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
+import { componentSpacing } from '../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  },
+  dialogContent: {
+    padding: 0,
+    textAlign: 'center',
+    [theme.breakpoints.down('sm')]: {
+      maxHeight: 'calc(90vh - 48px)', // Account for dialog margin
+      overflow: 'auto'
+    }
+  }
+}));
 
 const ZoomableImage = ({ src, alt, style, className }) => {
   const [open, setOpen] = useState(false);
   const classes = useComponentStyles();
+  const styles = useStyles();
   const theme = useTheme();
 
   const handleOpen = () => {
@@ -40,10 +62,11 @@ const ZoomableImage = ({ src, alt, style, className }) => {
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
+        className={styles.dialog}
       >
         <DialogContent 
           onClick={handleClose}
-          style={{ padding: 0, textAlign: 'center' }}
+          className={styles.dialogContent}
         >
           <img 
             src={src} 

@@ -19,12 +19,29 @@ import {
   Visibility,
   VisibilityOff
 } from '@material-ui/icons';
+import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { strengthIndicator, strengthColor } from '../../utils/password-strength';
+import { componentSpacing, touchTargets } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  formContainer: componentSpacing.formContainer(theme),
+  button: componentSpacing.button(theme),
+  dialogContent: componentSpacing.dialog(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
 
 const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
   const classes = useComponentStyles();
+  const styles = useStyles();
   
   const [formValues, setFormValues] = useState({
     currentPassword: '',
@@ -204,6 +221,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
       onClose={handleClose}
       maxWidth="sm"
       fullWidth
+      className={styles.dialog}
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -217,7 +235,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
       </DialogTitle>
       
       <form noValidate onSubmit={handleSubmit}>
-        <DialogContent>
+        <DialogContent className={`${styles.formContainer} ${styles.dialogContent}`}>
           <Typography variant="body2" className={classes.staticText} gutterBottom>
             Please enter your current password and choose a new password.
           </Typography>
@@ -226,7 +244,6 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           <FormControl 
             fullWidth 
             error={Boolean(touched.currentPassword && formErrors.currentPassword)}
-            style={{ marginBottom: 16 }}
           >
             <TextField
               id="current-password"
@@ -238,6 +255,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
               placeholder="Enter your current password"
               error={touched.currentPassword && Boolean(formErrors.currentPassword)}
               InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight },
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -263,7 +281,6 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           <FormControl 
             fullWidth 
             error={Boolean(touched.newPassword && formErrors.newPassword)}
-            style={{ marginBottom: 16 }}
           >
             <TextField
               id="new-password"
@@ -275,6 +292,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
               placeholder="Enter your new password"
               error={touched.newPassword && Boolean(formErrors.newPassword)}
               InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight },
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -298,7 +316,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
 
           {/* Password Strength Indicator */}
           {strength !== 0 && (
-            <FormControl fullWidth style={{ marginBottom: 16 }}>
+            <FormControl fullWidth>
               <Box>
                 <Grid container spacing={2} alignItems="center">
                   <Grid item>
@@ -325,7 +343,6 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           <FormControl 
             fullWidth 
             error={Boolean(touched.confirmPassword && formErrors.confirmPassword)}
-            style={{ marginBottom: 16 }}
           >
             <TextField
               id="confirm-password"
@@ -338,6 +355,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
               placeholder="Confirm your new password"
               error={touched.confirmPassword && Boolean(formErrors.confirmPassword)}
               InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight },
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
@@ -367,13 +385,14 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={handleClose} disabled={isSubmitting}>
+          <Button onClick={handleClose} disabled={isSubmitting} className={styles.button}>
             Cancel
           </Button>
           <Button 
             type="submit" 
             variant="contained" 
             disabled={isSubmitting}
+            className={styles.button}
           >
             {isSubmitting ? 'Changing...' : 'Change Password'}
           </Button>

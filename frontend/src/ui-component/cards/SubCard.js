@@ -2,8 +2,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // material-ui
-import { useTheme } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import { Card, CardContent, CardHeader, Divider, Typography } from '@material-ui/core';
+
+// project imports
+import { componentSpacing } from '../../utils/spacing';
 
 //-----------------------|| CUSTOM SUB CARD ||-----------------------//
 
@@ -23,8 +26,8 @@ const SubCard = ({ children, content, contentClass, darkTitle, secondary, sx = {
             {...others}
         >
             {/* card header and action */}
-            {!darkTitle && title && <CardHeader sx={{ p: 2.5 }} title={<Typography variant="h5">{title}</Typography>} action={secondary} />}
-            {darkTitle && title && <CardHeader sx={{ p: 2.5 }} title={<Typography variant="h4">{title}</Typography>} action={secondary} />}
+            {!darkTitle && title && <CardHeader sx={componentSpacing.card(theme)} title={<Typography variant="h5">{title}</Typography>} action={secondary} />}
+            {darkTitle && title && <CardHeader sx={componentSpacing.card(theme)} title={<Typography variant="h4">{title}</Typography>} action={secondary} />}
 
             {/* content & header divider */}
             {title && (
@@ -38,7 +41,7 @@ const SubCard = ({ children, content, contentClass, darkTitle, secondary, sx = {
 
             {/* card content */}
             {content && (
-                <CardContent sx={{ p: 2.5 }} className={contentClass}>
+                <CardContent sx={componentSpacing.card(theme)} className={contentClass}>
                     {children}
                 </CardContent>
             )}

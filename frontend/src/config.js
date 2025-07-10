@@ -16,7 +16,12 @@ if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
   APP_BRANDING = 'abitchaotic';
 } else if (process.env.REACT_APP_BRANDING === 'local') {
   APP_BRANDING = 'local';
-} 
+}
+
+// Theme configuration
+// Available themes: cyberpunk, vaporwave, matrix, synthwave, hacker, neonTokyo, bloodMoon, deepSpace, arcade, original
+let APP_THEME = process.env.REACT_APP_THEME || 'vaporwave'; // Default to neonTokyo
+console.log('Selected theme:', APP_THEME); 
 
 let branding_config = {
   logo: 'camel_logo.jpg',
@@ -70,7 +75,8 @@ const config = {
     API_SERVER: BACKEND_SERVER,
     SHOW_DEBUG_INFO: SHOW_DEBUG_INFO,
     APP_BRANDING: APP_BRANDING,
-    BRANDING_CONFIG: branding_config
+    BRANDING_CONFIG: branding_config,
+    APP_THEME: APP_THEME // Add theme to config
 };
 
 // Log the configuration for debugging purposes

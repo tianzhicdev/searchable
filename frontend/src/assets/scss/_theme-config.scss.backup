@@ -1,0 +1,207 @@
+// ===========================
+// SEARCHABLE THEME CONFIGURATION
+// Single source of truth for all design tokens
+// ===========================
+
+// Core Colors (5 main + additions)
+$primary: #5f409a;        // Main brand color (red/orange)
+$secondary: #3899ef;      // Secondary brand color (blue)
+
+$error: #d32f2f;          // Error states (was alerting)
+$warning: #ff9800;        // Warning states (orange)
+$success: #4caf50;        // Success states (was highlight)
+
+// Background Colors
+$bg-primary: #000000;     // Main app background
+$bg-secondary: #0a0a0a;   // Cards, papers, elevated surfaces
+$bg-hover: #1a1a1a;       // Hover states
+$bg-elevated: #141414;    // Modals, dialogs
+
+// Border Colors
+$border-color: #ff0000;   // Default border
+$border-light: #555555;   // Light borders
+$border-dark: #222222;    // Dark borders
+$border-focus: $secondary; // Focus state borders
+
+// Text Colors
+$text-primary: #ff4d3a;    // Primary text
+$text-secondary: #b3b3b3; // Secondary text
+$text-disabled: #666666;  // Disabled text
+$text-inverse: #000000;   // Text on light backgrounds
+
+// Gradient Colors
+$gradient-primary-start: $primary;
+$gradient-primary-end: $warning;
+$gradient-secondary-start: $secondary;
+$gradient-secondary-end: #00bcd4;
+
+// Typography
+$font-primary: "FreePixel", "Courier New", monospace;
+$font-code: "Courier New", monospace;
+
+// Font Sizes
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 30px;
+$font-size-4xl: 36px;
+$font-size-5xl: 48px;
+
+// Font Weights
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// Spacing Scale (8px base)
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+// Component Defaults
+$border-radius: 0px;      // Pixelated/retro look
+$border-width: 1px;
+$border-style: solid;
+
+// Transitions
+$transition-speed: 200ms;
+$transition-speed-slow: 300ms;
+$transition-easing: ease-in-out;
+
+// Shadows (minimal for retro theme)
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+// Z-index Scale
+$z-index-dropdown: 1000;
+$z-index-sticky: 1020;
+$z-index-fixed: 1030;
+$z-index-modal-backdrop: 1040;
+$z-index-modal: 1050;
+$z-index-popover: 1060;
+$z-index-tooltip: 1070;
+
+// Breakpoints (matching Material-UI)
+$breakpoint-xs: 0;
+$breakpoint-sm: 600px;
+$breakpoint-md: 960px;
+$breakpoint-lg: 1280px;
+$breakpoint-xl: 1920px;
+
+// Component Specific
+$button-min-height: 44px;
+$input-min-height: 44px;
+$chip-height: 24px;
+$avatar-size: 40px;
+$icon-size: 24px;
+$icon-size-sm: 20px;
+$icon-size-lg: 32px;
+
+// Special Effects
+$hover-brightness: 1.2;
+$disabled-opacity: 0.6;
+
+// Export for JavaScript usage
+:export {
+  // Colors
+  primary: $primary;
+  secondary: $secondary;
+  error: $error;
+  warning: $warning;
+  success: $success;
+  
+  // Backgrounds
+  bgPrimary: $bg-primary;
+  bgSecondary: $bg-secondary;
+  bgHover: $bg-hover;
+  bgElevated: $bg-elevated;
+  
+  // Borders
+  borderColor: $border-color;
+  borderLight: $border-light;
+  borderDark: $border-dark;
+  borderFocus: $border-focus;
+  
+  // Text
+  textPrimary: $text-primary;
+  textSecondary: $text-secondary;
+  textDisabled: $text-disabled;
+  textInverse: $text-inverse;
+  
+  // Gradients
+  gradientPrimaryStart: $gradient-primary-start;
+  gradientPrimaryEnd: $gradient-primary-end;
+  gradientSecondaryStart: $gradient-secondary-start;
+  gradientSecondaryEnd: $gradient-secondary-end;
+  
+  // Typography
+  fontPrimary: $font-primary;
+  fontCode: $font-code;
+  
+  // Font Sizes
+  fontSizeXs: $font-size-xs;
+  fontSizeSm: $font-size-sm;
+  fontSizeBase: $font-size-base;
+  fontSizeLg: $font-size-lg;
+  fontSizeXl: $font-size-xl;
+  fontSize2xl: $font-size-2xl;
+  fontSize3xl: $font-size-3xl;
+  fontSize4xl: $font-size-4xl;
+  fontSize5xl: $font-size-5xl;
+  
+  // Font Weights
+  fontWeightNormal: $font-weight-normal;
+  fontWeightMedium: $font-weight-medium;
+  fontWeightSemibold: $font-weight-semibold;
+  fontWeightBold: $font-weight-bold;
+  
+  // Line Heights
+  lineHeightTight: $line-height-tight;
+  lineHeightNormal: $line-height-normal;
+  lineHeightRelaxed: $line-height-relaxed;
+  
+  // Spacing
+  spacingXs: $spacing-xs;
+  spacingSm: $spacing-sm;
+  spacingMd: $spacing-md;
+  spacingLg: $spacing-lg;
+  spacingXl: $spacing-xl;
+  spacing2xl: $spacing-2xl;
+  spacing3xl: $spacing-3xl;
+  
+  // Component Defaults
+  borderRadius: $border-radius;
+  borderWidth: $border-width;
+  borderStyle: $border-style;
+  
+  // Transitions
+  transitionSpeed: $transition-speed;
+  transitionSpeedSlow: $transition-speed-slow;
+  transitionEasing: $transition-easing;
+  
+  // Component Specific
+  buttonMinHeight: $button-min-height;
+  inputMinHeight: $input-min-height;
+  chipHeight: $chip-height;
+  avatarSize: $avatar-size;
+  iconSize: $icon-size;
+  iconSizeSm: $icon-size-sm;
+  iconSizeLg: $icon-size-lg;
+  
+  // Effects
+  hoverBrightness: $hover-brightness;
+  disabledOpacity: $disabled-opacity;
+}

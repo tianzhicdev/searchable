@@ -1,11 +1,13 @@
 import { createTheme } from '@material-ui/core/styles';
 
-// assets
-import colors from '../assets/scss/_themes-vars.module.scss';
-// project imports
-import { componentStyleOverrides } from './compStyleOverride';
+// Dynamic theme configuration
+import themeConfig from './themeLoader';
+
+// Theme imports
+import { componentStyleOverrides } from './components';
 import { themePalette } from './palette';
 import { themeTypography } from './typography';
+import { gradients } from './gradients';
 
 /**
  * SIMPLIFIED THEME - Only 5 colors allowed
@@ -13,26 +15,30 @@ import { themeTypography } from './typography';
  */
 export function theme(customization) {
     const themeOption = {
-        colors: colors,
+        colors: themeConfig,
+        gradients: gradients,
         customization: {
             ...customization,
-            fontFamily: '"FreePixel", "Courier New", monospace'
+            fontFamily: themeConfig.fontPrimary
         },
-        // CENTRALIZED COLOR USAGE - Only 5 colors
+        // CENTRALIZED COLOR USAGE - Backward compatibility
         appColors: {
-            userText: colors.primary,       // User provided data/text
-            staticText: colors.secondary,   // Static/system texts
-            iconColor: colors.highlight,    // Icons and interactive elements
-            alerting: colors.alerting,      // Error states
-            warning: colors.warning         // Warning states
-        }
+            userText: themeConfig.primary,       // User provided data/text
+            staticText: themeConfig.secondary,   // Static/system texts
+            iconColor: themeConfig.success,      // Icons and interactive elements
+            alerting: themeConfig.error,         // Error states
+            warning: themeConfig.warning         // Warning states
+        },
+        // Add theme name for reference
+        themeName: themeConfig.currentThemeName || 'neonTokyo'
     };
 
     return createTheme({
         direction: 'ltr',
         palette: themePalette(themeOption),
         typography: themeTypography(themeOption),
-        components: componentStyleOverrides(themeOption)
+        components: componentStyleOverrides(themeOption),
+        spacing: 8 // Base spacing unit (8px)
     });
 }
 

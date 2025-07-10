@@ -13,34 +13,60 @@ import ColumnLayout from '../Layout/ColumnLayout';
 
 const useStyles = makeStyles((theme) => ({
   resultsContainer: {
-    marginTop: theme.spacing(2)
+    marginTop: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1.5)
+    }
   },
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '200px'
+    minHeight: '200px',
+    padding: theme.spacing(3),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2),
+      minHeight: '150px'
+    }
   },
   emptyContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: '200px',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    padding: theme.spacing(3),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2),
+      minHeight: '150px'
+    }
   },
   emptyMessage: {
     textAlign: 'center',
     color: theme.palette.text.secondary,
-    marginBottom: theme.spacing(2)
+    marginBottom: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(1.5),
+      fontSize: '0.875rem'
+    }
   },
   resultsHeader: {
     marginBottom: theme.spacing(2),
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(1.5)
+    }
   },
   resultsCount: {
     color: theme.palette.text.secondary
+  },
+  paginationBox: {
+    marginTop: theme.spacing(3),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(2)
+    }
   }
 }));
 
@@ -92,7 +118,7 @@ const UserSearchResults = ({
       
       {/* Pagination */}
       {pagination && onPageChange && (
-        <Box mt={2}>
+        <Box className={classes.paginationBox}>
           <Pagination
             currentPage={pagination.page || pagination.current_page || 1}
             totalPages={pagination.totalPages || pagination.pages || pagination.total_pages || 1}

@@ -13,17 +13,19 @@ import { Visibility, VisibilityOff } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useDispatch } from 'react-redux';
 import { performLogin, performRegistrationAndLogin } from '../services/authService';
+import { componentSpacing, touchTargets } from '../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   form: {
     marginTop: theme.spacing(3),
+    ...componentSpacing.formContainer(theme)
   },
   formField: {
-    marginBottom: theme.spacing(3),
+    // Handled by formContainer now
   },
   submitButton: {
     marginTop: theme.spacing(4),
-    padding: theme.spacing(1.5),
+    ...componentSpacing.button(theme)
   },
   toggleSection: {
     marginTop: theme.spacing(3),
@@ -175,6 +177,9 @@ const OnboardingAuth = ({
               error={Boolean(touched.username && formErrors.username)}
               helperText={touched.username && formErrors.username}
               disabled={isSubmitting}
+              InputProps={{
+                style: { minHeight: touchTargets.input.mobileHeight }
+              }}
             />
           </FormControl>
         )}
@@ -195,6 +200,9 @@ const OnboardingAuth = ({
             error={Boolean(touched.email && formErrors.email)}
             helperText={touched.email && formErrors.email}
             disabled={isSubmitting}
+            InputProps={{
+              style: { minHeight: touchTargets.input.mobileHeight }
+            }}
           />
         </FormControl>
 
@@ -215,6 +223,7 @@ const OnboardingAuth = ({
             helperText={(touched.password && formErrors.password) || (!isLoginMode ? 'At least 8 characters' : '')}
             disabled={isSubmitting}
             InputProps={{
+              style: { minHeight: touchTargets.input.mobileHeight },
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton

@@ -12,6 +12,7 @@ import {
 } from '@material-ui/core';
 import { Storefront, ShoppingCart } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { componentSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -21,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.default,
   },
   paper: {
-    padding: theme.spacing(4),
+    ...componentSpacing.card(theme),
     textAlign: 'center',
   },
   title: {
@@ -36,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   cardContent: {
-    padding: theme.spacing(4),
+    ...componentSpacing.card(theme),
     textAlign: 'center',
   },
   icon: {

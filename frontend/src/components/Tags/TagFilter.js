@@ -7,35 +7,48 @@ import {
   TextField,
   Box,
   Button,
-  Chip
+  Chip,
+  useMediaQuery
 } from '@material-ui/core';
 import { Clear as ClearIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import Backend from '../../views/utilities/Backend';
+import { componentSpacing, touchTargets } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   filterContainer: {
     width: '350px',
     maxWidth: '100%',
     marginBottom: theme.spacing(2),
-    padding: theme.spacing(2),
+    padding: theme.spacing(2.5),
     position: 'absolute',
     right: 0,
     zIndex: 1200,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+    boxShadow: theme.shadows[4],
     backgroundColor: theme.palette.background.paper,
-    marginTop: theme.spacing(1)
+    marginTop: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      width: '90vw',
+      maxWidth: '100%',
+      padding: theme.spacing(2),
+      right: theme.spacing(1)
+    }
   },
   filterHeader: {
     marginBottom: theme.spacing(2)
   },
   tagGroup: {
     maxHeight: '300px',
-    overflowY: 'scroll',
-    marginBottom: theme.spacing(1),
-    padding: theme.spacing(0.5),
+    overflowY: 'auto',
+    marginBottom: theme.spacing(1.5),
+    padding: theme.spacing(1),
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
+    [theme.breakpoints.down('sm')]: {
+      maxHeight: '40vh',
+      padding: theme.spacing(0.5)
+    },
     '&::-webkit-scrollbar': {
       width: '8px',
       visibility: 'visible',
@@ -54,14 +67,62 @@ const useStyles = makeStyles((theme) => ({
     }
   },
   clearButton: {
-    marginTop: theme.spacing(1)
+    marginTop: theme.spacing(1.5),
+    minHeight: touchTargets.clickable.minHeight,
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1),
+      minHeight: touchTargets.clickable.minHeight - 4,
+      fontSize: '0.875rem'
+    }
   },
   selectedTagsContainer: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: theme.spacing(0.5),
+    gap: theme.spacing(0.75),
     marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1)
+    marginBottom: theme.spacing(1.5),
+    [theme.breakpoints.down('sm')]: {
+      gap: theme.spacing(0.5),
+      marginBottom: theme.spacing(1)
+    }
+  },
+  chip: {
+    minHeight: 32,
+    height: 'auto',
+    '& .MuiChip-label': {
+      paddingLeft: theme.spacing(1.5),
+      paddingRight: theme.spacing(1.5),
+      paddingTop: theme.spacing(0.5),
+      paddingBottom: theme.spacing(0.5),
+      fontSize: '0.875rem'
+    },
+    [theme.breakpoints.down('sm')]: {
+      minHeight: touchTargets.clickable.minHeight - 16,
+      '& .MuiChip-label': {
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+        fontSize: '0.75rem'
+      }
+    }
+  },
+  formControlLabel: {
+    display: 'block',
+    margin: theme.spacing(0.75, 0),
+    width: '100%',
+    minHeight: touchTargets.clickable.minHeight,
+    '& .MuiCheckbox-root': {
+      padding: theme.spacing(1)
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+      minHeight: touchTargets.clickable.minHeight - 4,
+      '& .MuiCheckbox-root': {
+        padding: theme.spacing(0.75)
+      },
+      '& .MuiFormControlLabel-label': {
+        fontSize: '0.875rem'
+      }
+    }
   }
 }));
 
@@ -72,6 +133,8 @@ const TagFilter = ({
   title = null
 }) => {
   const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -139,9 +202,10 @@ const TagFilter = ({
               <Chip
                 key={tag.id}
                 label={tag.name}
-                size="small"
+                size={isMobile ? "small" : "medium"}
                 onDelete={() => handleTagRemove(tag)}
                 color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
+                className={classes.chip}
               />
             ))}
           </Box>
@@ -155,12 +219,12 @@ const TagFilter = ({
             return (
               <FormControlLabel
                 key={tag.id}
-                style={{ display: 'block', margin: '4px 0', width: '100%' }}
+                className={classes.formControlLabel}
                 control={
                   <Checkbox
                     checked={!!isSelected}
                     onChange={() => handleTagToggle(tag)}
-                    size="small"
+                    size={isMobile ? "small" : "medium"}
                     color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
                   />
                 }
@@ -187,9 +251,10 @@ const TagFilter = ({
           <Button
             className={classes.clearButton}
             variant="outlined"
-            size="small"
+            size={isMobile ? "small" : "medium"}
             startIcon={<ClearIcon />}
             onClick={handleClearAll}
+            fullWidth={isMobile}
           >
             Clear All Filters
           </Button>

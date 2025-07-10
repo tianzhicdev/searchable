@@ -1,7 +1,7 @@
 import React from 'react';
 
 // material-ui
-import { useTheme } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import config from '../config';
 
 // Import logo images

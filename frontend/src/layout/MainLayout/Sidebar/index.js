@@ -2,7 +2,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // material-ui
-import { makeStyles, useTheme } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import { Box, Drawer, useMediaQuery } from '@material-ui/core';
 
 // third-party
@@ -14,6 +15,9 @@ import MenuList from './MenuList';
 import LogoSection from '../LogoSection';
 import MenuCard from './MenuCard';
 import { drawerWidth } from './../../../store/constant';
+
+// Import spacing utilities
+import { spacing } from './../../../utils/spacing';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -34,17 +38,22 @@ const useStyles = makeStyles((theme) => ({
     },
     ScrollHeight: {
         height: 'calc(100vh - 88px)',
-        paddingLeft: '16px',
-        paddingRight: '16px',
+        paddingLeft: theme.spacing(spacing.container.md), // 24px on desktop
+        paddingRight: theme.spacing(spacing.container.md),
         [theme.breakpoints.down('sm')]: {
-            height: 'calc(100vh - 56px)'
+            height: 'calc(100vh - 56px)',
+            paddingLeft: theme.spacing(spacing.container.xs), // 16px on mobile
+            paddingRight: theme.spacing(spacing.container.xs)
         }
     },
     boxContainer: {
         display: 'flex',
-        padding: '16px',
+        padding: theme.spacing(spacing.container.md), // 24px on desktop
         marginLeft: 'auto',
-        marginRight: 'auto'
+        marginRight: 'auto',
+        [theme.breakpoints.down('sm')]: {
+            padding: theme.spacing(spacing.container.xs) // 16px on mobile
+        }
     }
 }));
 
@@ -69,7 +78,7 @@ const Sidebar = ({ drawerOpen, drawerToggle, window }) => {
                 </PerfectScrollbar>
             </BrowserView>
             <MobileView>
-                <Box sx={{ px: 2 }}>
+                <Box sx={{ px: spacing.container.xs }}>
                     <MenuList />
                     {/* <MenuCard /> */}
                 </Box>

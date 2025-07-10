@@ -9,8 +9,71 @@ import {
   TablePagination, 
   Paper, 
   Typography,
-  Box 
+  Box,
+  useMediaQuery,
+  useTheme
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
+import { touchTargets, componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  tableContainer: {
+    overflowX: 'auto',
+    // Add horizontal scroll on mobile
+    [theme.breakpoints.down('sm')]: {
+      marginLeft: -theme.spacing(2),
+      marginRight: -theme.spacing(2),
+      paddingLeft: theme.spacing(2),
+      paddingRight: theme.spacing(2),
+      '& table': {
+        minWidth: 600
+      }
+    }
+  },
+  tableCell: {
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5),
+      fontSize: '0.875rem'
+    }
+  },
+  headerCell: {
+    fontWeight: 600,
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5),
+      fontSize: '0.875rem'
+    }
+  },
+  tableRow: {
+    minHeight: touchTargets.clickable.minHeight,
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover
+    }
+  },
+  titleBox: {
+    ...componentSpacing.card(theme),
+    borderBottom: `1px solid ${theme.palette.divider}`
+  },
+  emptyBox: {
+    ...componentSpacing.card(theme),
+    textAlign: 'center'
+  },
+  pagination: {
+    [theme.breakpoints.down('sm')]: {
+      '& .MuiTablePagination-toolbar': {
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1)
+      },
+      '& .MuiTablePagination-selectLabel': {
+        display: 'none'
+      },
+      '& .MuiTablePagination-displayedRows': {
+        fontSize: '0.75rem'
+      }
+    }
+  }
+}));
 
 /**
  * A reusable table component that dynamically renders data objects
@@ -30,6 +93,9 @@ const CompactTable = ({
   emptyMessage = "No records found.",
   excludeColumns = []
 }) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
 
@@ -66,23 +132,23 @@ const CompactTable = ({
   return (
     <Paper elevation={2}>
       {title && (
-        <Box p={2} pb={1}>
+        <Box className={classes.titleBox}>
           <Typography variant="h6">{title}</Typography>
         </Box>
       )}
       
       {data.length === 0 ? (
-        <Box p={3} textAlign="center">
+        <Box className={classes.emptyBox}>
           <Typography variant="body1">{emptyMessage}</Typography>
         </Box>
       ) : (
         <>
-          <TableContainer>
-            <Table size="small">
+          <TableContainer className={classes.tableContainer}>
+            <Table size={isMobile ? 'small' : 'medium'}>
               <TableHead>
                 <TableRow>
                   {columns.map((column) => (
-                    <TableCell key={column}>
+                    <TableCell key={column} className={classes.headerCell}>
                       <Typography variant="subtitle2">
                         {formatColumnHeader(column)}
                       </Typography>
@@ -92,9 +158,9 @@ const CompactTable = ({
               </TableHead>
               <TableBody>
                 {paginatedData.map((row, rowIndex) => (
-                  <TableRow key={rowIndex}>
+                  <TableRow key={rowIndex} className={classes.tableRow}>
                     {columns.map((column) => (
-                      <TableCell key={`${rowIndex}-${column}`}>
+                      <TableCell key={`${rowIndex}-${column}`} className={classes.tableCell}>
                         {row[column] !== undefined ? String(row[column]) : ''}
                       </TableCell>
                     ))}
@@ -105,7 +171,8 @@ const CompactTable = ({
           </TableContainer>
           
           <TablePagination
-            rowsPerPageOptions={[10, 20, 50]}
+            className={classes.pagination}
+            rowsPerPageOptions={isMobile ? [10, 20] : [10, 20, 50]}
             component="div"
             count={data.length}
             rowsPerPage={rowsPerPage}
