@@ -1,15 +1,17 @@
 import React from 'react';
 
 // material-ui
-import { Typography, Paper, Box, Divider, Container } from '@material-ui/core';
+import { Typography, Paper, Box, Divider, Container, useTheme } from '@material-ui/core';
 import useComponentStyles from '../../themes/componentStyles';
 import config from '../../config';
+import { componentSpacing } from '../../utils/spacing';
 
 const FAQ = () => {
     const classes = useComponentStyles();
+    const theme = useTheme();
 
     return (
-            <Paper elevation={1} sx={{ p: 3, marginTop: '24px' }}>
+            <Paper elevation={1} sx={{ ...componentSpacing.card(theme), marginTop: '24px' }}>
                 {/* Header */}
                 <Box className={classes.header}>
                     <Typography variant="h2" gutterBottom>

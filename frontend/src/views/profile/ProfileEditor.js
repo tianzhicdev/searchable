@@ -5,6 +5,7 @@ import {
   TextField, Button, CircularProgress, Typography, Snackbar, Alert,
   Box, Avatar, IconButton, InputAdornment
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { PhotoCamera, Person } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import { SET_USER } from '../../store/actions';
@@ -13,6 +14,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import ImageUploader from '../../components/ImageUploader';
 import TagSelector from '../../components/Tags/TagSelector';
 import { SOCIAL_MEDIA_PLATFORMS, validateSocialMediaUrl } from '../../components/SocialMediaIcons';
+import { componentSpacing, touchTargets } from '../../utils/spacing';
 
 // Singleton pattern to manage dialog state across components
 const profileEditorState = {
@@ -21,7 +23,22 @@ const profileEditorState = {
   closeDialog: () => {}
 };
 
+const useStyles = makeStyles((theme) => ({
+  formContainer: componentSpacing.formContainer(theme),
+  button: componentSpacing.button(theme),
+  dialogContent: componentSpacing.dialog(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
+
 const ProfileEditor = () => {
+  const classes = useStyles();
   const account = useSelector((state) => state.account);
   const dispatch = useDispatch();
   
@@ -335,9 +352,9 @@ const ProfileEditor = () => {
   
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={classes.dialog}>
         <DialogTitle>Edit Profile Information</DialogTitle>
-        <DialogContent>
+        <DialogContent className={`${classes.formContainer} ${classes.dialogContent}`}>
           {fetchLoading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
               <CircularProgress />
@@ -404,6 +421,9 @@ const ProfileEditor = () => {
                 rows={4}
                 margin="normal"
                 placeholder="Tell others about yourself..."
+                InputProps={{
+                  style: { minHeight: touchTargets.input.mobileHeight }
+                }}
               />
 
               {/* User Tags Section */}
@@ -442,6 +462,7 @@ const ProfileEditor = () => {
                       margin="normal"
                       placeholder={platform.name}
                       InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight },
                         startAdornment: (
                           <InputAdornment position="start">
                             <Icon /> {/* Color managed by theme override for MuiSvgIcon */}
@@ -474,7 +495,7 @@ const ProfileEditor = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>
+          <Button onClick={handleClose} className={classes.button}>
             Cancel
           </Button>
           <Button 
@@ -482,6 +503,7 @@ const ProfileEditor = () => {
             variant="contained"
             color="primary"
             disabled={loading || fetchLoading}
+            className={classes.button}
           >
             {loading ? <CircularProgress size={24} /> : 'Save'}
           </Button>

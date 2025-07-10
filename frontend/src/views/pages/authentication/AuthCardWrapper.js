@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/styles';
 
 // project import
 import MainCard from './../../../ui-component/cards/MainCard';
+import { componentSpacing } from '../../../utils/spacing';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -22,12 +23,7 @@ const useStyles = makeStyles((theme) => ({
             maxWidth: '400px'
         }
     },
-    content: {
-        padding: theme.spacing(5) + ' !important',
-        [theme.breakpoints.down('lg')]: {
-            padding: theme.spacing(3) + ' !important'
-        }
-    }
+    content: componentSpacing.card
 }));
 
 //-----------------------|| AUTHENTICATION CARD WRAPPER ||-----------------------//

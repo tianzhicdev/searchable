@@ -3,14 +3,31 @@ import {
   Chip 
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { touchTargets } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   userTag: {
     backgroundColor: theme.palette.primary.light,
     color: theme.palette.primary.contrastText,
-    margin: theme.spacing(0.25),
-    fontSize: '0.75rem',
-    height: '24px',
+    margin: theme.spacing(0.5),
+    fontSize: '0.875rem',
+    minHeight: 32,
+    height: 'auto',
+    '& .MuiChip-label': {
+      paddingLeft: theme.spacing(1.5),
+      paddingRight: theme.spacing(1.5),
+      paddingTop: theme.spacing(0.5),
+      paddingBottom: theme.spacing(0.5),
+    },
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '0.75rem',
+      minHeight: touchTargets.clickable.minHeight - 16, // 28px
+      margin: theme.spacing(0.25),
+      '& .MuiChip-label': {
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+      }
+    },
     '&:hover': {
       backgroundColor: theme.palette.primary.main,
     }
@@ -18,9 +35,25 @@ const useStyles = makeStyles((theme) => ({
   searchableTag: {
     backgroundColor: theme.palette.secondary.light,
     color: theme.palette.secondary.contrastText,
-    margin: theme.spacing(0.25),
-    fontSize: '0.75rem',
-    height: '24px',
+    margin: theme.spacing(0.5),
+    fontSize: '0.875rem',
+    minHeight: 32,
+    height: 'auto',
+    '& .MuiChip-label': {
+      paddingLeft: theme.spacing(1.5),
+      paddingRight: theme.spacing(1.5),
+      paddingTop: theme.spacing(0.5),
+      paddingBottom: theme.spacing(0.5),
+    },
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '0.75rem',
+      minHeight: touchTargets.clickable.minHeight - 16, // 28px
+      margin: theme.spacing(0.25),
+      '& .MuiChip-label': {
+        paddingLeft: theme.spacing(1),
+        paddingRight: theme.spacing(1),
+      }
+    },
     '&:hover': {
       backgroundColor: theme.palette.secondary.main,
     }
@@ -30,7 +63,12 @@ const useStyles = makeStyles((theme) => ({
   },
   deletable: {
     '& .MuiChip-deleteIcon': {
-      fontSize: '16px'
+      fontSize: '18px',
+      marginRight: theme.spacing(0.5),
+      [theme.breakpoints.down('sm')]: {
+        fontSize: '16px',
+        marginRight: theme.spacing(0.25)
+      }
     }
   }
 }));

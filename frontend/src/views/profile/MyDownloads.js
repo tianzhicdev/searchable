@@ -12,12 +12,15 @@ import {
 } from '@material-ui/core';
 import { ArrowBack, Download } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { componentSpacing, spacing } from '../../utils/spacing';
+import { useTheme } from '@material-ui/core/styles';
 import backend from '../utilities/Backend';
 import DownloadableProfile from '../../components/DownloadableProfile';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 
 const MyDownloads = () => {
   const classes = useComponentStyles();
+  const theme = useTheme();
   const history = useHistory();
   const location = useLocation();
   const account = useSelector((state) => state.account);
@@ -90,13 +93,16 @@ const MyDownloads = () => {
   }
 
   return (
-    <Grid container className={classes.container}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header */}
-      <Grid item xs={12} className={classes.header} style={{ 
+      <Grid item xs={12} sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        marginBottom: '16px'
+        mb: theme.spacing(spacing.element.md),
+        [theme.breakpoints.down('sm')]: {
+          mb: theme.spacing(spacing.element.xs)
+        }
       }}>
         <Box display="flex" alignItems="center" gap={2}>
           <Button 
@@ -112,7 +118,12 @@ const MyDownloads = () => {
 
       {error && (
         <Grid item xs={12}>
-          <Alert severity="error" style={{ marginBottom: '16px' }}>
+          <Alert severity="error" sx={{ 
+            mb: theme.spacing(spacing.element.md),
+            [theme.breakpoints.down('sm')]: {
+              mb: theme.spacing(spacing.element.xs)
+            }
+          }}>
             {error}
           </Alert>
         </Grid>
@@ -121,16 +132,29 @@ const MyDownloads = () => {
       {/* Downloads List */}
       <Grid item xs={12}>
         {downloadableItems.length === 0 ? (
-          <Paper className={classes.paper}>
-            <Box textAlign="center" py={4}>
-              <Download style={{ fontSize: 64, color: '#ccc', marginBottom: '16px' }} />
+          <Paper sx={componentSpacing.card(theme)}>
+            <Box textAlign="center" sx={{ 
+              py: theme.spacing(4),
+              [theme.breakpoints.down('sm')]: {
+                py: theme.spacing(3)
+              }
+            }}>
+              <Download sx={{ 
+                fontSize: 64, 
+                color: theme.palette.grey[400], 
+                mb: theme.spacing(2),
+                [theme.breakpoints.down('sm')]: {
+                  fontSize: 48,
+                  mb: theme.spacing(1.5)
+                }
+              }} />
               <Typography variant="h6" gutterBottom>
                 No Downloads Yet
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="textSecondary" sx={{ mb: theme.spacing(2) }}>
                 Start exploring and purchasing items to see them here.
               </Typography>
-              <Box mt={2}>
+              <Box>
                 <Button
                   variant="contained"
                   onClick={() => navigateWithStack(history, '/search', { replaceStack: true })}
@@ -141,7 +165,14 @@ const MyDownloads = () => {
             </Box>
           </Paper>
         ) : (
-          <Box>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: theme.spacing(spacing.element.md),
+            [theme.breakpoints.down('sm')]: {
+              gap: theme.spacing(spacing.element.xs)
+            }
+          }}>
             {downloadableItems.map((item, index) => (
               <DownloadableProfile
                 key={`${item.invoice_id}-${index}`}

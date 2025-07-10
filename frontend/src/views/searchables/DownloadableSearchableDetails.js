@@ -4,6 +4,7 @@ import {
   Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails,
   IconButton
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import CloseIcon from '@material-ui/icons/Close';
@@ -17,9 +18,34 @@ import useSearchableDetails from '../../hooks/useSearchableDetails';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
+import { detailPageStyles } from '../../utils/detailPageSpacing';
+
+// Create styles for downloadable details
+const useStyles = makeStyles((theme) => ({
+  fileItem: {
+    ...detailPageStyles.card(theme),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: theme.spacing(2),
+  },
+  fileList: {
+    ...detailPageStyles.itemContainer(theme),
+  },
+  alertSection: {
+    ...detailPageStyles.alert(theme),
+  },
+  totalSection: {
+    ...detailPageStyles.subSection(theme),
+    display: 'flex',
+    justifyContent: 'flex-end',
+  }
+}));
 
 const DownloadableSearchableDetails = () => {
   const classes = useComponentStyles();
+  const detailClasses = useStyles();
   
   const {
     SearchableItem,
@@ -299,7 +325,7 @@ const DownloadableSearchableDetails = () => {
     }
     
     return (
-      <Box>
+      <Box className={detailClasses.fileList}>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
           // Ensure fileId exists before using it
           const fileIdStr = file.fileId ? file.fileId.toString() : '';
@@ -313,7 +339,7 @@ const DownloadableSearchableDetails = () => {
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
-            <Paper key={file.fileId} >
+            <Paper key={file.fileId} className={detailClasses.fileItem}>
               <Box flex={1}>
                 <Box display="flex" alignItems="center">
                   {!isPaidByCurrentUser ? (
@@ -360,7 +386,7 @@ const DownloadableSearchableDetails = () => {
         })}
         
         {totalPrice > 0 && (
-          <Box mt={2} display="flex" justifyContent="flex-end" width="100%">
+          <Box className={detailClasses.totalSection}>
             <Typography variant="h6">
               Total: {formatCurrency(totalPrice)}
             </Typography>
@@ -376,6 +402,7 @@ const DownloadableSearchableDetails = () => {
       {/* Alert notification */}
       <Collapse in={alertOpen}>
         <Alert
+          className={detailClasses.alertSection}
           severity={alertSeverity}
           action={
             <IconButton

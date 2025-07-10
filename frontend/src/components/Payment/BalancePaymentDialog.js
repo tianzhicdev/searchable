@@ -15,7 +15,22 @@ import {
   AccountBalance as BalanceIcon,
   CheckCircle as CheckCircleIcon
 } from '@material-ui/icons';
+import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
+import { componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  dialogContent: componentSpacing.dialog(theme),
+  button: componentSpacing.button(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
 
 const BalancePaymentDialog = ({
   open,
@@ -27,6 +42,7 @@ const BalancePaymentDialog = ({
   processing = false
 }) => {
   const classes = useComponentStyles();
+  const styles = useStyles();
   
   const formatCurrency = (amount) => {
     return `$${amount.toFixed(2)}`;
@@ -40,6 +56,7 @@ const BalancePaymentDialog = ({
       onClose={!processing ? onClose : undefined}
       maxWidth="sm"
       fullWidth
+      className={styles.dialog}
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -56,7 +73,7 @@ const BalancePaymentDialog = ({
         </Box>
       </DialogTitle>
       
-      <DialogContent>
+      <DialogContent className={styles.dialogContent}>
         <Box mb={3} textAlign="center">
           <BalanceIcon style={{ fontSize: 48, color: '#4caf50', marginBottom: 16 }} />
           
@@ -122,6 +139,7 @@ const BalancePaymentDialog = ({
         <Button 
           onClick={onClose}
           disabled={processing}
+          className={styles.button}
         >
           Cancel
         </Button>
@@ -130,6 +148,7 @@ const BalancePaymentDialog = ({
           onClick={onConfirm}
           disabled={processing}
           startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
+          className={styles.button}
         >
           {processing ? 'Processing...' : 'Confirm Payment'}
         </Button>

@@ -19,8 +19,23 @@ import {
   AccountBalanceWallet as WalletIcon
 } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
+import { componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  dialogContent: componentSpacing.dialog(theme),
+  button: componentSpacing.button(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
 
 const RefillBalanceDialog = ({
   open,
@@ -29,6 +44,7 @@ const RefillBalanceDialog = ({
   requiredAmount = 0
 }) => {
   const classes = useComponentStyles();
+  const styles = useStyles();
   const history = useHistory();
   const [depositDialogOpen, setDepositDialogOpen] = React.useState(false);
   
@@ -60,6 +76,7 @@ const RefillBalanceDialog = ({
         onClose={onClose}
         maxWidth="sm"
         fullWidth
+        className={styles.dialog}
       >
         <DialogTitle>
           <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -72,7 +89,7 @@ const RefillBalanceDialog = ({
           </Box>
         </DialogTitle>
         
-        <DialogContent>
+        <DialogContent className={styles.dialogContent}>
           <Box mb={3}>
             <Typography variant="body1" className={classes.userText} gutterBottom>
               Current Balance: {formatCurrency(currentBalance)}
@@ -129,7 +146,7 @@ const RefillBalanceDialog = ({
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={onClose}>
+          <Button onClick={onClose} className={styles.button}>
             Cancel
           </Button>
         </DialogActions>

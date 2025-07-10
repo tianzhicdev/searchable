@@ -4,16 +4,17 @@ import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import { Card, CardContent, List, ListItem, ListItemAvatar, ListItemText, Skeleton } from '@material-ui/core';
 
+// project imports
+import { componentSpacing } from '../../../utils/spacing';
+
 // style constant
-const useStyles = makeStyles({
-    content: {
-        padding: '16px !important'
-    },
+const useStyles = makeStyles((theme) => ({
+    content: componentSpacing.card(theme),
     padding: {
         paddingTop: 0,
         paddingBottom: 0
     }
-});
+}));
 
 //-----------------------|| SKELETON - TOTAL INCOME DARK/LIGHT Card ||-----------------------//
 

@@ -15,6 +15,17 @@ import DirectSearchableDetails from '../views/searchables/DirectSearchableDetail
 import UserProfile from '../views/profile/UserProfile';
 import MyDownloads from '../views/profile/MyDownloads';
 import CreditCardRefill from '../views/payments/CreditCardRefill';
+import ThemeTestPage from '../views/theme-test-page';
+import CyberpunkDemo from '../views/cyberpunk-demo';
+import ThemeSelector from '../views/theme-selector';
+import ThemeGallery from '../views/theme-gallery';
+import SpacingDemo from '../views/spacing-demo';
+import SpacingTest from '../views/spacing-test/SpacingTest';
+import TextSpacingDemo from '../views/spacing-test/TextSpacingDemo';
+import ThemeInfo from '../views/theme-info/ThemeInfo';
+import ThemeGalleryCartoon from '../views/theme-gallery-cartoon';
+import ThemeGalleryCategories from '../views/theme-gallery-categories';
+import ThemeQuickTest from '../views/theme-quick-test';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -22,7 +33,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -39,6 +50,17 @@ const SearchableRoutes = () => {
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />
                     <Route exact path="/credit-card-refill" component={CreditCardRefill} />
+                    <Route exact path="/theme-test" component={ThemeTestPage} />
+                    <Route exact path="/cyberpunk-demo" component={CyberpunkDemo} />
+                    <Route exact path="/theme-selector" component={ThemeSelector} />
+                    <Route exact path="/theme-gallery" component={ThemeGallery} />
+                    <Route exact path="/spacing-demo" component={SpacingDemo} />
+                    <Route exact path="/spacing-test" component={SpacingTest} />
+                    <Route exact path="/text-spacing-demo" component={TextSpacingDemo} />
+                    <Route exact path="/theme-info" component={ThemeInfo} />
+                    <Route exact path="/theme-gallery-cartoon" component={ThemeGalleryCartoon} />
+                    <Route exact path="/theme-gallery-categories" component={ThemeGalleryCategories} />
+                    <Route exact path="/theme-quick-test" component={ThemeQuickTest} />
                 </AuthGuard>
                 
             </Switch>

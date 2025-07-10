@@ -5,13 +5,13 @@ import { makeStyles } from '@material-ui/styles';
 import { Card, CardContent, Grid, Skeleton } from '@material-ui/core';
 
 // style constant
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
     cardHeading: {
-        marginRight: '8px',
-        marginTop: '18px',
-        marginBottom: '14px'
+        marginRight: theme.spacing(1),
+        marginTop: theme.spacing(2.25),
+        marginBottom: theme.spacing(1.75)
     }
-});
+}));
 
 //-----------------------|| SKELETON EARNING CARD ||-----------------------//
 

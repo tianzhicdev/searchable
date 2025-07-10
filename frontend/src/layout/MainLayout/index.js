@@ -3,7 +3,8 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 // material-ui
-import { makeStyles, useTheme } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import { AppBar, CssBaseline, Toolbar, useMediaQuery } from '@material-ui/core';
 
 // third-party
@@ -17,9 +18,13 @@ import Customization from './../Customization';
 import navigation from './../../menu-items';
 import { drawerWidth } from '../../store/constant';
 import { SET_MENU } from './../../store/actions';
+import ThemeDebug from '../../components/ThemeDebug';
 
 // assets
 import { IconChevronRight } from '@tabler/icons';
+
+// Import spacing utilities
+import { componentSpacing, spacing } from '../../utils/spacing';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -41,20 +46,24 @@ const useStyles = makeStyles((theme) => ({
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen
         }),
+        // Desktop styles
         [theme.breakpoints.up('md')]: {
-            marginLeft: -(drawerWidth - 20),
-            width: `calc(100% - ${drawerWidth}px)`
+            marginLeft: -(drawerWidth - theme.spacing(2.5)), // 20px
+            width: `calc(100% - ${drawerWidth}px)`,
+            padding: theme.spacing(spacing.container.md), // 24px
         },
+        // Tablet styles
         [theme.breakpoints.down('md')]: {
-            marginLeft: '20px',
-            width: '100%',
-            padding: '16px'
+            marginLeft: theme.spacing(spacing.container.sm), // ~20px
+            width: `calc(100% - ${theme.spacing(spacing.container.sm * 2)})`, // Account for margins
+            padding: theme.spacing(spacing.container.sm), // 20px
         },
+        // Mobile styles
         [theme.breakpoints.down('sm')]: {
-            marginLeft: '10px',
-            width: '100%',
-            padding: '16px',
-            marginRight: '10px'
+            marginLeft: theme.spacing(spacing.container.xs), // 16px
+            marginRight: theme.spacing(spacing.container.xs), // 16px
+            width: `calc(100% - ${theme.spacing(spacing.container.xs * 2)})`, // Account for margins
+            padding: theme.spacing(spacing.container.xs), // 16px
         }
     },
     contentShift: {
@@ -66,10 +75,10 @@ const useStyles = makeStyles((theme) => ({
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
         [theme.breakpoints.down('md')]: {
-            marginLeft: '20px'
+            marginLeft: theme.spacing(spacing.container.sm) // 20px
         },
         [theme.breakpoints.down('sm')]: {
-            marginLeft: '10px'
+            marginLeft: theme.spacing(spacing.container.xs) // 16px
         }
     }
 }));
@@ -128,6 +137,7 @@ const MainLayout = ({ children }) => {
                 {/* </Main> */}
             </main>
             {/* <Customization /> */}
+            <ThemeDebug />
         </div>
     );
 };

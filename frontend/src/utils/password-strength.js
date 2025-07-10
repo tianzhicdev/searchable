@@ -2,7 +2,7 @@
  * Password validator for login pages
  */
 
-import value from '../assets/scss/_themes-vars.module.scss';
+import themeConfig from '../themes/themeLoader';
 
 // has number
 const hasNumber = (value) => {
@@ -21,11 +21,11 @@ const hasSpecial = (value) => {
 
 // set color based on password strength
 export const strengthColor = (count) => {
-    if (count < 2) return { label: 'Poor', color: value.alerting };
-    if (count < 3) return { label: 'Weak', color: value.warning };
-    if (count < 4) return { label: 'Normal', color: value.warning };
-    if (count < 5) return { label: 'Good', color: value.highlight };
-    if (count < 6) return { label: 'Strong', color: value.highlight };
+    if (count < 2) return { label: 'Poor', color: themeConfig.error };
+    if (count < 3) return { label: 'Weak', color: themeConfig.warning };
+    if (count < 4) return { label: 'Normal', color: themeConfig.warning };
+    if (count < 5) return { label: 'Good', color: themeConfig.success };
+    if (count < 6) return { label: 'Strong', color: themeConfig.success };
 };
 
 // password strength indicator
