@@ -115,9 +115,9 @@ const AIContentStatus = () => {
           <Table className={classes.table}>
             <TableHead>
               <TableRow>
-                <TableCell style={{ width: '50%' }}>Title</TableCell>
-                <TableCell style={{ width: '20%' }} align="center">Status</TableCell>
-                <TableCell style={{ width: '30%' }} align="right">Created</TableCell>
+                <TableCell >Title</TableCell>
+                <TableCell >Status</TableCell>
+                <TableCell >Created</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
