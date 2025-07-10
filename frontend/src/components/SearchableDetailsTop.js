@@ -1,9 +1,36 @@
 import React from 'react';
-import { Typography, Box, Divider } from '@material-ui/core';
+import { Typography, Box } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import ZoomableImage from './ZoomableImage';
 import RatingDisplay from './Rating/RatingDisplay';
 import PostedBy from './PostedBy';
 import useComponentStyles from '../themes/componentStyles';
+import { detailPageStyles } from '../utils/detailPageSpacing';
+
+const useStyles = makeStyles((theme) => ({
+  title: {
+    ...detailPageStyles.title(theme),
+  },
+  description: {
+    ...detailPageStyles.description(theme),
+  },
+  ratingSection: {
+    ...detailPageStyles.itemText(theme),
+    marginBottom: theme.spacing(2),
+  },
+  postedBySection: {
+    marginBottom: theme.spacing(3),
+  },
+  imagesSection: {
+    marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(3),
+  },
+  imageGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
+  }
+}));
 
 const SearchableDetailsTop = ({
   searchableItem,
@@ -12,6 +39,7 @@ const SearchableDetailsTop = ({
   searchableId
 }) => {
   const classes = useComponentStyles();
+  const detailClasses = useStyles();
 
   if (!searchableItem) return null;
 
@@ -21,14 +49,13 @@ const SearchableDetailsTop = ({
   return (
     <Box>
       {/* Title */}
-      <Typography variant="h3" className={classes.userText}>
+      <Typography variant="h3" className={`${classes.userText} ${detailClasses.title}`}>
         {publicData.title || `Item #${searchableItem.searchable_id}`}
       </Typography>
-      <Divider />
       
       {/* Rating Summary */}
       {!loadingRatings && searchableRating && (
-        <Box>
+        <Box className={detailClasses.ratingSection}>
           <Typography variant="body1" className={classes.staticText}>
             Rating: {searchableRating.average_rating?.toFixed(1)}/5 ({searchableRating.total_ratings} reviews)
           </Typography>
@@ -36,31 +63,29 @@ const SearchableDetailsTop = ({
       )}
       
       {/* Posted by section */}
-      <PostedBy 
-        username={searchableItem.username} 
-        userId={searchableItem.user_id} 
-        maxLength={30}
-        rating={searchableItem.seller_rating}
-        totalRatings={searchableItem.seller_total_ratings}
-      />
-
-      <Divider />
+      <Box className={detailClasses.postedBySection}>
+        <PostedBy 
+          username={searchableItem.username} 
+          userId={searchableItem.user_id} 
+          maxLength={30}
+          rating={searchableItem.seller_rating}
+          totalRatings={searchableItem.seller_total_ratings}
+        />
+      </Box>
       
       {/* Description */}
       {publicData.description && (
         <Box>
-          <Typography variant="body1" className={classes.userText}>
+          <Typography variant="body1" className={`${classes.userText} ${detailClasses.description}`}>
             {publicData.description}
           </Typography>
         </Box>
       )}
 
-      <Divider />
-
       {/* Images */}
       {publicData.images && publicData.images.length > 0 && (
-        <>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <Box className={detailClasses.imagesSection}>
+          <div className={detailClasses.imageGrid}>
             {publicData.images.map((image, index) => {
               // Check if it's a URL (mock mode) or base64
               const isUrl = typeof image === 'string' && (image.startsWith('http') || image.startsWith('/') || image.includes('static/media'));
@@ -81,8 +106,7 @@ const SearchableDetailsTop = ({
               );
             })}
           </div>
-          <Divider />
-        </>
+        </Box>
       )}
     </Box>
   );

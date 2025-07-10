@@ -1,10 +1,28 @@
 import React from 'react';
 import { Grid, Typography, Button, Paper, Box } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PublishSearchableCommon from './PublishSearchableCommon';
 import PublishSearchableActions from './PublishSearchableActions';
 import useComponentStyles from '../themes/componentStyles';
 import usePublishSearchable from '../hooks/usePublishSearchable';
+import { detailPageStyles } from '../utils/detailPageSpacing';
+
+// Create styles for publish pages
+const useStyles = makeStyles((theme) => ({
+  mainContent: {
+    ...detailPageStyles.card(theme),
+  },
+  typeSpecificSection: {
+    ...detailPageStyles.sectionWrapper(theme),
+  },
+  commonSection: {
+    ...detailPageStyles.subSection(theme),
+  },
+  actionSection: {
+    ...detailPageStyles.subSection(theme),
+  }
+}));
 
 /**
  * Base component for all PublishSearchable components
@@ -43,6 +61,7 @@ const BasePublishSearchable = ({
   initialFormData = {},
 }) => {
   const classes = useComponentStyles();
+  const publishClasses = useStyles();
   
   const {
     formData,
@@ -83,10 +102,10 @@ const BasePublishSearchable = ({
   };
 
   return (
-    <Grid container className={classes.container}>
+    <Grid container spacing={3}>
       {/* Back button */}
       {!hideBackButton && (
-        <Grid item xs={12} className={classes.header}>
+        <Grid item xs={12}>
           <Button 
             variant="contained" 
             onClick={navigateBack}
@@ -117,53 +136,67 @@ const BasePublishSearchable = ({
       
       {/* Main content */}
       <Grid item xs={12}>
-        <Paper elevation={3}>
+        <Paper elevation={3} className={publishClasses.mainContent}>
           <form onSubmit={onSubmit}>
-            <Grid container spacing={1}>
+            <Grid container spacing={3}>
               {/* Title section */}
-              <Grid item xs={12} className={classes.formGroup}>
+              <Grid item xs={12}>
                 <Typography variant="h4" gutterBottom>
                   {title}
                 </Typography>
                 
                 {subtitle && (
-                  <Typography variant="body2" color="textSecondary" style={{ marginBottom: 24 }}>
+                  <Typography variant="body2" color="textSecondary">
                     {subtitle}
                   </Typography>
                 )}
               </Grid>
 
               {/* Common fields: title, description, tags, images */}
-              <PublishSearchableCommon
-                formData={formData}
-                onInputChange={handleInputChange}
-                images={images}
-                onImagesChange={handleImagesChange}
-                selectedTags={selectedTags}
-                onTagsChange={handleTagsChange}
-                onError={setError}
-                imageDescription={imageDescription}
-                showCurrency={showCurrency}
-                isMinimalMode={isMinimalMode}
-              />
+              <Grid item xs={12}>
+                <Box className={publishClasses.commonSection}>
+                  <PublishSearchableCommon
+                    formData={formData}
+                    onInputChange={handleInputChange}
+                    images={images}
+                    onImagesChange={handleImagesChange}
+                    selectedTags={selectedTags}
+                    onTagsChange={handleTagsChange}
+                    onError={setError}
+                    imageDescription={imageDescription}
+                    showCurrency={showCurrency}
+                    isMinimalMode={isMinimalMode}
+                  />
+                </Box>
+              </Grid>
               
               {/* Type-specific content */}
-              {renderTypeSpecificContent && renderTypeSpecificContent({
-                formData,
-                handleInputChange,
-                error,
-                setError,
-                loading
-              })}
+              {renderTypeSpecificContent && (
+                <Grid item xs={12}>
+                  <Box className={publishClasses.typeSpecificSection}>
+                    {renderTypeSpecificContent({
+                      formData,
+                      handleInputChange,
+                      error,
+                      setError,
+                      loading
+                    })}
+                  </Box>
+                </Grid>
+              )}
               
               {/* Action buttons */}
-              <PublishSearchableActions
-                loading={loading}
-                disabled={!isFormValid()}
-                onSubmit={null} // Form submission handled by form onSubmit
-                submitText={submitText}
-                loadingText={loadingText}
-              />
+              <Grid item xs={12}>
+                <Box className={publishClasses.actionSection}>
+                  <PublishSearchableActions
+                    loading={loading}
+                    disabled={!isFormValid()}
+                    onSubmit={null} // Form submission handled by form onSubmit
+                    submitText={submitText}
+                    loadingText={loadingText}
+                  />
+                </Box>
+              </Grid>
             </Grid>
           </form>
         </Paper>

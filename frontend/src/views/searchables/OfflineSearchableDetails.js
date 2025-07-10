@@ -4,6 +4,7 @@ import {
   Accordion, AccordionSummary, AccordionDetails,
   TextField, IconButton
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import CheckIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
 import CloseIcon from '@material-ui/icons/Close';
@@ -18,9 +19,61 @@ import useSearchableDetails from '../../hooks/useSearchableDetails';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
+import { detailPageStyles } from '../../utils/detailPageSpacing';
+
+// Create styles for offline details
+const useStyles = makeStyles((theme) => ({
+  itemCard: {
+    ...detailPageStyles.card(theme),
+    padding: theme.spacing(2),
+  },
+  itemContainer: {
+    ...detailPageStyles.itemContainer(theme),
+  },
+  itemName: {
+    ...detailPageStyles.sectionTitle(theme),
+    marginTop: 0,
+    marginBottom: theme.spacing(1),
+  },
+  itemDescription: {
+    ...detailPageStyles.description(theme),
+    marginBottom: theme.spacing(1),
+  },
+  itemPrice: {
+    ...detailPageStyles.value(theme),
+    fontWeight: 'bold',
+  },
+  purchasedLabel: {
+    ...detailPageStyles.caption(theme),
+    color: theme.palette.primary.main,
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
+  },
+  alertSection: {
+    ...detailPageStyles.alert(theme),
+  },
+  totalSection: {
+    ...detailPageStyles.subSection(theme),
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  quantityControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1),
+  },
+  quantityInput: {
+    width: 80,
+    '& input': {
+      textAlign: 'center',
+    }
+  }
+}));
 
 const OfflineSearchableDetails = () => {
   const classes = useComponentStyles();
+  const detailClasses = useStyles();
   
   const {
     SearchableItem,
@@ -244,61 +297,69 @@ const OfflineSearchableDetails = () => {
     }
     
     return (
-      <Box>
+      <Box className={detailClasses.itemContainer}>
         {SearchableItem.payloads.public.offlineItems.map((item) => {
           const isPaidByCurrentUser = userPaidItems.has(item.itemId.toString());
           const currentCount = selectedItems[item.itemId] || 0;
           
           return (
-            <Paper key={item.itemId} >
-              <Box flex={1}>
-                <Box display="flex" alignItems="center" justifyContent="space-between">
-                  <Box flex={1}>
-                    <Typography variant="body1" className={classes.staticText}>{item.name}</Typography>
-                    <Typography variant="body2" className={classes.userText}>
+            <Paper key={item.itemId} className={detailClasses.itemCard}>
+              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
+                <Box flex={1}>
+                  <Typography variant="h6" className={`${classes.staticText} ${detailClasses.itemName}`}>
+                    {item.name}
+                  </Typography>
+                  {item.description && (
+                    <Typography variant="body2" className={`${classes.userText} ${detailClasses.itemDescription}`}>
                       {item.description}
                     </Typography>
-                    <Typography variant="body2" className={classes.userText}>{formatCurrency(item.price)}</Typography>
-                    {isPaidByCurrentUser && (
-                      <Typography variant="caption" className={classes.userText} color="primary">
-                        ✓ Purchased
+                  )}
+                  <Typography variant="body1" className={`${classes.userText} ${detailClasses.itemPrice}`}>
+                    {formatCurrency(item.price)}
+                  </Typography>
+                  {isPaidByCurrentUser && (
+                    <Box className={detailClasses.purchasedLabel}>
+                      <CheckIcon fontSize="small" />
+                      <Typography variant="caption">
+                        Purchased
                       </Typography>
-                    )}
-                  </Box>
-                  
-                  {!isPaidByCurrentUser && (
-                    <Box display="flex" alignItems="center">
-                      <IconButton 
-                        size="small"
-                        onClick={() => decrementCount(item.itemId)}
-                        disabled={currentCount === 0}
-                      >
-                        <RemoveIcon />
-                      </IconButton>
-                      <TextField
-                        type="number"
-                        value={currentCount}
-                        onChange={(e) => handleItemSelection(item.itemId, parseInt(e.target.value) || 0)}
-                        inputProps={{ min: 0 }}
-                        variant="outlined"
-                        size="small"
-                      />
-                      <IconButton 
-                        size="small"
-                        onClick={() => incrementCount(item.itemId)}
-                      >
-                        <AddIcon />
-                      </IconButton>
                     </Box>
                   )}
                 </Box>
+                
+                {!isPaidByCurrentUser && (
+                  <Box className={detailClasses.quantityControls}>
+                    <IconButton 
+                      size="small"
+                      onClick={() => decrementCount(item.itemId)}
+                      disabled={currentCount === 0}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                    <TextField
+                      type="number"
+                      value={currentCount}
+                      onChange={(e) => handleItemSelection(item.itemId, parseInt(e.target.value) || 0)}
+                      inputProps={{ min: 0 }}
+                      variant="outlined"
+                      size="small"
+                      className={detailClasses.quantityInput}
+                    />
+                    <IconButton 
+                      size="small"
+                      onClick={() => incrementCount(item.itemId)}
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                )}
               </Box>
             </Paper>
           );
         })}
         
         {totalPrice > 0 && (
-          <Box mt={2} display="flex" justifyContent="flex-end" width="100%">
+          <Box className={detailClasses.totalSection}>
             <Typography variant="h6">
               Total: {formatCurrency(totalPrice)}
             </Typography>
@@ -314,6 +375,7 @@ const OfflineSearchableDetails = () => {
       {/* Alert notification */}
       <Collapse in={alertOpen}>
         <Alert
+          className={detailClasses.alertSection}
           severity={alertSeverity}
           action={
             <IconButton
@@ -343,7 +405,7 @@ const OfflineSearchableDetails = () => {
     }
     
     return (
-      <Paper>
+      <Paper style={{ padding: 16 }}>
         <Typography variant="h6" className={classes.staticText} gutterBottom>
           Recent Reviews ({searchableRating.individual_ratings.length})
         </Typography>

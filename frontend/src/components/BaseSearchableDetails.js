@@ -1,11 +1,26 @@
 import React from 'react';
 import { Grid, Typography, Button, Paper, Box, CircularProgress } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import SearchableDetailsTop from './SearchableDetailsTop';
 import SearchableDetailsPriceDisplay from './SearchableDetailsPriceDisplay';
 import useComponentStyles from '../themes/componentStyles';
 import { navigateBack, getBackButtonText } from '../utils/navigationUtils';
 import useSearchableDetails from '../hooks/useSearchableDetails';
+import { detailPageStyles } from '../utils/detailPageSpacing';
+
+// Create styles with detail page spacing
+const useStyles = makeStyles((theme) => ({
+  mainContent: {
+    ...detailPageStyles.card(theme),
+  },
+  typeSpecificWrapper: {
+    ...detailPageStyles.sectionWrapper(theme),
+  },
+  externalSection: {
+    ...detailPageStyles.sectionWrapper(theme),
+  }
+}));
 
 /**
  * Base component for all SearchableDetails components
@@ -36,6 +51,7 @@ const BaseSearchableDetails = ({
   customLoadingComponent,
 }) => {
   const classes = useComponentStyles();
+  const detailClasses = useStyles();
   
   const {
     SearchableItem,
@@ -103,7 +119,7 @@ const BaseSearchableDetails = ({
   }
 
   return (
-    <Grid container spacing={2}>
+    <Grid container spacing={3}>
       {/* Back button */}
       <Grid item xs={12}>
         <Button
@@ -117,7 +133,7 @@ const BaseSearchableDetails = ({
 
       {/* Main content */}
       <Grid item xs={12}>
-        <Paper className={classes.paper}>
+        <Paper className={detailClasses.mainContent}>
           {/* Top section: Title, ratings, description, images */}
           <SearchableDetailsTop
             searchableItem={SearchableItem}
@@ -127,12 +143,16 @@ const BaseSearchableDetails = ({
           />
 
           {/* Type-specific content (items, files, payment options, etc.) */}
-          {renderTypeSpecificContent && renderTypeSpecificContent({
-            SearchableItem,
-            isOwner,
-            searchableRating,
-            loadingRatings
-          })}
+          {renderTypeSpecificContent && (
+            <Box className={detailClasses.typeSpecificWrapper}>
+              {renderTypeSpecificContent({
+                SearchableItem,
+                isOwner,
+                searchableRating,
+                loadingRatings
+              })}
+            </Box>
+          )}
 
           {/* Payment display and button */}
           <SearchableDetailsPriceDisplay
@@ -158,26 +178,30 @@ const BaseSearchableDetails = ({
       {/* Reviews section - rendered outside main Paper */}
       {renderReviewsContent && (
         <Grid item xs={12}>
-          {renderReviewsContent({
-            SearchableItem,
-            isOwner,
-            searchableRating,
-            loadingRatings,
-            id
-          })}
+          <Box className={detailClasses.externalSection}>
+            {renderReviewsContent({
+              SearchableItem,
+              isOwner,
+              searchableRating,
+              loadingRatings,
+              id
+            })}
+          </Box>
         </Grid>
       )}
 
       {/* Receipts section - rendered outside main Paper */}
       {renderReceiptsContent && (
         <Grid item xs={12}>
-          {renderReceiptsContent({
-            SearchableItem,
-            isOwner,
-            searchableRating,
-            loadingRatings,
-            id
-          })}
+          <Box className={detailClasses.externalSection}>
+            {renderReceiptsContent({
+              SearchableItem,
+              isOwner,
+              searchableRating,
+              loadingRatings,
+              id
+            })}
+          </Box>
         </Grid>
       )}
     </Grid>
