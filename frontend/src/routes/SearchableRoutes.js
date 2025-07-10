@@ -15,6 +15,8 @@ import DirectSearchableDetails from '../views/searchables/DirectSearchableDetail
 import UserProfile from '../views/profile/UserProfile';
 import MyDownloads from '../views/profile/MyDownloads';
 import CreditCardRefill from '../views/payments/CreditCardRefill';
+import ThemeTestPage from '../views/theme-test-page';
+import CyberpunkDemo from '../views/cyberpunk-demo';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -22,7 +24,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -39,6 +41,8 @@ const SearchableRoutes = () => {
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />
                     <Route exact path="/credit-card-refill" component={CreditCardRefill} />
+                    <Route exact path="/theme-test" component={ThemeTestPage} />
+                    <Route exact path="/cyberpunk-demo" component={CyberpunkDemo} />
                 </AuthGuard>
                 
             </Switch>

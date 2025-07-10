@@ -1,45 +1,45 @@
 import { makeStyles } from '@material-ui/styles';
+import themeConfig from '../assets/scss/_theme-config.scss';
 
 /**
- * SIMPLIFIED COMPONENT STYLES - Using 5 color system
- * COLORS: primary, secondary, alerting, warning, highlight
- * FONT: Only FreePixel font
+ * SIMPLIFIED COMPONENT STYLES - Using centralized theme config
+ * This hook provides commonly used styles across components
  */
 const useComponentStyles = makeStyles((theme) => ({
     
     // User provided content (descriptions, titles) - Primary
     userText: {
-        color: theme.appColors?.userText || theme.colors?.primary,
-        fontFamily: '"FreePixel", "Courier New", monospace'
+        color: theme.appColors?.userText || theme.palette?.primary?.main,
+        fontFamily: themeConfig.fontPrimary
     },
     
     // Static/system text - Secondary
     staticText: {
-        color: theme.appColors?.staticText || theme.colors?.secondary,
-        fontFamily: '"FreePixel", "Courier New", monospace'
+        color: theme.appColors?.staticText || theme.palette?.secondary?.main,
+        fontFamily: themeConfig.fontPrimary
     },
     
-    // Icons - Highlight
+    // Icons - Success color (was highlight)
     iconColor: {
-        color: theme.appColors?.iconColor || theme.colors?.highlight
+        color: theme.appColors?.iconColor || theme.palette?.success?.main
     },
 
     // Centralized component styling
     paper: {
-        padding: 12,
-        marginBottom: 8,
-        backgroundColor: theme.colors?.background,
-        border: `1px solid ${theme.colors?.primary}`,
-        borderRadius: '0px'
+        padding: themeConfig.spacingMd,
+        marginBottom: themeConfig.spacingSm,
+        backgroundColor: themeConfig.bgSecondary,
+        border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
+        borderRadius: themeConfig.borderRadius
     },
     
     box: {
-        padding: 4,
-        margin: 2
+        padding: themeConfig.spacingXs,
+        margin: themeConfig.spacing2xs
     },
     
     grid: {
-        padding: 4
+        padding: themeConfig.spacingXs
     },
 }));
 
