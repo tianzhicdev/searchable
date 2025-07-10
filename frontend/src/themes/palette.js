@@ -1,11 +1,23 @@
 /**
  * Color palette configuration using centralized theme config
  */
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from './themeLoader';
 
 export const themePalette = (theme) => {
+    // Determine if this is a light theme based on background color
+    const isLightTheme = themeConfig.bgPrimary === '#ffffff' || 
+                        themeConfig.bgPrimary === '#f9fafb' || 
+                        themeConfig.bgPrimary === '#ecf0f1' ||
+                        themeConfig.bgPrimary === '#dfe6e9' ||
+                        themeConfig.bgPrimary === '#f8f8ff' ||
+                        themeConfig.bgPrimary === '#ffeaa7' ||
+                        themeConfig.bgPrimary === '#ffffba' ||
+                        themeConfig.bgPrimary === '#f0f8ff' ||
+                        themeConfig.bgPrimary === '#f0fff0' ||
+                        themeConfig.bgPrimary === '#ffe4e1';
+    
     return {
-        mode: 'dark', // Always dark theme
+        mode: isLightTheme ? 'light' : 'dark',
         common: {
             black: themeConfig.bgPrimary,
             white: themeConfig.textPrimary

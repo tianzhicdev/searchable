@@ -18,6 +18,7 @@ import Customization from './../Customization';
 import navigation from './../../menu-items';
 import { drawerWidth } from '../../store/constant';
 import { SET_MENU } from './../../store/actions';
+import ThemeDebug from '../../components/ThemeDebug';
 
 // assets
 import { IconChevronRight } from '@tabler/icons';
@@ -136,6 +137,7 @@ const MainLayout = ({ children }) => {
                 {/* </Main> */}
             </main>
             {/* <Customization /> */}
+            <ThemeDebug />
         </div>
     );
 };

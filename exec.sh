@@ -51,6 +51,15 @@ show_usage() {
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local unittests                   - Run unit tests for critical functions"
     echo "  ./exec.sh local mock                        - Start React in mock mode"
+    echo "  ./exec.sh local mock --theme=<themename>    - Start React in mock mode with specific theme"
+    echo "                                               Available themes: neonTokyo, cyberpunk, vaporwave, matrix,"
+    echo "                                               synthwave, hacker, bloodMoon, deepSpace, arcade, original,"
+    echo "                                               cartoonCandy, cartoonBubble, cartoonPastel, lightMinimal,"
+    echo "                                               lightAiry, lightSoft, elegantGold, elegantSilver, elegantRoyal,"
+    echo "                                               natureForest, natureOcean, natureSunset, retro80s, retro70s,"
+    echo "                                               retroTerminal, fantasyDragon, fantasyUnicorn, fantasyElven,"
+    echo "                                               minimalMonochrome, minimalNordic, minimalZen, seasonalAutumn,"
+    echo "                                               seasonalWinter, seasonalSpring"
     echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
@@ -84,6 +93,9 @@ show_usage() {
     echo "  ./exec.sh local test --parallel"
     echo "  ./exec.sh local unittests"
     echo "  ./exec.sh local mock"
+    echo "  ./exec.sh local mock --theme=cyberpunk"
+    echo "  ./exec.sh local mock --theme=lightMinimal"
+    echo "  ./exec.sh local mock --theme=elegantGold"
     echo "  ./exec.sh local cicd"
     echo "  ./exec.sh local cicd --sequential"
     echo "  ./exec.sh release"
@@ -576,7 +588,16 @@ local_test() {
 
 # Local React development server in mock mode
 local_mock() {
+    local theme="$1"
+    
     echo -e "${BLUE}🚀 Starting React development server in mock mode...${NC}"
+    
+    # Check if theme parameter is provided
+    if [ -n "$theme" ]; then
+        echo -e "${GREEN}🎨 Using theme: $theme${NC}"
+    else
+        echo -e "${YELLOW}ℹ️  Using default theme: neonTokyo${NC}"
+    fi
     
     cd frontend
     
@@ -591,14 +612,27 @@ local_mock() {
     echo ""
     
     # Start React development server with mock mode enabled on port 3001
-    PORT=3001 \
-    REACT_APP_MOCK_MODE=true \
-    REACT_APP_ENV=local \
-    REACT_APP_BRANDING=silkroadonlightning \
-    REACT_APP_LOGO=camel_logo.jpg \
-    REACT_APP_DESCRIPTION='Silk Road on Lightning' \
-    NODE_OPTIONS=--openssl-legacy-provider \
-    npm start
+    # Add REACT_APP_THEME if provided
+    if [ -n "$theme" ]; then
+        PORT=3001 \
+        REACT_APP_MOCK_MODE=true \
+        REACT_APP_ENV=local \
+        REACT_APP_BRANDING=silkroadonlightning \
+        REACT_APP_LOGO=camel_logo.jpg \
+        REACT_APP_DESCRIPTION='Silk Road on Lightning' \
+        REACT_APP_THEME="$theme" \
+        NODE_OPTIONS=--openssl-legacy-provider \
+        npm start
+    else
+        PORT=3001 \
+        REACT_APP_MOCK_MODE=true \
+        REACT_APP_ENV=local \
+        REACT_APP_BRANDING=silkroadonlightning \
+        REACT_APP_LOGO=camel_logo.jpg \
+        REACT_APP_DESCRIPTION='Silk Road on Lightning' \
+        NODE_OPTIONS=--openssl-legacy-provider \
+        npm start
+    fi
 }
 
 # Local unit tests for critical functions
@@ -1121,7 +1155,14 @@ case "$ENVIRONMENT" in
                 fi
                 ;;
             "mock")
-                local_mock
+                # Check if theme parameter is provided
+                if [[ "$CONTAINER" == --theme=* ]]; then
+                    # Extract theme name from --theme=themename
+                    theme_name="${CONTAINER#--theme=}"
+                    local_mock "$theme_name"
+                else
+                    local_mock
+                fi
                 ;;
             "unittests")
                 local_unittests

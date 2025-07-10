@@ -2,7 +2,7 @@
  * Simplified component overrides using centralized theme config
  * Single source for all component style overrides
  */
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from './themeLoader';
 
 // ===========================
 // REUSABLE STYLE PATTERNS

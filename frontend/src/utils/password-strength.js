@@ -2,7 +2,7 @@
  * Password validator for login pages
  */
 
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from '../themes/themeLoader';
 
 // has number
 const hasNumber = (value) => {
