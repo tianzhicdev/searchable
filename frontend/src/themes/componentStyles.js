@@ -1,5 +1,5 @@
 import { makeStyles } from '@material-ui/styles';
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from './themeLoader';
 
 /**
  * SIMPLIFIED COMPONENT STYLES - Using centralized theme config

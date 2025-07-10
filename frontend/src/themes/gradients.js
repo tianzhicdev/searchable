@@ -1,7 +1,7 @@
 /**
  * Gradient utilities using theme config
  */
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from './themeLoader';
 
 // Create gradient CSS string
 export const createGradient = (startColor, endColor, angle = '135deg') => {

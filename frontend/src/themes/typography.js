@@ -1,7 +1,7 @@
 /**
  * Typography configuration using centralized theme config
  */
-import themeConfig from '../assets/scss/_theme-config.scss';
+import themeConfig from './themeLoader';
 
 export const themeTypography = (theme) => {
     return {

@@ -22,6 +22,10 @@ import ThemeGallery from '../views/theme-gallery';
 import SpacingDemo from '../views/spacing-demo';
 import SpacingTest from '../views/spacing-test/SpacingTest';
 import TextSpacingDemo from '../views/spacing-test/TextSpacingDemo';
+import ThemeInfo from '../views/theme-info/ThemeInfo';
+import ThemeGalleryCartoon from '../views/theme-gallery-cartoon';
+import ThemeGalleryCategories from '../views/theme-gallery-categories';
+import ThemeQuickTest from '../views/theme-quick-test';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -29,7 +33,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -53,6 +57,10 @@ const SearchableRoutes = () => {
                     <Route exact path="/spacing-demo" component={SpacingDemo} />
                     <Route exact path="/spacing-test" component={SpacingTest} />
                     <Route exact path="/text-spacing-demo" component={TextSpacingDemo} />
+                    <Route exact path="/theme-info" component={ThemeInfo} />
+                    <Route exact path="/theme-gallery-cartoon" component={ThemeGalleryCartoon} />
+                    <Route exact path="/theme-gallery-categories" component={ThemeGalleryCategories} />
+                    <Route exact path="/theme-quick-test" component={ThemeQuickTest} />
                 </AuthGuard>
                 
             </Switch>

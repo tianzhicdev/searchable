@@ -1,7 +1,7 @@
 import { createTheme } from '@material-ui/core/styles';
 
-// Theme configuration
-import themeConfig from '../assets/scss/_theme-config.scss';
+// Dynamic theme configuration
+import themeConfig from './themeLoader';
 
 // Theme imports
 import { componentStyleOverrides } from './components';
@@ -28,7 +28,9 @@ export function theme(customization) {
             iconColor: themeConfig.success,      // Icons and interactive elements
             alerting: themeConfig.error,         // Error states
             warning: themeConfig.warning         // Warning states
-        }
+        },
+        // Add theme name for reference
+        themeName: themeConfig.currentThemeName || 'neonTokyo'
     };
 
     return createTheme({
