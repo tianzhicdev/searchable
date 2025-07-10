@@ -3,36 +3,36 @@
 // Single source of truth for all design tokens
 // ===========================
 
-// Core Colors (5 main + additions) - NEON TOKYO THEME
-$primary: #ff0080;        // Hot pink
-$secondary: #00d4ff;      // Bright cyan
+// Core Colors (5 main + additions) - CYBERPUNK THEME
+$primary: #ff00ff;        // Neon magenta/pink
+$secondary: #00ffff;      // Neon cyan
 
-$error: #ff1744;          // Error red
-$warning: #ff9100;        // Warning orange
-$success: #00e676;        // Success green
+$error: #ff0040;          // Neon red
+$warning: #ffaa00;        // Neon amber
+$success: #00ff88;        // Neon green
 
-// Background Colors - Deep dark with purple undertones
-$bg-primary: #0a0014;     // Deep dark background
-$bg-secondary: #130025;   // Secondary dark purple
-$bg-hover: #1f0d3a;       // Hover state purple
-$bg-elevated: #180530;    // Elevated surface
+// Background Colors - Dark with subtle purple tint
+$bg-primary: #0a0012;     // Deep dark purple-black
+$bg-secondary: #1a0f2e;   // Dark purple for cards
+$bg-hover: #2d1b4e;       // Purple hover states
+$bg-elevated: #241640;    // Elevated purple
 
 // Border Colors - Neon accents
-$border-color: #ff0080;   // Hot pink border
-$border-light: #00d4ff;   // Cyan borders
-$border-dark: #2a1445;    // Dark purple borders
-$border-focus: #00d4ff;   // Cyan focus
+$border-color: #ff00ff;   // Neon magenta border
+$border-light: #00ffff;   // Cyan borders
+$border-dark: #3d2f5f;    // Dark purple borders
+$border-focus: #00ffff;   // Cyan focus
 
-// Text Colors - High contrast for dark backgrounds
+// Text Colors - High contrast neon
 $text-primary: #ffffff;   // Pure white for readability
-$text-secondary: #e0c3fc; // Light purple
-$text-disabled: #8b7b9f;  // Muted purple
-$text-inverse: #0a0014;   // Dark for light backgrounds
+$text-secondary: #b8a3ff; // Light purple
+$text-disabled: #6b5b8c;  // Muted purple
+$text-inverse: #0a0012;   // Dark for light backgrounds
 
-// Gradient Colors - Neon Tokyo gradients
-$gradient-primary-start: #ff0080;     // Hot pink
-$gradient-primary-end: #00d4ff;       // Bright cyan
-$gradient-secondary-start: #00e676;   // Green
+// Gradient Colors - Cyberpunk neon gradients
+$gradient-primary-start: #ff00ff;     // Magenta
+$gradient-primary-end: #00ffff;       // Cyan
+$gradient-secondary-start: #00ff88;   // Green
 $gradient-secondary-end: #00bcd4;
 
 // Typography
