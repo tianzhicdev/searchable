@@ -35,7 +35,8 @@ export function theme(customization) {
         direction: 'ltr',
         palette: themePalette(themeOption),
         typography: themeTypography(themeOption),
-        components: componentStyleOverrides(themeOption)
+        components: componentStyleOverrides(themeOption),
+        spacing: 8 // Base spacing unit (8px)
     });
 }
 

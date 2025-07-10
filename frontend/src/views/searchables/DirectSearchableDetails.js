@@ -3,16 +3,47 @@ import { useLocation } from 'react-router-dom';
 import {
   Typography, Box, TextField, InputAdornment, ButtonGroup, Button
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { AttachMoney } from '@material-ui/icons';
 import Alert from '@material-ui/lab/Alert';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
 import { formatUSD } from '../../utils/searchableUtils';
 import InvoiceList from '../payments/InvoiceList';
+import { detailPageStyles } from '../../utils/detailPageSpacing';
 
+// Create styles for direct payment details
+const useStyles = makeStyles((theme) => ({
+  amountSection: {
+    ...detailPageStyles.subSection(theme),
+    textAlign: 'center',
+  },
+  paymentTitle: {
+    ...detailPageStyles.sectionTitle(theme),
+  },
+  fixedAmountLabel: {
+    ...detailPageStyles.label(theme),
+  },
+  fixedAmountValue: {
+    ...detailPageStyles.value(theme),
+    fontSize: theme.typography.h3.fontSize,
+    fontWeight: theme.typography.h3.fontWeight,
+    color: theme.palette.primary.main,
+  },
+  buttonGroupSection: {
+    ...detailPageStyles.buttonGroup(theme),
+  },
+  customAmountSection: {
+    ...detailPageStyles.formField(theme),
+  },
+  alertSection: {
+    ...detailPageStyles.alert(theme),
+  }
+}));
 
 const DirectSearchableDetails = () => {
   const location = useLocation();
+  const classes = useStyles();
   
   // Use the shared hook for common functionality
   const { 
@@ -156,38 +187,40 @@ const DirectSearchableDetails = () => {
       <Box>
         {isAmountFixed ? (
           // For fixed amounts (from URL param or fixed pricing mode), just show the amount
-          <Box textAlign="center" my={3}>
-            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+          <Box className={classes.amountSection}>
+            <Typography className={classes.fixedAmountLabel}>
               Payment Amount
             </Typography>
-            <Typography variant="h3" color="primary">
+            <Typography className={classes.fixedAmountValue}>
               ${paymentAmount.toFixed(2)}
             </Typography>
           </Box>
         ) : (
           // For flexible/preset amounts, show the selection UI
           <Box>
-            <Typography variant="h6" gutterBottom>
+            <Typography className={classes.paymentTitle}>
               {publicData?.pricingMode === 'preset' ? 'Choose Payment Amount' : 'Choose or Enter Payment Amount'}
             </Typography>
 
             {/* Amount selection buttons */}
-            <ButtonGroup fullWidth>
-              {availableAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  variant={paymentAmount === amount ? 'contained' : 'outlined'}
-                  onClick={() => setPaymentAmount(amount)}
-                  startIcon={<AttachMoney />}
-                >
-                  ${amount.toFixed(2)}
-                </Button>
-              ))}
-            </ButtonGroup>
+            <Box className={classes.buttonGroupSection}>
+              <ButtonGroup fullWidth>
+                {availableAmounts.map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={paymentAmount === amount ? 'contained' : 'outlined'}
+                    onClick={() => setPaymentAmount(amount)}
+                    startIcon={<AttachMoney />}
+                  >
+                    ${amount.toFixed(2)}
+                  </Button>
+                ))}
+              </ButtonGroup>
+            </Box>
 
             {/* Custom amount input - only show if allowed */}
             {allowCustomAmount && (
-              <Box mt={2}>
+              <Box className={classes.customAmountSection}>
                 <TextField
                   type="number"
                   value={paymentAmount}
@@ -205,7 +238,7 @@ const DirectSearchableDetails = () => {
         )}
 
         {paymentError && (
-          <Alert severity="error">
+          <Alert severity="error" className={classes.alertSection}>
             {paymentError}
           </Alert>
         )}
