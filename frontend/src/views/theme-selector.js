@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/styles';
 import {
     Box,
     Typography,
@@ -23,9 +24,24 @@ import {
 import { CheckCircle, ContentCopy, Save } from '@material-ui/icons';
 import { themePresets, generateScssFromPreset } from '../themes/presets';
 import { gradients } from '../themes/gradients';
+import { componentSpacing } from '../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+    dialogContent: componentSpacing.dialog(theme),
+    button: componentSpacing.button(theme),
+    dialog: {
+        '& .MuiDialog-paper': {
+            [theme.breakpoints.down('sm')]: {
+                margin: theme.spacing(2),
+                maxHeight: '90vh'
+            }
+        }
+    }
+}));
 
 const ThemeSelector = () => {
     const theme = useTheme();
+    const styles = useStyles();
     const [selectedTheme, setSelectedTheme] = useState('cyberpunk');
     const [showSnackbar, setShowSnackbar] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -247,6 +263,7 @@ const ThemeSelector = () => {
                 onClose={() => setShowDialog(false)}
                 maxWidth="md"
                 fullWidth
+                className={styles.dialog}
             >
                 <DialogTitle>
                     <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -258,7 +275,7 @@ const ThemeSelector = () => {
                         </IconButton>
                     </Box>
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent className={styles.dialogContent}>
                     <Typography variant="body2" color="textSecondary" paragraph>
                         Copy this content and paste it into <code>_theme-config.scss</code>:
                     </Typography>
@@ -272,7 +289,7 @@ const ThemeSelector = () => {
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setShowDialog(false)}>
+                    <Button onClick={() => setShowDialog(false)} className={styles.button}>
                         Close
                     </Button>
                     <Button 
@@ -280,6 +297,7 @@ const ThemeSelector = () => {
                         color="primary" 
                         onClick={handleCopyToClipboard}
                         startIcon={<ContentCopy />}
+                        className={styles.button}
                     >
                         Copy to Clipboard
                     </Button>

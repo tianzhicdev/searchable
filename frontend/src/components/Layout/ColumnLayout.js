@@ -5,14 +5,18 @@ import { makeStyles } from '@material-ui/styles';
 const useStyles = makeStyles((theme) => ({
   columnLayout: {
     columnCount: 2,
-    columnGap: theme.spacing(2),
-    [theme.breakpoints.down('xs')]: {
+    columnGap: theme.spacing(3), // 24px on desktop
+    [theme.breakpoints.down('sm')]: {
+      columnGap: theme.spacing(2), // 16px on mobile
       columnCount: 1
     }
   },
   columnItem: {
     breakInside: 'avoid',
-    marginBottom: theme.spacing(2)
+    marginBottom: theme.spacing(3), // 24px on desktop
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(2) // 16px on mobile
+    }
   }
 }));
 

@@ -3,6 +3,8 @@ import { useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
+import { componentSpacing, responsivePadding, spacing } from '../../utils/spacing';
+import { makeStyles } from '@material-ui/styles';
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert,
@@ -25,8 +27,23 @@ import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
 import AIContentStatus from '../../components/AIContentStatus';
+
+const useStyles = makeStyles((theme) => ({
+  dialogContent: componentSpacing.dialog(theme),
+  button: componentSpacing.button(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
+
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
+  const styles = useStyles();
   const theme = useTheme();
   const [balance, setBalance] = useState({ usd: null });
   const [loading, setLoading] = useState(false);
@@ -313,8 +330,8 @@ const Dashboard = () => {
       
       {/* Personal Information Section */}
       <Grid item xs={12}>
-        <Paper elevation={3}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" style={{ padding: 0, margin: 0 }}>
+        <Paper elevation={3} sx={componentSpacing.card(theme)}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6" className={classes.staticText}>
               Personal Information
             </Typography>
@@ -326,6 +343,7 @@ const Dashboard = () => {
               <Avatar 
                 src={getMediaUrl(userProfile.profile_image_url)} 
                 alt={userProfile.username}
+                sx={{ width: 80, height: 80, mb: 2 }}
               >
                 {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 40 }} />}
               </Avatar>
@@ -374,7 +392,7 @@ const Dashboard = () => {
             </Box>
           )}
 
-          <Box>
+          <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
             <Typography variant="body2"  className={classes.staticText}>
               Email:
             </Typography>
@@ -389,7 +407,7 @@ const Dashboard = () => {
             <>
             </>
           )}
-          <Box>
+          <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
             {loading ? (
               <CircularProgress size={18} />
             ) : error ? (
@@ -409,11 +427,16 @@ const Dashboard = () => {
 
           {/* Additional Images Section */}
           {userProfile?.metadata?.additional_images && userProfile.metadata.additional_images.length > 0 && (
-            <Box mt={3}>
+            <Box sx={{ mt: theme.spacing(spacing.section.md), [theme.breakpoints.down('sm')]: { mt: theme.spacing(spacing.section.xs) } }}>
               <Typography variant="h6" gutterBottom>
                 Gallery
               </Typography>
-              <Box display="flex" flexWrap="wrap" gap={2}>
+              <Box display="flex" flexWrap="wrap" gap={2} sx={{ 
+                [theme.breakpoints.down('sm')]: { 
+                  gap: 1,
+                  justifyContent: 'center' 
+                } 
+              }}>
                 {processMediaUrls(userProfile.metadata.additional_images).map((imageUrl, index) => (
                   <ZoomableImage 
                     key={index}
@@ -425,6 +448,12 @@ const Dashboard = () => {
                       objectFit: 'cover',
                       borderRadius: 4
                     }}
+                    sx={{
+                      [theme.breakpoints.down('sm')]: {
+                        width: 120,
+                        height: 120
+                      }
+                    }}
                   />
                 ))}
               </Box>
@@ -434,19 +463,33 @@ const Dashboard = () => {
       </Grid>
       
       {/* AI Content Status Section */}
-      <Grid item xs={12} style={{ padding: '4px' }}>
+      <Grid item xs={12} sx={{ 
+        p: theme.spacing(0.5), 
+        mt: theme.spacing(spacing.element.md),
+        [theme.breakpoints.down('sm')]: { 
+          p: theme.spacing(0.25),
+          mt: theme.spacing(spacing.element.xs)
+        } 
+      }}>
         <AIContentStatus />
       </Grid>
       
       {/* Invoice History Section with view parameter */}
-      <Grid item xs={12} style={{ padding: '4px' }}>
+      <Grid item xs={12} sx={{ 
+        p: theme.spacing(0.5), 
+        mt: theme.spacing(spacing.element.md),
+        [theme.breakpoints.down('sm')]: { 
+          p: theme.spacing(0.25),
+          mt: theme.spacing(spacing.element.xs)
+        } 
+      }}>
         <UserInvoices initialView={currentView} />
       </Grid>
       
       {/* USDT Withdrawal Dialog */}
-      <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth>
+      <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth className={styles.dialog}>
         <DialogTitle>Withdraw USDT</DialogTitle>
-        <DialogContent>
+        <DialogContent className={styles.dialogContent}>
           <TextField
             id="usdt-address"
             type="text"
@@ -480,7 +523,7 @@ const Dashboard = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUsdtWithdrawDialog}>
+          <Button onClick={handleCloseUsdtWithdrawDialog} className={styles.button}>
             Cancel
           </Button>
           <Button 
@@ -488,6 +531,7 @@ const Dashboard = () => {
             variant="contained"
             color="primary"
             disabled={usdtWithdrawalLoading}
+            className={styles.button}
           >
             {usdtWithdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
           </Button>

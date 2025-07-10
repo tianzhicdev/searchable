@@ -2,7 +2,8 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 // material-ui
-import { makeStyles, useTheme } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import {
     Avatar,
     Card,
@@ -31,6 +32,7 @@ import MainCard from '../../../../ui-component/cards/MainCard';
 import Transitions from '../../../../ui-component/extended/Transitions';
 import UpgradePlanCard from './UpgradePlanCard';
 import { useLogout } from '../../../../components/LogoutHandler';
+import { touchTargets } from '../../../../utils/spacing';
 
 // assets
 import { IconLogout, IconSearch, IconSettings } from '@tabler/icons';
@@ -55,12 +57,17 @@ const useStyles = makeStyles((theme) => ({
         margin: '8px 0 8px 8px !important'
     },
     profileChip: {
-        height: '48px',
+        height: touchTargets.input.height,
+        minHeight: touchTargets.minHeight,
         alignItems: 'center',
         borderRadius: '27px',
         transition: 'all .2s ease-in-out',
         borderColor: theme.palette.primary.light,
         backgroundColor: theme.palette.primary.light,
+        [theme.breakpoints.down('sm')]: {
+            height: touchTargets.input.mobileHeight,
+            minHeight: touchTargets.clickable.minHeight
+        },
         '&[aria-controls="menu-list-grow"], &:hover': {
             borderColor: theme.palette.primary.main,
             background: theme.palette.primary.main + '!important',

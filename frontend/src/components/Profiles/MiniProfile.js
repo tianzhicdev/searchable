@@ -22,7 +22,11 @@ const useStyles = makeStyles((theme) => ({
   imageContainer: {
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: theme.palette.grey[100]
+    backgroundColor: theme.palette.grey[100],
+    aspectRatio: '16 / 9', // Consistent aspect ratio
+    [theme.breakpoints.down('sm')]: {
+      aspectRatio: '4 / 3' // More square on mobile
+    }
   },
   image: {
     width: '100%',
@@ -30,25 +34,43 @@ const useStyles = makeStyles((theme) => ({
     objectFit: 'cover'
   },
   contentContainer: {
-    padding: theme.spacing(2)
+    padding: theme.spacing(2.5), // 20px on desktop
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2) // 16px on mobile
+    }
   },
   title: {
     fontWeight: 'bold',
-    marginBottom: theme.spacing(1)
+    marginBottom: theme.spacing(1),
+    fontSize: '1.125rem',
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '1rem'
+    }
   },
   description: {
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
     marginTop: theme.spacing(1),
-    color: theme.palette.text.secondary
+    color: theme.palette.text.secondary,
+    fontSize: '0.875rem',
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '0.813rem'
+    }
   },
   tagsSection: {
-    marginTop: theme.spacing(1.5)
+    marginTop: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1.5)
+    }
   },
   metaInfo: {
-    marginTop: theme.spacing(0.5),
+    marginTop: theme.spacing(1),
     color: theme.palette.text.secondary,
-    fontSize: '0.875rem'
+    fontSize: '0.875rem',
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(0.75),
+      fontSize: '0.813rem'
+    }
   },
   noImagePlaceholder: {
     width: '100%',

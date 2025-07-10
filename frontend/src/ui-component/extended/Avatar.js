@@ -4,6 +4,7 @@ import React from 'react';
 // material-ui
 import { makeStyles } from '@material-ui/styles';
 import MuiAvatar from '@material-ui/core/Avatar';
+import { touchTargets } from '../../utils/spacing';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -72,27 +73,51 @@ const useStyles = makeStyles((theme) => ({
     },
     badge: {
         width: theme.spacing(3.5),
-        height: theme.spacing(3.5)
+        height: theme.spacing(3.5),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(3),
+            height: theme.spacing(3)
+        }
     },
     xs: {
         width: theme.spacing(4.25),
-        height: theme.spacing(4.25)
+        height: theme.spacing(4.25),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(3.75),
+            height: theme.spacing(3.75)
+        }
     },
     sm: {
         width: theme.spacing(5),
-        height: theme.spacing(5)
+        height: theme.spacing(5),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(4.5),
+            height: theme.spacing(4.5)
+        }
     },
     md: {
         width: theme.spacing(7),
-        height: theme.spacing(7)
+        height: theme.spacing(7),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(6),
+            height: theme.spacing(6)
+        }
     },
     lg: {
         width: theme.spacing(9),
-        height: theme.spacing(9)
+        height: theme.spacing(9),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(7.5),
+            height: theme.spacing(7.5)
+        }
     },
     xl: {
         width: theme.spacing(10.25),
-        height: theme.spacing(10.25)
+        height: theme.spacing(10.25),
+        [theme.breakpoints.down('sm')]: {
+            width: theme.spacing(8.5),
+            height: theme.spacing(8.5)
+        }
     }
 }));
 

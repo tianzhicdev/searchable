@@ -13,9 +13,24 @@ import {
   useTheme
 } from '@material-ui/core';
 import QRCode from 'react-qr-code';
+import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { useHistory } from 'react-router-dom';
+import { componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  dialogContent: componentSpacing.dialog(theme),
+  button: componentSpacing.button(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
 
 /**
  * Reusable USDT Deposit Component
@@ -29,6 +44,7 @@ const DepositComponent = ({
   showInstructions = true
 }) => {
   const classes = useComponentStyles();
+  const styles = useStyles();
   const theme = useTheme();
   const history = useHistory();
   
@@ -99,9 +115,9 @@ const DepositComponent = ({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog}>
         <DialogTitle>{title}</DialogTitle>
-        <DialogContent>
+        <DialogContent className={styles.dialogContent}>
           {!depositAddress ? (
             <>
               {showInstructions && (
@@ -197,7 +213,7 @@ const DepositComponent = ({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>
+          <Button onClick={handleClose} className={styles.button}>
             {depositAddress ? 'Close' : 'Cancel'}
           </Button>
           {!depositAddress && (
@@ -206,6 +222,7 @@ const DepositComponent = ({
               variant="contained"
               disabled={depositLoading}
               startIcon={depositLoading ? <CircularProgress size={20} /> : null}
+              className={styles.button}
             >
               {depositLoading ? 'Creating...' : 'Create Deposit'}
             </Button>

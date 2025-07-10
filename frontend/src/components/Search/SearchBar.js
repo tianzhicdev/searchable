@@ -14,15 +14,41 @@ import { makeStyles } from '@material-ui/styles';
 
 const useStyles = makeStyles((theme) => ({
   searchContainer: {
-    marginBottom: theme.spacing(2)
+    marginBottom: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(1.5)
+    }
   },
   searchForm: {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1)
+    gap: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      gap: theme.spacing(0.5)
+    }
   },
   searchField: {
-    flex: 1
+    flex: 1,
+    '& .MuiOutlinedInput-root': {
+      // Touch-friendly sizing on mobile
+      [theme.breakpoints.down('sm')]: {
+        minHeight: 48,
+        '& input': {
+          padding: '12px 14px',
+          fontSize: '16px' // Prevents zoom on iOS
+        }
+      }
+    }
+  },
+  iconButton: {
+    // Touch-friendly sizing
+    minWidth: 44,
+    minHeight: 44,
+    [theme.breakpoints.down('sm')]: {
+      minWidth: 48,
+      minHeight: 48,
+      padding: theme.spacing(1)
+    }
   }
 }));
 
@@ -79,6 +105,7 @@ const SearchBar = ({
           variant="contained"
           color="primary"
           disabled={loading}
+          className={classes.iconButton}
         >
           <SearchIcon />
         </IconButton>
@@ -87,6 +114,7 @@ const SearchBar = ({
           variant="contained"
           color={showFilters ? "primary" : "default"}
           onClick={onToggleFilters}
+          className={classes.iconButton}
         >
           <FilterIcon />
         </IconButton>

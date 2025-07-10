@@ -22,6 +22,7 @@ import {
 // assets
 import { IconBrandTelegram, IconBuildingStore, IconMailbox, IconPhoto } from '@tabler/icons';
 import User1 from './../../../../assets/images/users/user-round.svg';
+import { touchTargets } from '../../../../utils/spacing';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -32,8 +33,8 @@ const useStyles = makeStyles((theme) => ({
         paddingBottom: 0,
         borderRadius: '10px',
         [theme.breakpoints.down('sm')]: {
-            maxWidth: '280px',
-            minWidth: '250px'
+            maxWidth: '300px',
+            minWidth: '280px'
         }
     },
     listAction: {
@@ -44,7 +45,8 @@ const useStyles = makeStyles((theme) => ({
     },
 
     listItem: {
-        padding: 0
+        padding: 0,
+        minHeight: touchTargets.clickable.minHeight
     },
     sendIcon: {
         marginLeft: '8px',
@@ -86,21 +88,31 @@ const useStyles = makeStyles((theme) => ({
         borderColor: theme.palette.primary.main
     },
     listContainer: {
-        paddingLeft: '56px'
+        paddingLeft: '56px',
+        [theme.breakpoints.down('sm')]: {
+            paddingLeft: '48px'
+        }
     },
     uploadCard: {
         backgroundColor: theme.palette.secondary.light
     },
     paddingBottom: {
-        paddingBottom: '16px'
+        paddingBottom: theme.spacing(2),
+        [theme.breakpoints.down('sm')]: {
+            paddingBottom: theme.spacing(1.5)
+        }
     },
     itemAction: {
         cursor: 'pointer',
-        padding: '16px',
+        padding: theme.spacing(2),
+        minHeight: touchTargets.clickable.minHeight,
+        [theme.breakpoints.down('sm')]: {
+            padding: theme.spacing(1.5)
+        },
         '&:hover': {
             background: theme.palette.primary.light
         }
-    }
+    },
 }));
 
 //-----------------------|| NOTIFICATION LIST ITEM ||-----------------------//

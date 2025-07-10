@@ -5,16 +5,18 @@ import { Card, CardContent, Grid, Skeleton } from '@material-ui/core';
 
 // project imports
 import { gridSpacing } from './../../../store/constant';
+import { componentSpacing } from '../../../utils/spacing';
 
 // style constant
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
     cardAction: {
-        padding: '10px',
+        ...componentSpacing.card(theme),
         display: 'flex',
         paddingTop: 0,
         justifyContent: 'center'
-    }
-});
+    },
+    cardContent: componentSpacing.card
+}));
 
 //-----------------------|| SKELETON - POPULAR CARD ||-----------------------//
 
@@ -22,7 +24,7 @@ const PopularCard = () => {
     const classes = useStyles();
     return (
         <Card>
-            <CardContent>
+            <CardContent className={classes.cardContent}>
                 <Grid container spacing={gridSpacing}>
                     <Grid item xs={12}>
                         <Grid container alignItems="center" justifyContent="space-between" spacing={gridSpacing}>

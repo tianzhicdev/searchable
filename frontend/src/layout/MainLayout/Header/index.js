@@ -14,6 +14,9 @@ import NotificationSection from './NotificationSection';
 // assets
 import { IconMenu2 } from '@tabler/icons';
 
+// Import spacing utilities
+import { touchTargets, spacing } from '../../../utils/spacing';
+
 // style constant
 const useStyles = makeStyles((theme) => ({
     grow: {
@@ -25,6 +28,13 @@ const useStyles = makeStyles((theme) => ({
         transition: 'all .2s ease-in-out',
         background: theme.palette.secondary.light,
         color: theme.palette.secondary.dark,
+        // Ensure touch-friendly size on mobile
+        width: touchTargets.minWidth,
+        height: touchTargets.minHeight,
+        [theme.breakpoints.up('md')]: {
+            width: theme.spacing(4.5), // 36px on desktop
+            height: theme.spacing(4.5)
+        },
         '&:hover': {
             background: theme.palette.secondary.dark,
             color: theme.palette.secondary.light
@@ -33,8 +43,11 @@ const useStyles = makeStyles((theme) => ({
     boxContainer: {
         width: '228px',
         display: 'flex',
+        alignItems: 'center',
+        gap: theme.spacing(spacing.element.md), // 16px gap
         [theme.breakpoints.down('md')]: {
-            width: 'auto'
+            width: 'auto',
+            gap: theme.spacing(spacing.element.xs) // 12px gap on mobile
         }
     }
 }));

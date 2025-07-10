@@ -2,8 +2,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // material-ui
-import { useTheme } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import { Card, CardContent, CardHeader, Divider, Typography } from '@material-ui/core';
+
+// project imports
+import { componentSpacing } from '../../utils/spacing';
 
 // constant
 const headerSX = {
@@ -56,7 +59,7 @@ const MainCard = React.forwardRef(
 
                 {/* card content */}
                 {content && (
-                    <CardContent sx={contentSX} className={contentClass}>
+                    <CardContent sx={{ ...componentSpacing.card(theme), ...contentSX }} className={contentClass}>
                         {children}
                     </CardContent>
                 )}

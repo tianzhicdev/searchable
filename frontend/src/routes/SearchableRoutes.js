@@ -19,6 +19,7 @@ import ThemeTestPage from '../views/theme-test-page';
 import CyberpunkDemo from '../views/cyberpunk-demo';
 import ThemeSelector from '../views/theme-selector';
 import ThemeGallery from '../views/theme-gallery';
+import SpacingDemo from '../views/spacing-demo';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -26,7 +27,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -47,6 +48,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/cyberpunk-demo" component={CyberpunkDemo} />
                     <Route exact path="/theme-selector" component={ThemeSelector} />
                     <Route exact path="/theme-gallery" component={ThemeGallery} />
+                    <Route exact path="/spacing-demo" component={SpacingDemo} />
                 </AuthGuard>
                 
             </Switch>
