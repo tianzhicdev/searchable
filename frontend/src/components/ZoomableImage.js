@@ -41,7 +41,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
   };
 
   return (
-    <Box border={1} borderColor={theme.colors?.primary}>
+    <Box>
       <img 
         src={src} 
         alt={alt} 
@@ -49,10 +49,12 @@ const ZoomableImage = ({ src, alt, style, className }) => {
           ...style, 
           cursor: 'pointer',
           padding: '4px',
-          border: `1px solid ${theme.colors?.primary}`,
+          border: `1px solid ${theme.palette.primary.main}`,
+          borderRadius: theme.shape.borderRadius,
           maxWidth: '200px',
           maxHeight: '200px',
-          objectFit: 'contain'
+          objectFit: 'contain',
+          backgroundColor: theme.palette.background.paper
         }}
         onClick={handleOpen}
       />
@@ -64,6 +66,23 @@ const ZoomableImage = ({ src, alt, style, className }) => {
         fullWidth
         className={styles.dialog}
       >
+        <Button
+          onClick={handleClose}
+          style={{
+            position: 'absolute',
+            right: theme.spacing(1),
+            top: theme.spacing(1),
+            minWidth: 'auto',
+            padding: theme.spacing(1),
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: '50%',
+            zIndex: 1
+          }}
+        >
+          <CloseIcon />
+        </Button>
         <DialogContent 
           onClick={handleClose}
           className={styles.dialogContent}

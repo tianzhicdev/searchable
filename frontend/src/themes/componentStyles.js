@@ -44,6 +44,26 @@ const useComponentStyles = makeStyles((theme) => ({
     grid: {
         padding: themeConfig.spacingXs
     },
+    
+    // Form actions container for buttons
+    formActions: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: theme.spacing(2),
+        marginTop: theme.spacing(3),
+        [theme.breakpoints.down('sm')]: {
+            gap: theme.spacing(1.5),
+            marginTop: theme.spacing(2)
+        }
+    },
+    
+    // Standard button styling
+    button: {
+        minWidth: 120,
+        [theme.breakpoints.down('sm')]: {
+            minWidth: 100
+        }
+    }
 }));
 
 export default useComponentStyles;

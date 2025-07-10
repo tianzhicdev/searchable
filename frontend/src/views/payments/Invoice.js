@@ -277,7 +277,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                     <Box mb={1}>
                                         {/* List each item and its price */}
                                         {selections.map((selection, index) => (
-                                            <Box key={index} display="flex" justifyContent="space-between" alignItems="center">
+                                            <Box key={selection.id || `selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
                                                 <Typography variant="body2" className={classes.userText}>
                                                     {selection.name || `Item ${selection.id}`}
                                                     {selection.count && selection.count > 1 && (
