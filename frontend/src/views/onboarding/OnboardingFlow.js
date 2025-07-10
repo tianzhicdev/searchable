@@ -13,6 +13,7 @@ import StepRenderer from './StepRenderer';
 import ProgressBar from './components/ProgressBar';
 import NavigationButtons from './components/NavigationButtons';
 import onboardingConfig from '../../onboarding.json';
+import { componentSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -25,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: 800,
   },
   paper: {
-    padding: theme.spacing(4),
+    ...componentSpacing.card(theme),
     position: 'relative',
   },
   loadingContainer: {

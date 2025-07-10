@@ -3,8 +3,10 @@ import { useSelector } from 'react-redux';
 import { 
   Card, CardContent, Typography, Divider, Grid, Button, Dialog, 
   DialogTitle, DialogContent, DialogActions, TextField, Box, Paper,
-  Chip, Collapse, IconButton, List, ListItem, ListItemText, Avatar
+  Chip, Collapse, IconButton, List, ListItem, ListItemText, Avatar,
+  useTheme, useMediaQuery
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { 
   ExpandMore, ExpandLess, Message, Star, Person, 
   AccountCircle, Comment, Send 
@@ -14,10 +16,43 @@ import PropTypes from 'prop-types';
 import Backend from '../utilities/Backend';
 import RatingComponent from '../../components/Rating/RatingComponent';
 import useComponentStyles from '../../themes/componentStyles';
+import { touchTargets, componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  listItem: {
+    minHeight: touchTargets.clickable.minHeight,
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1)
+    }
+  },
+  notesList: {
+    padding: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(0.5)
+    }
+  },
+  messageInput: {
+    [theme.breakpoints.down('sm')]: {
+      fontSize: '0.875rem'
+    }
+  },
+  communicationSection: {
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5)
+    }
+  }
+}));
 
 const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     const account = useSelector((state) => state.account);
     const classes = useComponentStyles();
+    const styles = useStyles();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
     // State for UI controls
     const [expanded, setExpanded] = useState(false);
@@ -360,33 +395,33 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
                         {/* Notes Section */}
                         <Collapse in={notesExpanded}>
-                            <Box className={classes.marginSm}>
+                            <Box className={styles.communicationSection}>
                                 <Divider className={classes.divider} />
-                                <Typography variant="subtitle2" className={classes.systemText}>
+                                <Typography variant="subtitle2" className={classes.systemText} style={{ marginBottom: theme.spacing(1) }}>
                                     Communication
                                 </Typography>
                                 
                                 {/* Notes List */}
                                 {notes.length > 0 ? (
-                                    <List dense className={classes.paddingXs}>
+                                    <List dense className={styles.notesList}>
                                         {notes.map((note) => (
-                                            <ListItem key={note.id} alignItems="flex-start" className={classes.paddingXs}>
-                                                <Avatar style={{ marginRight: 4, width: 24, height: 24 }}>
+                                            <ListItem key={note.id} alignItems="flex-start" className={styles.listItem}>
+                                                <Avatar style={{ marginRight: theme.spacing(1), width: isMobile ? 28 : 32, height: isMobile ? 28 : 32 }}>
                                                     {note.buyer_seller === 'buyer' ? 'B' : 'S'}
                                                 </Avatar>
                                                 <ListItemText
                                                     primary={
-                                                        <Box display="flex" justifyContent="space-between">
+                                                        <Box display="flex" justifyContent="space-between" flexWrap="wrap">
                                                             <Typography variant="body2" className={classes.systemText}>
                                                                 {note.username} ({note.buyer_seller})
                                                             </Typography>
                                                             <Typography variant="caption" className={classes.systemText}>
-                                                                {formatDate(note.created_at)}
+                                                                {isMobile ? formatDate(note.created_at).split(' ')[0] : formatDate(note.created_at)}
                                                             </Typography>
                                                         </Box>
                                                     }
                                                     secondary={
-                                                        <Typography variant="body2" className={classes.userText}>
+                                                        <Typography variant="body2" className={classes.userText} style={{ wordBreak: 'break-word' }}>
                                                             {note.content}
                                                         </Typography>
                                                     }
@@ -401,7 +436,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 )}
 
                                 {/* Add Note Input */}
-                                <Box display="flex" className={`${classes.marginSm} ${classes.paddingXs}`}>
+                                <Box display="flex" style={{ marginTop: theme.spacing(2), gap: theme.spacing(1) }}>
                                     <TextField
                                         fullWidth
                                         placeholder="Add a message..."
@@ -416,8 +451,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         multiline
                                         maxRows={3}
                                         size="small"
-                                        className={classes.eightBitDragonFont}
-                                        style={{ marginRight: '4px' }}
+                                        className={`${classes.eightBitDragonFont} ${styles.messageInput}`}
                                     />
                                     <Button
                                         onClick={handleSubmitNote}

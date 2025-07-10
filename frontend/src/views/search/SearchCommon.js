@@ -20,11 +20,52 @@ import {
   Payment as PaymentIcon,
   CloudUpload as CloudUploadIcon
 } from '@material-ui/icons';
+import { makeStyles } from '@material-ui/styles';
 import { useHistory } from 'react-router-dom';
 import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
 import { navigateWithStack } from '../../utils/navigationUtils';
+
+const useStyles = makeStyles((theme) => ({
+  headerBox: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(1.5)
+    }
+  },
+  actionButton: {
+    marginRight: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      marginRight: theme.spacing(0.5),
+      minWidth: 44,
+      minHeight: 44,
+      padding: theme.spacing(1)
+    }
+  },
+  lastActionButton: {
+    [theme.breakpoints.down('sm')]: {
+      minWidth: 44,
+      minHeight: 44,
+      padding: theme.spacing(1)
+    }
+  },
+  searchBarContainer: {
+    marginTop: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1.5)
+    }
+  },
+  resultsContainer: {
+    marginTop: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1.5)
+    }
+  }
+}));
 
 const SearchCommon = ({
   searchType = 'content', // 'content' or 'user'
@@ -39,6 +80,7 @@ const SearchCommon = ({
   onClearSearch,
   children
 }) => {
+  const classes = useStyles();
   const history = useHistory();
   const handleLogout = useLogout();
   
@@ -114,7 +156,7 @@ const SearchCommon = ({
     <Box>
       <Grid container margin={0} spacing={0} padding={0}>
         <Grid item xs={12}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Box className={classes.headerBox}>
             {/* Navigation dropdown menu on the left */}
             <Box>
               <Button 
@@ -163,7 +205,7 @@ const SearchCommon = ({
               <Button 
                 variant="contained" 
                 onClick={handleLogout}
-                style={{ marginRight: 8 }}
+                className={classes.actionButton}
               >
                 <ExitToAppIcon />
               </Button>
@@ -171,6 +213,7 @@ const SearchCommon = ({
               <Button 
                 variant="contained" 
                 onClick={handleAddNew}
+                className={classes.lastActionButton}
               >
                 <AddIcon />
               </Button>
@@ -217,7 +260,7 @@ const SearchCommon = ({
           </Box>
         </Grid>
         
-        <Grid item xs={12} style={{ marginTop: 16 }}>
+        <Grid item xs={12} className={classes.searchBarContainer}>
           <SearchBar
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
@@ -244,7 +287,7 @@ const SearchCommon = ({
         )}
         
         {/* Results Section */}
-        <Grid item xs={12} style={{ marginTop: 16 }}>
+        <Grid item xs={12} className={classes.resultsContainer}>
           {children}
         </Grid>
       </Grid>

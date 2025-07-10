@@ -3,6 +3,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { 
   Grid, Typography, Paper, Box, CircularProgress
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 
 import MiniProfile from '../../components/Profiles/MiniProfile';
 import Pagination from '../../components/Pagination/Pagination';
@@ -10,7 +11,41 @@ import ColumnLayout from '../../components/Layout/ColumnLayout';
 import backend from '../utilities/Backend';
 import { navigateWithStack } from '../../utils/navigationUtils';
 
+const useStyles = makeStyles((theme) => ({
+  errorPaper: {
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5)
+    }
+  },
+  loadingBox: {
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1.5),
+      marginBottom: theme.spacing(1.5)
+    }
+  },
+  paginationBox: {
+    marginTop: theme.spacing(3),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(2)
+    }
+  },
+  emptyPaper: {
+    padding: theme.spacing(3),
+    textAlign: 'center',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(2)
+    }
+  }
+}));
+
 const SearchableList = ({ criteria, onPageChange }) => {
+  const classes = useStyles();
     
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -140,7 +175,7 @@ const SearchableList = ({ criteria, onPageChange }) => {
     <>
       {error && (
         <Grid item xs={12}>
-          <Paper>
+          <Paper className={classes.errorPaper}>
             <Typography variant="body1">{error}</Typography>
           </Paper>
         </Grid>
@@ -148,7 +183,7 @@ const SearchableList = ({ criteria, onPageChange }) => {
 
       {loading && (
         <Grid item xs={12}>
-          <Box my={2} display="flex" alignItems="center" justifyContent="center">
+          <Box className={classes.loadingBox}>
             <CircularProgress />
           </Box>
         </Grid>
@@ -168,7 +203,7 @@ const SearchableList = ({ criteria, onPageChange }) => {
             ))}
           </ColumnLayout>
 
-          <Box mt={2}>
+          <Box className={classes.paginationBox}>
             {console.log('[SEARCHABLE LIST] Rendering pagination:', { 
               currentPage: pagination.page, 
               totalPages: pagination.totalPages,
@@ -188,7 +223,7 @@ const SearchableList = ({ criteria, onPageChange }) => {
 
       {!loading && searchResults.length === 0 && criteria.searchTerm !== undefined && (
         <Grid item xs={12}>
-          <Paper elevation={2}>
+          <Paper elevation={2} className={classes.emptyPaper}>
             <Typography variant="body1">
               No items found.
             </Typography>

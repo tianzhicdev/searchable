@@ -26,7 +26,10 @@ const useComponentStyles = makeStyles((theme) => ({
 
     // Centralized component styling
     paper: {
-        padding: themeConfig.spacingMd,
+        padding: theme.spacing(2.5),
+        [theme.breakpoints.down('sm')]: {
+            padding: theme.spacing(1.5)
+        },
         marginBottom: themeConfig.spacingSm,
         backgroundColor: themeConfig.bgSecondary,
         border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,

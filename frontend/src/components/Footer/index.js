@@ -1,23 +1,48 @@
 import React from 'react';
 import { Box, Typography, Link, Container } from '@material-ui/core';
-// import useComponentStyles from '../../themes/componentStyles';
+import { makeStyles } from '@material-ui/styles';
 import config from '../../config';
 import { APP_VERSION } from '../../version';
+import { spacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  footer: {
+    paddingTop: theme.spacing(spacing.section.md), // 48px desktop
+    paddingBottom: theme.spacing(spacing.section.md),
+    [theme.breakpoints.down('sm')]: {
+      paddingTop: theme.spacing(spacing.section.xs), // 24px mobile
+      paddingBottom: theme.spacing(spacing.section.xs),
+    }
+  },
+  copyright: {
+    paddingBottom: theme.spacing(spacing.element.md), // 16px
+    [theme.breakpoints.down('sm')]: {
+      paddingBottom: theme.spacing(spacing.element.xs), // 12px mobile
+    }
+  },
+  links: {
+    paddingBottom: theme.spacing(spacing.element.md), // 16px
+    [theme.breakpoints.down('sm')]: {
+      paddingBottom: theme.spacing(spacing.element.xs), // 12px mobile
+      fontSize: '0.875rem', // Slightly smaller on mobile
+    }
+  }
+}));
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-//   const classes = useComponentStyles();
+  const classes = useStyles();
   
   return (
-    <Box component="footer" >
+    <Box component="footer" className={classes.footer}>
       <Container maxWidth="lg">
-        <Typography variant="body2" color="textSecondary" align="center" style={{ padding: '16px 0' }}>
+        <Typography variant="body2" color="textSecondary" align="center" className={classes.copyright}>
           {'Copyright © '}
             {config.BRANDING_CONFIG.domain}
             {' '}
           {currentYear}
         </Typography>
-        <Typography variant="body2" color="textSecondary" align="center" style={{ paddingBottom: '16px' }}>
+        <Typography variant="body2" color="textSecondary" align="center" className={classes.links}>
           <Link color="inherit" href="/faq" underline="hover">
             FAQ
           </Link>

@@ -2,20 +2,40 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // material-ui
-import { useTheme } from '@material-ui/styles';
-import { ButtonBase, Link, Tooltip } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
+import { ButtonBase, Link, Tooltip, useMediaQuery } from '@material-ui/core';
 
 // project imports
 import Avatar from './../extended/Avatar';
+import { touchTargets } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+    buttonBase: {
+        minWidth: touchTargets.minWidth,
+        minHeight: touchTargets.minHeight,
+        padding: theme.spacing(0.5),
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        [theme.breakpoints.down('sm')]: {
+            minWidth: touchTargets.minWidth - 8,
+            minHeight: touchTargets.minHeight - 8,
+        }
+    }
+}));
 
 //-----------------------|| CARD SECONDARY ACTION ||-----------------------//
 
 const CardSecondaryAction = ({ title, link, icon }) => {
     const theme = useTheme();
+    const classes = useStyles();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-        <Tooltip title={title ? title : 'Reference'} placement="left">
-            <ButtonBase disableRipple>
+        <Tooltip title={title ? title : 'Reference'} placement={isMobile ? 'bottom' : 'left'}>
+            <ButtonBase disableRipple className={classes.buttonBase}>
                 {!icon && (
                     <Avatar component={Link} href={link} target="_blank" alt="MUI Logo" size="badge" color="primary" outline>
                         <svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">

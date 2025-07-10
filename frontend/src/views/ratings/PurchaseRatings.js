@@ -14,15 +14,76 @@ import {
   CircularProgress,
   Alert,
   IconButton,
-  Tooltip
+  Tooltip,
+  useMediaQuery,
+  useTheme
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 import { Rating } from '@material-ui/lab';
 import { Star, StarBorder, RateReview } from '@material-ui/icons';
 import { formatDate } from '../utilities/Date';
 import RatingComponent from '../../components/Rating/RatingComponent';
 import config from '../../config';
+import { touchTargets, componentSpacing } from '../../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  tableContainer: {
+    overflowX: 'auto',
+    [theme.breakpoints.down('sm')]: {
+      marginLeft: -theme.spacing(2),
+      marginRight: -theme.spacing(2),
+      paddingLeft: theme.spacing(2),
+      paddingRight: theme.spacing(2),
+      '& table': {
+        minWidth: 650
+      }
+    }
+  },
+  tableCell: {
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5),
+      fontSize: '0.875rem'
+    }
+  },
+  headerCell: {
+    fontWeight: 600,
+    padding: theme.spacing(2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1.5),
+      fontSize: '0.875rem'
+    }
+  },
+  tableRow: {
+    minHeight: touchTargets.clickable.minHeight,
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover
+    }
+  },
+  emptyPaper: {
+    ...componentSpacing.card(theme),
+    textAlign: 'center'
+  },
+  actionButton: {
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(1)
+    }
+  },
+  mobileHide: {
+    [theme.breakpoints.down('sm')]: {
+      display: 'none'
+    }
+  },
+  pageContainer: {
+    ...componentSpacing.pageContainer(theme)
+  }
+}));
 
 const PurchaseRatings = () => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -122,7 +183,7 @@ const PurchaseRatings = () => {
   }
 
   return (
-    <Box p={3}>
+    <Box className={classes.pageContainer}>
       <Typography variant="h4" gutterBottom>
         My Purchases & Ratings
       </Typography>
@@ -132,13 +193,13 @@ const PurchaseRatings = () => {
       </Typography>
 
       {error && (
-        <Alert severity="error" style={{ marginBottom: 16 }}>
+        <Alert severity="error" style={{ marginBottom: theme.spacing(2) }}>
           {error}
         </Alert>
       )}
 
       {purchases.length === 0 ? (
-        <Paper style={{ padding: 32, textAlign: 'center' }}>
+        <Paper className={classes.emptyPaper}>
           <Typography variant="h6" color="textSecondary">
             No purchases found
           </Typography>
@@ -147,26 +208,26 @@ const PurchaseRatings = () => {
           </Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
+        <TableContainer component={Paper} className={classes.tableContainer}>
+          <Table size={isMobile ? 'small' : 'medium'}>
             <TableHead>
               <TableRow>
-                <TableCell>Item</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Purchase Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell className={classes.headerCell}>Item</TableCell>
+                <TableCell className={`${classes.headerCell} ${classes.mobileHide}`}>Amount</TableCell>
+                <TableCell className={classes.headerCell}>Date</TableCell>
+                <TableCell className={classes.headerCell}>Status</TableCell>
+                <TableCell className={classes.headerCell} align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {purchases.map((purchase) => (
-                <TableRow key={purchase.invoice_id}>
-                  <TableCell>
+                <TableRow key={purchase.invoice_id} className={classes.tableRow}>
+                  <TableCell className={classes.tableCell}>
                     <Box>
                       <Typography variant="subtitle2">
                         {purchase.item_title || 'Untitled Item'}
                       </Typography>
-                      {purchase.item_description && (
+                      {purchase.item_description && !isMobile && (
                         <Typography variant="caption" color="textSecondary">
                           {purchase.item_description.length > 100 
                             ? `${purchase.item_description.substring(0, 100)}...`
@@ -177,26 +238,27 @@ const PurchaseRatings = () => {
                     </Box>
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell className={`${classes.tableCell} ${classes.mobileHide}`}>
                     <Typography variant="body2">
                       ${purchase.amount.toFixed(2)} {purchase.currency?.toUpperCase()}
                     </Typography>
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell className={classes.tableCell}>
                     <Typography variant="body2">
-                      {formatDate(purchase.payment_completed)}
+                      {isMobile ? formatDate(purchase.payment_completed).split(' ')[0] : formatDate(purchase.payment_completed)}
                     </Typography>
                   </TableCell>
                   
-                  <TableCell>
+                  <TableCell className={classes.tableCell}>
                     {getStatusChip(purchase)}
                   </TableCell>
                   
-                  <TableCell align="center">
+                  <TableCell className={classes.tableCell} align="center">
                     {purchase.can_rate && !purchase.already_rated && (
                       <Tooltip title="Rate this item">
                         <IconButton
+                          className={classes.actionButton}
                           color="primary"
                           onClick={() => handleRateItem(purchase)}
                           size="small"
@@ -208,7 +270,7 @@ const PurchaseRatings = () => {
                     
                     {purchase.already_rated && (
                       <Tooltip title="Already rated">
-                        <IconButton disabled size="small">
+                        <IconButton className={classes.actionButton} disabled size="small">
                           <Star color="action" />
                         </IconButton>
                       </Tooltip>

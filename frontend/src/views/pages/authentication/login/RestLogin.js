@@ -12,10 +12,12 @@ import {
     IconButton,
     InputAdornment,
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
 import { performLogin } from '../../../../services/authService';
+import { componentSpacing, touchTargets } from '../../../../utils/spacing';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -23,7 +25,13 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 //============================|| API JWT - LOGIN ||============================//
 
+const useStyles = makeStyles((theme) => ({
+    formContainer: componentSpacing.formContainer(theme),
+    button: componentSpacing.button(theme)
+}));
+
 const RestLogin = (props, { ...others }) => {
+    const classes = useStyles();
     const dispatcher = useDispatch();
     const history = useHistory();
     const location = useLocation();
@@ -126,11 +134,10 @@ const RestLogin = (props, { ...others }) => {
     };
 
     return (
-        <form noValidate onSubmit={handleSubmit} {...others}>
+        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...others}>
             <FormControl 
                 fullWidth 
                 error={Boolean(touched.email && formErrors.email)}
-                sx={{ mb: 2 }}
             >
                 <TextField
                     id="outlined-adornment-email-login"
@@ -141,6 +148,9 @@ const RestLogin = (props, { ...others }) => {
                     onChange={handleChange}
                     placeholder="Enter your email"
                     error={touched.email && Boolean(formErrors.email)}
+                    InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight }
+                    }}
                 />
                 {touched.email && formErrors.email && (
                     <FormHelperText error id="standard-weight-helper-text-email-login">
@@ -152,7 +162,6 @@ const RestLogin = (props, { ...others }) => {
             <FormControl 
                 fullWidth 
                 error={Boolean(touched.password && formErrors.password)}
-                sx={{ mb: 2 }}
             >
                 <TextField
                     id="outlined-adornment-password-login"
@@ -164,6 +173,7 @@ const RestLogin = (props, { ...others }) => {
                     placeholder="Enter your password"
                     error={touched.password && Boolean(formErrors.password)}
                     InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight },
                         endAdornment: (
                             <InputAdornment position="end">
                                 <IconButton
@@ -197,6 +207,7 @@ const RestLogin = (props, { ...others }) => {
                     disabled={isSubmitting}
                     fullWidth
                     type="submit"
+                    className={classes.button}
                 >
                     Sign In
                 </Button>

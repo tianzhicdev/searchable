@@ -18,6 +18,7 @@ import {
     TextField,
     Typography,
 } from '@material-ui/core';
+import { makeStyles } from '@material-ui/styles';
 
 // third party
 import axios from 'axios';
@@ -25,6 +26,7 @@ import axios from 'axios';
 // project imports
 import useScriptRef from '../../../../hooks/useScriptRef';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
+import { componentSpacing, touchTargets } from '../../../../utils/spacing';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -32,7 +34,13 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 //===========================|| API JWT - REGISTER ||===========================//
 
+const useStyles = makeStyles((theme) => ({
+    formContainer: componentSpacing.formContainer(theme),
+    button: componentSpacing.button(theme)
+}));
+
 const RestRegister = ({ ...others }) => {
+    const classes = useStyles();
     let history = useHistory();
     const location = useLocation();
     const scriptedRef = useScriptRef();
@@ -197,12 +205,11 @@ const RestRegister = ({ ...others }) => {
     }, []);
 
     return (
-        <form noValidate onSubmit={handleSubmit} {...others}>
+        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...others}>
                         
             <FormControl 
                 fullWidth 
                 error={Boolean(touched.email && formErrors.email)}
-                sx={{ mb: 2 }}
             >
                 <TextField
                     id="outlined-adornment-email-register"
@@ -213,6 +220,9 @@ const RestRegister = ({ ...others }) => {
                     onBlur={handleBlur}
                     onChange={handleChange}
                     error={touched.email && Boolean(formErrors.email)}
+                    InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight }
+                    }}
                 />
                 {touched.email && formErrors.email && (
                     <FormHelperText error id="standard-weight-helper-text--register">
@@ -223,7 +233,6 @@ const RestRegister = ({ ...others }) => {
             <FormControl 
                 fullWidth 
                 error={Boolean(touched.username && formErrors.username)}
-                sx={{ mb: 2 }}
             >
                 <TextField
                     name="username"
@@ -234,6 +243,9 @@ const RestRegister = ({ ...others }) => {
                     placeholder="Enter your username"
                     onChange={handleChange}
                     error={touched.username && Boolean(formErrors.username)}
+                    InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight }
+                    }}
                 />
                 {touched.username && formErrors.username && (
                     <FormHelperText error id="standard-weight-helper-text--register">
@@ -243,8 +255,7 @@ const RestRegister = ({ ...others }) => {
             </FormControl>
             
             <FormControl 
-                fullWidth 
-                sx={{ mb: 2 }}
+                fullWidth
             >
                 <TextField
                     name="invite_code"
@@ -256,6 +267,7 @@ const RestRegister = ({ ...others }) => {
                     onChange={handleChange}
                     inputProps={{ maxLength: 6 }}
                     InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight },
                         endAdornment: (
                             <InputAdornment position="end">
                                 {checkingInviteCode && <CircularProgress size={20} />}
@@ -288,6 +300,7 @@ const RestRegister = ({ ...others }) => {
                     onChange={handleChange}
                     error={touched.password && Boolean(formErrors.password)}
                     InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight },
                         endAdornment: (
                             <InputAdornment position="end">
                                 <IconButton
@@ -373,6 +386,7 @@ const RestRegister = ({ ...others }) => {
                     type="submit"
                     variant="contained"
                     color="primary"
+                    className={classes.button}
                 >
                     Sign Up
                 </Button>

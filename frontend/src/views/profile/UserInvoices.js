@@ -25,6 +25,7 @@ import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
 import RewardComponent from '../../components/Reward/RewardComponent';
 import useComponentStyles from '../../themes/componentStyles';
+import { componentSpacing, spacing } from '../../utils/spacing';
 
 const UserInvoices = ({ initialView }) => {
   const classes = useComponentStyles();
@@ -218,7 +219,7 @@ const UserInvoices = ({ initialView }) => {
 
   if (loading) {
     return (
-      <Paper style={{ padding: 24, textAlign: 'center' }}>
+      <Paper sx={{ ...componentSpacing.card(theme), textAlign: 'center' }}>
         <CircularProgress />
         <Typography variant="body1" style={{ marginTop: 16 }}>
           Loading your invoices...
@@ -229,7 +230,7 @@ const UserInvoices = ({ initialView }) => {
 
   if (error) {
     return (
-      <Paper style={{ padding: 24 }}>
+      <Paper sx={componentSpacing.card(theme)}>
         <Alert severity="error">{error}</Alert>
         <Button 
           onClick={() => {
@@ -248,8 +249,16 @@ const UserInvoices = ({ initialView }) => {
   }
 
   return (
-      <Paper>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} p={2}>
+      <Paper sx={componentSpacing.card(theme)}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ 
+        mb: theme.spacing(spacing.element.md),
+        [theme.breakpoints.down('sm')]: {
+          mb: theme.spacing(spacing.element.xs),
+          flexDirection: 'column',
+          gap: theme.spacing(1),
+          alignItems: 'stretch'
+        }
+      }}>
         <Typography variant="h6">
           {getActiveTabName()}
         </Typography>
@@ -257,6 +266,11 @@ const UserInvoices = ({ initialView }) => {
           variant="contained"
           onClick={handleMenuOpen}
           endIcon={<MoreVert />}
+          sx={{
+            [theme.breakpoints.down('sm')]: {
+              width: '100%'
+            }
+          }}
         >
           Select View
         </Button>
@@ -305,13 +319,26 @@ const UserInvoices = ({ initialView }) => {
         </Menu>
       </Box>
 
-        <Box p={2}>
+        <Box>
           {/* Total Spent Tab */}
           {activeTab === 0 && (
             <Box>
               {purchases.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <TrendingDown style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                <Box textAlign="center" sx={{ 
+                  py: theme.spacing(4),
+                  [theme.breakpoints.down('sm')]: {
+                    py: theme.spacing(3)
+                  }
+                }}>
+                  <TrendingDown sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.grey[500], 
+                    mb: theme.spacing(2),
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: 36,
+                      mb: theme.spacing(1.5)
+                    }
+                  }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No purchases yet
                   </Typography>
@@ -341,8 +368,21 @@ const UserInvoices = ({ initialView }) => {
           {activeTab === 1 && (
             <Box>
               {sales.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <TrendingUp style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                <Box textAlign="center" sx={{ 
+                  py: theme.spacing(4),
+                  [theme.breakpoints.down('sm')]: {
+                    py: theme.spacing(3)
+                  }
+                }}>
+                  <TrendingUp sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.grey[500], 
+                    mb: theme.spacing(2),
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: 36,
+                      mb: theme.spacing(1.5)
+                    }
+                  }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No sales yet
                   </Typography>
@@ -372,8 +412,21 @@ const UserInvoices = ({ initialView }) => {
           {activeTab === 2 && (
             <Box>
               {withdrawals.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <AccountBalanceWallet style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                <Box textAlign="center" sx={{ 
+                  py: theme.spacing(4),
+                  [theme.breakpoints.down('sm')]: {
+                    py: theme.spacing(3)
+                  }
+                }}>
+                  <AccountBalanceWallet sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.grey[500], 
+                    mb: theme.spacing(2),
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: 36,
+                      mb: theme.spacing(1.5)
+                    }
+                  }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No withdrawals yet
                   </Typography>
@@ -388,7 +441,15 @@ const UserInvoices = ({ initialView }) => {
                   </Typography>
                   {withdrawals.map((withdrawal) => (
                     <Paper 
-                      key={withdrawal.id} 
+                      key={withdrawal.id}
+                      sx={{ 
+                        mb: theme.spacing(spacing.element.md),
+                        p: theme.spacing(2),
+                        [theme.breakpoints.down('sm')]: {
+                          mb: theme.spacing(spacing.element.xs),
+                          p: theme.spacing(1.5)
+                        }
+                      }}
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                         <Box flex={1}>
@@ -417,7 +478,16 @@ const UserInvoices = ({ initialView }) => {
                           </Typography>
                           
                           {/* Withdrawal Breakdown */}
-                          <Box mt={2} p={2} >
+                          <Box sx={{ 
+                            mt: theme.spacing(2), 
+                            p: theme.spacing(2),
+                            backgroundColor: theme.palette.grey[50],
+                            borderRadius: 1,
+                            [theme.breakpoints.down('sm')]: {
+                              mt: theme.spacing(1.5),
+                              p: theme.spacing(1.5)
+                            }
+                          }}>
                             <Typography variant="subtitle2" className={classes.systemText}>
                               Withdrawal Breakdown:
                             </Typography>
@@ -461,8 +531,21 @@ const UserInvoices = ({ initialView }) => {
           {activeTab === 3 && (
             <Box>
               {deposits.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <AccountBalance style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                <Box textAlign="center" sx={{ 
+                  py: theme.spacing(4),
+                  [theme.breakpoints.down('sm')]: {
+                    py: theme.spacing(3)
+                  }
+                }}>
+                  <AccountBalance sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.grey[500], 
+                    mb: theme.spacing(2),
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: 36,
+                      mb: theme.spacing(1.5)
+                    }
+                  }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No deposits yet
                   </Typography>
@@ -478,7 +561,14 @@ const UserInvoices = ({ initialView }) => {
                   {deposits.map((deposit) => (
                     <Paper 
                       key={deposit.deposit_id}
-                      style={{ marginBottom: 16, padding: 16 }}
+                      sx={{ 
+                        mb: theme.spacing(spacing.element.md),
+                        p: theme.spacing(2),
+                        [theme.breakpoints.down('sm')]: {
+                          mb: theme.spacing(spacing.element.xs),
+                          p: theme.spacing(1.5)
+                        }
+                      }}
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                         <Box flex={1}>
@@ -521,8 +611,21 @@ const UserInvoices = ({ initialView }) => {
           {activeTab === 4 && (
             <Box>
               {rewards.length === 0 ? (
-                <Box textAlign="center" py={4}>
-                  <CardGiftcard style={{ fontSize: 48, color: theme.palette.grey[500], marginBottom: 16 }} />
+                <Box textAlign="center" sx={{ 
+                  py: theme.spacing(4),
+                  [theme.breakpoints.down('sm')]: {
+                    py: theme.spacing(3)
+                  }
+                }}>
+                  <CardGiftcard sx={{ 
+                    fontSize: 48, 
+                    color: theme.palette.grey[500], 
+                    mb: theme.spacing(2),
+                    [theme.breakpoints.down('sm')]: {
+                      fontSize: 36,
+                      mb: theme.spacing(1.5)
+                    }
+                  }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No rewards yet
                   </Typography>

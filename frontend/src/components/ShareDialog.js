@@ -13,11 +13,27 @@ import {
   Alert
 } from '@material-ui/core';
 import { ContentCopy, Close as CloseIcon } from '@material-ui/icons';
+import { makeStyles } from '@material-ui/styles';
 import QRCode from 'react-qr-code';
 import useComponentStyles from '../themes/componentStyles';
+import { componentSpacing } from '../utils/spacing';
+
+const useStyles = makeStyles((theme) => ({
+  dialogContent: componentSpacing.dialog(theme),
+  button: componentSpacing.button(theme),
+  dialog: {
+    '& .MuiDialog-paper': {
+      [theme.breakpoints.down('sm')]: {
+        margin: theme.spacing(2),
+        maxHeight: '90vh'
+      }
+    }
+  }
+}));
 
 const ShareDialog = ({ open, onClose, searchableId, title }) => {
   const classes = useComponentStyles();
+  const styles = useStyles();
   const [shareUrl, setShareUrl] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -44,7 +60,7 @@ const ShareDialog = ({ open, onClose, searchableId, title }) => {
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog}>
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Share "{title}"</Typography>
@@ -54,7 +70,7 @@ const ShareDialog = ({ open, onClose, searchableId, title }) => {
           </Box>
         </DialogTitle>
         
-        <DialogContent>
+        <DialogContent className={styles.dialogContent}>
           <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
             {/* QR Code */}
             <Box
@@ -108,7 +124,7 @@ const ShareDialog = ({ open, onClose, searchableId, title }) => {
         </DialogContent>
         
         <DialogActions>
-          <Button onClick={handleClose} color="primary" variant="contained">
+          <Button onClick={handleClose} color="primary" variant="contained" className={styles.button}>
             Close
           </Button>
         </DialogActions>

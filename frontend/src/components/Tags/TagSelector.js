@@ -7,34 +7,55 @@ import {
   FormControl,
   FormLabel,
   Alert,
-  OutlinedInput
+  OutlinedInput,
+  useMediaQuery
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { useTheme } from '@material-ui/core/styles';
 import Backend from '../../views/utilities/Backend';
 import TagChip from './TagChip';
+import { componentSpacing, touchTargets } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   formControl: {
     marginBottom: theme.spacing(2),
-    width: '100%'
+    width: '100%',
+    [theme.breakpoints.down('sm')]: {
+      marginBottom: theme.spacing(1.5)
+    }
   },
   select: {
     width: '100%',
     '& .MuiSelect-select': {
-      paddingTop: theme.spacing(1),
-      paddingBottom: theme.spacing(1)
+      paddingTop: theme.spacing(1.5),
+      paddingBottom: theme.spacing(1.5),
+      minHeight: touchTargets.input.height - 32, // Account for borders/padding
+      [theme.breakpoints.down('sm')]: {
+        paddingTop: theme.spacing(1),
+        paddingBottom: theme.spacing(1),
+        minHeight: touchTargets.input.mobileHeight - 28,
+        fontSize: '0.875rem'
+      }
     }
   },
   selectedTagsContainer: {
-    marginTop: theme.spacing(1),
+    marginTop: theme.spacing(1.5),
     display: 'flex',
     flexWrap: 'wrap',
-    gap: theme.spacing(0.5)
+    gap: theme.spacing(0.75),
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(1),
+      gap: theme.spacing(0.5)
+    }
   },
   limitMessage: {
     marginTop: theme.spacing(1),
     fontSize: '0.75rem',
-    color: theme.palette.text.secondary
+    color: theme.palette.text.secondary,
+    [theme.breakpoints.down('sm')]: {
+      marginTop: theme.spacing(0.75),
+      fontSize: '0.7rem'
+    }
   },
   errorMessage: {
     marginTop: theme.spacing(1)
@@ -42,11 +63,19 @@ const useStyles = makeStyles((theme) => ({
   menuPaper: {
     maxHeight: 400,
     width: 350,
+    [theme.breakpoints.down('sm')]: {
+      maxHeight: '60vh',
+      width: '90vw',
+      maxWidth: 300
+    },
     '& .MuiList-root': {
       paddingTop: 0,
       paddingBottom: 0,
       maxHeight: 400,
       overflowY: 'scroll',
+      [theme.breakpoints.down('sm')]: {
+        maxHeight: '60vh'
+      },
       '&::-webkit-scrollbar': {
         width: '8px',
         visibility: 'visible',
@@ -64,6 +93,16 @@ const useStyles = makeStyles((theme) => ({
         }
       }
     }
+  },
+  menuItem: {
+    minHeight: touchTargets.clickable.minHeight,
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      minHeight: touchTargets.clickable.minHeight - 4,
+      paddingTop: theme.spacing(0.75),
+      paddingBottom: theme.spacing(0.75)
+    }
   }
 }));
 
@@ -77,6 +116,8 @@ const TagSelector = ({
   disabled = false
 }) => {
   const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -199,10 +240,11 @@ const TagSelector = ({
             key={tag.id} 
             value={tag.id}
             disabled={isMaxReached && !selectedTagIds.includes(tag.id)}
+            className={classes.menuItem}
           >
             <Box display="flex" alignItems="center" width="100%">
-              <Typography variant="body2">{tag.name}</Typography>
-              {tag.description && (
+              <Typography variant={isMobile ? "body2" : "body1"}>{tag.name}</Typography>
+              {tag.description && !isMobile && (
                 <Typography 
                   variant="caption" 
                   color="textSecondary" 
