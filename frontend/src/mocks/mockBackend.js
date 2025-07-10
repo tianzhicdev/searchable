@@ -1261,52 +1261,87 @@ const mockHandlers = {
     
     const mockPurchases = [
       {
+        id: 1,
         invoice_id: 'inv-purchase-1',
         searchable_id: 'mock-item-2',
         amount: 19.99,
+        fee: 0.02, // Platform fee 0.1%
         currency: 'usd',
+        type: 'stripe',
         status: 'paid',
         payment_status: 'complete',
+        payment_date: new Date(Date.now() - 170000000).toISOString(),
         created_at: new Date(Date.now() - 172800000).toISOString(),
-        paid_at: new Date(Date.now() - 170000000).toISOString(),
-        type: 'outgoing',
         other_party_username: 'seller456',
-        item_title: 'Professional Templates',
-        is_incoming: false,
-        user_role: 'buyer'
+        metadata: {
+          selections: [
+            {
+              id: 'file-1',
+              name: 'Professional Templates Pack',
+              price: 19.99,
+              count: 1
+            }
+          ],
+          stripe_fee: 0.70 // 3.5% Stripe fee
+        }
       },
       {
+        id: 2,
         invoice_id: 'inv-purchase-2',
         searchable_id: 'mock-item-4',
         amount: 39.99,
+        fee: 0.04,
         currency: 'usd',
+        type: 'stripe',
         status: 'paid',
         payment_status: 'complete',
+        payment_date: new Date(Date.now() - 259000000).toISOString(),
         created_at: new Date(Date.now() - 259200000).toISOString(),
-        paid_at: new Date(Date.now() - 259000000).toISOString(),
-        type: 'outgoing',
         other_party_username: 'designer_pro',
-        item_title: 'UI Kit Components',
-        is_incoming: false,
-        user_role: 'buyer'
+        metadata: {
+          selections: [
+            {
+              id: 'file-2',
+              name: 'UI Kit Components',
+              price: 29.99,
+              count: 1
+            },
+            {
+              id: 'file-3',
+              name: 'Bonus Icons Pack',
+              price: 10.00,
+              count: 1
+            }
+          ],
+          stripe_fee: 1.40
+        }
       }
     ];
     
     const mockSales = [
       {
+        id: 3,
         invoice_id: 'inv-sale-1',
         searchable_id: 'mock-item-1',
         amount: 29.99,
+        fee: 0.03,
         currency: 'usd',
+        type: 'stripe',
         status: 'paid',
         payment_status: 'complete',
+        payment_date: new Date(Date.now() - 80000000).toISOString(),
         created_at: new Date(Date.now() - 86400000).toISOString(),
-        paid_at: new Date(Date.now() - 80000000).toISOString(),
-        type: 'incoming',
         other_party_username: 'buyer123',
-        item_title: 'Premium Digital Asset Bundle',
-        is_incoming: true,
-        user_role: 'seller'
+        metadata: {
+          selections: [
+            {
+              id: 'file-4',
+              name: 'Premium Digital Asset Bundle',
+              price: 29.99,
+              count: 1
+            }
+          ]
+        }
       }
     ];
     
@@ -1606,31 +1641,44 @@ const mockHandlers = {
     return createMockResponse({
       withdrawals: [
         {
-          id: 'withdrawal-1',
+          id: 1,
           amount: 50.00,
+          fee: 0.05, // 0.1% withdrawal fee
           currency: 'usd',
-          status: 'completed',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          completed_at: new Date(Date.now() - 172000000).toISOString(),
+          status: 'complete',
           type: 'bank_transfer',
+          created_at: new Date(Date.now() - 172800000).toISOString(),
           metadata: {
-            bank_name: 'Mock Bank',
-            last_four: '1234'
+            address: '****1234',
+            bank_name: 'Mock Bank'
           }
         },
         {
-          id: 'withdrawal-2',
+          id: 2,
           amount: 30.00,
+          fee: 0.03,
           currency: 'usd',
           status: 'pending',
+          type: 'lightning',
           created_at: new Date(Date.now() - 3600000).toISOString(),
-          type: 'paypal',
           metadata: {
-            email: 'user@example.com'
+            address: 'lnbc30u1p3h4c7...'
+          }
+        },
+        {
+          id: 3,
+          amount: 100.00,
+          fee: 0.10,
+          currency: 'usd',
+          status: 'complete',
+          type: 'usdt',
+          created_at: new Date(Date.now() - 604800000).toISOString(),
+          metadata: {
+            address: '0x742d35Cc6634C0532925a3b844Bc9e7595f89234'
           }
         }
       ],
-      total: 2
+      total: 3
     });
   },
   
@@ -1641,29 +1689,42 @@ const mockHandlers = {
     return createMockResponse({
       deposits: [
         {
-          id: 'deposit-1',
-          amount: 100.00,
+          deposit_id: 1,
+          amount: '100.00',
           currency: 'usd',
-          status: 'completed',
+          type: 'stripe',
+          status: 'complete',
           created_at: new Date(Date.now() - 432000000).toISOString(),
-          completed_at: new Date(Date.now() - 431000000).toISOString(),
-          type: 'credit_card',
+          address: null,
+          tx_hash: null,
           metadata: {
             last_four: '4242'
           }
         },
         {
-          id: 'deposit-2',
-          amount: 50.00,
-          currency: 'usd',
-          status: 'completed',
+          deposit_id: 2,
+          amount: '50.00',
+          currency: 'usdt',
+          type: 'usdt',
+          status: 'complete',
           created_at: new Date(Date.now() - 864000000).toISOString(),
-          completed_at: new Date(Date.now() - 863000000).toISOString(),
-          type: 'bank_transfer',
+          address: '0x742d35Cc6634C0532925a3b844Bc9e7595f89234',
+          tx_hash: '0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+          metadata: {}
+        },
+        {
+          deposit_id: 3,
+          amount: '0.00000000',
+          currency: 'usdt',
+          type: 'usdt',
+          status: 'pending',
+          created_at: new Date(Date.now() - 3600000).toISOString(),
+          address: '0x123456789abcdef123456789abcdef123456789a',
+          tx_hash: null,
           metadata: {}
         }
       ],
-      total: 2
+      total: 3
     });
   },
   

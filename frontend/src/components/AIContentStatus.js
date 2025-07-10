@@ -19,9 +19,16 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(2),
     marginBottom: theme.spacing(2),
+    width: '100%',
   },
   table: {
+    display: 'table',
     width: '100%',
+    tableLayout: 'fixed',
+  },
+  tableContainer: {
+    width: '100%',
+    overflowX: 'auto',
   },
   statusChip: {
     fontWeight: 'bold',
@@ -104,13 +111,13 @@ const AIContentStatus = () => {
           </Typography>
         </Box>
       ) : (
-        <TableContainer>
+        <TableContainer className={classes.tableContainer}>
           <Table className={classes.table}>
             <TableHead>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created</TableCell>
+                <TableCell style={{ width: '50%' }}>Title</TableCell>
+                <TableCell style={{ width: '20%' }} align="center">Status</TableCell>
+                <TableCell style={{ width: '30%' }} align="right">Created</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

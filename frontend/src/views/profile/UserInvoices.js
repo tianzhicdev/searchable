@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useHistory } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -24,12 +25,16 @@ import {
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
 import RewardComponent from '../../components/Reward/RewardComponent';
+import UnifiedReceipt from '../../components/Receipt';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing, spacing } from '../../utils/spacing';
 
-const UserInvoices = ({ initialView }) => {
+const UserInvoices = () => {
   const classes = useComponentStyles();
   const theme = useTheme();
+  const location = useLocation();
+  const history = useHistory();
+  
   const [invoices, setInvoices] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [sales, setSales] = useState([]);
@@ -38,20 +43,6 @@ const UserInvoices = ({ initialView }) => {
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Map view names to tab indices
-  const getInitialTab = () => {
-    switch (initialView) {
-      case 'purchases': return 0;
-      case 'sales': return 1;
-      case 'withdrawals': return 2;
-      case 'deposits': return 3;
-      case 'rewards': return 4;
-      default: return 0; // Default to purchases
-    }
-  };
-  
-  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [anchorEl, setAnchorEl] = useState(null);
   const [stats, setStats] = useState({
     totalSpent: 0,
@@ -65,6 +56,29 @@ const UserInvoices = ({ initialView }) => {
     rewardsCount: 0,
     depositsCount: 0
   });
+  
+  // Get active tab from URL
+  const searchParams = new URLSearchParams(location.search);
+  const viewParam = searchParams.get('view') || 'purchases';
+  
+  const viewToTab = {
+    'purchases': 0,
+    'sales': 1,
+    'withdrawals': 2,
+    'deposits': 3,
+    'gifts': 4,
+    'rewards': 4
+  };
+  
+  const tabToView = {
+    0: 'purchases',
+    1: 'sales',
+    2: 'withdrawals',
+    3: 'deposits',
+    4: 'gifts'
+  };
+  
+  const activeTab = viewToTab[viewParam] ?? 0;
 
   useEffect(() => {
     fetchUserInvoices();
@@ -73,10 +87,10 @@ const UserInvoices = ({ initialView }) => {
     fetchUserDeposits();
   }, []);
   
-  // Update active tab when initialView changes
+  // Re-render when URL changes
   useEffect(() => {
-    setActiveTab(getInitialTab());
-  }, [initialView]);
+    // Force component to use new activeTab from URL
+  }, [location.search]);
 
   const fetchUserInvoices = async () => {
     try {
@@ -186,7 +200,8 @@ const UserInvoices = ({ initialView }) => {
   };
 
   const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+    const newView = tabToView[newValue];
+    history.push(`/dashboard?view=${newView}`);
   };
 
   const handleMenuOpen = (event) => {
@@ -198,7 +213,8 @@ const UserInvoices = ({ initialView }) => {
   };
 
   const handleMenuItemClick = (tabIndex) => {
-    setActiveTab(tabIndex);
+    const newView = tabToView[tabIndex];
+    history.push(`/dashboard?view=${newView}`);
     handleMenuClose();
   };
 
@@ -213,8 +229,18 @@ const UserInvoices = ({ initialView }) => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount, currency = 'usd') => {
+    if (typeof amount !== 'number') {
+      amount = parseFloat(amount) || 0;
+    }
+    const symbol = currency === 'usd' ? '$' : '';
+    return `${symbol}${amount.toFixed(2)}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
   };
 
   if (loading) {
@@ -440,87 +466,13 @@ const UserInvoices = ({ initialView }) => {
                     Total Withdrawn History ({withdrawals.length})
                   </Typography>
                   {withdrawals.map((withdrawal) => (
-                    <Paper 
+                    <UnifiedReceipt
                       key={withdrawal.id}
-                      sx={{ 
-                        mb: theme.spacing(spacing.element.md),
-                        p: theme.spacing(2),
-                        [theme.breakpoints.down('sm')]: {
-                          mb: theme.spacing(spacing.element.xs),
-                          p: theme.spacing(1.5)
-                        }
-                      }}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                        <Box flex={1}>
-                          <Chip 
-                            label={withdrawal.status.toUpperCase()}
-                            color={withdrawal.status === 'complete' ? 'primary' : 'default'}
-                            size="small"
-                          />
-                          <Typography variant="h6" className={classes.staticText}>
-                            Withdrawal #{withdrawal.id}
-                          </Typography>
-                          <Typography variant="body2" className={classes.systemText}>
-                            {new Date(withdrawal.created_at).toLocaleDateString()} at {new Date(withdrawal.created_at).toLocaleTimeString()}
-                          </Typography>
-                          {withdrawal.metadata?.address && (
-                            <Typography
-                              variant="body2"
-                              className={classes.systemText}
-                              style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}
-                            >
-                              To: {withdrawal.metadata.address}
-                            </Typography>
-                          )}
-                          <Typography variant="caption" display="block" style={{ marginTop: 4 }}>
-                            {withdrawal.type.replace('_', ' ').toUpperCase()}
-                          </Typography>
-                          
-                          {/* Withdrawal Breakdown */}
-                          <Box sx={{ 
-                            mt: theme.spacing(2), 
-                            p: theme.spacing(2),
-                            backgroundColor: theme.palette.grey[50],
-                            borderRadius: 1,
-                            [theme.breakpoints.down('sm')]: {
-                              mt: theme.spacing(1.5),
-                              p: theme.spacing(1.5)
-                            }
-                          }}>
-                            <Typography variant="subtitle2" className={classes.systemText}>
-                              Withdrawal Breakdown:
-                            </Typography>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-                              <Typography variant="body2" className={classes.userText}>
-                                Amount:
-                              </Typography>
-                              <Typography variant="body2" className={classes.userText}>
-                                {formatCurrency(withdrawal.amount)}
-                              </Typography>
-                            </Box>
-                            {withdrawal.fee > 0 && (
-                              <Box display="flex" justifyContent="space-between" alignItems="center">
-                                <Typography variant="body2" className={classes.systemText}>
-                                  Platform Fee (0.1%):
-                                </Typography>
-                                <Typography variant="body2" className={classes.systemText}>
-                                  -{formatCurrency(withdrawal.fee)}
-                                </Typography>
-                              </Box>
-                            )}
-                            <Box display="flex" justifyContent="space-between" alignItems="center" style={{ borderTop: '1px solid #ccc', paddingTop: '8px', marginTop: '8px' }}>
-                              <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
-                                Received Amount:
-                              </Typography>
-                              <Typography variant="body2" className={classes.userText} style={{ fontWeight: 'bold' }}>
-                                {formatCurrency(withdrawal.amount - (withdrawal.fee || 0))}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Paper>
+                      type="withdrawal"
+                      data={withdrawal}
+                      formatCurrency={formatCurrency}
+                      formatDate={formatDate}
+                    />
                   ))}
                 </>
               )}
@@ -559,48 +511,24 @@ const UserInvoices = ({ initialView }) => {
                     Total Deposit History ({deposits.length})
                   </Typography>
                   {deposits.map((deposit) => (
-                    <Paper 
+                    <UnifiedReceipt
                       key={deposit.deposit_id}
-                      sx={{ 
-                        mb: theme.spacing(spacing.element.md),
-                        p: theme.spacing(2),
-                        [theme.breakpoints.down('sm')]: {
-                          mb: theme.spacing(spacing.element.xs),
-                          p: theme.spacing(1.5)
-                        }
+                      type="deposit"
+                      data={{
+                        ...deposit,
+                        id: deposit.deposit_id,
+                        metadata: {
+                          address: deposit.address,
+                          tx_hash: deposit.tx_hash
+                        },
+                        currency: deposit.type === 'stripe' ? 'usd' : 'usdt'
                       }}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                        <Box flex={1}>
-                          <Box display="flex" gap={1} mb={1}>
-                            <Chip 
-                              label={deposit.status.toUpperCase()}
-                              color={deposit.status === 'complete' ? 'primary' : 'default'}
-                              size="small"
-                            />
-                          </Box>
-                          <Typography variant="h6" className={classes.staticText}>
-                            Deposit #{deposit.deposit_id}
-                          </Typography>
-                          <Typography variant="body2" className={classes.systemText}>
-                            {new Date(deposit.created_at).toLocaleDateString()} at {new Date(deposit.created_at).toLocaleTimeString()}
-                          </Typography>
-                          {deposit.type !== 'stripe' && deposit.address && (
-                            <Typography variant="body2" className={classes.systemText}>
-                              Address: {deposit.address}
-                            </Typography>
-                          )}
-                          {deposit.tx_hash && (
-                            <Typography variant="body2" className={classes.systemText}>
-                              TX: {deposit.tx_hash}
-                            </Typography>
-                          )}
-                          <Typography variant="h6" className={classes.userText} style={{ marginTop: 8 }}>
-                            {deposit.amount === '0.00000000' ? 'Pending' : `$${deposit.amount} ${deposit.type === 'stripe' ? 'USD' : 'USDT'}`}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Paper>
+                      formatCurrency={(amount, currency) => {
+                        if (amount === '0.00000000') return 'Pending';
+                        return formatCurrency(parseFloat(amount), currency);
+                      }}
+                      formatDate={formatDate}
+                    />
                   ))}
                 </>
               )}
@@ -639,9 +567,16 @@ const UserInvoices = ({ initialView }) => {
                     Total Rewards History ({rewards.length})
                   </Typography>
                   {rewards.map((reward) => (
-                    <RewardComponent
+                    <UnifiedReceipt
                       key={reward.id}
-                      reward={reward}
+                      type="reward"
+                      data={{
+                        ...reward,
+                        currency: 'usd',
+                        description: reward.description || (reward.type ? `${reward.type.replace(/_/g, ' ')} reward` : 'Reward')
+                      }}
+                      formatCurrency={formatCurrency}
+                      formatDate={formatDate}
                     />
                   ))}
                 </>

@@ -483,7 +483,7 @@ const Dashboard = () => {
           mt: theme.spacing(spacing.element.xs)
         } 
       }}>
-        <UserInvoices initialView={currentView} />
+        <UserInvoices />
       </Grid>
       
       {/* USDT Withdrawal Dialog */}
