@@ -50,16 +50,9 @@ show_usage() {
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local unittests                   - Run unit tests for critical functions"
-    echo "  ./exec.sh local mock                        - Start React in mock mode"
+    echo "  ./exec.sh local mock                        - Start React in mock mode (default theme)"
+    echo "  ./exec.sh local mock --ls                   - List all available themes"
     echo "  ./exec.sh local mock --theme=<themename>    - Start React in mock mode with specific theme"
-    echo "                                               Available themes: neonTokyo, cyberpunk, vaporwave, matrix,"
-    echo "                                               synthwave, hacker, bloodMoon, deepSpace, arcade, original,"
-    echo "                                               cartoonCandy, cartoonBubble, cartoonPastel, lightMinimal,"
-    echo "                                               lightAiry, lightSoft, elegantGold, elegantSilver, elegantRoyal,"
-    echo "                                               natureForest, natureOcean, natureSunset, retro80s, retro70s,"
-    echo "                                               retroTerminal, fantasyDragon, fantasyUnicorn, fantasyElven,"
-    echo "                                               minimalMonochrome, minimalNordic, minimalZen, seasonalAutumn,"
-    echo "                                               seasonalWinter, seasonalSpring"
     echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
@@ -93,6 +86,7 @@ show_usage() {
     echo "  ./exec.sh local test --parallel"
     echo "  ./exec.sh local unittests"
     echo "  ./exec.sh local mock"
+    echo "  ./exec.sh local mock --ls"
     echo "  ./exec.sh local mock --theme=cyberpunk"
     echo "  ./exec.sh local mock --theme=lightMinimal"
     echo "  ./exec.sh local mock --theme=elegantGold"
@@ -584,6 +578,78 @@ local_react() {
 # Local integration tests  
 local_test() {
     run_tests "local"
+}
+
+# List available themes
+list_themes() {
+    echo -e "${BLUE}Available Themes for Mock Mode:${NC}"
+    echo ""
+    
+    echo -e "${YELLOW}🍭 Cartoon Themes:${NC}"
+    echo "  cartoonCandy      - Sweet and playful candy colors"
+    echo "  cartoonBubble     - Bubblegum and cotton candy vibes"
+    echo "  cartoonPastel     - Soft pastel cartoon palette"
+    echo ""
+    
+    echo -e "${YELLOW}☀️  Light Themes:${NC}"
+    echo "  lightMinimal      - Clean and minimalist light theme"
+    echo "  lightAiry         - Bright and breathable design"
+    echo "  lightSoft         - Gentle and soothing light colors"
+    echo ""
+    
+    echo -e "${YELLOW}👑 Elegant Themes:${NC}"
+    echo "  elegantGold       - Luxurious gold and black"
+    echo "  elegantSilver     - Sophisticated silver and navy"
+    echo "  elegantRoyal      - Regal purple and gold accents"
+    echo ""
+    
+    echo -e "${YELLOW}🌿 Nature Themes:${NC}"
+    echo "  natureForest      - Deep forest greens and earth tones"
+    echo "  natureOcean       - Deep sea blues and aqua"
+    echo "  natureSunset      - Warm sunset oranges and purples"
+    echo ""
+    
+    echo -e "${YELLOW}📼 Retro Themes:${NC}"
+    echo "  retro80s          - Radical 80s neon colors"
+    echo "  retro70s          - Groovy 70s earth tones"
+    echo "  retroTerminal     - Old school amber terminal"
+    echo ""
+    
+    echo -e "${YELLOW}🐉 Fantasy Themes:${NC}"
+    echo "  fantasyDragon     - Mystical dragon scales and fire"
+    echo "  fantasyUnicorn    - Magical unicorn rainbow pastels"
+    echo "  fantasyElven      - Mystical elven forest magic"
+    echo ""
+    
+    echo -e "${YELLOW}⚪ Minimal Themes:${NC}"
+    echo "  minimalMonochrome - Pure black and white"
+    echo "  minimalNordic     - Scandinavian minimalism"
+    echo "  minimalZen        - Peaceful and calming"
+    echo ""
+    
+    echo -e "${YELLOW}🍂 Seasonal Themes:${NC}"
+    echo "  seasonalAutumn    - Fall leaves and harvest colors"
+    echo "  seasonalWinter    - Cool winter blues and whites"
+    echo "  seasonalSpring    - Fresh spring blooms and pastels"
+    echo ""
+    
+    echo -e "${YELLOW}🎮 Original Themes:${NC}"
+    echo "  neonTokyo         - Tokyo nights with neon signs (default)"
+    echo "  cyberpunk         - Neon-lit streets of the future"
+    echo "  vaporwave         - 80s nostalgia with pastel dreams"
+    echo "  matrix            - Enter the Matrix (green terminal)"
+    echo "  synthwave         - Retro-futuristic sunset vibes"
+    echo "  hacker            - Classic green terminal aesthetic"
+    echo "  bloodMoon         - Dark and vampiric crimson theme"
+    echo "  deepSpace         - Cosmic void with stellar accents"
+    echo "  arcade            - Retro arcade game vibes"
+    echo "  original          - The classic Searchable look"
+    echo ""
+    
+    echo -e "${GREEN}Usage Examples:${NC}"
+    echo "  ./exec.sh local mock --theme=lightMinimal"
+    echo "  ./exec.sh local mock --theme=cyberpunk"
+    echo "  ./exec.sh local mock --theme=natureForest"
 }
 
 # Local React development server in mock mode
@@ -1155,8 +1221,11 @@ case "$ENVIRONMENT" in
                 fi
                 ;;
             "mock")
+                # Check for --ls option to list themes
+                if [ "$CONTAINER" = "--ls" ]; then
+                    list_themes
                 # Check if theme parameter is provided
-                if [[ "$CONTAINER" == --theme=* ]]; then
+                elif [[ "$CONTAINER" == --theme=* ]]; then
                     # Extract theme name from --theme=themename
                     theme_name="${CONTAINER#--theme=}"
                     local_mock "$theme_name"

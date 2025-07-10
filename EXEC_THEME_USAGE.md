@@ -4,6 +4,12 @@ The `exec.sh` script now supports theme selection for local mock deployment!
 
 ## Usage
 
+### List Available Themes
+```bash
+./exec.sh local mock --ls
+```
+This displays all 34 available themes with descriptions, organized by category.
+
 ### Basic Usage (Default Theme)
 ```bash
 ./exec.sh local mock
@@ -18,6 +24,9 @@ This starts the React app in mock mode with the default `neonTokyo` theme.
 ## Examples
 
 ```bash
+# List all available themes
+./exec.sh local mock --ls
+
 # Cartoon themes
 ./exec.sh local mock --theme=cartoonCandy
 ./exec.sh local mock --theme=cartoonBubble
@@ -73,6 +82,7 @@ This starts the React app in mock mode with the default `neonTokyo` theme.
 ## Features
 
 - 🎨 **34 Unique Themes**: Choose from a wide variety of themes
+- 📋 **Theme Listing**: Use `--ls` to see all themes with descriptions
 - 🚀 **Easy Deployment**: Just add `--theme=themename` to your command
 - 🔄 **No Restart Required**: Each run can use a different theme
 - 📱 **Mock Mode**: Perfect for testing themes without backend
