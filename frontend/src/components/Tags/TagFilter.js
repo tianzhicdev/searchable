@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Paper,
   Typography,
-  FormControlLabel,
-  Checkbox,
-  TextField,
   Box,
   Button,
   Chip,
@@ -43,11 +40,13 @@ const useStyles = makeStyles((theme) => ({
     overflowY: 'auto',
     marginBottom: theme.spacing(1.5),
     padding: theme.spacing(1),
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing(1),
     [theme.breakpoints.down('sm')]: {
       maxHeight: '40vh',
-      padding: theme.spacing(0.5)
+      padding: theme.spacing(0.5),
+      gap: theme.spacing(0.75)
     },
     '&::-webkit-scrollbar': {
       width: '8px',
@@ -105,23 +104,39 @@ const useStyles = makeStyles((theme) => ({
       }
     }
   },
-  formControlLabel: {
-    display: 'block',
-    margin: theme.spacing(0.75, 0),
-    width: '100%',
-    minHeight: touchTargets.clickable.minHeight,
-    '& .MuiCheckbox-root': {
-      padding: theme.spacing(1)
+  chipSecondary: {
+    // For retro80s theme, use black text on bright green background
+    color: theme.palette.secondary === '#00ff00' ? '#000000' : theme.palette.getContrastText(theme.palette.secondary.main),
+    '& .MuiChip-deleteIcon': {
+      color: theme.palette.secondary === '#00ff00' ? '#000000' : theme.palette.getContrastText(theme.palette.secondary.main)
+    }
+  },
+  tagButton: {
+    minHeight: 36,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(1, 2),
+    textTransform: 'none',
+    fontWeight: 'normal',
+    transition: 'all 0.2s',
+    border: `1px solid ${theme.palette.divider}`,
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+      transform: 'translateY(-1px)',
+      boxShadow: theme.shadows[2]
     },
     [theme.breakpoints.down('sm')]: {
-      margin: theme.spacing(0.5, 0),
-      minHeight: touchTargets.clickable.minHeight - 4,
-      '& .MuiCheckbox-root': {
-        padding: theme.spacing(0.75)
-      },
-      '& .MuiFormControlLabel-label': {
-        fontSize: '0.875rem'
-      }
+      minHeight: touchTargets.clickable.minHeight,
+      padding: theme.spacing(0.75, 1.5),
+      fontSize: '0.875rem'
+    }
+  },
+  tagButtonSelected: {
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    border: `1px solid ${theme.palette.primary.main}`,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.dark,
+      border: `1px solid ${theme.palette.primary.dark}`
     }
   }
 }));
@@ -205,31 +220,27 @@ const TagFilter = ({
                 size={isMobile ? "small" : "medium"}
                 onDelete={() => handleTagRemove(tag)}
                 color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
-                className={classes.chip}
+                className={`${classes.chip} ${tag.tag_type !== 'user' ? classes.chipSecondary : ''}`}
               />
             ))}
           </Box>
         )}
         
-        {/* Available tags checkboxes */}
+        {/* Available tags as clickable buttons */}
         <Box className={classes.tagGroup}>
           {availableTags.map((tag) => {
             const isSelected = selectedTags.find(selected => selected.id === tag.id);
             
             return (
-              <FormControlLabel
+              <Button
                 key={tag.id}
-                className={classes.formControlLabel}
-                control={
-                  <Checkbox
-                    checked={!!isSelected}
-                    onChange={() => handleTagToggle(tag)}
-                    size={isMobile ? "small" : "medium"}
-                    color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
-                  />
-                }
-                label={tag.name}
-              />
+                variant="outlined"
+                className={`${classes.tagButton} ${isSelected ? classes.tagButtonSelected : ''}`}
+                onClick={() => handleTagToggle(tag)}
+                size={isMobile ? "small" : "medium"}
+              >
+                {tag.name}
+              </Button>
             );
           })}
         </Box>

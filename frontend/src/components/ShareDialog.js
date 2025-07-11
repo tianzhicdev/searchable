@@ -31,18 +31,32 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-const ShareDialog = ({ open, onClose, searchableId, title }) => {
+const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => {
   const classes = useComponentStyles();
   const styles = useStyles();
   const [shareUrl, setShareUrl] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
-    if (searchableId) {
-      const url = `${window.location.origin}/searchable-details/${searchableId}`;
+    if (searchableId && searchableType) {
+      let route;
+      switch (searchableType) {
+        case 'downloadable':
+          route = 'searchable-item';
+          break;
+        case 'offline':
+          route = 'offline-item';
+          break;
+        case 'direct':
+          route = 'direct-item';
+          break;
+        default:
+          route = 'searchable-item'; // Default fallback
+      }
+      const url = `${window.location.origin}/${route}/${searchableId}`;
       setShareUrl(url);
     }
-  }, [searchableId]);
+  }, [searchableId, searchableType]);
 
   const handleCopyToClipboard = async () => {
     try {
