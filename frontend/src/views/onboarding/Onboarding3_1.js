@@ -28,6 +28,9 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   backButton: {
     position: 'absolute',
@@ -46,6 +49,8 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(2),
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
+    boxShadow: 'none !important',
+    border: 'none !important',
   },
   priceInput: {
     width: 120,
@@ -138,7 +143,7 @@ const Onboarding3_1 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>

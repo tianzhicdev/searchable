@@ -33,7 +33,8 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(2),
     backgroundColor: theme.palette.background.default,
     borderRadius: theme.shape.borderRadius,
-    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: 'none !important',
+    border: 'none !important',
   },
   previewTitle: {
     marginBottom: theme.spacing(1),

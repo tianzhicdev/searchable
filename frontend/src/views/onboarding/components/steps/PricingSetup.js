@@ -43,17 +43,20 @@ const useStyles = makeStyles((theme) => ({
   pricingOption: {
     padding: theme.spacing(2),
     marginBottom: theme.spacing(1),
-    border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     cursor: 'pointer',
     transition: 'all 0.3s ease',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
     '&:hover': {
-      borderColor: theme.palette.primary.main,
+      background: 'transparent !important',
     },
   },
   selectedOption: {
-    borderColor: theme.palette.primary.main,
     backgroundColor: theme.palette.primary.light,
+    boxShadow: 'none !important',
+    border: 'none !important',
   },
   optionTitle: {
     fontWeight: 600,

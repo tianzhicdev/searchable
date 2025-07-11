@@ -29,6 +29,9 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   backButton: {
     position: 'absolute',
@@ -39,13 +42,11 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(4),
     marginBottom: theme.spacing(4),
     padding: theme.spacing(4),
-    border: `2px dashed ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     textAlign: 'center',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     '&:hover': {
-      borderColor: theme.palette.primary.main,
       backgroundColor: theme.palette.action.hover,
     },
   },
@@ -168,7 +169,7 @@ const Onboarding3 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           {uploading && (
             <Box className={classes.loadingOverlay}>
               <CircularProgress />

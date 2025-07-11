@@ -13,6 +13,7 @@ import {
 import { Storefront, ShoppingCart } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { componentSpacing } from '../../utils/spacing';
+import config from '../../config';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -24,16 +25,46 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     ...componentSpacing.card(theme),
     textAlign: 'center',
+    boxShadow: 'none',
+    border: 'none',
+    background: 'transparent',
   },
   title: {
     marginBottom: theme.spacing(4),
+    animation: '$typewriter 2s steps(20) 1s forwards',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    width: 0,
+  },
+  '@keyframes typewriter': {
+    to: { width: '100%' }
+  },
+  subtitle: {
+    marginBottom: theme.spacing(3),
   },
   optionCard: {
     height: '100%',
     transition: 'all 0.3s ease',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
+    '& .MuiPaper-root': {
+      boxShadow: 'none !important',
+      border: 'none !important',
+      background: 'transparent !important',
+    },
+    '& .MuiCard-root': {
+      boxShadow: 'none !important',
+      border: 'none !important',
+      background: 'transparent !important',
+    },
+    '& .MuiCardActionArea-root': {
+      '&:hover': {
+        backgroundColor: 'transparent',
+      }
+    },
     '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: theme.shadows[8],
+      transform: 'translateY(-10px)',
     },
   },
   cardContent: {
@@ -50,7 +81,7 @@ const useStyles = makeStyles((theme) => ({
   },
   optionDescription: {
     color: theme.palette.text.secondary,
-  },
+  }
 }));
 
 const Onboarding1 = () => {
@@ -68,18 +99,18 @@ const Onboarding1 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           <Typography variant="h3" className={classes.title}>
-            Welcome to Searchable!
+            Welcome to {config.BRANDING_CONFIG.landingIntro}!
           </Typography>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" className={classes.subtitle} gutterBottom>
             What would you like to do?
           </Typography>
           
           <Box style={{ marginTop: 32 }}>
             <Grid container spacing={3} id="container-1">
-              <Grid item xs={12}>
-                <Card className={classes.optionCard} elevation={2}>
+              <Grid item xs={12} className={classes.optionCard}>
+                <Card elevation={0}>
                   <CardActionArea onClick={handleSellerClick}>
                     <CardContent className={classes.cardContent}>
                       <Storefront className={classes.icon} />
@@ -94,8 +125,8 @@ const Onboarding1 = () => {
                 </Card>
               </Grid>
               
-              <Grid item xs={12}>
-                <Card className={classes.optionCard} elevation={2}>
+              <Grid item xs={12} className={classes.optionCard}>
+                <Card elevation={0}>
                   <CardActionArea onClick={handleShopperClick}>
                     <CardContent className={classes.cardContent}>
                       <ShoppingCart className={classes.icon} />
