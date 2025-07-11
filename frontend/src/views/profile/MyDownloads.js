@@ -72,13 +72,21 @@ const MyDownloads = () => {
       
     } catch (err) {
       console.error('Error downloading file:', err);
-      setError('Failed to download file. Please try again.');
+      
+      // Check if the error is due to removed item
+      if (err.response?.status === 404) {
+        setError('This file is no longer available. The item may have been removed by the seller. Please contact support for assistance.');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to download this file. Please ensure you have purchased this item.');
+      } else {
+        setError('Failed to download file. Please try again later or contact support if the problem persists.');
+      }
     }
   };
 
   const handleBackClick = () => {
     debugNavigationStack(location, 'MyDownloads Back Click');
-    navigateBack(history, '/profile');
+    navigateBack(history);
   };
 
   if (loading) {

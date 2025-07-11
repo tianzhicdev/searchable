@@ -44,12 +44,13 @@ def get_searchableIds_by_user(user_id):
         logger.error(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
         return []
 
-def get_searchable(searchable_id):
+def get_searchable(searchable_id, include_removed=False):
     """
     Retrieves a searchable item by its ID
     
     Args:
         searchable_id: The ID of the searchable item to retrieve
+        include_removed: If True, will also return removed items (default: False)
         
     Returns:
         dict: The searchable data including the searchable_id, or None if not found
@@ -58,12 +59,22 @@ def get_searchable(searchable_id):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        execute_sql(cur, """
-            SELECT searchable_id, type, searchable_data, user_id
-            FROM searchables
-            WHERE searchable_id = %s
-            AND removed = FALSE
-        """, params=(searchable_id,))
+        # Build query based on include_removed parameter
+        if include_removed:
+            query = """
+                SELECT searchable_id, type, searchable_data, user_id
+                FROM searchables
+                WHERE searchable_id = %s
+            """
+        else:
+            query = """
+                SELECT searchable_id, type, searchable_data, user_id
+                FROM searchables
+                WHERE searchable_id = %s
+                AND removed = FALSE
+            """
+        
+        execute_sql(cur, query, params=(searchable_id,))
         
         result = cur.fetchone()
         
