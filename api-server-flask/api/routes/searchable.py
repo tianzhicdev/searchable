@@ -1013,55 +1013,42 @@ class DownloadSearchableFile(Resource):
             # Get buyer ID from authenticated user
             buyer_id = current_user.id
             
-            # Get the searchable item data
-            searchable_data = get_searchable(searchable_id)
-            if not searchable_data:
-                return {"error": "Searchable item not found"}, 404
-            
-            # Check if this is a downloadable type searchable
-            item_type = searchable_data.get('payloads', {}).get('public', {}).get('type')
-            if item_type != 'downloadable':
-                return {"error": "This item is not downloadable"}, 400
-            
-            # Get downloadable files from the searchable data
-            downloadable_files = searchable_data.get('payloads', {}).get('public', {}).get('downloadableFiles', [])
-            
-            # Find the specific file
-            target_file = None
-            for file_info in downloadable_files:
-                if file_info.get('fileId') == file_id:
-                    target_file = file_info
-                    break
-            
-            if not target_file:
-                return {"error": "File not found"}, 404
-            
-            # Check if buyer has paid for this file
+            # First check if buyer has paid for this file
             conn = get_db_connection()
             cur = conn.cursor()
             
             # Query for completed payments for this searchable item by this buyer
-            payment_query = f"""
-                SELECT p.status, i.metadata
+            payment_query = """
+                SELECT p.status, i.metadata, s.searchable_data
                 FROM payment p
                 JOIN invoice i ON p.invoice_id = i.id
-                WHERE i.searchable_id = {searchable_id}
-                AND i.buyer_id = '{buyer_id}'
+                LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
+                WHERE i.searchable_id = %s
+                AND i.buyer_id = %s
                 AND p.status = 'complete'
             """
             
-            execute_sql(cur, payment_query)
+            execute_sql(cur, payment_query, params=(searchable_id, buyer_id))
             payments = cur.fetchall()
             
             # Check if any payment includes this file
             has_paid_for_file = False
-            for payment_status, invoice_metadata in payments:
+            target_file = None
+            searchable_data = None
+            
+            for payment_status, invoice_metadata, searchable_data_raw in payments:
                 if invoice_metadata and 'selections' in invoice_metadata:
                     for selection in invoice_metadata['selections']:
                         if selection.get('id') == file_id and selection.get('type') == 'downloadable':
                             has_paid_for_file = True
+                            # Try to get file info from invoice metadata first
+                            target_file = {
+                                'fileId': selection.get('id'),
+                                'fileName': selection.get('name', 'download')
+                            }
                             break
                     if has_paid_for_file:
+                        searchable_data = searchable_data_raw
                         break
             
             cur.close()
@@ -1069,6 +1056,14 @@ class DownloadSearchableFile(Resource):
             
             if not has_paid_for_file:
                 return {"error": "Payment required to download this file"}, 403
+            
+            # If we don't have file info from invoice, try to get it from searchable data
+            if target_file and not target_file.get('fileName') and searchable_data:
+                downloadable_files = searchable_data.get('payloads', {}).get('public', {}).get('downloadableFiles', [])
+                for file_info in downloadable_files:
+                    if file_info.get('fileId') == file_id:
+                        target_file['fileName'] = file_info.get('fileName', 'download')
+                        break
             
             # If payment verified, get the file from the file server
             file_server_url = os.environ.get('FILE_SERVER_URL')

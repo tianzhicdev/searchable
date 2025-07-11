@@ -1461,6 +1461,7 @@ def get_downloadable_items_by_user_id(user_id):
         cur = conn.cursor()
         
         # Query to get all completed purchases for the user
+        # Use LEFT JOIN for searchables so we still get results even if item was removed
         query = """
             SELECT 
                 i.id as invoice_id,
@@ -1474,7 +1475,7 @@ def get_downloadable_items_by_user_id(user_id):
                 u.username as seller_username
             FROM invoice i
             INNER JOIN payment p ON i.id = p.invoice_id
-            INNER JOIN searchables s ON i.searchable_id = s.searchable_id
+            LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
             INNER JOIN users u ON i.seller_id = u.id
             WHERE i.buyer_id = %s
             AND p.status = %s
@@ -1495,8 +1496,10 @@ def get_downloadable_items_by_user_id(user_id):
             searchable_data = row[7] or {}
             seller_username = row[8]
             
-            # Extract public data from searchable
-            public_data = searchable_data.get('payloads', {}).get('public', {})
+            # Extract public data from searchable (if item still exists)
+            public_data = {}
+            if searchable_data:
+                public_data = searchable_data.get('payloads', {}).get('public', {})
             
             # Extract downloadable files from invoice metadata selections
             downloadable_files = []
@@ -1512,8 +1515,8 @@ def get_downloadable_items_by_user_id(user_id):
                         'download_url': f"/v1/download-file/{searchable_id}/{selection.get('id')}"  # API endpoint for download
                     })
             
-            # If no selections in metadata, fallback to public downloadableFiles
-            if not downloadable_files and public_data.get('downloadableFiles'):
+            # If no selections in metadata, fallback to public downloadableFiles (only if searchable still exists)
+            if not downloadable_files and searchable_data and public_data.get('downloadableFiles'):
                 for file_data in public_data.get('downloadableFiles', []):
                     downloadable_files.append({
                         'id': file_data.get('id', ''),
@@ -1523,11 +1526,23 @@ def get_downloadable_items_by_user_id(user_id):
                         'download_url': f"/v1/download-file/{searchable_id}/{file_data.get('id', '')}"
                     })
             
+            # Get title and description from invoice metadata if searchable was removed
+            searchable_title = public_data.get('title', 'Untitled')
+            searchable_description = public_data.get('description', '')
+            
+            # If searchable was removed, try to get info from invoice metadata
+            if not searchable_data and invoice_metadata:
+                searchable_title = invoice_metadata.get('searchable_title', searchable_title)
+                searchable_description = invoice_metadata.get('searchable_description', searchable_description)
+                # Also check if we can get item type from invoice
+                if not public_data.get('type') and invoice_metadata.get('item_type'):
+                    public_data['type'] = invoice_metadata.get('item_type')
+            
             item = {
                 'invoice_id': invoice_id,
                 'searchable_id': searchable_id,
-                'searchable_title': public_data.get('title', 'Untitled'),
-                'searchable_description': public_data.get('description', ''),
+                'searchable_title': searchable_title,
+                'searchable_description': searchable_description,
                 'seller_username': seller_username,
                 'amount_paid': amount,
                 'fee_paid': fee,

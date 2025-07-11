@@ -276,12 +276,16 @@ class CreateInvoiceV1(Resource):
                     cancel_url=cancel_url,
                 )
                 
-                # Store invoice record metadata
+                # Store invoice record metadata with searchable info for future reference
+                public_data = searchable_data.get('payloads', {}).get('public', {})
                 invoice_metadata = {
                     "address": delivery_info.get('address', ''),
                     "tel": delivery_info.get('tel', ''),
                     "description": description,
                     "selections": selections,
+                    "searchable_title": public_data.get('title', f'Item #{searchable_id}'),
+                    "searchable_description": public_data.get('description', ''),
+                    "item_type": public_data.get('type', 'downloadable')
                 }
                 
                 # Use the helper function to insert the record
@@ -385,13 +389,17 @@ class CreateBalanceInvoiceV1(Resource):
             # Get delivery info if provided
             delivery_info = data.get('delivery_info', {})
             
-            # Prepare metadata
+            # Prepare metadata with searchable info for future reference
+            public_data = searchable_data.get('payloads', {}).get('public', {})
             metadata = {
                 "address": delivery_info.get('address', ''),
                 "tel": delivery_info.get('tel', ''),
                 "description": description,
                 "selections": selections,
-                "payment_method": "balance"
+                "payment_method": "balance",
+                "searchable_title": public_data.get('title', f'Item #{searchable_id}'),
+                "searchable_description": public_data.get('description', ''),
+                "item_type": public_data.get('type', 'downloadable')
             }
             
             # Create balance invoice and payment atomically
