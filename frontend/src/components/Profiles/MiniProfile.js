@@ -43,6 +43,8 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 'bold',
     marginBottom: theme.spacing(1),
     fontSize: '1.125rem',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
     [theme.breakpoints.down('sm')]: {
       fontSize: '1rem'
     }

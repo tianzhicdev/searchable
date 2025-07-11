@@ -49,7 +49,7 @@ const SearchableDetailsTop = ({
   return (
     <Box>
       {/* Title */}
-      <Typography variant="h3" className={`${classes.userText} ${detailClasses.title}`}>
+      <Typography variant="h3" className={`${classes.userText} ${classes.titleText} ${detailClasses.title}`}>
         {publicData.title || `Item #${searchableItem.searchable_id}`}
       </Typography>
       
@@ -76,7 +76,7 @@ const SearchableDetailsTop = ({
       {/* Description */}
       {publicData.description && (
         <Box>
-          <Typography variant="body1" className={`${classes.userText} ${detailClasses.description}`}>
+          <Typography variant="body1" className={`${classes.userText} ${classes.userTextBreak} ${detailClasses.description}`}>
             {publicData.description}
           </Typography>
         </Box>

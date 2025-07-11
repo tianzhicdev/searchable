@@ -63,6 +63,47 @@ const useComponentStyles = makeStyles((theme) => ({
         [theme.breakpoints.down('sm')]: {
             minWidth: 100
         }
+    },
+    
+    // Text breaking utilities for long continuous strings
+    breakWord: {
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word'
+    },
+    
+    breakAll: {
+        wordBreak: 'break-all',
+        overflowWrap: 'break-word'
+    },
+    
+    // For addresses, hashes, and other technical strings
+    addressText: {
+        wordBreak: 'break-all',
+        overflowWrap: 'break-word',
+        fontFamily: 'monospace'
+    },
+    
+    // For titles and user-generated content
+    titleText: {
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word',
+        hyphens: 'auto'
+    },
+    
+    // Combined userText with word breaking
+    userTextBreak: {
+        color: theme.appColors?.userText || theme.palette?.primary?.main,
+        fontFamily: themeConfig.fontPrimary,
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word'
+    },
+    
+    // Combined staticText with word breaking
+    staticTextBreak: {
+        color: theme.appColors?.staticText || theme.palette?.secondary?.main,
+        fontFamily: themeConfig.fontPrimary,
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word'
     }
 }));
 
