@@ -179,6 +179,14 @@ export const componentSpacing = {
       maxHeight: '90vh',
       margin: theme.spacing(2)
     }
+  }),
+  
+  // Page header with top buttons (back buttons, action buttons)
+  pageHeader: (theme) => ({
+    paddingBottom: theme.spacing(2), // 16px bottom padding
+    [theme.breakpoints.down('sm')]: {
+      paddingBottom: theme.spacing(1.5) // 12px bottom padding on mobile
+    }
   })
 };
 

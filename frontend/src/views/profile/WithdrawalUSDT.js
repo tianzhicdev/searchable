@@ -13,14 +13,12 @@ import {
   Alert,
   useTheme
 } from '@material-ui/core';
-import {
-  ArrowBack as ArrowBackIcon
-} from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -158,7 +156,7 @@ const WithdrawalUSDT = () => {
   
   if (fetchingBalance) {
     return (
-      <Grid container spacing={2} flexDirection={'column'}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -169,15 +167,11 @@ const WithdrawalUSDT = () => {
   }
   
   return (
-    <Grid container spacing={2} flexDirection={'column'}>
-      <Grid item xs={12}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={() => navigateBack(history, '/dashboard')}
-          className={classes.backButton}
-        >
-          Back to Dashboard
-        </Button>
+        />
       </Grid>
       
       <Grid item xs={12} md={6}>

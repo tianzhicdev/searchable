@@ -1,11 +1,11 @@
 import React from 'react';
 import { Grid, Typography, Button, Paper, Box, CircularProgress, useTheme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import SearchableDetailsTop from './SearchableDetailsTop';
 import SearchableDetailsPriceDisplay from './SearchableDetailsPriceDisplay';
 import useComponentStyles from '../themes/componentStyles';
 import { navigateBack, getBackButtonText } from '../utils/navigationUtils';
+import PageHeaderButton from './Navigation/PageHeaderButton';
 import useSearchableDetails from '../hooks/useSearchableDetails';
 import { detailPageStyles } from '../utils/detailPageSpacing';
 import { componentSpacing } from '../utils/spacing';
@@ -123,14 +123,10 @@ const BaseSearchableDetails = ({
   return (
     <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Back button */}
-      <Grid item xs={12} sx={{ mb: theme.spacing(2) }}>
-        <Button
-          startIcon={<ChevronLeftIcon />}
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={() => navigateBack(history)}
-          className={classes.backButton}
-        >
-          {getBackButtonText(location)}
-        </Button>
+        />
       </Grid>
 
       {/* Main content */}

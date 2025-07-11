@@ -10,13 +10,14 @@ import {
   CircularProgress,
   Alert
 } from '@material-ui/core';
-import { ArrowBack, Download } from '@material-ui/icons';
+import { Download } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing, spacing } from '../../utils/spacing';
 import { useTheme } from '@material-ui/core/styles';
 import backend from '../utilities/Backend';
 import DownloadableProfile from '../../components/DownloadableProfile';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 
 const MyDownloads = () => {
   const classes = useComponentStyles();
@@ -95,25 +96,10 @@ const MyDownloads = () => {
   return (
     <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header */}
-      <Grid item xs={12} sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: theme.spacing(spacing.element.md),
-        [theme.breakpoints.down('sm')]: {
-          mb: theme.spacing(spacing.element.xs)
-        }
-      }}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Button 
-            variant="contained" 
-            className={classes.iconButton}
-            onClick={handleBackClick}
-            title={getBackButtonText(location)}
-          >
-            <ArrowBack />
-          </Button>
-        </Box>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
+          onClick={handleBackClick}
+        />
       </Grid>
 
       {error && (

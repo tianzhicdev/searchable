@@ -17,7 +17,6 @@ import {
   useTheme
 } from '@material-ui/core';
 import {
-  ArrowBack as ArrowBackIcon,
   PhotoCamera,
   Person
 } from '@material-ui/icons';
@@ -31,6 +30,7 @@ import TagSelector from '../../components/Tags/TagSelector';
 import { SOCIAL_MEDIA_PLATFORMS, validateSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -377,7 +377,7 @@ const EditProfile = () => {
 
   if (fetchLoading) {
     return (
-      <Grid container spacing={2} flexDirection={'column'}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -388,15 +388,11 @@ const EditProfile = () => {
   }
   
   return (
-    <Grid container spacing={2} flexDirection={'column'}>
-      <Grid item xs={12}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={() => navigateBack(history, '/dashboard')}
-          className={classes.backButton}
-        >
-          Back to Dashboard
-        </Button>
+        />
       </Grid>
       
       <Grid item xs={12} md={6}>

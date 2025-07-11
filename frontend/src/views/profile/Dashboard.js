@@ -8,7 +8,6 @@ import {
   Snackbar, Alert,
   Menu, MenuItem, IconButton, Avatar, useTheme
 } from '@material-ui/core';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
 // import PaymentList from '../payments/PaymentList';
@@ -19,6 +18,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
@@ -159,32 +159,16 @@ const Dashboard = () => {
   return (
     <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header Section with updated styles */}
-      <Grid item xs={12} sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        mb: theme.spacing(spacing.element.md),
-        [theme.breakpoints.down('sm')]: {
-          mb: theme.spacing(spacing.element.xs)
-        }
-      }}>
-        <div>
-          <Button 
-            variant="contained" 
-            className={classes.iconButton}
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <PageHeaderButton
             onClick={() => {
               debugNavigationStack(location, 'Profile Page Navigation');
               navigateBack(history, '/search');
             }}
-            title={getBackButtonText(location)}
-          >
-            <ArrowBackIcon />
-          </Button>
-        </div>
-        <div>
+          />
           <Button 
-
-            variant='contained'
+            variant='text'
             onClick={handleMenuOpen}
           >
             <MoreVertIcon />
@@ -236,7 +220,7 @@ const Dashboard = () => {
               Change Password
             </MenuItem>
           </Menu>
-        </div>
+        </Box>
       </Grid>
       
       {/* Personal Information Section */}

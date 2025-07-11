@@ -4,7 +4,6 @@ import {
   Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip, IconButton
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PersonIcon from '@material-ui/icons/Person';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing, spacing } from '../../utils/spacing';
@@ -13,6 +12,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import SearchableList from '../searchables/SearchableList';
 
@@ -75,7 +75,7 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid container>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
             <CircularProgress />
@@ -87,18 +87,14 @@ const UserProfile = () => {
 
   if (error) {
     return (
-      <Grid container sx={componentSpacing.pageContainer(theme)}>
-        <Grid item xs={12}>
+      <Grid container>
+        <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
           <Paper elevation={3} className={classes.paper}>
-            <Box display="flex" alignItems="center" mb={2}>
-              <Button 
-                variant="contained" 
-                className={classes.iconButton}
+            <Box mb={2}>
+              <PageHeaderButton
                 onClick={handleBackClick}
-              >
-                <ArrowBackIcon />
-              </Button>
-              <Typography variant="h6" style={{ marginLeft: '16px' }}>
+              />
+              <Typography variant="h6" style={{ marginTop: '16px' }}>
                 User Profile
               </Typography>
             </Box>
@@ -112,22 +108,12 @@ const UserProfile = () => {
   }
 
   return (
-    <Grid container sx={componentSpacing.pageContainer(theme)}>
+    <Grid container>
       {/* Header */}
-      <Grid item xs={12} style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '16px'
-      }}>
-        <Button 
-          variant="contained" 
-          className={classes.iconButton}
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={handleBackClick}
-          title={getBackButtonText(location)}
-        >
-          <ArrowBackIcon />
-        </Button>
+        />
       </Grid>
 
       {/* Profile Information */}

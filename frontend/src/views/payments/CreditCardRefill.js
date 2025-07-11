@@ -9,17 +9,20 @@ import {
   Box,
   CircularProgress,
   InputAdornment,
-  Alert
+  Alert,
+  useTheme
 } from '@material-ui/core';
 import {
-  ArrowBack as ArrowBackIcon,
   CreditCard as CreditCardIcon
 } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 
 const CreditCardRefill = () => {
   const classes = useComponentStyles();
+  const theme = useTheme();
   const history = useHistory();
   const location = useLocation();
   
@@ -106,15 +109,11 @@ const CreditCardRefill = () => {
   const totalAmount = amount ? parseFloat(amount) + stripeFee : 0;
   
   return (
-    <Grid container spacing={2} flexDirection={'column'} >
-      <Grid item xs={12}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={() => history.push('/dashboard')}
-          className={classes.backButton}
-        >
-          Back to Dashboard
-        </Button>
+        />
       </Grid>
       
       <Grid item xs={12} md={6}>
