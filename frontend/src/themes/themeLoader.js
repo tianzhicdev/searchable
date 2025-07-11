@@ -15,6 +15,9 @@ console.log(`Loading theme: ${selectedThemeName}`, selectedTheme);
 
 // Convert theme preset to the format expected by the app
 export const themeConfig = {
+  // Theme metadata
+  themeName: selectedThemeName,
+  
   // Core colors
   primary: selectedTheme.colors.primary,
   secondary: selectedTheme.colors.secondary,

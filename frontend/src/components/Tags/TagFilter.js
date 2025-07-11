@@ -104,13 +104,6 @@ const useStyles = makeStyles((theme) => ({
       }
     }
   },
-  chipSecondary: {
-    // For retro80s theme, use black text on bright green background
-    color: theme.palette.secondary === '#00ff00' ? '#000000' : theme.palette.getContrastText(theme.palette.secondary.main),
-    '& .MuiChip-deleteIcon': {
-      color: theme.palette.secondary === '#00ff00' ? '#000000' : theme.palette.getContrastText(theme.palette.secondary.main)
-    }
-  },
   tagButton: {
     minHeight: 36,
     borderRadius: theme.shape.borderRadius,
@@ -220,7 +213,7 @@ const TagFilter = ({
                 size={isMobile ? "small" : "medium"}
                 onDelete={() => handleTagRemove(tag)}
                 color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
-                className={`${classes.chip} ${tag.tag_type !== 'user' ? classes.chipSecondary : ''}`}
+                className={classes.chip}
               />
             ))}
           </Box>
