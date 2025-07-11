@@ -75,7 +75,7 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <Grid container className={classes.container}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
             <CircularProgress />
@@ -87,7 +87,7 @@ const UserProfile = () => {
 
   if (error) {
     return (
-      <Grid container className={classes.container}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Paper elevation={3} className={classes.paper}>
             <Box display="flex" alignItems="center" mb={2}>
@@ -112,9 +112,9 @@ const UserProfile = () => {
   }
 
   return (
-    <Grid container className={classes.container}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header */}
-      <Grid item xs={12} className={classes.header} style={{ 
+      <Grid item xs={12} style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',

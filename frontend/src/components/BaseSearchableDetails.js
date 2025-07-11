@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Typography, Button, Paper, Box, CircularProgress } from '@material-ui/core';
+import { Grid, Typography, Button, Paper, Box, CircularProgress, useTheme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import SearchableDetailsTop from './SearchableDetailsTop';
@@ -8,6 +8,7 @@ import useComponentStyles from '../themes/componentStyles';
 import { navigateBack, getBackButtonText } from '../utils/navigationUtils';
 import useSearchableDetails from '../hooks/useSearchableDetails';
 import { detailPageStyles } from '../utils/detailPageSpacing';
+import { componentSpacing } from '../utils/spacing';
 
 // Create styles with detail page spacing
 const useStyles = makeStyles((theme) => ({
@@ -52,6 +53,7 @@ const BaseSearchableDetails = ({
 }) => {
   const classes = useComponentStyles();
   const detailClasses = useStyles();
+  const theme = useTheme();
   
   const {
     SearchableItem,
@@ -81,7 +83,7 @@ const BaseSearchableDetails = ({
     }
     
     return (
-      <Grid spacing={2}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
             <CircularProgress />
@@ -95,7 +97,7 @@ const BaseSearchableDetails = ({
   if (error) {
     const errorMessage = customErrorMessage || error;
     return (
-      <Grid spacing={2}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">{errorMessage}</Typography>
@@ -108,7 +110,7 @@ const BaseSearchableDetails = ({
   // Item not found
   if (!SearchableItem) {
     return (
-      <Grid spacing={2}>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Paper className={classes.paper} style={{ backgroundColor: '#ffebee' }}>
             <Typography color="error">Item not found</Typography>
@@ -119,7 +121,7 @@ const BaseSearchableDetails = ({
   }
 
   return (
-    <Grid container spacing={3}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Back button */}
       <Grid item xs={12}>
         <Button

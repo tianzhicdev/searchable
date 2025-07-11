@@ -82,11 +82,6 @@ const SearchBar = ({
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
           InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
             endAdornment: searchTerm && (
               <InputAdornment position="end">
                 <IconButton
