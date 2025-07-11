@@ -278,7 +278,7 @@ const UserProfile = () => {
 
       {/* Published Items Section */}
       <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
-        <Paper elevation={3} sx={componentSpacing.card(theme)}>
+
           <Typography variant="h6" gutterBottom>
             Published Items
           </Typography>
@@ -290,7 +290,6 @@ const UserProfile = () => {
               Loading published items...
             </Typography>
           )}
-        </Paper>
       </Grid>
     </Grid>
   );

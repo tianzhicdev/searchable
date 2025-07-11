@@ -123,7 +123,7 @@ const BaseSearchableDetails = ({
   return (
     <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Back button */}
-      <Grid item xs={12}>
+      <Grid item xs={12} sx={{ mb: theme.spacing(2) }}>
         <Button
           startIcon={<ChevronLeftIcon />}
           onClick={() => navigateBack(history)}
