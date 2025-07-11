@@ -81,10 +81,18 @@ const UserInvoices = () => {
   const activeTab = viewToTab[viewParam] ?? 0;
 
   useEffect(() => {
-    fetchUserInvoices();
-    fetchUserWithdrawals();
-    fetchUserRewards();
-    fetchUserDeposits();
+    const fetchAllData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchUserInvoices(),
+        fetchUserWithdrawals(),
+        fetchUserRewards(),
+        fetchUserDeposits()
+      ]);
+      setLoading(false);
+    };
+    
+    fetchAllData();
   }, []);
   
   // Re-render when URL changes
@@ -94,7 +102,6 @@ const UserInvoices = () => {
 
   const fetchUserInvoices = async () => {
     try {
-      setLoading(true);
       setError(null);
       
       const response = await Backend.get('v1/user/invoices');
@@ -143,8 +150,6 @@ const UserInvoices = () => {
     } catch (err) {
       console.error('Error fetching user withdrawals:', err);
       // Don't set error state for withdrawals as it's not critical
-    } finally {
-      setLoading(false);
     }
   };
   

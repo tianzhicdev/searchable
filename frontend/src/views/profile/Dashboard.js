@@ -4,11 +4,10 @@ import { useHistory, useLocation } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
 import { componentSpacing, spacing } from '../../utils/spacing';
 import { 
-  Grid, Typography, Button, Paper, Box, CircularProgress,
+  Grid, Typography, Paper, Box, CircularProgress,
   Snackbar, Alert,
-  Menu, MenuItem, IconButton, Avatar, useTheme
+  IconButton, Avatar, useTheme
 } from '@material-ui/core';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
@@ -43,9 +42,6 @@ const Dashboard = () => {
   // Add change password dialog state
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  
-  // Menu state
-  const [anchorEl, setAnchorEl] = useState(null);
   
   const account = useSelector((state) => state.account);
   const history = useHistory();
@@ -115,7 +111,6 @@ const Dashboard = () => {
   
   const handleWithdrawalUSDTClick = () => {
     openWithdrawalDialog();
-    handleMenuClose();
   };
   
   const handleCloseSuccessMessage = () => {
@@ -124,15 +119,6 @@ const Dashboard = () => {
   
   const handleEditClick = () => {
     openProfileEditor();
-    handleMenuClose();
-  };
-  
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleMenuClose = () => {
-    setAnchorEl(null);
   };
   
   // Refill balance functions
@@ -144,7 +130,6 @@ const Dashboard = () => {
   
   const handleChangePasswordClick = () => {
     setChangePasswordDialogOpen(true);
-    handleMenuClose();
   };
   
   const handleCloseChangePasswordDialog = () => {
@@ -160,67 +145,12 @@ const Dashboard = () => {
     <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header Section with updated styles */}
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <PageHeaderButton
-            onClick={() => {
-              debugNavigationStack(location, 'Profile Page Navigation');
-              navigateBack(history, '/search');
-            }}
-          />
-          <Button 
-            variant='text'
-            onClick={handleMenuOpen}
-          >
-            <MoreVertIcon />
-          </Button>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              navigateWithStack(history, `/profile/${account.user._id}`);
-            }}>
-              Profile Page
-            </MenuItem>
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              navigateWithStack(history, '/my-downloads');
-            }}>
-              My Downloads
-            </MenuItem>
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              setRefillDialogOpen(true);
-            }}>
-              Refill with Credit Card
-            </MenuItem>
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              navigateWithStack(history, '/refill-usdt');
-            }}>
-              Refill with USDT
-            </MenuItem>
-            {balance.usd > 0 && !loading && (
-              <MenuItem onClick={() => {
-                handleMenuClose();
-                handleWithdrawalUSDTClick();
-              }}>
-                Withdraw USDT
-              </MenuItem>
-            )}
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              handleEditClick();
-            }}>
-              Edit Profile
-            </MenuItem>
-            <MenuItem onClick={handleChangePasswordClick}>
-              Change Password
-            </MenuItem>
-          </Menu>
-        </Box>
+        <PageHeaderButton
+          onClick={() => {
+            debugNavigationStack(location, 'Profile Page Navigation');
+            navigateBack(history, '/search');
+          }}
+        />
       </Grid>
       
       {/* Personal Information Section */}
