@@ -20,7 +20,8 @@ const SearchableDetailsPriceDisplay = ({
   showPaymentSummary = true,
   disabled = false,
   searchableId,
-  searchableTitle
+  searchableTitle,
+  searchableType
 }) => {
   const classes = useComponentStyles();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -98,6 +99,7 @@ const SearchableDetailsPriceDisplay = ({
         onClose={() => setShareDialogOpen(false)}
         searchableId={searchableId}
         title={searchableTitle}
+        searchableType={searchableType}
       />
     </Box>
   );

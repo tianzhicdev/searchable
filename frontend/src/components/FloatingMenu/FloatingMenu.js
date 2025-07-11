@@ -315,13 +315,6 @@ const FloatingMenu = () => {
         }}
         getContentAnchorEl={null}
       >
-        <MenuItem disabled>
-          <ListItemText 
-            primary="Choose Posting Type" 
-            primaryTypographyProps={{ variant: 'subtitle2' }}
-          />
-        </MenuItem>
-        <Divider className={classes.divider} />
         {postingTypes.map((type) => (
           <MenuItem 
             key={type.name}
