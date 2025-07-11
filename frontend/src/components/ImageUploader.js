@@ -3,6 +3,7 @@ import {
   Box, Typography, IconButton
 } from '@material-ui/core';
 import { Delete as DeleteIcon, AddPhotoAlternate as AddPhotoAlternateIcon } from '@material-ui/icons';
+import { useTheme } from '@material-ui/core/styles';
 import Backend from '../views/utilities/Backend';
 import ZoomableImage from './ZoomableImage';
 
@@ -15,6 +16,7 @@ const ImageUploader = ({
   imageSize = 100,
   onError
 }) => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [inputId] = useState(() => `image-uploader-input-${Math.random().toString(36).substr(2, 9)}`);
 
@@ -128,8 +130,12 @@ const ImageUploader = ({
                 position: 'absolute',
                 top: -8,
                 right: -8,
-                backgroundColor: 'white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                backgroundColor: theme.palette.background.paper,
+                color: theme.palette.error.main,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover
+                }
               }}
             >
               <DeleteIcon fontSize="small" />
@@ -156,13 +162,13 @@ const ImageUploader = ({
                 style={{
                   width: imageSize,
                   height: imageSize,
-                  border: '2px dashed #ccc',
+                  border: `2px dashed ${theme.palette.divider}`,
                   borderRadius: 4,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.5 : 1
                 }}
               >
-                <IconButton component="span" disabled={loading}>
+                <IconButton component="span" disabled={loading} style={{ color: theme.palette.primary.main }}>
                   <AddPhotoAlternateIcon />
                 </IconButton>
               </Box>

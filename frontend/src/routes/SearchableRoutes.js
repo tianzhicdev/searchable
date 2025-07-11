@@ -28,6 +28,7 @@ import ThemeInfo from '../views/theme-info/ThemeInfo';
 import ThemeGalleryCartoon from '../views/theme-gallery-cartoon';
 import ThemeGalleryCategories from '../views/theme-gallery-categories';
 import ThemeQuickTest from '../views/theme-quick-test';
+import RefillUSDT from '../views/payments/RefillUSDT';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -35,7 +36,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -52,6 +53,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />
                     <Route exact path="/credit-card-refill" component={CreditCardRefill} />
+                    <Route exact path="/refill-usdt" component={RefillUSDT} />
                     <Route exact path="/withdrawal-usdt" component={WithdrawalUSDT} />
                     <Route exact path="/edit-profile" component={EditProfile} />
                     <Route exact path="/change-password" component={ChangePassword} />
