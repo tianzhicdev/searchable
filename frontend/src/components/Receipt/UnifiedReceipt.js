@@ -131,7 +131,7 @@ const UnifiedReceipt = ({
           <Box mb={1}>
             {selections.map((selection, index) => (
               <Box key={selection.id || `selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="body2" className={classes.userText}>
+                <Typography variant="body2" className={`${classes.userText} ${classes.titleText}`} style={{ flex: 1, marginRight: '8px' }}>
                   {selection.name || `Item ${selection.id}`}
                   {selection.count && selection.count > 1 && (
                     <span style={{ fontWeight: 'bold', marginLeft: '4px' }}>
@@ -305,7 +305,7 @@ const UnifiedReceipt = ({
             {getStatusChip()}
             <Typography 
               variant="h6" 
-              className={classes.invoiceTitle}
+              className={`${classes.invoiceTitle} ${classes.titleText}`}
               style={{ marginRight: '12px' }}
             >
               {getTitle()}
@@ -330,7 +330,11 @@ const UnifiedReceipt = ({
 
         {/* Subtitle and Date */}
         <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
-          <Typography variant="body2" className={classes.systemText}>
+          <Typography 
+            variant="body2" 
+            className={`${classes.systemText} ${type === 'withdrawal' || type === 'deposit' ? classes.addressText : ''}`}
+            style={{ flex: 1, marginRight: '8px' }}
+          >
             {getSubtitle()}
           </Typography>
           <Typography variant="body2" className={classes.systemText}>
