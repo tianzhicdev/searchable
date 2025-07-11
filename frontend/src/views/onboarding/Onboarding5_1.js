@@ -25,6 +25,9 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   backButton: {
     position: 'absolute',
@@ -133,7 +136,7 @@ const Onboarding5_1 = () => {
     return (
       <Box className={classes.root}>
         <Container maxWidth="md">
-          <Paper className={classes.paper} elevation={3}>
+          <Paper className={classes.paper} elevation={0}>
             <CircularProgress />
           </Paper>
         </Container>
@@ -144,7 +147,7 @@ const Onboarding5_1 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           {isCreatingPage && (
             <Box className={classes.loadingOverlay}>
               <Box textAlign="center">

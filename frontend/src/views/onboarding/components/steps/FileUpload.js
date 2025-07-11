@@ -47,6 +47,9 @@ const useStyles = makeStyles((theme) => ({
   },
   fileList: {
     marginTop: theme.spacing(3),
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   fileItem: {
     marginBottom: theme.spacing(1),
@@ -227,7 +230,7 @@ const FileUpload = ({ stepConfig }) => {
       )}
 
       {uploadedFiles.length > 0 && (
-        <Paper className={classes.fileList} variant="outlined">
+        <Paper className={classes.fileList} elevation={0}>
           <List>
             {uploadedFiles.map((file) => (
               <ListItem key={file.id} className={classes.fileItem}>
