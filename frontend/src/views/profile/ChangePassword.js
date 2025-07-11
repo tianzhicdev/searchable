@@ -16,7 +16,6 @@ import {
   useTheme
 } from '@material-ui/core';
 import {
-  ArrowBack as ArrowBackIcon,
   Visibility,
   VisibilityOff
 } from '@material-ui/icons';
@@ -26,6 +25,7 @@ import backend from '../utilities/Backend';
 import { strengthIndicator, strengthColor } from '../../utils/password-strength';
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
+import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -210,15 +210,11 @@ const ChangePassword = () => {
   };
 
   return (
-    <Grid container spacing={2} flexDirection={'column'}>
-      <Grid item xs={12}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+        <PageHeaderButton
           onClick={() => navigateBack(history, '/dashboard')}
-          className={classes.backButton}
-        >
-          Back to Dashboard
-        </Button>
+        />
       </Grid>
       
       <Grid item xs={12} md={6}>
