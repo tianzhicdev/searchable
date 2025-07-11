@@ -128,7 +128,20 @@ const RestLogin = (props, { ...others }) => {
                 setIsSubmitting(false);
             }
         } catch (error) {
-            setSubmitError(error.message || 'Login failed');
+            // Set specific field errors based on errorType
+            if (error.errorType === 'invalid_email') {
+                setFormErrors(prev => ({ ...prev, email: error.message }));
+                setTouched(prev => ({ ...prev, email: true }));
+                setSubmitError(''); // Clear general error when showing field-specific error
+            } else if (error.errorType === 'invalid_password') {
+                setFormErrors(prev => ({ ...prev, password: error.message }));
+                setTouched(prev => ({ ...prev, password: true }));
+                setSubmitError(''); // Clear general error when showing field-specific error
+            } else {
+                // For other errors, show general error message
+                setSubmitError(error.message || 'Login failed');
+            }
+            
             setIsSubmitting(false);
         }
     };
