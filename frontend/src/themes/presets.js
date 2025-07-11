@@ -773,7 +773,7 @@ export const themePresets = {
             secondary: '#00ff00',
             error: '#ff0000',
             warning: '#ffff00',
-            success: '#00ffff',
+            success: '#1e90ff',  // Changed from light cyan to dodger blue for better contrast
         },
         backgrounds: {
             primary: '#000000',

@@ -379,7 +379,7 @@ export const componentStyleOverrides = (theme) => {
                 },
                 standardSuccess: {
                     backgroundColor: themeConfig.success,
-                    color: themeConfig.name === 'retro80s' ? '#000000' : themeConfig.textPrimary,
+                    color: themeConfig.textPrimary,
                     borderColor: themeConfig.success,
                 },
                 standardInfo: {
