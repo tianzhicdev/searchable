@@ -26,7 +26,7 @@ const CreditCardRefill = () => {
   const history = useHistory();
   const location = useLocation();
   
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState('20.00');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
