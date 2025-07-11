@@ -268,11 +268,13 @@ class Login(Resource):
 
         if not user_exists:
             return {"success": False,
-                    "msg": "This email does not exist."}, 400
+                    "msg": "This email does not exist.",
+                    "errorType": "invalid_email"}, 400
 
         if not user_exists.check_password(_password):
             return {"success": False,
-                    "msg": "Wrong credentials."}, 400
+                    "msg": "Wrong password.",
+                    "errorType": "invalid_password"}, 400
 
         # create access token uwing JWT
         token = jwt.encode({'email': _email, 'exp': datetime.utcnow() + timedelta(days=30)}, BaseConfig.SECRET_KEY)

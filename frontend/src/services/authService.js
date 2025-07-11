@@ -9,16 +9,27 @@ import { ACCOUNT_INITIALIZE } from '../store/actions';
  */
 
 export const loginUser = async (email, password) => {
-  const response = await axios.post(configData.API_SERVER + 'users/login', {
-    email,
-    password
-  });
-  
-  if (!response.data.success) {
-    throw new Error(response.data.msg || 'Login failed');
+  try {
+    const response = await axios.post(configData.API_SERVER + 'users/login', {
+      email,
+      password
+    });
+    
+    if (!response.data.success) {
+      const error = new Error(response.data.msg || 'Login failed');
+      error.errorType = response.data.errorType;
+      throw error;
+    }
+    
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      const customError = new Error(error.response.data.msg || 'Login failed');
+      customError.errorType = error.response.data.errorType;
+      throw customError;
+    }
+    throw error;
   }
-  
-  return response.data;
 };
 
 export const registerUser = async (username, email, password) => {
