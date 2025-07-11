@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   Menu,
   MenuItem,
@@ -26,10 +27,11 @@ import AutoAwesomeMotionIcon from '@material-ui/icons/AutoAwesomeMotion';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import PersonIcon from '@material-ui/icons/Person';
 import GetAppIcon from '@material-ui/icons/GetApp';
-import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import MoneyOffIcon from '@material-ui/icons/MoneyOff';
 import EditIcon from '@material-ui/icons/Edit';
 import LockIcon from '@material-ui/icons/Lock';
+import CreditCardIcon from '@material-ui/icons/CreditCard';
+import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
 
 const useStyles = makeStyles((theme) => ({
   fab: {
@@ -109,6 +111,7 @@ const FloatingMenu = () => {
   const classes = useStyles();
   const history = useHistory();
   const logout = useLogout();
+  const account = useSelector((state) => state.account);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
   const [accountSubmenuAnchorEl, setAccountSubmenuAnchorEl] = useState(null);
@@ -194,7 +197,7 @@ const FloatingMenu = () => {
     {
       icon: <PersonIcon />,
       label: 'Profile Page',
-      onClick: () => handleNavigation('/profile/me')
+      onClick: () => handleNavigation(`/profile/${account.user?._id}`)
     },
     {
       icon: <GetAppIcon />,
@@ -202,9 +205,14 @@ const FloatingMenu = () => {
       onClick: () => handleNavigation('/my-downloads')
     },
     {
-      icon: <AccountBalanceWalletIcon />,
-      label: 'Refill Balance',
+      icon: <CreditCardIcon />,
+      label: 'Refill with Credit Card',
       onClick: () => handleNavigation('/credit-card-refill')
+    },
+    {
+      icon: <AttachMoneyIcon />,
+      label: 'Refill with USDT',
+      onClick: () => handleNavigation('/refill-usdt')
     },
     {
       icon: <MoneyOffIcon />,

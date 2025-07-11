@@ -5,11 +5,10 @@ import {
   TextField, Button, CircularProgress, Typography, Snackbar, Alert,
   Box, Avatar, IconButton, InputAdornment
 } from '@material-ui/core';
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles, useTheme } from '@material-ui/styles';
 import { PhotoCamera, Person } from '@material-ui/icons';
 import Backend from '../utilities/Backend';
 import { SET_USER } from '../../store/actions';
-import useComponentStyles from '../../themes/componentStyles';
 import ZoomableImage from '../../components/ZoomableImage';
 import ImageUploader from '../../components/ImageUploader';
 import TagSelector from '../../components/Tags/TagSelector';
@@ -39,6 +38,7 @@ const useStyles = makeStyles((theme) => ({
 
 const ProfileEditor = () => {
   const classes = useStyles();
+  const theme = useTheme();
   const account = useSelector((state) => state.account);
   const dispatch = useDispatch();
   
@@ -387,14 +387,14 @@ const ProfileEditor = () => {
                   />
                   <label htmlFor="profile-image-input">
                     <IconButton
-                      color="primary"
                       aria-label="upload picture"
                       component="span"
                       style={{
                         position: 'absolute',
                         bottom: 0,
                         right: 0,
-                        backgroundColor: 'white',
+                        backgroundColor: theme.palette.background.paper,
+                        color: theme.palette.primary.main,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                       }}
                     >
