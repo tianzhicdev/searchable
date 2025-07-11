@@ -237,7 +237,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 className={classes.invoiceTitle}
                                 style={{ marginRight: '12px' }}
                             >
-                                Invoice #{invoice.id}
+                                #{invoice.id}
                             </Typography>
                             
                             {getRoleChip()}
@@ -276,21 +276,38 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 {selections.length > 0 && (
                                     <Box mb={1}>
                                         {/* List each item and its price */}
-                                        {selections.map((selection, index) => (
-                                            <Box key={selection.id || `selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
-                                                <Typography variant="body2" className={classes.userText}>
-                                                    {selection.name || `Item ${selection.id}`}
-                                                    {selection.count && selection.count > 1 && (
-                                                        <span style={{ fontWeight: 'bold', marginLeft: '4px' }}>
-                                                            x{selection.count}
-                                                        </span>
-                                                    )}
-                                                </Typography>
-                                                <Typography variant="body2" className={classes.userText}>
-                                                    {formatCurrency((selection.price || 0) * (selection.count || 1), invoice.currency)}
-                                                </Typography>
-                                            </Box>
-                                        ))}
+                                        {selections.map((selection, index) => {
+                                            // Handle direct payment selections differently
+                                            if (selection.type === 'direct') {
+                                                return (
+                                                    <Box key={`selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
+                                                        <Typography variant="body2" className={classes.userText}>
+                                                            Direct Payment
+                                                        </Typography>
+                                                        <Typography variant="body2" className={classes.userText}>
+                                                            {formatCurrency(selection.amount || 0, invoice.currency)}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            }
+                                            
+                                            // Regular item selections
+                                            return (
+                                                <Box key={selection.id || `selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
+                                                    <Typography variant="body2" className={classes.userText} style={{ wordBreak: 'break-word', flex: 1, marginRight: '8px' }}>
+                                                        {selection.name || `Item ${selection.id}`}
+                                                        {selection.count && selection.count > 1 && (
+                                                            <span style={{ fontWeight: 'bold', marginLeft: '4px' }}>
+                                                                x{selection.count}
+                                                            </span>
+                                                        )}
+                                                    </Typography>
+                                                    <Typography variant="body2" className={classes.userText}>
+                                                        {formatCurrency((selection.price || 0) * (selection.count || 1), invoice.currency)}
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        })}
 
                                         {/* Payment Fee (Stripe) */}
                                         {invoice.metadata?.stripe_fee > 0 && (
@@ -479,6 +496,9 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                         invoice_id: invoice.id,
                         item_title: `Invoice #${invoice.id}`,
                         item_description: selections.map(s => {
+                            if (s.type === 'direct') {
+                                return 'Direct Payment';
+                            }
                             const name = s.name || `Item ${s.id}`;
                             return s.count && s.count > 1 ? `${name} x${s.count}` : name;
                         }).join(', '),

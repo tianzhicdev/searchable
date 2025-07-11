@@ -169,6 +169,7 @@ const BaseSearchableDetails = ({
             disabled={disabled}
             searchableId={id}
             searchableTitle={SearchableItem?.payloads?.public?.title || 'Untitled'}
+            searchableType={SearchableItem?.type}
           />
         </Paper>
       </Grid>

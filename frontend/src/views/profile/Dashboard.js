@@ -156,11 +156,6 @@ const Dashboard = () => {
       {/* Personal Information Section */}
       <Grid item xs={12}>
         <Paper elevation={3} sx={componentSpacing.card(theme)}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6" className={classes.staticText}>
-              Personal Information
-            </Typography>
-          </Box>
 
           {/* Profile Picture and Introduction */}
           {userProfile && (

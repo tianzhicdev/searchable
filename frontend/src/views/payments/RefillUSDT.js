@@ -29,7 +29,10 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: theme.palette.grey[200]
     },
     wordBreak: 'break-all',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    '& .MuiTypography-root': {
+      color: theme.palette.text.primary === '#ff69b4' || theme.palette.text.secondary === '#ff69b4' ? '#000000' : theme.palette.text.primary
+    }
   },
   qrContainer: {
     backgroundColor: 'white',
