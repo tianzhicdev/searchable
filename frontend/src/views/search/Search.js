@@ -3,7 +3,6 @@ import { useLocation, useHistory } from 'react-router-dom';
 import { makeStyles } from '@material-ui/styles';
 import SearchByContent from '../search/SearchByContent';
 import SearchByUser from '../search/SearchByUser';
-import FloatingMenu from '../../components/FloatingMenu';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -36,7 +35,6 @@ const Landing = () => {
         ) : (
           <SearchByContent />
         )}
-        <FloatingMenu />
       </div>
   );
 };

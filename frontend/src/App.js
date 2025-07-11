@@ -13,6 +13,7 @@ import theme from './themes';
 import StateDebugger from './components/StateDebugger';
 import Footer from './components/Footer';
 import MockModeIndicator from './components/MockModeIndicator';
+import FloatingMenu from './components/FloatingMenu';
 import './mocks/mockAuth'; // Setup mock auth if in mock mode
 //-----------------------|| APP ||-----------------------//
 
@@ -41,6 +42,7 @@ const App = () => {
                             <Routes />
                         </Box>
                         <Footer  />
+                        <FloatingMenu />
                     </Container>
                 {/* </Box> */}
             </ThemeProvider>

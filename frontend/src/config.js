@@ -20,7 +20,7 @@ if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
 
 // Theme configuration
 // Available themes: cyberpunk, vaporwave, matrix, synthwave, hacker, neonTokyo, bloodMoon, deepSpace, arcade, original
-let APP_THEME = process.env.REACT_APP_THEME || 'vaporwave'; // Default to neonTokyo
+let APP_THEME = process.env.REACT_APP_THEME || 'retro80s'; // Default to neonTokyo
 console.log('Selected theme:', APP_THEME); 
 
 let branding_config = {
