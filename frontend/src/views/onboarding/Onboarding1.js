@@ -29,15 +29,43 @@ const useStyles = makeStyles((theme) => ({
     border: 'none',
     background: 'transparent',
   },
-  title: {
+  titleContainer: {
     marginBottom: theme.spacing(4),
-    animation: '$typewriter 2s steps(20) 1s forwards',
     overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    width: 0,
+    position: 'relative',
+    width: '100%',
+    '&::before, &::after': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      width: '10%',
+      height: '100%',
+      zIndex: 1,
+    },
+    '&::before': {
+      left: 0,
+      background: 'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)',
+      [theme.breakpoints.down('sm')]: {
+        background: 'none',
+      },
+    },
+    '&::after': {
+      right: 0,
+      background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
+      [theme.breakpoints.down('sm')]: {
+        background: 'none',
+      },
+    },
   },
-  '@keyframes typewriter': {
-    to: { width: '100%' }
+  title: {
+    display: 'inline-block',
+    paddingLeft: '20px',
+    animation: '$marquee 5s linear infinite',
+    whiteSpace: 'nowrap',
+  },
+  '@keyframes marquee': {
+    from: { transform: 'translateX(0)' },
+    to: { transform: 'translateX(-100%)' }
   },
   subtitle: {
     marginBottom: theme.spacing(3),
@@ -100,9 +128,7 @@ const Onboarding1 = () => {
     <Box className={classes.root}>
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
-          <Typography variant="h3" className={classes.title}>
-            Welcome to {config.BRANDING_CONFIG.landingIntro}!
-          </Typography>
+
           <Typography variant="h5" className={classes.subtitle} gutterBottom>
             What would you like to do?
           </Typography>
