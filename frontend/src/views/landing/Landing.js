@@ -21,15 +21,10 @@ const Landing = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const bulletPoints = [
-    'Built for creators, by creators',
-    'Skip the middleman, keep the crypto',
-    'Industry\'s lowest fees, guaranteed',
-    'Monetize any digital content with crypto',
-    'Instant payouts, Globally available',
   ];
 
   const handleJoinNow = () => {
-    history.push('/visitor');
+    history.push('/onboarding-1');
   };
 
   return (
@@ -70,7 +65,7 @@ const Landing = () => {
               // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
           >
-            WARP TO THE FUTURE
+            {config.BRANDING_CONFIG.landingIntro}
           </Typography>
                       <Typography 
             variant={isMobile ? 'h3' : 'h2'} 
@@ -85,7 +80,7 @@ const Landing = () => {
               // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
           >
-            {config.BRANDING_CONFIG.landingIntro}
+            {/* {config.BRANDING_CONFIG.landingIntro} */}
           </Typography>
           <Typography 
             variant={isMobile ? 'h3' : 'h2'} 
@@ -100,7 +95,7 @@ const Landing = () => {
               // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
           >
-            Web3 Digital Content Marketplace
+            Monitize your talent
           </Typography>
 
           {/* Bullet Points */}
@@ -140,7 +135,7 @@ const Landing = () => {
               color="primary"
               onClick={handleJoinNow}
             >
-              Enter Marketplace
+              WARP TO THE FUTURE
             </Button>
           </Box>
         </Box>
