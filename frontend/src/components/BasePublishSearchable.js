@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Typography, Button, Paper, Box } from '@material-ui/core';
+import { Grid, Typography, Button, Paper, Box, useTheme } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import PublishSearchableCommon from './PublishSearchableCommon';
@@ -7,6 +7,7 @@ import PublishSearchableActions from './PublishSearchableActions';
 import useComponentStyles from '../themes/componentStyles';
 import usePublishSearchable from '../hooks/usePublishSearchable';
 import { detailPageStyles } from '../utils/detailPageSpacing';
+import { componentSpacing } from '../utils/spacing';
 
 // Create styles for publish pages
 const useStyles = makeStyles((theme) => ({
@@ -62,6 +63,7 @@ const BasePublishSearchable = ({
 }) => {
   const classes = useComponentStyles();
   const publishClasses = useStyles();
+  const theme = useTheme();
   
   const {
     formData,
@@ -102,7 +104,7 @@ const BasePublishSearchable = ({
   };
 
   return (
-    <Grid container spacing={3}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Back button */}
       {!hideBackButton && (
         <Grid item xs={12}>

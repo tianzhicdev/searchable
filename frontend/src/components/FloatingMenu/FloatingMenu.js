@@ -1,15 +1,12 @@
 import React, { useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
   Divider,
-  Fab,
-  Backdrop,
-  Box,
-  IconButton,
-  Zoom
+  Fab
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { useHistory } from 'react-router-dom';
@@ -27,6 +24,14 @@ import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import StorefrontIcon from '@material-ui/icons/Storefront';
 import SendIcon from '@material-ui/icons/Send';
 import AutoAwesomeMotionIcon from '@material-ui/icons/AutoAwesomeMotion';
+import AccountCircleIcon from '@material-ui/icons/AccountCircle';
+import PersonIcon from '@material-ui/icons/Person';
+import GetAppIcon from '@material-ui/icons/GetApp';
+import MoneyOffIcon from '@material-ui/icons/MoneyOff';
+import EditIcon from '@material-ui/icons/Edit';
+import LockIcon from '@material-ui/icons/Lock';
+import CreditCardIcon from '@material-ui/icons/CreditCard';
+import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
 
 const useStyles = makeStyles((theme) => ({
   fab: {
@@ -106,8 +111,10 @@ const FloatingMenu = () => {
   const classes = useStyles();
   const history = useHistory();
   const logout = useLogout();
+  const account = useSelector((state) => state.account);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
+  const [accountSubmenuAnchorEl, setAccountSubmenuAnchorEl] = useState(null);
   const fabRef = useRef(null);
 
   const handleToggle = (event) => {
@@ -121,6 +128,7 @@ const FloatingMenu = () => {
   const handleClose = () => {
     setMenuAnchorEl(null);
     setSubmenuAnchorEl(null);
+    setAccountSubmenuAnchorEl(null);
   };
 
   const handleAddPosting = (event) => {
@@ -130,6 +138,15 @@ const FloatingMenu = () => {
 
   const handleSubmenuClose = () => {
     setSubmenuAnchorEl(null);
+  };
+
+  const handleMyAccount = (event) => {
+    event.stopPropagation();
+    setAccountSubmenuAnchorEl(event.currentTarget);
+  };
+
+  const handleAccountSubmenuClose = () => {
+    setAccountSubmenuAnchorEl(null);
   };
 
   const handleNavigation = (path) => {
@@ -144,14 +161,14 @@ const FloatingMenu = () => {
 
   const menuItems = [
     { 
+      icon: <AccountCircleIcon />, 
+      label: 'My Account',
+      onClick: handleMyAccount
+    },
+    { 
       icon: <AddIcon />, 
       label: 'Add a Posting',
       onClick: handleAddPosting
-    },
-    { 
-      icon: <DashboardIcon />, 
-      label: 'My Dashboard',
-      onClick: () => handleNavigation('/dashboard')
     },
     { 
       icon: <PersonSearchIcon />, 
@@ -163,11 +180,55 @@ const FloatingMenu = () => {
       label: 'Find Items',
       onClick: () => handleNavigation('/search?tab=content')
     },
+
     { 
       icon: <ExitToAppIcon />, 
       label: 'Log Out',
       onClick: handleLogout
     },
+  ];
+  
+  const accountMenuItems = [
+    {
+      icon: <DashboardIcon />,
+      label: 'My Dashboard',
+      onClick: () => handleNavigation('/dashboard')
+    },
+    {
+      icon: <PersonIcon />,
+      label: 'Profile Page',
+      onClick: () => handleNavigation(`/profile/${account.user?._id}`)
+    },
+    {
+      icon: <GetAppIcon />,
+      label: 'My Downloads',
+      onClick: () => handleNavigation('/my-downloads')
+    },
+    {
+      icon: <CreditCardIcon />,
+      label: 'Refill with Credit Card',
+      onClick: () => handleNavigation('/credit-card-refill')
+    },
+    {
+      icon: <AttachMoneyIcon />,
+      label: 'Refill with USDT',
+      onClick: () => handleNavigation('/refill-usdt')
+    },
+    {
+      icon: <MoneyOffIcon />,
+      label: 'Withdraw USDT',
+      onClick: () => handleNavigation('/withdrawal-usdt')
+    },
+    {
+      icon: <EditIcon />,
+      label: 'Edit Profile',
+      onClick: () => handleNavigation('/edit-profile')
+    },
+    {
+      icon: <LockIcon />,
+      label: 'Change Password',
+      onClick: () => handleNavigation('/change-password')
+    }
   ];
 
   const postingTypes = [
@@ -277,6 +338,39 @@ const FloatingMenu = () => {
               primary={type.name} 
               secondary={type.description}
             />
+          </MenuItem>
+        ))}
+      </Menu>
+
+      {/* My Account submenu */}
+      <Menu
+        anchorEl={accountSubmenuAnchorEl}
+        open={Boolean(accountSubmenuAnchorEl)}
+        onClose={handleAccountSubmenuClose}
+        className={classes.submenu}
+        anchorOrigin={{
+          vertical: 'center',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'center',
+          horizontal: 'left',
+        }}
+        getContentAnchorEl={null}
+      >
+        {accountMenuItems.map((item) => (
+          <MenuItem 
+            key={item.label}
+            onClick={() => {
+              item.onClick();
+              handleAccountSubmenuClose();
+            }}
+            className={classes.submenuItem}
+          >
+            <ListItemIcon>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.label} />
           </MenuItem>
         ))}
       </Menu>

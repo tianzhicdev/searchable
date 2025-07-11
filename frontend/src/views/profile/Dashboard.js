@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
-import configData from '../../config';
 import useComponentStyles from '../../themes/componentStyles'; // Import shared component styles
-import { componentSpacing, responsivePadding, spacing } from '../../utils/spacing';
-import { makeStyles } from '@material-ui/styles';
+import { componentSpacing, spacing } from '../../utils/spacing';
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert,
+  Snackbar, Alert,
   Menu, MenuItem, IconButton, Avatar, useTheme
 } from '@material-ui/core';
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
-import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
 import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
-import { formatDate } from '../utilities/Date';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
@@ -26,24 +22,11 @@ import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStac
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
+import WithdrawalDialog, { openWithdrawalDialog } from '../../components/WithdrawalDialog';
 import AIContentStatus from '../../components/AIContentStatus';
-
-const useStyles = makeStyles((theme) => ({
-  dialogContent: componentSpacing.dialog(theme),
-  button: componentSpacing.button(theme),
-  dialog: {
-    '& .MuiDialog-paper': {
-      [theme.breakpoints.down('sm')]: {
-        margin: theme.spacing(2),
-        maxHeight: '90vh'
-      }
-    }
-  }
-}));
 
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles
-  const styles = useStyles();
   const theme = useTheme();
   const [balance, setBalance] = useState({ usd: null });
   const [loading, setLoading] = useState(false);
@@ -53,13 +36,6 @@ const Dashboard = () => {
   const [profileLoading, setProfileLoading] = useState(false);
   
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
-  
-  // Add USDT withdrawal states
-  const [usdtWithdrawDialogOpen, setUsdtWithdrawDialogOpen] = useState(false);
-  const [usdtWithdrawalAddress, setUsdtWithdrawalAddress] = useState('');
-  const [usdtWithdrawalAmount, setUsdtWithdrawalAmount] = useState('');
-  const [usdtWithdrawalLoading, setUsdtWithdrawalLoading] = useState(false);
-  const [usdtWithdrawalError, setUsdtWithdrawalError] = useState(null);
   
   // Add refill balance dialog state
   const [refillDialogOpen, setRefillDialogOpen] = useState(false);
@@ -75,15 +51,11 @@ const Dashboard = () => {
   const history = useHistory();
   const location = useLocation();
   
-  // Parse view parameter from URL
-  const searchParams = new URLSearchParams(location.search);
-  const currentView = searchParams.get('view') || 'overview'; // default to overview
-  
   useEffect(() => {
     fetchBalance();
     fetchProfileData();
     fetchUserProfile();
-  }, [account.user, account.token]);
+  }, []);
   
   const fetchBalance = async () => {
     if (!account.user || !account.user._id) return;
@@ -142,10 +114,8 @@ const Dashboard = () => {
   };
   
   const handleWithdrawalUSDTClick = () => {
-    setUsdtWithdrawDialogOpen(true);
-    setUsdtWithdrawalAddress('');
-    setUsdtWithdrawalAmount('');
-    setUsdtWithdrawalError(null);
+    openWithdrawalDialog();
+    handleMenuClose();
   };
   
   const handleCloseSuccessMessage = () => {
@@ -163,74 +133,6 @@ const Dashboard = () => {
   
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-  
-  const handleCloseUsdtWithdrawDialog = () => {
-    setUsdtWithdrawDialogOpen(false);
-  };
-  
-  const handleUsdtAddressChange = (e) => {
-    setUsdtWithdrawalAddress(e.target.value);
-  };
-  
-  const handleUsdtAmountChange = (e) => {
-    // Only allow numeric input with at most 2 decimal places
-    const value = e.target.value;
-    if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
-      setUsdtWithdrawalAmount(value);
-    }
-  };
-  
-  const handleSubmitUsdtWithdrawal = async () => {
-    // Validate inputs
-    if (!usdtWithdrawalAddress || usdtWithdrawalAddress.trim() === '') {
-      setUsdtWithdrawalError('Please enter a valid withdrawal address');
-      return;
-    }
-    
-    if (!usdtWithdrawalAmount || parseFloat(usdtWithdrawalAmount) <= 0) {
-      setUsdtWithdrawalError('Please enter a valid amount greater than 0');
-      return;
-    }
-    
-    if (parseFloat(usdtWithdrawalAmount) > balance.usd) {
-      setUsdtWithdrawalError(`Insufficient funds. Available balance: $${balance.usd} USD`);
-      return;
-    }
-    
-    setUsdtWithdrawalLoading(true);
-    setUsdtWithdrawalError(null);
-    
-    try {
-      const response = await backend.post(
-        'v1/withdrawal-usd',
-        { 
-          address: usdtWithdrawalAddress.trim(),
-          amount: parseFloat(usdtWithdrawalAmount)
-        }
-      );
-      
-      console.log('USDT Withdrawal response:', response.data);
-      setWithdrawalSuccess(true);
-      setUsdtWithdrawDialogOpen(false);
-      
-      // Refresh balance after successful withdrawal
-      fetchBalance();
-      
-    } catch (err) {
-      console.error('Error processing USDT withdrawal:', err);
-      
-      // Handle error response
-      if (err.response?.status === 400 && 
-          err.response?.data?.error === "Insufficient funds") {
-        const errorMsg = `Insufficient funds. Available balance: $${balance.usd} USD`;
-        setUsdtWithdrawalError(errorMsg);
-      } else {
-        setUsdtWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
-      }
-    } finally {
-      setUsdtWithdrawalLoading(false);
-    }
   };
   
   // Refill balance functions
@@ -255,13 +157,16 @@ const Dashboard = () => {
   };
   
   return (
-    <Grid container className={classes.container}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
       {/* Header Section with updated styles */}
-      <Grid item xs={12} className={classes.header} style={{ 
+      <Grid item xs={12} sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        marginBottom: '16px'
+        mb: theme.spacing(spacing.element.md),
+        [theme.breakpoints.down('sm')]: {
+          mb: theme.spacing(spacing.element.xs)
+        }
       }}>
         <div>
           <Button 
@@ -305,7 +210,13 @@ const Dashboard = () => {
               handleMenuClose();
               setRefillDialogOpen(true);
             }}>
-              Refill Balance
+              Refill with Credit Card
+            </MenuItem>
+            <MenuItem onClick={() => {
+              handleMenuClose();
+              navigateWithStack(history, '/refill-usdt');
+            }}>
+              Refill with USDT
             </MenuItem>
             {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {
@@ -486,57 +397,8 @@ const Dashboard = () => {
         <UserInvoices />
       </Grid>
       
-      {/* USDT Withdrawal Dialog */}
-      <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth className={styles.dialog}>
-        <DialogTitle>Withdraw USDT</DialogTitle>
-        <DialogContent className={styles.dialogContent}>
-          <TextField
-            id="usdt-address"
-            type="text"
-            value={usdtWithdrawalAddress}
-            onChange={handleUsdtAddressChange}
-            placeholder="Enter Ethereum wallet address to receive USDT"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            id="usdt-amount"
-            type="text"
-            value={usdtWithdrawalAmount}
-            onChange={handleUsdtAmountChange}
-            placeholder="Enter amount to withdraw"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            InputProps={{
-              startAdornment: <Typography  style={{ marginRight: 8 }}>$</Typography>,
-            }}
-          />
-          {usdtWithdrawalError && (
-            <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
-              {usdtWithdrawalError}
-            </Typography>
-          )}
-          <Typography variant="body2" style={{ marginTop: 16 }}>
-            Available balance: ${balance.usd} USD
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseUsdtWithdrawDialog} className={styles.button}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmitUsdtWithdrawal} 
-            variant="contained"
-            color="primary"
-            disabled={usdtWithdrawalLoading}
-            className={styles.button}
-          >
-            {usdtWithdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Withdrawal Dialog */}
+      <WithdrawalDialog />
       
       {/* Refill Balance Dialog */}
       <RefillBalanceDialog

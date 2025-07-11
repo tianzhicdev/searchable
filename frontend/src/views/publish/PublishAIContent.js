@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
-  Container,
   Paper,
   Typography,
   TextField,
@@ -15,7 +14,7 @@ import {
   LinearProgress,
   Chip,
   Grid,
-  Snackbar
+  useTheme
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { Alert } from '@material-ui/lab';
@@ -23,12 +22,11 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
 import backend from '../utilities/Backend';
+import { componentSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
-    marginTop: theme.spacing(3),
-    marginBottom: theme.spacing(3),
   },
   form: {
     '& > *': {
@@ -59,6 +57,7 @@ const useStyles = makeStyles((theme) => ({
 
 const PublishAIContent = () => {
   const classes = useStyles();
+  const theme = useTheme();
   const history = useHistory();
   const [title, setTitle] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -188,8 +187,9 @@ const PublishAIContent = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Paper className={classes.paper}>
+    <Grid container sx={componentSpacing.pageContainer(theme)}>
+      <Grid item xs={12} md={8} lg={6} sx={{ margin: '0 auto' }}>
+        <Paper className={classes.paper}>
         <Typography variant="h4" gutterBottom>
           AI Content Manager
         </Typography>
@@ -328,7 +328,8 @@ const PublishAIContent = () => {
           </Grid>
         </Box>
       </Paper>
-    </Container>
+      </Grid>
+    </Grid>
   );
 };
 

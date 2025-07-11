@@ -1,6 +1,5 @@
 import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
-import NavMotion from '../layout/NavMotion';
 import AuthGuard from './../utils/route-guard/AuthGuard';
 import PublishDownloadableSearchable from '../views/searchables/PublishDownloadableSearchable';
 import PublishOfflineSearchable from '../views/searchables/PublishOfflineSearchable';
@@ -15,6 +14,9 @@ import DirectSearchableDetails from '../views/searchables/DirectSearchableDetail
 import UserProfile from '../views/profile/UserProfile';
 import MyDownloads from '../views/profile/MyDownloads';
 import CreditCardRefill from '../views/payments/CreditCardRefill';
+import WithdrawalUSDT from '../views/profile/WithdrawalUSDT';
+import EditProfile from '../views/profile/EditProfile';
+import ChangePassword from '../views/profile/ChangePassword';
 import ThemeTestPage from '../views/theme-test-page';
 import CyberpunkDemo from '../views/cyberpunk-demo';
 import ThemeSelector from '../views/theme-selector';
@@ -26,6 +28,7 @@ import ThemeInfo from '../views/theme-info/ThemeInfo';
 import ThemeGalleryCartoon from '../views/theme-gallery-cartoon';
 import ThemeGalleryCategories from '../views/theme-gallery-categories';
 import ThemeQuickTest from '../views/theme-quick-test';
+import RefillUSDT from '../views/payments/RefillUSDT';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
@@ -33,7 +36,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -50,6 +53,10 @@ const SearchableRoutes = () => {
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />
                     <Route exact path="/credit-card-refill" component={CreditCardRefill} />
+                    <Route exact path="/refill-usdt" component={RefillUSDT} />
+                    <Route exact path="/withdrawal-usdt" component={WithdrawalUSDT} />
+                    <Route exact path="/edit-profile" component={EditProfile} />
+                    <Route exact path="/change-password" component={ChangePassword} />
                     <Route exact path="/theme-test" component={ThemeTestPage} />
                     <Route exact path="/cyberpunk-demo" component={CyberpunkDemo} />
                     <Route exact path="/theme-selector" component={ThemeSelector} />
