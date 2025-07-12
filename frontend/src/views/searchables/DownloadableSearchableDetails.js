@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Grid, Typography, Button, Paper, Box, CircularProgress, 
-  Checkbox, FormControlLabel, Accordion, AccordionSummary, AccordionDetails,
+  Accordion, AccordionSummary, AccordionDetails,
   IconButton
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
@@ -29,6 +29,29 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: theme.spacing(2),
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    userSelect: 'none',
+    border: `2px dashed ${theme.palette.divider}`,
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: theme.shadows[3],
+      borderColor: theme.palette.primary.main,
+      borderStyle: 'solid',
+    },
+  },
+  fileItemSelected: {
+    backgroundColor: theme.palette.action.selected,
+    border: `2px solid ${theme.palette.primary.main}`,
+  },
+  fileItemPaid: {
+    cursor: 'default',
+    border: `2px solid transparent`,
+    '&:hover': {
+      transform: 'none',
+      boxShadow: theme.shadows[1],
+      borderColor: 'transparent',
+    },
   },
   fileList: {
     ...detailPageStyles.itemContainer(theme),
@@ -339,48 +362,53 @@ const DownloadableSearchableDetails = () => {
           const isDownloading = downloadingFiles[file.fileId];
           
           return (
-            <Paper key={file.fileId} className={detailClasses.fileItem}>
-              <Box flex={1}>
-                <Box display="flex" alignItems="center">
-                  {!isPaidByCurrentUser ? (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={selectedFiles[file.fileId] || false}
-                          onChange={(e) => handleFileSelection(file.fileId, e.target.checked)}
-                          color="primary"
-                        />
-                      }
-                      label=""
-                    />
-                  ) : (
-                    <CheckIcon style={{ color: 'green', marginRight: 16 }} />
-                  )}
-                  <Box>
-                    <Typography variant="body1" className={classes.staticText}>{file.name}</Typography>
-                    <Typography variant="body2" className={classes.userText}>
+            <Paper 
+              key={file.fileId} 
+              className={`${detailClasses.fileItem} ${selectedFiles[file.fileId] && !isPaidByCurrentUser ? detailClasses.fileItemSelected : ''} ${isPaidByCurrentUser ? detailClasses.fileItemPaid : ''}`}
+              onClick={() => !isPaidByCurrentUser && handleFileSelection(file.fileId, !selectedFiles[file.fileId])}
+            >
+              <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                <Box flex={1}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    {isPaidByCurrentUser && (
+                      <CheckIcon style={{ color: 'green' }} />
+                    )}
+                    <Typography variant="body1" style={{ fontWeight: 500 }}>{file.name}</Typography>
+                  </Box>
+                  {file.description && (
+                    <Typography variant="body2" style={{ marginTop: 4, marginLeft: isPaidByCurrentUser ? 28 : 0 }}>
                       {file.description}
                     </Typography>
-                    <Typography variant="body2" className={classes.userText}>{formatCurrency(file.price)}</Typography>
-                    {isPaidBySomeone && !isPaidByCurrentUser && (
-                      <Typography variant="caption" className={classes.userText}>
-                        (Purchased by others)
-                      </Typography>
-                    )}
-                  </Box>
+                  )}
+                  <Typography variant="body2" style={{ marginTop: 4, fontWeight: 500, marginLeft: isPaidByCurrentUser ? 28 : 0 }}>
+                    {formatCurrency(file.price)}
+                  </Typography>
+                  {isPaidBySomeone && !isPaidByCurrentUser && (
+                    <Typography variant="caption" style={{ marginTop: 4, display: 'block', marginLeft: isPaidByCurrentUser ? 28 : 0 }}>
+                      (Purchased by others)
+                    </Typography>
+                  )}
                 </Box>
+                
+                {isPaidByCurrentUser ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      downloadFile(file.fileId, file.name);
+                    }}
+                    disabled={isDownloading}
+                    startIcon={isDownloading ? <CircularProgress size={20} /> : <GetAppIcon />}
+                  >
+                    {isDownloading ? 'Downloading...' : 'Download'}
+                  </Button>
+                ) : (
+                  selectedFiles[file.fileId] && (
+                    <CheckIcon style={{ color: '#1976d2', fontSize: 28 }} />
+                  )
+                )}
               </Box>
-              
-              {isPaidByCurrentUser && (
-                <Button
-                 variant='contained'
-                  onClick={() => downloadFile(file.fileId, file.name)}
-                  disabled={isDownloading}
-                  startIcon={isDownloading ? <CircularProgress size={20} /> : <GetAppIcon />}
-                >
-                  {isDownloading ? 'Downloading...' : 'Download'}
-                </Button>
-              )}
             </Paper>
           );
         })}
