@@ -22,29 +22,35 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(6),
     textAlign: 'center',
-    position: 'relative',
-    overflow: 'hidden',
+    boxShadow: 'none',
+    border: 'none',
+    background: 'transparent',
   },
   successIcon: {
     fontSize: 80,
     color: theme.palette.success.main,
     marginBottom: theme.spacing(3),
-    animation: '$bounce 0.5s ease-in-out',
-  },
-  '@keyframes bounce': {
-    '0%': {
-      transform: 'scale(0)',
-    },
-    '50%': {
-      transform: 'scale(1.2)',
-    },
-    '100%': {
-      transform: 'scale(1)',
-    },
   },
   title: {
     fontWeight: 600,
     marginBottom: theme.spacing(2),
+    animation: '$slideInLetters 1.5s ease-out 0.5s both',
+    position: 'relative',
+    '& span': {
+      display: 'inline-block',
+      animation: '$letterBounce 0.6s ease-out',
+      animationFillMode: 'both',
+    }
+  },
+  '@keyframes slideInLetters': {
+    from: { opacity: 0 },
+    to: { opacity: 1 }
+  },
+  '@keyframes letterBounce': {
+    '0%': { transform: 'translateY(-100px) rotate(360deg)', opacity: 0 },
+    '60%': { transform: 'translateY(20px) rotate(-10deg)' },
+    '80%': { transform: 'translateY(-10px) rotate(5deg)' },
+    '100%': { transform: 'translateY(0) rotate(0)', opacity: 1 }
   },
   subtitle: {
     marginBottom: theme.spacing(4),
@@ -54,20 +60,15 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(2, 6),
     fontSize: '1.1rem',
     fontWeight: 600,
-    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-    boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
     '&:hover': {
       transform: 'translateY(-2px)',
-      boxShadow: '0 5px 10px 2px rgba(33, 203, 243, .3)',
+      boxShadow: theme.shadows[8],
     },
     transition: 'all 0.3s ease',
   },
   storeInfo: {
-    backgroundColor: theme.palette.background.default,
-    borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(3),
     marginBottom: theme.spacing(3),
-    border: `2px solid ${theme.palette.primary.light}`,
   },
   storeIcon: {
     fontSize: 40,
@@ -77,6 +78,9 @@ const useStyles = makeStyles((theme) => ({
   highlight: {
     color: theme.palette.primary.main,
     fontWeight: 600,
+  },
+  tipsContainer: {
+    // Simple tips container without animations
   }
 }));
 
@@ -176,11 +180,15 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="sm">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           <CheckCircle className={classes.successIcon} />
           
           <Typography variant="h4" className={classes.title}>
-            {content.title}
+            {content.title.split('').map((char, i) => (
+              <span key={i} style={{ animationDelay: `${1 + i * 0.05}s` }}>
+                {char === ' ' ? '\u00A0' : char}
+              </span>
+            ))}
           </Typography>
           
           <Typography variant="h6" className={classes.subtitle}>
@@ -197,7 +205,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
             </Typography>
           </Box>
 
-          <Box mb={3}>
+          <Box mb={3} className={classes.tipsContainer}>
             <Typography variant="body1" gutterBottom style={{ fontWeight: 600 }}>
               What's Next?
             </Typography>

@@ -22,9 +22,7 @@ const useStyles = makeStyles((theme) => ({
   optionCard: {
     height: '100%',
     transition: 'all 0.3s ease',
-    border: `2px solid transparent`,
     '&:hover': {
-      borderColor: theme.palette.primary.main,
       transform: 'translateY(-4px)',
       boxShadow: theme.shadows[4],
     },

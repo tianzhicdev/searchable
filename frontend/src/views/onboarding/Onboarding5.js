@@ -23,6 +23,9 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   backButton: {
     position: 'absolute',
@@ -40,9 +43,10 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(3),
     padding: theme.spacing(3),
     backgroundColor: theme.palette.background.paper,
-    border: `2px solid ${theme.palette.primary.main}`,
     borderRadius: theme.shape.borderRadius,
     textAlign: 'center',
+    boxShadow: 'none !important',
+    border: 'none !important',
   }
 }));
 
@@ -90,7 +94,7 @@ const Onboarding5 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
