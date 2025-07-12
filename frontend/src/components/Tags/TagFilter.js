@@ -4,14 +4,13 @@ import {
   Typography,
   Box,
   Button,
-  Chip,
   useMediaQuery
 } from '@material-ui/core';
-import { Clear as ClearIcon } from '@material-ui/icons';
+import { Clear as ClearIcon, Search as SearchIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useTheme } from '@material-ui/core/styles';
 import Backend from '../../views/utilities/Backend';
-import { componentSpacing, touchTargets } from '../../utils/spacing';
+import { touchTargets } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   filterContainer: {
@@ -74,34 +73,22 @@ const useStyles = makeStyles((theme) => ({
       fontSize: '0.875rem'
     }
   },
-  selectedTagsContainer: {
+  buttonContainer: {
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: theme.spacing(0.75),
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1.5),
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(1.5),
     [theme.breakpoints.down('sm')]: {
-      gap: theme.spacing(0.5),
-      marginBottom: theme.spacing(1)
+      flexDirection: 'column',
+      gap: theme.spacing(0.75),
+      marginTop: theme.spacing(1)
     }
   },
-  chip: {
-    minHeight: 32,
-    height: 'auto',
-    '& .MuiChip-label': {
-      paddingLeft: theme.spacing(1.5),
-      paddingRight: theme.spacing(1.5),
-      paddingTop: theme.spacing(0.5),
-      paddingBottom: theme.spacing(0.5),
-      fontSize: '0.875rem'
-    },
+  searchButton: {
+    flex: 1,
+    minHeight: touchTargets.clickable.minHeight,
     [theme.breakpoints.down('sm')]: {
-      minHeight: touchTargets.clickable.minHeight - 16,
-      '& .MuiChip-label': {
-        paddingLeft: theme.spacing(1),
-        paddingRight: theme.spacing(1),
-        fontSize: '0.75rem'
-      }
+      minHeight: touchTargets.clickable.minHeight - 4,
+      fontSize: '0.875rem'
     }
   },
   tagButton: {
@@ -138,6 +125,7 @@ const TagFilter = ({
   tagType = 'user', // 'user' or 'searchable'
   selectedTags = [],
   onTagsChange,
+  onSearch,
   title = null
 }) => {
   const classes = useStyles();
@@ -169,26 +157,27 @@ const TagFilter = ({
   };
   
   const handleTagToggle = (tag) => {
-    const isSelected = selectedTags.find(selected => selected.id === tag.id);
+    const isSelected = selectedTags.find(selected => 
+      selected.id === tag.id || 
+      (selected.id && selected.id.toString() === tag.id.toString())
+    );
     
     if (isSelected) {
       // Remove tag
-      const newTags = selectedTags.filter(selected => selected.id !== tag.id);
+      const newTags = selectedTags.filter(selected => 
+        selected.id !== tag.id && 
+        (!selected.id || selected.id.toString() !== tag.id.toString())
+      );
       onTagsChange(newTags);
     } else {
-      // Add tag
-      const newTags = [...selectedTags, tag];
+      // Add tag - ensure we pass the full tag object
+      const newTags = [...selectedTags, { ...tag }];
       onTagsChange(newTags);
     }
   };
   
   const handleClearAll = () => {
     onTagsChange([]);
-  };
-  
-  const handleTagRemove = (tagToRemove) => {
-    const newTags = selectedTags.filter(tag => tag.id !== tagToRemove.id);
-    onTagsChange(newTags);
   };
   
   return (
@@ -203,26 +192,19 @@ const TagFilter = ({
       </Typography>
       
       <Box>
-        {/* Selected tags display */}
-        {selectedTags.length > 0 && (
-          <Box className={classes.selectedTagsContainer}>
-            {selectedTags.map((tag) => (
-              <Chip
-                key={tag.id}
-                label={tag.name}
-                size={isMobile ? "small" : "medium"}
-                onDelete={() => handleTagRemove(tag)}
-                color={tag.tag_type === 'user' ? 'primary' : 'secondary'}
-                className={classes.chip}
-              />
-            ))}
-          </Box>
-        )}
-        
         {/* Available tags as clickable buttons */}
         <Box className={classes.tagGroup}>
           {availableTags.map((tag) => {
-            const isSelected = selectedTags.find(selected => selected.id === tag.id);
+            const isSelected = selectedTags.some(selected => {
+              // Handle various formats of selected tags
+              if (typeof selected === 'string') {
+                return selected === tag.id.toString();
+              }
+              if (selected.id !== undefined) {
+                return selected.id.toString() === tag.id.toString();
+              }
+              return false;
+            });
             
             return (
               <Button
@@ -250,18 +232,34 @@ const TagFilter = ({
           </Typography>
         )}
         
-        {/* Clear all button */}
-        {selectedTags.length > 0 && (
-          <Button
-            className={classes.clearButton}
-            variant="outlined"
-            size={isMobile ? "small" : "medium"}
-            startIcon={<ClearIcon />}
-            onClick={handleClearAll}
-            fullWidth={isMobile}
-          >
-            Clear All Filters
-          </Button>
+        {/* Action buttons */}
+        {(selectedTags.length > 0 || onSearch) && (
+          <Box className={classes.buttonContainer}>
+            {onSearch && (
+              <Button
+                className={classes.searchButton}
+                variant="contained"
+                color="primary"
+                size={isMobile ? "small" : "medium"}
+                startIcon={<SearchIcon />}
+                onClick={onSearch}
+              >
+                Search
+              </Button>
+            )}
+            {selectedTags.length > 0 && (
+              <Button
+                className={classes.clearButton}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                startIcon={<ClearIcon />}
+                onClick={handleClearAll}
+                style={{ flex: 1 }}
+              >
+                Clear All Filters
+              </Button>
+            )}
+          </Box>
         )}
       </Box>
     </Paper>
