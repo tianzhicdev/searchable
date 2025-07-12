@@ -268,13 +268,27 @@ export const componentStyleOverrides = (theme) => {
                     fontSize: themeConfig.fontSizeXs,
                     '&.MuiChip-colorPrimary': {
                         backgroundColor: themeConfig.primary,
-                        color: themeConfig.textPrimary,
+                        color: themeConfig.textInverse || themeConfig.textPrimary,
                         borderColor: themeConfig.primary,
+                        '& .MuiChip-deleteIcon': {
+                            color: themeConfig.textInverse || themeConfig.textPrimary,
+                            '&:hover': {
+                                color: themeConfig.textInverse || themeConfig.textPrimary,
+                                opacity: 0.7
+                            }
+                        }
                     },
                     '&.MuiChip-colorSecondary': {
                         backgroundColor: themeConfig.secondary,
-                        color: themeConfig.textPrimary,
+                        color: themeConfig.textInverse || themeConfig.textPrimary,
                         borderColor: themeConfig.secondary,
+                        '& .MuiChip-deleteIcon': {
+                            color: themeConfig.textInverse || themeConfig.textPrimary,
+                            '&:hover': {
+                                color: themeConfig.textInverse || themeConfig.textPrimary,
+                                opacity: 0.7
+                            }
+                        }
                     }
                 }
             }

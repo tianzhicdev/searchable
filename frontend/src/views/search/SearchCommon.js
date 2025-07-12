@@ -87,6 +87,10 @@ const SearchCommon = ({
               tagType={tagType}
               selectedTags={selectedTags}
               onTagsChange={setSelectedTags}
+              onSearch={() => {
+                setShowFilters(false);
+                onSearch(1);
+              }}
               title={filterTitle}
             />
           </Grid>
