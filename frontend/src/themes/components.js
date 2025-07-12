@@ -50,8 +50,8 @@ const paperBase = {
     borderRadius: themeConfig.borderRadius,
     backgroundImage: 'none',
     backgroundColor: themeConfig.bgSecondary,
-    border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
-    boxShadow: `0 0 10px ${themeConfig.borderColor}40`,
+    border: 'none',
+    boxShadow: 'none',
 };
 
 // ===========================

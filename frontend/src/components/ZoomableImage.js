@@ -49,7 +49,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
           ...style, 
           cursor: 'pointer',
           padding: '4px',
-          border: `1px solid ${theme.palette.primary.main}`,
+          border: 'none',
           borderRadius: theme.shape.borderRadius,
           maxWidth: '200px',
           maxHeight: '200px',
@@ -76,7 +76,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
             padding: theme.spacing(1),
             backgroundColor: theme.palette.background.paper,
             color: theme.palette.text.primary,
-            border: `1px solid ${theme.palette.divider}`,
+            border: 'none',
             borderRadius: '50%',
             zIndex: 1
           }}
