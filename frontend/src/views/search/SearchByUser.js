@@ -35,11 +35,16 @@ const SearchByUser = () => {
     // Update page
     setCurrentPage(parseInt(params.get('page')) || 1);
     
-    // Update tags
+    // Update tags - preserve existing tag objects if IDs match
     const urlTags = params.get('tags');
     if (urlTags) {
       const tagIds = urlTags.split(',').filter(Boolean);
-      setSelectedTags(tagIds.map(id => ({ id })));
+      // Try to preserve existing tag objects with names
+      const newSelectedTags = tagIds.map(id => {
+        const existingTag = selectedTags.find(tag => tag.id === id || tag.id?.toString() === id);
+        return existingTag || { id };
+      });
+      setSelectedTags(newSelectedTags);
     } else {
       setSelectedTags([]);
     }
