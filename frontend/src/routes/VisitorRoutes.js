@@ -17,6 +17,7 @@ import Onboarding4_1 from '../views/onboarding/Onboarding4_1';
 import Onboarding5 from '../views/onboarding/Onboarding5';
 import Onboarding5_1 from '../views/onboarding/Onboarding5_1';
 import OnboardingCongratsWrapper from '../views/onboarding/OnboardingCongratsWrapper';
+import AnimatedLanding from '../views/animated-landing/AnimatedLanding';
 //-----------------------|| VISITOR ROUTING ||-----------------------//
 import VisitorSection from '../views/pages/authentication/visitor/VisitorSection';
 
@@ -24,7 +25,7 @@ const VisitorRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/landing', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats']}>
+        <Route path={['/landing', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats', '/animated-landing']}>
             <Switch location={location} key={location.pathname}>
                 {/* Public routes accessible to unregistered visitors */}
                 <Route exact path="/declaration" component={Declaration} />
@@ -45,6 +46,7 @@ const VisitorRoutes = () => {
                 <Route exact path="/onboarding-5" component={Onboarding5} />
                 <Route exact path="/onboarding-5-1" component={Onboarding5_1} />
                 <Route exact path="/onboarding-congrats" component={OnboardingCongratsWrapper} />
+                <Route exact path="/animated-landing" component={AnimatedLanding} />
             </Switch>
         </Route>
     );
