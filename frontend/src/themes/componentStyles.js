@@ -36,6 +36,17 @@ const useComponentStyles = makeStyles((theme) => ({
         borderRadius: themeConfig.borderRadius
     },
     
+    // Paper style without borders - for account pages and similar content
+    paperNoBorder: {
+        padding: theme.spacing(2.5),
+        [theme.breakpoints.down('sm')]: {
+            padding: theme.spacing(1.5)
+        },
+        marginBottom: themeConfig.spacingSm,
+        backgroundColor: themeConfig.bgSecondary,
+        borderRadius: themeConfig.borderRadius
+    },
+    
     box: {
         padding: themeConfig.spacingXs,
         margin: themeConfig.spacing2xs
