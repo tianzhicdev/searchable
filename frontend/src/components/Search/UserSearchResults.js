@@ -44,10 +44,11 @@ const useStyles = makeStyles((theme) => ({
   emptyMessage: {
     textAlign: 'center',
     color: theme.palette.text.secondary,
-    marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(1), // Reduced spacing
+    fontSize: '1.25rem', // Increased size
     [theme.breakpoints.down('sm')]: {
-      marginBottom: theme.spacing(1.5),
-      fontSize: '0.875rem'
+      marginBottom: theme.spacing(0.75),
+      fontSize: '1.125rem' // Increased size
     }
   },
   resultsHeader: {
