@@ -26,21 +26,21 @@ export const mockSearchableItem = {
           fileId: "file-1",
           name: "Professional Design Templates",
           fileName: "design_templates_v1.2.zip",
-          description: "Professional design templates for various projects",
+          description: "A collection of 50+ professionally designed templates for brochures, flyers, business cards, and social media posts. All templates are fully editable with organized layers and include both Adobe Photoshop and Illustrator files.",
           price: 29.99
         },
         {
           fileId: "file-2", 
           name: "Stock Photos Collection",
           fileName: "stock_photos_hd_collection.zip",
-          description: "High-resolution stock photos for commercial use",
+          description: "Over 200 high-resolution stock photos (5000x3000px) covering nature, business, technology, and lifestyle themes. All images are royalty-free for commercial use and include both RAW and JPEG formats.",
           price: 49.99
         },
         {
           fileId: "file-3",
           name: "Source Code Examples",
           fileName: "clean_source_code_samples.zip", 
-          description: "Clean, documented source code examples",
+          description: "Well-documented source code examples featuring React components, Node.js APIs, and Python scripts. Includes best practices, unit tests, and detailed README files for each project.",
           price: 19.99
         }
       ],

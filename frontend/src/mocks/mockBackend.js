@@ -240,12 +240,49 @@ const generateMockSearchables = () => {
         'Music_Loops_Pack.wav', 'Podcast_Intro_Outro.mp3', 'Voice_Over_Samples.mp3'
       ];
       
+      const fileDescriptions = [
+        'Professional design templates with editable layers and modern layouts',
+        'High-resolution stock photos suitable for commercial use, includes diverse subjects',
+        'Scalable vector graphics bundle with over 500 unique elements',
+        'Complete UI kit with components, styles, and design system documentation',
+        'Premium icon set featuring 1000+ pixel-perfect icons in multiple formats',
+        'Photorealistic mockup templates for showcasing your designs',
+        'Royalty-free audio tracks perfect for videos, podcasts, and presentations',
+        'Professional video templates with transitions and effects included',
+        'High-quality sound effects library for multimedia projects',
+        'Comprehensive ebook collection covering design principles and best practices',
+        'Step-by-step tutorial videos with downloadable project files',
+        'Clean, documented source code examples with best practices',
+        'Complete font collection including serif, sans-serif, and display fonts',
+        'Custom brush pack for digital painting and illustration',
+        'Seamless pattern library for backgrounds and textures',
+        'Business presentation templates with charts and infographics',
+        'Excel spreadsheet templates with formulas and automation',
+        'Professional document templates for contracts and proposals',
+        'Game-ready asset bundle with sprites, tiles, and animations',
+        'Optimized 3D models pack with textures and materials',
+        'High-resolution texture collection for 3D rendering',
+        'Essential plugin collection to enhance your workflow',
+        'Modular script library with reusable components',
+        'Modern CSS framework with responsive grid system',
+        'Cross-platform mobile app template with documentation',
+        'Responsive website template with SEO optimization',
+        'Premium WordPress theme with drag-and-drop builder',
+        'Professional Lightroom presets for photo editing',
+        'Time-saving Photoshop actions for common tasks',
+        'Dynamic After Effects templates for motion graphics',
+        'Loopable music tracks ideal for background audio',
+        'Professional podcast intro/outro with multiple variations',
+        'Voice-over samples in multiple languages and styles'
+      ];
+      
       searchable.payloads.public.downloadableFiles = Array(fileCount).fill(null).map((_, idx) => {
         const fileIndex = (i * 5 + idx) % fileNames.length;
         return {
           fileId: `file-${i}-${idx}`,
           id: `file-${i}-${idx}`, // Keep for backward compatibility
           name: fileNames[fileIndex],
+          description: fileDescriptions[fileIndex % fileDescriptions.length],
           price: Math.floor(Math.random() * 100) + 0.99 // Random price from 0.99 to 100.99
         };
       });

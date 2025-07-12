@@ -117,7 +117,7 @@ const CreditCardRefill = () => {
       </Grid>
       
       <Grid item xs={12} md={6}>
-        <Paper className={classes.paper}>
+        <Paper className={classes.paperNoBorder}>
           <Box mb={3}>
             <Typography variant="h5" className={classes.staticText} gutterBottom>
               Refill Balance with Credit Card
@@ -209,7 +209,7 @@ const CreditCardRefill = () => {
       </Grid>
       
       <Grid item xs={12} md={6}>
-        <Paper className={classes.paper}>
+        <Paper className={classes.paperNoBorder}>
           <Typography variant="h6" className={classes.staticText} gutterBottom>
             Why Add Balance?
           </Typography>

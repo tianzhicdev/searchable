@@ -5,11 +5,12 @@ import { useTheme } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   tagText: {
-    color: theme.palette.text.secondary,
-    fontSize: '0.875rem',
+    color: theme.palette.secondary.main,
+    fontSize: '1rem',
     lineHeight: 1.5,
+    fontWeight: 500,
     [theme.breakpoints.down('sm')]: {
-      fontSize: '0.8125rem',
+      fontSize: '0.9375rem',
       lineHeight: 1.4
     }
   }

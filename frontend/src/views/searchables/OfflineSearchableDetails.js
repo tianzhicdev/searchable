@@ -61,12 +61,29 @@ const useStyles = makeStyles((theme) => ({
   quantityControls: {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing(1),
+    gap: theme.spacing(0.5),
+    '& .MuiIconButton-root': {
+      padding: theme.spacing(0.5),
+    }
   },
   quantityInput: {
-    width: 80,
+    width: 60,
     '& input': {
       textAlign: 'center',
+      padding: theme.spacing(0.5, 1),
+    },
+    '& .MuiOutlinedInput-root': {
+      height: 32,
+    }
+  },
+  itemDivider: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    paddingBottom: theme.spacing(2),
+    marginBottom: theme.spacing(2),
+    '&:last-child': {
+      borderBottom: 'none',
+      paddingBottom: 0,
+      marginBottom: 0,
     }
   }
 }));
@@ -298,43 +315,40 @@ const OfflineSearchableDetails = () => {
     
     return (
       <Box className={detailClasses.itemContainer}>
-        {SearchableItem.payloads.public.offlineItems.map((item) => {
+        {SearchableItem.payloads.public.offlineItems.map((item, index) => {
           const isPaidByCurrentUser = userPaidItems.has(item.itemId.toString());
           const currentCount = selectedItems[item.itemId] || 0;
           
           return (
-            <Paper key={item.itemId} className={detailClasses.itemCard}>
-              <Box display="flex" alignItems="flex-start" justifyContent="space-between">
-                <Box flex={1}>
-                  <Typography variant="h6" className={`${classes.staticText} ${detailClasses.itemName}`}>
-                    {item.name}
-                  </Typography>
-                  {item.description && (
-                    <Typography variant="body2" className={`${classes.userText} ${detailClasses.itemDescription}`}>
-                      {item.description}
-                    </Typography>
-                  )}
-                  <Typography variant="body1" className={`${classes.userText} ${detailClasses.itemPrice}`}>
-                    {formatCurrency(item.price)}
-                  </Typography>
-                  {isPaidByCurrentUser && (
-                    <Box className={detailClasses.purchasedLabel}>
-                      <CheckIcon fontSize="small" />
-                      <Typography variant="caption">
-                        Purchased
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
+            <Box key={item.itemId} className={detailClasses.itemDivider}>
+              <Typography variant="h6" style={{ fontWeight: 600, marginBottom: 4 }}>
+                {item.name}
+              </Typography>
+              {item.description && (
+                <Typography variant="body2" style={{ marginBottom: 8, color: theme => theme.palette.text.primary }}>
+                  {item.description}
+                </Typography>
+              )}
+              <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                <Typography variant="body1" style={{ fontWeight: 500, fontSize: '1.1rem', color: theme => theme.palette.primary.main }}>
+                  {formatCurrency(item.price)}
+                </Typography>
                 
-                {!isPaidByCurrentUser && (
+                {isPaidByCurrentUser ? (
+                  <Box className={detailClasses.purchasedLabel}>
+                    <CheckIcon fontSize="small" />
+                    <Typography variant="caption">
+                      Purchased
+                    </Typography>
+                  </Box>
+                ) : (
                   <Box className={detailClasses.quantityControls}>
                     <IconButton 
                       size="small"
                       onClick={() => decrementCount(item.itemId)}
                       disabled={currentCount === 0}
                     >
-                      <RemoveIcon />
+                      <RemoveIcon fontSize="small" />
                     </IconButton>
                     <TextField
                       type="number"
@@ -349,12 +363,12 @@ const OfflineSearchableDetails = () => {
                       size="small"
                       onClick={() => incrementCount(item.itemId)}
                     >
-                      <AddIcon />
+                      <AddIcon fontSize="small" />
                     </IconButton>
                   </Box>
                 )}
               </Box>
-            </Paper>
+            </Box>
           );
         })}
         
