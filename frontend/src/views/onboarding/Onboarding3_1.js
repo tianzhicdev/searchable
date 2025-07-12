@@ -169,7 +169,7 @@ const Onboarding3_1 = () => {
             />
 
             <Typography variant="h6" gutterBottom>
-              Set Prices for Your Files
+              Set Prices for Your Content
             </Typography>
             <Typography variant="body2" color="textSecondary" gutterBottom>
               Default price is set to $9.99. You can modify individual prices below.

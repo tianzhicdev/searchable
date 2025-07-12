@@ -7,8 +7,10 @@ import {
   Button, 
   Chip,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Link
 } from '@material-ui/core';
+import { useSelector } from 'react-redux';
 import config from '../../config';
 import Logo from '../../ui-component/Logo';
 import backgroundImage from '../../assets/images/bg.png';
@@ -19,12 +21,22 @@ const Landing = () => {
   const history = useHistory();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const account = useSelector((state) => state.account);
+  const isLoggedIn = account?.user?.id;
   
   const bulletPoints = [
   ];
 
   const handleJoinNow = () => {
     history.push('/onboarding-1');
+  };
+
+  const handleImBack = () => {
+    if (isLoggedIn) {
+      history.push('/search');
+    } else {
+      history.push('/login');
+    }
   };
 
   return (
@@ -134,6 +146,30 @@ const Landing = () => {
             >
               WARP TO THE FUTURE
             </Button>
+          </Box>
+          
+          {/* I'm back link */}
+          <Box sx={{ mt: 3 }}>
+            <Link
+              component="button"
+              variant="body2"
+              onClick={handleImBack}
+              sx={{
+                color: theme.palette.primary.main,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                '&:hover': {
+                  textDecoration: 'none',
+                  backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                }
+              }}
+            >
+              I'm back
+            </Link>
           </Box>
         </Box>
       </Container>
