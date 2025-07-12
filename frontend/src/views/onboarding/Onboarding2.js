@@ -100,17 +100,17 @@ const Onboarding2 = () => {
       path: '/onboarding-3'
     },
     {
+      title: 'Create a donation page',
+      description: 'Accept donations and tips from supporters',
+      icon: <Favorite className={classes.icon} />,
+      path: '/onboarding-5'
+    },
+    {
       title: 'Create catalog for my store',
       description: 'Build a product catalog with multiple items and categories',
       icon: <Store className={classes.icon} />,
       path: '/onboarding-4'
     },
-    {
-      title: 'Create a donation page',
-      description: 'Accept donations and tips from supporters',
-      icon: <Favorite className={classes.icon} />,
-      path: '/onboarding-5'
-    }
   ];
 
   const handleOptionClick = (path) => {
@@ -127,11 +127,11 @@ const Onboarding2 = () => {
           
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" className={classes.title}>
-              What would you like to create?
+              Your first storefront
             </Typography>
           </Box>
           <Typography variant="h6" className={classes.subtitle} color="textSecondary">
-            Choose how you want to start selling
+            Choose how you want to start earning
           </Typography>
           
           <Box style={{ marginTop: 32 }}>

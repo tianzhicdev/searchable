@@ -61,8 +61,7 @@ const Landing = () => {
               backgroundColor: 'rgba(0, 0, 0, 0.7)',
               mb: 4, 
               fontSize: isMobile ? '2.5rem' : '3.5rem',
-              // color: 'white',
-              // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+              color: theme.palette.primary.main,
             }}
           >
             {config.BRANDING_CONFIG.landingIntro}
@@ -83,19 +82,15 @@ const Landing = () => {
             {/* {config.BRANDING_CONFIG.landingIntro} */}
           </Typography>
           <Typography 
-            variant={isMobile ? 'h3' : 'h2'} 
-            component="h2" 
+            variant={isMobile ? 'h4' : 'h3'} 
+            // component="h2" 
             gutterBottom
             sx={{ 
-              // fontWeight: 'bold', 
               backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              // mb: 4, 
-              // fontSize: isMobile ? '1.5rem' : '2.5rem',
-              // color: 'white',
-              // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+              color: theme.palette.primary.main,
             }}
           >
-            Monitize your talent
+            Your Talent Mines Crypto Here
           </Typography>
 
           {/* Bullet Points */}
@@ -134,6 +129,8 @@ const Landing = () => {
               variant="contained"
               color="primary"
               onClick={handleJoinNow}
+              size="large"
+              sx={{ fontSize: isMobile ? '1.7rem' : '2rem', padding: '16px 32px', fontStyle: 'bold' }}
             >
               WARP TO THE FUTURE
             </Button>
