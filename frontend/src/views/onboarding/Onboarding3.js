@@ -195,7 +195,7 @@ const Onboarding3 = () => {
           >
             <CloudUpload className={classes.uploadIcon} />
             <Typography variant="h6">
-              Drag & drop files here or click to browse
+              Upload files here
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Supported formats: PDF, ZIP, MP4, MP3, PNG, JPG, and more
