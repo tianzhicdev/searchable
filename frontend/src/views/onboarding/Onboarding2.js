@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   Container,
@@ -25,6 +25,9 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(4),
     textAlign: 'center',
     position: 'relative',
+    boxShadow: 'none',
+    border: 'none',
+    background: 'transparent',
   },
   backButton: {
     position: 'absolute',
@@ -34,17 +37,38 @@ const useStyles = makeStyles((theme) => ({
   title: {
     marginBottom: theme.spacing(4),
   },
+  subtitle: {
+    marginBottom: theme.spacing(3),
+  },
   optionCard: {
     height: '100%',
     transition: 'all 0.3s ease',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
+    '& .MuiPaper-root': {
+      boxShadow: 'none !important',
+      border: 'none !important',
+      background: 'transparent !important',
+    },
+    '& .MuiCard-root': {
+      boxShadow: 'none !important',
+      border: 'none !important',
+      background: 'transparent !important',
+    },
+    '& .MuiCardActionArea-root': {
+      '&:hover': {
+        backgroundColor: 'transparent',
+      }
+    },
     '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: theme.shadows[8],
+      transform: 'translateY(-10px)',
     },
   },
   cardContent: {
     padding: theme.spacing(4),
     textAlign: 'center',
+    transition: 'all 0.3s ease',
   },
   icon: {
     fontSize: 64,
@@ -53,10 +77,11 @@ const useStyles = makeStyles((theme) => ({
   },
   optionTitle: {
     marginBottom: theme.spacing(1),
+    fontWeight: 600,
   },
   optionDescription: {
     color: theme.palette.text.secondary,
-  },
+  }
 }));
 
 const Onboarding2 = () => {
@@ -75,17 +100,17 @@ const Onboarding2 = () => {
       path: '/onboarding-3'
     },
     {
+      title: 'Create a donation page',
+      description: 'Accept donations and tips from supporters',
+      icon: <Favorite className={classes.icon} />,
+      path: '/onboarding-5'
+    },
+    {
       title: 'Create catalog for my store',
       description: 'Build a product catalog with multiple items and categories',
       icon: <Store className={classes.icon} />,
       path: '/onboarding-4'
     },
-    {
-      title: 'Create a donation page',
-      description: 'Accept donations and tips from supporters',
-      icon: <Favorite className={classes.icon} />,
-      path: '/onboarding-5'
-    }
   ];
 
   const handleOptionClick = (path) => {
@@ -95,25 +120,25 @@ const Onboarding2 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" className={classes.title}>
-              What would you like to create?
+              Your first storefront
             </Typography>
           </Box>
-          <Typography variant="h6" gutterBottom color="textSecondary">
-            Choose how you want to start selling
+          <Typography variant="h6" className={classes.subtitle} color="textSecondary">
+            Choose how you want to start earning
           </Typography>
           
           <Box style={{ marginTop: 32 }}>
             <Grid container spacing={3}>
               {options.map((option, index) => (
                 <Grid item xs={12} key={index}>
-                  <Card className={classes.optionCard} elevation={2}>
+                  <Card className={classes.optionCard} elevation={0}>
                     <CardActionArea onClick={() => handleOptionClick(option.path)}>
                       <CardContent className={classes.cardContent}>
                         {option.icon}

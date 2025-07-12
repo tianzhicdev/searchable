@@ -13,7 +13,7 @@ import {
 import { ArrowBack, Store } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import backend from '../utilities/Backend';
-import OnboardingAuth from '../../components/OnboardingAuth';
+import OnboardingAuthWithLoggedInState from '../../components/OnboardingAuthWithLoggedInState';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -25,6 +25,9 @@ const useStyles = makeStyles((theme) => ({
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
+    boxShadow: 'none !important',
+    border: 'none !important',
+    background: 'transparent !important',
   },
   backButton: {
     position: 'absolute',
@@ -141,7 +144,7 @@ const Onboarding3_2 = () => {
     return (
       <Box className={classes.root}>
         <Container maxWidth="md">
-          <Paper className={classes.paper} elevation={3}>
+          <Paper className={classes.paper} elevation={0}>
             <CircularProgress />
           </Paper>
         </Container>
@@ -152,7 +155,7 @@ const Onboarding3_2 = () => {
   return (
     <Box className={classes.root}>
       <Container maxWidth="md">
-        <Paper className={classes.paper} elevation={3}>
+        <Paper className={classes.paper} elevation={0}>
           {isCreatingStore && (
             <Box className={classes.loadingOverlay}>
               <Box textAlign="center">
@@ -169,7 +172,7 @@ const Onboarding3_2 = () => {
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <OnboardingAuth
+            <OnboardingAuthWithLoggedInState
               onSuccess={handleAuthSuccess}
               submitButtonText={isCreatingStore ? "Creating..." : "Open My Store"}
               submitButtonIcon={<Store />}
