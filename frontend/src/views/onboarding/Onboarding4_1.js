@@ -13,7 +13,7 @@ import {
 import { ArrowBack, Store } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import backend from '../utilities/Backend';
-import OnboardingAuth from '../../components/OnboardingAuth';
+import OnboardingAuthWithLoggedInState from '../../components/OnboardingAuthWithLoggedInState';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -169,7 +169,7 @@ const Onboarding4_1 = () => {
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <OnboardingAuth
+            <OnboardingAuthWithLoggedInState
               onSuccess={handleAuthSuccess}
               submitButtonText={isCreatingStore ? "Creating..." : "Open My Store"}
               submitButtonIcon={<Store />}
