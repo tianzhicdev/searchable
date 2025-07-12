@@ -5,17 +5,17 @@ import { makeStyles } from '@material-ui/styles';
 const useStyles = makeStyles((theme) => ({
   columnLayout: {
     columnCount: 2,
-    columnGap: theme.spacing(3), // 24px on desktop
+    columnGap: theme.spacing(2), // Reduced from 3 (24px to 16px on desktop)
     [theme.breakpoints.down('sm')]: {
-      columnGap: theme.spacing(2), // 16px on mobile
+      columnGap: theme.spacing(1.5), // Reduced from 2 (16px to 12px on mobile)
       columnCount: 1
     }
   },
   columnItem: {
     breakInside: 'avoid',
-    marginBottom: theme.spacing(3), // 24px on desktop
+    marginBottom: theme.spacing(2), // Reduced from 3 (24px to 16px on desktop)
     [theme.breakpoints.down('sm')]: {
-      marginBottom: theme.spacing(2) // 16px on mobile
+      marginBottom: theme.spacing(1.5) // Reduced from 2 (16px to 12px on mobile)
     }
   }
 }));
