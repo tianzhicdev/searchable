@@ -175,7 +175,7 @@ const WithdrawalUSDT = () => {
       </Grid>
       
       <Grid item xs={12} md={6}>
-        <Paper className={classes.paper}>
+        <Paper className={classes.paperNoBorder}>
           <Typography variant="h4" gutterBottom>
             Withdraw USDT
           </Typography>
