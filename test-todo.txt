@@ -1,0 +1,4 @@
+# Test Todo List
+# Simple test with just one task
+
+[x] Test simple task that should always pass
