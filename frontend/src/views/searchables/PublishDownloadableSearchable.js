@@ -7,6 +7,7 @@ import { makeStyles } from '@material-ui/styles';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
+import AddIcon from '@material-ui/icons/Add';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 import backend from '../utilities/Backend';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
@@ -248,10 +249,11 @@ const PublishDownloadableSearchable = () => {
           value={newFile.description}
           onChange={handleFileDataChange}
           fullWidth
-          className={classes.fileInput}
+          variant="outlined"
+          style={{ marginBottom: 8 }}
         />
         
-        <Box className={classes.buttonGroup}>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
           <TextField
             placeholder="Price (USD)"
             type="number"
@@ -259,28 +261,28 @@ const PublishDownloadableSearchable = () => {
             name="price"
             value={newFile.price}
             onChange={handleFileDataChange}
-            style={{ flex: 1 }}
+            variant="outlined"
+            InputProps={{
+              startAdornment: '$'
+            }}
+            style={{ flex: 1, marginRight: 8 }}
           />
-          <Button 
-            variant="contained" 
+          <IconButton
+            size="small"
             onClick={() => {
               addDownloadableFile().catch(err => setError(err.message));
             }}
             disabled={!newFile.file || !newFile.price || fileLoading}
           >
-            {fileLoading ? <CircularProgress size={20} /> : 'Add File'}
-          </Button>
+            {fileLoading ? <CircularProgress size={20} /> : <AddIcon />}
+          </IconButton>
         </Box>
       </Box>
       
       <Box className={classes.fileList}>
         {downloadableFiles.length > 0 ? (
           downloadableFiles.map((item) => (
-            <Paper 
-              key={item.id} 
-              className={classes.fileItem}
-              style={{ flexDirection: 'column', alignItems: 'stretch', padding: theme.spacing(2) }}
-            >
+            <Box key={item.id} style={{ marginBottom: theme.spacing(2) }}>
               <TextField
                 value={item.name}
                 onChange={(e) => updateFileData(item.id, 'name', e.target.value)}
@@ -297,11 +299,8 @@ const PublishDownloadableSearchable = () => {
                 fullWidth
                 variant="outlined"
                 placeholder="Description (optional)"
-                style={{ marginBottom: 4 }}
+                style={{ marginBottom: 8 }}
               />
-              <Typography variant="caption" color="textSecondary" style={{ marginBottom: 8 }}>
-                {item.fileName} ({formatFileSize(item.fileSize)})
-              </Typography>
               <Box display="flex" alignItems="center" justifyContent="space-between">
                 <TextField
                   value={item.price}
@@ -313,7 +312,7 @@ const PublishDownloadableSearchable = () => {
                   InputProps={{
                     startAdornment: '$'
                   }}
-                  style={{ width: 150 }}
+                  style={{ flex: 1, marginRight: 8 }}
                 />
                 <IconButton 
                   size="small" 
@@ -322,7 +321,7 @@ const PublishDownloadableSearchable = () => {
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Box>
-            </Paper>
+            </Box>
           ))
         ) : (
           <Typography variant="body2" color="textSecondary">

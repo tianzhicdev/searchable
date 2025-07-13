@@ -138,37 +138,38 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
             style={{ marginBottom: 8 }}
           />
           <TextField
-            placeholder="Price (USD)"
-            value={newItem.price}
+            placeholder="Description (Optional)"
+            value={newItem.description}
             onChange={handleItemDataChange}
-            name="price"
-            type="number"
-            inputProps={{ step: "0.01", min: "0" }}
+            name="description"
             fullWidth
             variant="outlined"
             size="small"
             style={{ marginBottom: 8 }}
           />
-          {!isMinimalMode && (
+          <Box display="flex" alignItems="center" justifyContent="space-between">
             <TextField
-              placeholder="Description (Optional)"
-              value={newItem.description}
+              placeholder="Price (USD)"
+              value={newItem.price}
               onChange={handleItemDataChange}
-              name="description"
-              fullWidth
+              name="price"
+              type="number"
+              inputProps={{ step: "0.01", min: "0" }}
               variant="outlined"
               size="small"
-              style={{ marginBottom: 8 }}
+              InputProps={{
+                startAdornment: '$'
+              }}
+              style={{ flex: 1, marginRight: 8 }}
             />
-          )}
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => addOfflineItem(setError)}
-            startIcon={<AddIcon />}
-          >
-            Add Item
-          </Button>
+            <IconButton
+              size="small"
+              onClick={() => addOfflineItem(setError)}
+              disabled={!newItem.name || !newItem.price}
+            >
+              <AddIcon />
+            </IconButton>
+          </Box>
         </Box>
         
         {offlineItems.length > 0 && (
@@ -177,7 +178,7 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
               Items ({offlineItems.length})
             </Typography>
             {offlineItems.map((item) => (
-              <Paper key={item.itemId} className={classes.fileItem} style={{ flexDirection: 'column', alignItems: 'stretch', padding: 16 }}>
+              <Box key={item.itemId} style={{ marginBottom: 16 }}>
                 <TextField
                   value={item.name}
                   onChange={(e) => updateItemData(item.itemId, 'name', e.target.value)}
@@ -207,7 +208,7 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
                     InputProps={{
                       startAdornment: '$'
                     }}
-                    style={{ width: 150 }}
+                    style={{ flex: 1, marginRight: 8 }}
                   />
                   <IconButton 
                     size="small" 
@@ -216,7 +217,7 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
                     <DeleteIcon />
                   </IconButton>
                 </Box>
-              </Paper>
+              </Box>
             ))}
           </Box>
         )}
