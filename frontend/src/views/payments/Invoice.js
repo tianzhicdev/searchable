@@ -103,8 +103,22 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     };
 
     const handleSearchableClick = () => {
-        if (invoice.searchable_id) {
-            navigateWithStack(history, `/searchable-item/${invoice.searchable_id}`);
+        if (invoice.searchable_id && invoice.searchable_type) {
+            let path;
+            switch (invoice.searchable_type) {
+                case 'downloadable':
+                    path = `/searchable-item/${invoice.searchable_id}`;
+                    break;
+                case 'offline':
+                    path = `/offline-item/${invoice.searchable_id}`;
+                    break;
+                case 'direct':
+                    path = `/direct-item/${invoice.searchable_id}`;
+                    break;
+                default:
+                    path = `/searchable-item/${invoice.searchable_id}`;
+            }
+            navigateWithStack(history, path);
         }
     };
 
