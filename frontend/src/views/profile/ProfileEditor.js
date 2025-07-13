@@ -57,6 +57,7 @@ const ProfileEditor = () => {
   const [userTags, setUserTags] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [profileImageRemoved, setProfileImageRemoved] = useState(false);
   const [additionalImages, setAdditionalImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
@@ -105,6 +106,10 @@ const ProfileEditor = () => {
         if (profile.profile_image_url) {
           setProfileImagePreview(profile.profile_image_url);
         }
+        
+        // Reset the removed flag and profile image state when loading profile
+        setProfileImageRemoved(false);
+        setProfileImage(null);
         
         // Set additional images if exist
         if (profile.metadata?.additional_images) {
@@ -206,6 +211,9 @@ const ProfileEditor = () => {
         
         // Store the media URI instead of the file
         setProfileImage(uploadResult.media_uri);
+        
+        // Reset the removed flag since a new image is being set
+        setProfileImageRemoved(false);
 
         // Create preview URL for immediate display
         const reader = new FileReader();
@@ -223,13 +231,26 @@ const ProfileEditor = () => {
   };
 
   const removeProfileImage = () => {
+    console.log('[DEBUG] removeProfileImage called');
+    console.log('[DEBUG] Before removal - profileImagePreview:', profileImagePreview);
+    console.log('[DEBUG] Before removal - profileData.profile_image_url:', profileData.profile_image_url);
+    console.log('[DEBUG] Before removal - profileImageRemoved:', profileImageRemoved);
+    
     setProfileImage(null);
     setProfileImagePreview(null);
+    setProfileImageRemoved(true);
+    // Clear the current profile_image_url from profileData
+    setProfileData(prev => ({
+      ...prev,
+      profile_image_url: ''
+    }));
     // Clear the file input
     const fileInput = document.getElementById('profile-image-input');
     if (fileInput) {
       fileInput.value = '';
     }
+    
+    console.log('[DEBUG] After removal - states should be updated in next render');
   };
 
   // Function to upload image to media endpoint immediately
@@ -278,9 +299,16 @@ const ProfileEditor = () => {
         metadata: {}
       };
 
-      // Include profile image URL if selected
+      // Handle profile image
       if (profileImage) {
+        // New image was selected
         updateData.profile_image_url = profileImage;
+      } else if (profileImageRemoved) {
+        // User explicitly removed the profile image
+        updateData.profile_image_url = '';
+      } else if (profileData.profile_image_url) {
+        // Keep existing image if not changed
+        updateData.profile_image_url = profileData.profile_image_url;
       }
 
       // Include additional image URIs
@@ -344,6 +372,8 @@ const ProfileEditor = () => {
   const handleClose = () => {
     setError(null);
     setOpen(false);
+    // Reset the removed flag when closing
+    setProfileImageRemoved(false);
   };
   
   const handleSuccessClose = () => {
@@ -367,7 +397,8 @@ const ProfileEditor = () => {
                   Profile Picture
                 </Typography>
                 <Box position="relative">
-                  {profileImagePreview || profileData.profile_image_url ? (
+                  {console.log('[DEBUG] Render - profileImagePreview:', profileImagePreview, 'profile_image_url:', profileData.profile_image_url, 'profileImageRemoved:', profileImageRemoved)}
+                  {(profileImagePreview || profileData.profile_image_url) && !profileImageRemoved ? (
                     <ZoomableImage 
                       src={profileImagePreview || profileData.profile_image_url} 
                       alt="Profile"
@@ -402,8 +433,17 @@ const ProfileEditor = () => {
                     </IconButton>
                   </label>
                 </Box>
-                {(profileImagePreview || profileData.profile_image_url) && (
-                  <Button size="small" onClick={removeProfileImage} color="secondary">
+                {((profileImagePreview || profileData.profile_image_url) && !profileImageRemoved) && (
+                  <Button 
+                    size="small" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeProfileImage();
+                    }} 
+                    color="secondary"
+                    variant="contained"
+                  >
                     Remove Image
                   </Button>
                 )}
