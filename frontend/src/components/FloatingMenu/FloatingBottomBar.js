@@ -225,7 +225,7 @@ const FloatingBottomBar = () => {
   const createMenuItems = [
     {
       icon: <CloudDownloadIcon />,
-      label: 'Digital Files',
+      label: 'Digital Content',
       description: 'Sell downloadable content',
       onClick: () => handleNavigation('/publish-searchables')
     },
@@ -237,8 +237,8 @@ const FloatingBottomBar = () => {
     },
     {
       icon: <SendIcon />,
-      label: 'Direct Payment',
-      description: 'Request direct payments',
+      label: 'Donation',
+      description: 'Accept donations',
       onClick: () => handleNavigation('/publish-direct-searchables')
     }
   ];

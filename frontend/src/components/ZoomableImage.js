@@ -53,7 +53,7 @@ const ZoomableImage = ({ src, alt, style, className }) => {
           borderRadius: theme.shape.borderRadius,
           maxWidth: '200px',
           maxHeight: '200px',
-          objectFit: 'contain',
+          objectFit: 'cover',
           backgroundColor: theme.palette.background.paper
         }}
         onClick={handleOpen}

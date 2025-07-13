@@ -1101,10 +1101,13 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                        i.fee, i.currency, i.type, i.external_id, i.created_at, 
                        i.metadata, p.status as payment_status, p.created_at as payment_date,
-                       u.username as buyer_username
+                       u.username as buyer_username,
+                       s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                       s.type as searchable_type
                 FROM invoice i
                 LEFT JOIN payment p ON i.id = p.invoice_id
                 LEFT JOIN users u ON i.buyer_id = u.id
+                LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
                 WHERE i.searchable_id = %s
                 AND i.seller_id = %s
                 AND p.status = %s
@@ -1117,10 +1120,13 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
                        i.fee, i.currency, i.type, i.external_id, i.created_at, 
                        i.metadata, p.status as payment_status, p.created_at as payment_date,
-                       u.username as seller_username
+                       u.username as seller_username,
+                       s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                       s.type as searchable_type
                 FROM invoice i
                 LEFT JOIN payment p ON i.id = p.invoice_id
                 LEFT JOIN users u ON i.seller_id = u.id
+                LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
                 WHERE i.searchable_id = %s
                 AND i.buyer_id = %s
                 AND (p.status = %s OR (p.status = %s AND i.created_at >= NOW() - INTERVAL '24 hours'))
@@ -1144,7 +1150,9 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
                 'metadata': row[10],
                 'payment_status': row[11],
                 'payment_date': row[12].isoformat() if row[12] else None,
-                'other_party_username': row[13]  # buyer_username for seller, seller_username for buyer
+                'other_party_username': row[13],  # buyer_username for seller, seller_username for buyer
+                'item_title': row[14],
+                'searchable_type': row[15]
             }
             invoices.append(invoice)
         
@@ -1171,6 +1179,7 @@ def get_user_all_invoices(user_id):
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
                    u.username as seller_username, s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                   s.type as searchable_type,
                    'buyer' as user_role
             FROM invoice i
             LEFT JOIN payment p ON i.id = p.invoice_id
@@ -1186,6 +1195,7 @@ def get_user_all_invoices(user_id):
                    i.fee, i.currency, i.type, i.external_id, i.created_at, 
                    i.metadata, p.status as payment_status, p.created_at as payment_date,
                    u.username as buyer_username, s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                   s.type as searchable_type,
                    'seller' as user_role
             FROM invoice i
             LEFT JOIN payment p ON i.id = p.invoice_id
@@ -1223,7 +1233,8 @@ def get_user_all_invoices(user_id):
                 'payment_date': row[12].isoformat() if row[12] else None,
                 'other_party_username': row[13],
                 'item_title': row[14],
-                'user_role': row[15]  # 'buyer' or 'seller'
+                'searchable_type': row[15],
+                'user_role': row[16]  # 'buyer' or 'seller'
             }
             invoices.append(invoice)
         

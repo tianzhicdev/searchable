@@ -3,6 +3,32 @@
  */
 import themeConfig from './themeLoader';
 
+// Helper function to calculate luminance of a color
+const getLuminance = (color) => {
+    const rgb = parseInt(color.slice(1), 16);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = (rgb >> 0) & 0xff;
+    
+    // Calculate relative luminance
+    const rsRGB = r / 255;
+    const gsRGB = g / 255;
+    const bsRGB = b / 255;
+    
+    const r1 = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+    const g1 = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+    const b1 = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+    
+    return 0.2126 * r1 + 0.7152 * g1 + 0.0722 * b1;
+};
+
+// Helper function to determine best contrast text color
+const getContrastText = (backgroundColor) => {
+    const luminance = getLuminance(backgroundColor);
+    // Use black text for light backgrounds, white for dark backgrounds
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+};
+
 export const themePalette = (theme) => {
     // Determine if this is a light theme based on background color
     const isLightTheme = themeConfig.bgPrimary === '#ffffff' || 
@@ -26,31 +52,31 @@ export const themePalette = (theme) => {
             light: themeConfig.primary,
             main: themeConfig.primary,
             dark: themeConfig.primary,
-            contrastText: themeConfig.textPrimary
+            contrastText: getContrastText(themeConfig.primary)
         },
         secondary: {
             light: themeConfig.secondary,
             main: themeConfig.secondary,
             dark: themeConfig.secondary,
-            contrastText: themeConfig.textPrimary
+            contrastText: getContrastText(themeConfig.secondary)
         },
         error: {
             light: themeConfig.error,
             main: themeConfig.error,
             dark: themeConfig.error,
-            contrastText: themeConfig.textPrimary
+            contrastText: getContrastText(themeConfig.error)
         },
         warning: {
             light: themeConfig.warning,
             main: themeConfig.warning,
             dark: themeConfig.warning,
-            contrastText: themeConfig.textInverse
+            contrastText: getContrastText(themeConfig.warning)
         },
         success: {
             light: themeConfig.success,
             main: themeConfig.success,
             dark: themeConfig.success,
-            contrastText: themeConfig.textPrimary
+            contrastText: getContrastText(themeConfig.success)
         },
         grey: {
             50: themeConfig.borderLight,

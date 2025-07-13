@@ -164,7 +164,7 @@ const DownloadableSearchableDetails = () => {
     const hasSelections = Object.values(selectedFiles).some(isSelected => isSelected);
     
     if (!hasSelections) {
-      showAlert("Please select at least one file to purchase", "warning");
+      showAlert("Please select at least one content item to purchase", "warning");
       return;
     }
     
@@ -237,7 +237,7 @@ const DownloadableSearchableDetails = () => {
     const hasSelections = Object.values(selectedFiles).some(isSelected => isSelected);
     
     if (!hasSelections) {
-      showAlert("Please select at least one file to purchase", "warning");
+      showAlert("Please select at least one content item to purchase", "warning");
       return;
     }
     
@@ -304,7 +304,7 @@ const DownloadableSearchableDetails = () => {
     
     // Check if user has paid for this specific file
     if (!userPaidFiles.has(fileId.toString())) {
-      showAlert("You haven't paid for this file yet", "error");
+      showAlert("You haven't paid for this content yet", "error");
       return;
     }
     
@@ -330,9 +330,9 @@ const DownloadableSearchableDetails = () => {
     } catch (error) {
       console.error("Error downloading file:", error);
       if (error.response && error.response.status === 403) {
-        showAlert("Payment required to download this file", "error");
+        showAlert("Payment required to download this content", "error");
       } else if (error.response && error.response.status === 401) {
-        showAlert("Please log in to download files", "error");
+        showAlert("Please log in to download content", "error");
       } else {
         showAlert(`Failed to download ${fileName}`, "error");
       }
