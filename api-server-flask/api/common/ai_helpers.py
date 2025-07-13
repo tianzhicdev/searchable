@@ -20,8 +20,8 @@ def create_ai_content(user_id, title, instructions, metadata):
         cursor = conn.cursor()
         
         query = """
-            INSERT INTO ai_content (user_id, title, instructions, metadata)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO ai_content (user_id, title, instructions, status, metadata)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id
         """
         
@@ -29,6 +29,7 @@ def create_ai_content(user_id, title, instructions, metadata):
             user_id,
             title,
             instructions,
+            'submitted',
             json.dumps(metadata)
         ))
         
