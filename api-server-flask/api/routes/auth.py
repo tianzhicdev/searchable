@@ -12,6 +12,7 @@ from .. import rest_api
 from ..common.config import BaseConfig
 from ..common.models import db, Users, JWTTokenBlocklist
 from ..common.database import get_db_connection, execute_sql, Json
+from ..common.database_context import database_cursor, database_transaction, db as db_ops
 from ..common.logging_config import setup_logger
 from ..common.metrics_collector import track_user_signup, track_user_login, track_error
 

@@ -21,6 +21,7 @@ from ..common.data_helpers import (
     get_db_connection,
     execute_sql,
 )
+from ..common.database_context import db
 from ..common.tag_helpers import get_user_tags
 from ..common.logging_config import setup_logger
 
@@ -97,23 +98,16 @@ def get_seller_rating(user_id):
         tuple: (avg_rating, total_ratings)
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        execute_sql(cur, """
+        result = db.fetch_one("""
             SELECT 
                 COALESCE(AVG(r.rating), 0) as avg_rating,
                 COALESCE(COUNT(*), 0) as total_ratings
             FROM rating r
             JOIN invoice i ON r.invoice_id = i.id
             WHERE i.seller_id = %s
-        """, params=(user_id,))
+        """, (user_id,))
         
-        result = cur.fetchone()
         avg_rating, total_ratings = result if result else (0, 0)
-        
-        cur.close()
-        conn.close()
         
         return float(avg_rating) if avg_rating else 0.0, total_ratings or 0
         
