@@ -1,0 +1,5 @@
+# Demo Todo List
+# This is a demonstration of the todo system
+
+[x] Demo task 1 - Simple test task
+[x] Demo task 2 - Another test task
