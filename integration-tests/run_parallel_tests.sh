@@ -393,10 +393,10 @@ if [ $failed_phases -gt 0 ]; then
     # Display failed groups with their log file locations
     for phase_name in "${failed_phase_names[@]}"; do
         print_color $RED "❌ $phase_name"
-        local log_file="${LOG_DIR}/${phase_name}_${TIMESTAMP}.log"
+        log_file="${LOG_DIR}/${phase_name}_${TIMESTAMP}.log"
         if [ -f "$log_file" ]; then
             # Extract failed test files from the log
-            local failed_tests=$(grep -E "❌ FAILED: test_.*\.py" "$log_file" | sed 's/❌ FAILED: /    • /')
+            failed_tests=$(grep -E "❌ FAILED: test_.*\.py" "$log_file" | sed 's/❌ FAILED: /    • /')
             if [ -n "$failed_tests" ]; then
                 print_color $YELLOW "$failed_tests"
             fi
