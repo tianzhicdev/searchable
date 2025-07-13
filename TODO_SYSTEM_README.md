@@ -2,16 +2,37 @@
 
 This system provides an automated way to manage todo lists and integrate them with CI/CD workflows and Claude AI assistance.
 
+## Quick Start
+
+```bash
+# 1. See the system in action with a demo
+./demo-orchestrator.sh
+
+# 2. Test with dry-run mode
+./todo-orchestrator.sh --dry-run
+
+# 3. Run the actual orchestrator
+./todo-orchestrator.sh
+```
+
 ## Files
 
 ### Core Files
 - **`todo-list.txt`** - Main todo list file with tasks marked as `[ ]` (unfinished) or `[x]` (completed)
 - **`todo-orchestrator.sh`** - Main orchestration script that manages the entire workflow
-- **`test-todo-orchestrator.sh`** - Test version with mock CI/CD for safe testing
+
+### Demo & Testing
+- **`demo-orchestrator.sh`** - Full working demonstration with mock CI/CD
+- **`demo-todo.txt`** - Sample todo file for demonstration
+- **`test-todo-orchestrator.sh`** - Test version for safe testing
 - **`test-todo.txt`** - Sample todo file for testing
+
+### Documentation
+- **`TODO_SYSTEM_README.md`** - This comprehensive guide
 
 ### Log Files (Generated)
 - **`todo-orchestrator.log`** - Main orchestrator log file
+- **`demo-orchestrator.log`** - Demo orchestrator log file
 - **`test-todo-orchestrator.log`** - Test orchestrator log file
 
 ## Usage
