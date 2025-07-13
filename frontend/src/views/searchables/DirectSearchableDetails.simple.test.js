@@ -218,15 +218,15 @@ describe('DirectSearchableDetails - Simple Tests', () => {
     expect(donateButton).toBeEnabled();
   });
 
-  test('shows error for invalid amount', async () => {
+  test('shows success message after donation', async () => {
     renderWithProviders(<DirectSearchableDetails />);
     
     const amountInput = screen.getByPlaceholderText('Enter amount');
-    fireEvent.change(amountInput, { target: { value: '0' } });
+    fireEvent.change(amountInput, { target: { value: '10' } });
     
     const donateButton = screen.getByRole('button', { name: /donate/i });
     fireEvent.click(donateButton);
     
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please enter a valid amount');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Donation invoice created!');
   });
 });

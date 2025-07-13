@@ -254,13 +254,13 @@ describe('PublishOfflineSearchable Simple Tests', () => {
     expect(screen.getByRole('button', { name: /add item/i })).toBeInTheDocument();
   });
 
-  test('shows validation message when no items added', () => {
+  test('shows validation message when trying to add empty item', () => {
     renderWithProviders(<PublishOfflineSearchable />);
     
-    const submitButton = screen.getByTestId('submit-button');
-    fireEvent.click(submitButton);
+    const addButton = screen.getByRole('button', { name: /add item/i });
+    fireEvent.click(addButton);
     
-    expect(screen.getByRole('alert')).toHaveTextContent(/Please add at least one item/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Please fill in all required fields/i);
   });
 
   test('disables submit button when no items added', () => {
