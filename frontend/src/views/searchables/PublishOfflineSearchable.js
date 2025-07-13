@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton
+  Grid, Typography, Box, TextField, Button, IconButton, Paper
 } from '@material-ui/core';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -77,6 +77,13 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
   // Remove offline item from the list
   const removeOfflineItem = (itemId) => {
     setOfflineItems(offlineItems.filter(item => item.itemId !== itemId));
+  };
+
+  // Update item data
+  const updateItemData = (itemId, field, value) => {
+    setOfflineItems(offlineItems.map(item => 
+      item.itemId === itemId ? { ...item, [field]: field === 'price' ? parseFloat(value) || 0 : value } : item
+    ));
   };
 
   // Function to format USD price
@@ -170,23 +177,46 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
               Items ({offlineItems.length})
             </Typography>
             {offlineItems.map((item) => (
-              <Box key={item.itemId} className={classes.fileItem}>
-                <Box flex={1}>
-                  <Typography variant="body1">{item.name}</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    {item.description || 'No description'}
-                  </Typography>
+              <Paper key={item.itemId} className={classes.fileItem} style={{ flexDirection: 'column', alignItems: 'stretch', padding: 16 }}>
+                <TextField
+                  value={item.name}
+                  onChange={(e) => updateItemData(item.itemId, 'name', e.target.value)}
+                  size="small"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Item name"
+                  style={{ marginBottom: 4 }}
+                />
+                <TextField
+                  value={item.description}
+                  onChange={(e) => updateItemData(item.itemId, 'description', e.target.value)}
+                  size="small"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Description (optional)"
+                  style={{ marginBottom: 8 }}
+                />
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <TextField
+                    value={item.price}
+                    onChange={(e) => updateItemData(item.itemId, 'price', e.target.value)}
+                    size="small"
+                    type="number"
+                    variant="outlined"
+                    placeholder="Price"
+                    InputProps={{
+                      startAdornment: '$'
+                    }}
+                    style={{ width: 150 }}
+                  />
+                  <IconButton 
+                    size="small" 
+                    onClick={() => removeOfflineItem(item.itemId)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </Box>
-                <Typography variant="body1" style={{ marginRight: 16 }}>
-                  {formatUSD(item.price)}
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  onClick={() => removeOfflineItem(item.itemId)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
+              </Paper>
             ))}
           </Box>
         )}
