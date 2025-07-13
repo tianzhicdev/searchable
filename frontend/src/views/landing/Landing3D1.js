@@ -12,7 +12,7 @@ import { useSelector } from 'react-redux';
 import Galaxy3D from '../../components/Galaxy3D';
 import { galaxyConfigs } from '../../components/Galaxy3D/configs';
 
-const Landing3D = () => {
+const Landing3D1 = () => {
   const history = useHistory();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -52,7 +52,7 @@ const Landing3D = () => {
           zIndex: 1
         }}
       >
-        <Galaxy3D config={galaxyConfigs.default} />
+        <Galaxy3D config={galaxyConfigs.variant1} />
       </Box>
 
       {/* Content Overlay */}
@@ -72,11 +72,11 @@ const Landing3D = () => {
         <Box
           sx={{
             textAlign: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backgroundColor: 'rgba(20, 0, 40, 0.8)',
             borderRadius: 2,
             p: 4,
             backdrop: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            border: '1px solid rgba(255, 51, 102, 0.3)'
           }}
         >
           <Typography 
@@ -85,7 +85,7 @@ const Landing3D = () => {
             gutterBottom
             sx={{
               fontWeight: 'bold',
-              background: 'linear-gradient(45deg, #ffaa00, #4444ff, #ff6b6b)',
+              background: 'linear-gradient(45deg, #ff3366, #6633ff, #ff6b6b)',
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -97,7 +97,7 @@ const Landing3D = () => {
               }
             }}
           >
-            Welcome to the Galaxy
+            Red Spiral Nebula
           </Typography>
           
           <Typography 
@@ -109,7 +109,7 @@ const Landing3D = () => {
               mb: 4
             }}
           >
-            Explore the infinite universe of possibilities
+            Witness the crimson dance of stellar formation
           </Typography>
 
           <Typography 
@@ -121,8 +121,8 @@ const Landing3D = () => {
               mx: 'auto'
             }}
           >
-            Journey through a beautiful rotating galaxy while you discover what awaits you in our digital cosmos. 
-            Each star represents a new opportunity waiting to be explored.
+            Experience the fiery birth of stars in this magnificent red spiral nebula. 
+            Watch as cosmic winds sculpt the fabric of space and time.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -131,9 +131,9 @@ const Landing3D = () => {
               size="large"
               onClick={handleExplore}
               sx={{
-                background: 'linear-gradient(45deg, #ffaa00, #ff6b6b)',
+                background: 'linear-gradient(45deg, #ff3366, #6633ff)',
                 '&:hover': {
-                  background: 'linear-gradient(45deg, #ff6b6b, #ffaa00)',
+                  background: 'linear-gradient(45deg, #6633ff, #ff3366)',
                 },
                 color: 'white',
                 fontWeight: 'bold',
@@ -168,4 +168,4 @@ const Landing3D = () => {
   );
 };
 
-export default Landing3D;
+export default Landing3D1;

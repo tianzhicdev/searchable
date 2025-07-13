@@ -1,7 +1,25 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-const Galaxy3D = ({ height = '100vh' }) => {
+const Galaxy3D = ({ 
+    height = '100vh',
+    config = {
+        particlesCount: 5000,
+        galaxyRadius: 8,
+        rotationSpeed: 0.001,
+        wobbleSpeed: 0.0005,
+        wobbleIntensity: 0.1,
+        innerColor: '#ffaa00',
+        outerColor: '#4444ff',
+        backgroundColor: '#000814',
+        cameraPosition: [0, 1, 8],
+        branches: 3,
+        spinAngle: 0.3,
+        randomnessIntensity: 0.02,
+        randomRadiusIntensity: 0.5,
+        verticalSpread: 0.3
+    }
+}) => {
     const mountRef = useRef(null);
     const sceneRef = useRef(null);
     const rendererRef = useRef(null);
@@ -24,12 +42,12 @@ const Galaxy3D = ({ height = '100vh' }) => {
             0.1,
             1000
         );
-        camera.position.set(0, 3, 8);
+        camera.position.set(...config.cameraPosition);
 
         // Renderer setup
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(mountElement.clientWidth, mountElement.clientHeight);
-        renderer.setClearColor(0x000814, 1);
+        renderer.setClearColor(config.backgroundColor, 1);
         rendererRef.current = renderer;
         mountElement.appendChild(renderer.domElement);
 
@@ -44,7 +62,7 @@ const Galaxy3D = ({ height = '100vh' }) => {
                 transparent: true
             });
 
-            const particlesCount = 5000;
+            const particlesCount = config.particlesCount;
             const positions = new Float32Array(particlesCount * 3);
             const colors = new Float32Array(particlesCount * 3);
 
@@ -52,19 +70,19 @@ const Galaxy3D = ({ height = '100vh' }) => {
                 const i3 = i * 3;
 
                 // Create spiral galaxy pattern
-                const radius = Math.random() * 8;
-                const spinAngle = radius * 0.3;
-                const branchAngle = ((i % 3) / 3) * Math.PI * 2;
+                const radius = Math.random() * config.galaxyRadius;
+                const spinAngle = radius * config.spinAngle;
+                const branchAngle = ((i % config.branches) / config.branches) * Math.PI * 2;
                 
-                const randomAngle = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.02 * radius;
+                const randomAngle = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * config.randomnessIntensity * radius;
                 const angle = branchAngle + spinAngle + randomAngle;
                 
-                const randomRadius = Math.pow(Math.random(), 3) * 0.5 * radius;
+                const randomRadius = Math.pow(Math.random(), 3) * config.randomRadiusIntensity * radius;
                 
                 // Position calculation
                 const x = Math.cos(angle) * (radius + randomRadius);
                 const z = Math.sin(angle) * (radius + randomRadius);
-                const y = (Math.random() - 0.5) * 0.3 * radius;
+                const y = (Math.random() - 0.5) * config.verticalSpread * radius;
 
                 positions[i3] = x;
                 positions[i3 + 1] = y;
@@ -73,10 +91,10 @@ const Galaxy3D = ({ height = '100vh' }) => {
                 // Color calculation - closer to center = warmer colors
                 const distanceToCenter = Math.sqrt(x * x + y * y + z * z);
                 const mixedColor = new THREE.Color();
-                const innerColor = new THREE.Color('#ffaa00');
-                const outerColor = new THREE.Color('#4444ff');
+                const innerColor = new THREE.Color(config.innerColor);
+                const outerColor = new THREE.Color(config.outerColor);
                 
-                mixedColor.lerpColors(innerColor, outerColor, Math.min(distanceToCenter / 8, 1));
+                mixedColor.lerpColors(innerColor, outerColor, Math.min(distanceToCenter / config.galaxyRadius, 1));
 
                 colors[i3] = mixedColor.r;
                 colors[i3 + 1] = mixedColor.g;
@@ -106,8 +124,8 @@ const Galaxy3D = ({ height = '100vh' }) => {
             animationIdRef.current = requestAnimationFrame(animate);
 
             if (galaxyRef.current) {
-                galaxyRef.current.rotation.y += 0.001; // Slow rotation
-                galaxyRef.current.rotation.x = Math.sin(Date.now() * 0.0005) * 0.1; // Gentle wobble
+                galaxyRef.current.rotation.y += config.rotationSpeed; // Configurable rotation
+                galaxyRef.current.rotation.x = Math.sin(Date.now() * config.wobbleSpeed) * config.wobbleIntensity; // Configurable wobble
             }
 
             renderer.render(scene, camera);
@@ -142,7 +160,7 @@ const Galaxy3D = ({ height = '100vh' }) => {
             }
             renderer.dispose();
         };
-    }, []);
+    }, [config]); // Add config to dependencies
 
     return (
         <div
