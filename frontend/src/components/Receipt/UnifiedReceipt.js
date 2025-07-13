@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { 
-  Paper, CardContent, Typography, Divider, Box, Chip, IconButton, Collapse
+  Paper, CardContent, Typography, Divider, Box, Chip, IconButton, Collapse, Link
 } from '@material-ui/core';
 import { ExpandMore, ExpandLess } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const useStyles = makeStyles((theme) => ({
   receiptPaper: {
@@ -24,10 +26,17 @@ const UnifiedReceipt = ({
 }) => {
   const classes = useComponentStyles();
   const styles = useStyles();
+  const history = useHistory();
   const [expanded, setExpanded] = useState(false);
 
   const handleExpandClick = () => {
     setExpanded(!expanded);
+  };
+
+  const handleSearchableClick = () => {
+    if (data.searchable_id) {
+      navigateWithStack(history, `/searchable-item/${data.searchable_id}`);
+    }
   };
 
   const getStatusChip = () => {
@@ -73,9 +82,9 @@ const UnifiedReceipt = ({
       case 'sale':
         return `Invoice #${data.id}`;
       case 'withdrawal':
-        return `Withdrawal #${data.id}`;
+        return `#${data.id}`;
       case 'deposit':
-        return `Deposit #${data.id}`;
+        return `#${data.id}`;
       case 'reward':
         return `Reward`;
       default:
@@ -330,13 +339,30 @@ const UnifiedReceipt = ({
 
         {/* Subtitle and Date */}
         <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
-          <Typography 
-            variant="body2" 
-            className={`${classes.systemText} ${type === 'withdrawal' || type === 'deposit' ? classes.addressText : ''}`}
-            style={{ flex: 1, marginRight: '8px' }}
-          >
-            {getSubtitle()}
-          </Typography>
+          <Box style={{ flex: 1, marginRight: '8px' }}>
+            <Typography 
+              variant="body2" 
+              className={`${classes.systemText} ${type === 'withdrawal' || type === 'deposit' ? classes.addressText : ''}`}
+            >
+              {getSubtitle()}
+            </Typography>
+            {/* Searchable title for purchases and sales */}
+            {(type === 'purchase' || type === 'sale') && data.searchable_title && (
+              <Link 
+                component="button" 
+                variant="body2" 
+                onClick={handleSearchableClick}
+                className={classes.userText}
+                style={{ 
+                  textAlign: 'left',
+                  display: 'block',
+                  marginTop: '4px'
+                }}
+              >
+                {data.searchable_title}
+              </Link>
+            )}
+          </Box>
           <Typography variant="body2" className={classes.systemText}>
             {formatDate(data.created_at || data.payment_date)}
           </Typography>
@@ -356,9 +382,12 @@ const UnifiedReceipt = ({
                   Type: {data.type.toUpperCase()}
                 </Typography>
               )}
-              <Typography variant="body2" className={classes.systemText}>
-                Created: {formatDate(data.created_at)}
-              </Typography>
+              {/* Only show Created date if it's different from payment_date */}
+              {type !== 'deposit' && (
+                <Typography variant="body2" className={classes.systemText}>
+                  Created: {formatDate(data.created_at)}
+                </Typography>
+              )}
             </Box>
             
             {/* Custom content */}

@@ -95,7 +95,7 @@ const Onboarding2 = () => {
   const options = [
     {
       title: 'Sell my digital content',
-      description: 'Upload and sell files like PDFs, music, videos, or software',
+      description: 'Upload and sell content like PDFs, music, videos, or software',
       icon: <CloudDownload className={classes.icon} />,
       path: '/onboarding-3'
     },
@@ -127,7 +127,7 @@ const Onboarding2 = () => {
           
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" className={classes.title}>
-              Your first storefront
+              Your first posting
             </Typography>
           </Box>
           <Typography variant="h6" className={classes.subtitle} color="textSecondary">

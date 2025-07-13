@@ -478,7 +478,7 @@ const mockHandlers = {
       filteredTags = filteredTags.filter(tag => tag.is_active);
     }
     
-    return createMockResponse({ tags: filteredTags });
+    return createMockResponse({ success: true, tags: filteredTags });
   },
   
   // User search endpoint
@@ -1301,6 +1301,8 @@ const mockHandlers = {
         id: 1,
         invoice_id: 'inv-purchase-1',
         searchable_id: 'mock-item-2',
+        searchable_title: 'Professional Design Templates',
+        searchable_type: 'downloadable',
         amount: 19.99,
         fee: 0.02, // Platform fee 0.1%
         currency: 'usd',
@@ -1326,6 +1328,8 @@ const mockHandlers = {
         id: 2,
         invoice_id: 'inv-purchase-2',
         searchable_id: 'mock-item-4',
+        searchable_title: 'UI Kit Components Bundle',
+        searchable_type: 'offline',
         amount: 39.99,
         fee: 0.04,
         currency: 'usd',
@@ -1360,6 +1364,8 @@ const mockHandlers = {
         id: 3,
         invoice_id: 'inv-sale-1',
         searchable_id: 'mock-item-1',
+        searchable_title: 'Premium Digital Asset Bundle',
+        searchable_type: 'downloadable',
         amount: 29.99,
         fee: 0.03,
         currency: 'usd',

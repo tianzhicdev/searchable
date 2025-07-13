@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton
+  Grid, Typography, Box, TextField, Button, IconButton, Paper, Divider
 } from '@material-ui/core';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -79,6 +79,13 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
     setOfflineItems(offlineItems.filter(item => item.itemId !== itemId));
   };
 
+  // Update item data
+  const updateItemData = (itemId, field, value) => {
+    setOfflineItems(offlineItems.map(item => 
+      item.itemId === itemId ? { ...item, [field]: field === 'price' ? parseFloat(value) || 0 : value } : item
+    ));
+  };
+
   // Function to format USD price
   const formatUSD = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -131,64 +138,93 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
             style={{ marginBottom: 8 }}
           />
           <TextField
-            placeholder="Price (USD)"
-            value={newItem.price}
+            placeholder="Description (Optional)"
+            value={newItem.description}
             onChange={handleItemDataChange}
-            name="price"
-            type="number"
-            inputProps={{ step: "0.01", min: "0" }}
+            name="description"
             fullWidth
             variant="outlined"
             size="small"
             style={{ marginBottom: 8 }}
           />
-          {!isMinimalMode && (
+          <Box display="flex" alignItems="center" justifyContent="space-between">
             <TextField
-              placeholder="Description (Optional)"
-              value={newItem.description}
+              placeholder="Price (USD)"
+              value={newItem.price}
               onChange={handleItemDataChange}
-              name="description"
-              fullWidth
+              name="price"
+              type="number"
+              inputProps={{ step: "0.01", min: "0" }}
               variant="outlined"
               size="small"
-              style={{ marginBottom: 8 }}
+              InputProps={{
+                startAdornment: '$'
+              }}
+              style={{ flex: 1, marginRight: 8 }}
             />
-          )}
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => addOfflineItem(setError)}
-            startIcon={<AddIcon />}
-          >
-            Add Item
-          </Button>
+            <IconButton
+              size="small"
+              onClick={() => addOfflineItem(setError)}
+              disabled={!newItem.name || !newItem.price}
+            >
+              <AddIcon />
+            </IconButton>
+          </Box>
         </Box>
         
         {offlineItems.length > 0 && (
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Items ({offlineItems.length})
-            </Typography>
+          <>
+            <Box display="flex" alignItems="center" style={{ margin: '16px 0' }}>
+              <Typography variant="subtitle2" style={{ marginRight: 8 }}>
+                Added Items ({offlineItems.length})
+              </Typography>
+              <Box style={{ flex: 1, height: 1, backgroundColor: 'currentColor', opacity: 0.3 }} />
+            </Box>
+            <Box>
             {offlineItems.map((item) => (
-              <Box key={item.itemId} className={classes.fileItem}>
-                <Box flex={1}>
-                  <Typography variant="body1">{item.name}</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    {item.description || 'No description'}
-                  </Typography>
+              <Box key={item.itemId} style={{ marginBottom: 16 }}>
+                <TextField
+                  value={item.name}
+                  onChange={(e) => updateItemData(item.itemId, 'name', e.target.value)}
+                  size="small"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Item name"
+                  style={{ marginBottom: 4 }}
+                />
+                <TextField
+                  value={item.description}
+                  onChange={(e) => updateItemData(item.itemId, 'description', e.target.value)}
+                  size="small"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Description (optional)"
+                  style={{ marginBottom: 8 }}
+                />
+                <Box display="flex" alignItems="center" justifyContent="space-between">
+                  <TextField
+                    value={item.price}
+                    onChange={(e) => updateItemData(item.itemId, 'price', e.target.value)}
+                    size="small"
+                    type="number"
+                    variant="outlined"
+                    placeholder="Price"
+                    InputProps={{
+                      startAdornment: '$'
+                    }}
+                    style={{ flex: 1, marginRight: 8 }}
+                  />
+                  <IconButton 
+                    size="small" 
+                    onClick={() => removeOfflineItem(item.itemId)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
                 </Box>
-                <Typography variant="body1" style={{ marginRight: 16 }}>
-                  {formatUSD(item.price)}
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  onClick={() => removeOfflineItem(item.itemId)}
-                >
-                  <DeleteIcon />
-                </IconButton>
               </Box>
             ))}
           </Box>
+          </>
         )}
       </Box>
     </Grid>

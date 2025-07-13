@@ -27,16 +27,28 @@ const useStyles = makeStyles((theme) => ({
     }
   },
   balanceDisplay: {
-    backgroundColor: theme.palette.grey[100],
+    backgroundColor: theme.palette.grey[900],
     padding: theme.spacing(2),
     borderRadius: theme.shape.borderRadius,
     marginBottom: theme.spacing(3),
     textAlign: 'center'
   },
+  balanceAmount: {
+    color: '#ffffff',
+    fontWeight: 'bold'
+  },
+  balanceLabel: {
+    color: '#ffffff'
+  },
   submitButton: {
     marginTop: theme.spacing(2)
   }
 }));
+
+// Ethereum address validation regex
+const isValidEthereumAddress = (address) => {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+};
 
 const WithdrawalUSDT = () => {
   const classes = useComponentStyles();
@@ -76,9 +88,17 @@ const WithdrawalUSDT = () => {
   };
   
   const handleAddressChange = (e) => {
-    setAddress(e.target.value);
+    const value = e.target.value.trim();
+    setAddress(value);
+    
+    // Clear error when user starts typing
     if (submitError) {
       setSubmitError('');
+    }
+    
+    // Validate Ethereum address format
+    if (value && !isValidEthereumAddress(value)) {
+      setSubmitError('Please enter a valid Ethereum address (starts with 0x followed by 40 hexadecimal characters)');
     }
   };
   
@@ -98,6 +118,12 @@ const WithdrawalUSDT = () => {
     // Validation
     if (!address || address.trim() === '') {
       setSubmitError('Please enter a valid withdrawal address');
+      return;
+    }
+    
+    // Validate Ethereum address format
+    if (!isValidEthereumAddress(address.trim())) {
+      setSubmitError('Invalid Ethereum address. Must start with 0x followed by 40 hexadecimal characters');
       return;
     }
     
@@ -182,10 +208,10 @@ const WithdrawalUSDT = () => {
           
           {/* Balance Display */}
           <Box className={styles.balanceDisplay}>
-            <Typography variant="h6">
+            <Typography variant="h6" className={styles.balanceLabel}>
               Available Balance
             </Typography>
-            <Typography variant="h4" color="primary">
+            <Typography variant="h4" className={styles.balanceAmount}>
               ${balance.usd} USD
             </Typography>
           </Box>
@@ -209,7 +235,7 @@ const WithdrawalUSDT = () => {
                   fontFamily: 'monospace'
                 }
               }}
-              error={Boolean(submitError && submitError.includes('address'))}
+              error={Boolean(submitError && (submitError.includes('address') || submitError.includes('Ethereum')))}
               helperText="Enter the Ethereum address where you want to receive USDT"
             />
             
@@ -243,7 +269,7 @@ const WithdrawalUSDT = () => {
                 • USDT will be sent on the Ethereum network
               </Typography>
               <Typography variant="body2" color="textSecondary" gutterBottom>
-                • Processing time: 1-2 business days
+                • Processing time: ~30 seconds
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 • Network fees may apply

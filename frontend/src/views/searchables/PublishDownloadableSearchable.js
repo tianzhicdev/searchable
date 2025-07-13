@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress, Paper
+  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress, Paper, Divider
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AttachFileIcon from '@material-ui/icons/AttachFile';
+import AddIcon from '@material-ui/icons/Add';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 import backend from '../utilities/Backend';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
@@ -156,6 +157,13 @@ const PublishDownloadableSearchable = () => {
     setDownloadableFiles(downloadableFiles.filter(item => item.id !== id));
   };
 
+  // Update file data
+  const updateFileData = (id, field, value) => {
+    setDownloadableFiles(downloadableFiles.map(file => 
+      file.id === id ? { ...file, [field]: field === 'price' ? Number(parseFloat(value).toFixed(2)) : value } : file
+    ));
+  };
+
   // Function to format file size
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -196,7 +204,7 @@ const PublishDownloadableSearchable = () => {
   // Custom validation for downloadable-specific requirements
   const customValidation = () => {
     if (downloadableFiles.length === 0) {
-      return "Please add at least one downloadable file.";
+      return "Please add at least one downloadable content item.";
     }
     return null;
   };
@@ -205,10 +213,10 @@ const PublishDownloadableSearchable = () => {
   const renderDownloadableContent = ({ formData, handleInputChange, setError }) => (
     <Grid item xs={12}>
       <Typography variant="subtitle1">
-        Downloadable Files *
+        Downloadable Content *
       </Typography>
       <Typography variant="caption">
-        Add files that customers can download after purchase
+        Add content that customers can download after purchase
       </Typography>
       
       <Box className={classes.addFileSection}>
@@ -218,7 +226,7 @@ const PublishDownloadableSearchable = () => {
             component="label"
             startIcon={<AttachFileIcon />}
           >
-            Choose File
+            Choose Content
             <input
               type="file"
               id="downloadableFile"
@@ -241,10 +249,11 @@ const PublishDownloadableSearchable = () => {
           value={newFile.description}
           onChange={handleFileDataChange}
           fullWidth
-          className={classes.fileInput}
+          variant="outlined"
+          style={{ marginBottom: 8 }}
         />
         
-        <Box className={classes.buttonGroup}>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
           <TextField
             placeholder="Price (USD)"
             type="number"
@@ -252,56 +261,80 @@ const PublishDownloadableSearchable = () => {
             name="price"
             value={newFile.price}
             onChange={handleFileDataChange}
-            style={{ flex: 1 }}
+            variant="outlined"
+            InputProps={{
+              startAdornment: '$'
+            }}
+            style={{ flex: 1, marginRight: 8 }}
           />
-          <Button 
-            variant="contained" 
+          <IconButton
+            size="small"
             onClick={() => {
               addDownloadableFile().catch(err => setError(err.message));
             }}
             disabled={!newFile.file || !newFile.price || fileLoading}
           >
-            {fileLoading ? <CircularProgress size={20} /> : 'Add File'}
-          </Button>
+            {fileLoading ? <CircularProgress size={20} /> : <AddIcon />}
+          </IconButton>
         </Box>
       </Box>
+      
+      {downloadableFiles.length > 0 && (
+        <Box display="flex" alignItems="center" style={{ margin: '16px 0' }}>
+          <Typography variant="subtitle2" style={{ marginRight: 8 }}>
+            Added Items ({downloadableFiles.length})
+          </Typography>
+          <Box style={{ flex: 1, height: 1, backgroundColor: theme.palette.primary.main }} />
+        </Box>
+      )}
       
       <Box className={classes.fileList}>
         {downloadableFiles.length > 0 ? (
           downloadableFiles.map((item) => (
-            <Paper 
-              key={item.id} 
-              className={classes.fileItem}
-            >
-              <Box style={{ flex: 3 }}>
-                <Typography variant="body2" style={{ fontWeight: 'bold' }}>
-                  {item.name}
-                </Typography>
-                {item.description && (
-                  <Typography variant="caption" color="textSecondary">
-                    {item.description}
-                  </Typography>
-                )}
-                <Typography variant="caption" color="textSecondary">
-                  {item.fileName} ({formatFileSize(item.fileSize)})
-                </Typography>
+            <Box key={item.id} style={{ marginBottom: theme.spacing(2) }}>
+              <TextField
+                value={item.name}
+                onChange={(e) => updateFileData(item.id, 'name', e.target.value)}
+                size="small"
+                fullWidth
+                variant="outlined"
+                placeholder="File name"
+                style={{ marginBottom: 4 }}
+              />
+              <TextField
+                value={item.description}
+                onChange={(e) => updateFileData(item.id, 'description', e.target.value)}
+                size="small"
+                fullWidth
+                variant="outlined"
+                placeholder="Description (optional)"
+                style={{ marginBottom: 8 }}
+              />
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <TextField
+                  value={item.price}
+                  onChange={(e) => updateFileData(item.id, 'price', e.target.value)}
+                  size="small"
+                  type="number"
+                  variant="outlined"
+                  placeholder="Price"
+                  InputProps={{
+                    startAdornment: '$'
+                  }}
+                  style={{ flex: 1, marginRight: 8 }}
+                />
+                <IconButton 
+                  size="small" 
+                  onClick={() => removeDownloadableFile(item.id)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
               </Box>
-              <Box style={{ flex: 1, textAlign: 'right' }}>
-                <Typography variant="body2">
-                  {formatUSD(item.price)}
-                </Typography>
-              </Box>
-              <IconButton 
-                size="small" 
-                onClick={() => removeDownloadableFile(item.id)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Paper>
+            </Box>
           ))
         ) : (
           <Typography variant="body2" color="textSecondary">
-            No files added yet. Add at least one downloadable file to continue.
+            No content added yet. Add at least one downloadable item to continue.
           </Typography>
         )}
       </Box>

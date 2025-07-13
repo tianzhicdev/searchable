@@ -189,7 +189,7 @@ const DirectSearchableDetails = () => {
           // For fixed amounts (from URL param or fixed pricing mode), just show the amount
           <Box className={classes.amountSection}>
             <Typography className={classes.fixedAmountLabel}>
-              Payment Amount
+              Donation Amount
             </Typography>
             <Typography className={classes.fixedAmountValue}>
               ${paymentAmount.toFixed(2)}
@@ -199,7 +199,7 @@ const DirectSearchableDetails = () => {
           // For flexible/preset amounts, show the selection UI
           <Box>
             <Typography className={classes.paymentTitle}>
-              {publicData?.pricingMode === 'preset' ? 'Choose Payment Amount' : 'Choose or Enter Payment Amount'}
+              {publicData?.pricingMode === 'preset' ? 'Choose Donation Amount' : 'Choose or Enter Donation Amount'}
             </Typography>
 
             {/* Amount selection buttons */}
@@ -230,7 +230,7 @@ const DirectSearchableDetails = () => {
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
-                  helperText="Enter any amount you'd like to pay"
+                  helperText="Enter any amount you'd like to donate"
                 />
               </Box>
             )}

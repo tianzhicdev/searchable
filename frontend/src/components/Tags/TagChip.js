@@ -7,7 +7,7 @@ import { touchTargets } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   userTag: {
-    backgroundColor: theme.palette.primary.light,
+    backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
     margin: theme.spacing(0.5),
     fontSize: '0.875rem',
@@ -29,33 +29,7 @@ const useStyles = makeStyles((theme) => ({
       }
     },
     '&:hover': {
-      backgroundColor: theme.palette.primary.main,
-    }
-  },
-  searchableTag: {
-    backgroundColor: theme.palette.secondary.light,
-    color: theme.palette.secondary.contrastText,
-    margin: theme.spacing(0.5),
-    fontSize: '0.875rem',
-    minHeight: 32,
-    height: 'auto',
-    '& .MuiChip-label': {
-      paddingLeft: theme.spacing(1.5),
-      paddingRight: theme.spacing(1.5),
-      paddingTop: theme.spacing(0.5),
-      paddingBottom: theme.spacing(0.5),
-    },
-    [theme.breakpoints.down('sm')]: {
-      fontSize: '0.75rem',
-      minHeight: touchTargets.clickable.minHeight - 16, // 28px
-      margin: theme.spacing(0.25),
-      '& .MuiChip-label': {
-        paddingLeft: theme.spacing(1),
-        paddingRight: theme.spacing(1),
-      }
-    },
-    '&:hover': {
-      backgroundColor: theme.palette.secondary.main,
+      backgroundColor: theme.palette.primary.dark,
     }
   },
   clickable: {
@@ -84,8 +58,8 @@ const TagChip = ({
 }) => {
   const classes = useStyles();
   
-  // Determine styling based on tag type
-  const tagClass = tag.tag_type === 'user' ? classes.userTag : classes.searchableTag;
+  // Use consistent primary color styling for all tags
+  const tagClass = classes.userTag; // Always use primary color for consistency
   const chipClass = `${tagClass} ${clickable ? classes.clickable : ''} ${deletable ? classes.deletable : ''}`;
   
   const handleClick = () => {
