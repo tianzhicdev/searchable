@@ -282,7 +282,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 {userRole === 'buyer' ? 'Seller' : 'Buyer'}: {invoice.other_party_username || 'Unknown'}
                             </Typography>
                             {/* Searchable title */}
-                            {invoice.searchable_title && (
+                            {(invoice.searchable_title || invoice.item_title) && (
                                 <Link 
                                     component="button" 
                                     variant="body2" 
@@ -294,7 +294,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         marginTop: '4px'
                                     }}
                                 >
-                                    {invoice.searchable_title}
+                                    {invoice.searchable_title || invoice.item_title}
                                 </Link>
                             )}
                         </Box>
