@@ -253,7 +253,11 @@ class TestSearchComprehensive:
         # Test 1: Search by single tag
         try:
             print("\nSearching for users with tag 0...")
-            search_result = self.client.search_users(tags=[self.user_tags[0]['id']])
+            # Use username filter to ensure we only get users from this test run
+            search_result = self.client.search_users(
+                tags=[self.user_tags[0]['id']], 
+                username=f"search_tags_{self.test_id}"
+            )
             print(f"[RESPONSE] Search users with tag {self.user_tags[0]['id']}: {search_result}")
             assert search_result.get('success'), f"Search failed: {search_result}"
             
@@ -274,7 +278,11 @@ class TestSearchComprehensive:
         # Test 2: Search by multiple tags (OR logic)
         try:
             print("\nSearching for users with tags 1 OR 2...")
-            search_result = self.client.search_users(tags=[self.user_tags[1]['id'], self.user_tags[2]['id']])
+            # Use username filter to ensure we only get users from this test run
+            search_result = self.client.search_users(
+                tags=[self.user_tags[1]['id'], self.user_tags[2]['id']],
+                username=f"search_tags_{self.test_id}"
+            )
             print(f"[RESPONSE] Search users with tags {[self.user_tags[1]['id'], self.user_tags[2]['id']]}: {search_result}")
             assert search_result.get('success'), f"Search failed: {search_result}"
             

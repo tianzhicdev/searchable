@@ -367,3 +367,10 @@ class TestAIContent:
         
         assert response['success'] is False
         assert "AI content cannot be deleted after creation" in response['msg']
+
+
+if __name__ == "__main__":
+    # Run the tests
+    import sys
+    exit_code = pytest.main([__file__, "-v", "-s"])
+    sys.exit(exit_code)
