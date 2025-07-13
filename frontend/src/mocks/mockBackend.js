@@ -831,7 +831,7 @@ const mockHandlers = {
     });
   },
   
-  // v1/profile endpoints (used by ProfileEditor)
+  // v1/profile endpoints (used by EditProfile)
   'v1/profile': (url, config) => {
     // Handle both GET and PUT requests
     if (config?.data) {
