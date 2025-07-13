@@ -156,6 +156,13 @@ const PublishDownloadableSearchable = () => {
     setDownloadableFiles(downloadableFiles.filter(item => item.id !== id));
   };
 
+  // Update file data
+  const updateFileData = (id, field, value) => {
+    setDownloadableFiles(downloadableFiles.map(file => 
+      file.id === id ? { ...file, [field]: field === 'price' ? Number(parseFloat(value).toFixed(2)) : value } : file
+    ));
+  };
+
   // Function to format file size
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -272,31 +279,49 @@ const PublishDownloadableSearchable = () => {
             <Paper 
               key={item.id} 
               className={classes.fileItem}
+              style={{ flexDirection: 'column', alignItems: 'stretch', padding: theme.spacing(2) }}
             >
-              <Box style={{ flex: 3 }}>
-                <Typography variant="body2" style={{ fontWeight: 'bold' }}>
-                  {item.name}
-                </Typography>
-                {item.description && (
-                  <Typography variant="caption" color="textSecondary">
-                    {item.description}
-                  </Typography>
-                )}
-                <Typography variant="caption" color="textSecondary">
-                  {item.fileName} ({formatFileSize(item.fileSize)})
-                </Typography>
+              <TextField
+                value={item.name}
+                onChange={(e) => updateFileData(item.id, 'name', e.target.value)}
+                size="small"
+                fullWidth
+                variant="outlined"
+                placeholder="File name"
+                style={{ marginBottom: 4 }}
+              />
+              <TextField
+                value={item.description}
+                onChange={(e) => updateFileData(item.id, 'description', e.target.value)}
+                size="small"
+                fullWidth
+                variant="outlined"
+                placeholder="Description (optional)"
+                style={{ marginBottom: 4 }}
+              />
+              <Typography variant="caption" color="textSecondary" style={{ marginBottom: 8 }}>
+                {item.fileName} ({formatFileSize(item.fileSize)})
+              </Typography>
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                <TextField
+                  value={item.price}
+                  onChange={(e) => updateFileData(item.id, 'price', e.target.value)}
+                  size="small"
+                  type="number"
+                  variant="outlined"
+                  placeholder="Price"
+                  InputProps={{
+                    startAdornment: '$'
+                  }}
+                  style={{ width: 150 }}
+                />
+                <IconButton 
+                  size="small" 
+                  onClick={() => removeDownloadableFile(item.id)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
               </Box>
-              <Box style={{ flex: 1, textAlign: 'right' }}>
-                <Typography variant="body2">
-                  {formatUSD(item.price)}
-                </Typography>
-              </Box>
-              <IconButton 
-                size="small" 
-                onClick={() => removeDownloadableFile(item.id)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
             </Paper>
           ))
         ) : (
