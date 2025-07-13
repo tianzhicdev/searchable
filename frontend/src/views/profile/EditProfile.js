@@ -462,8 +462,6 @@ const EditProfile = () => {
                   <Button 
                     size="small" 
                     onClick={removeProfileImage} 
-                    color="secondary"
-                    variant="contained"
                   >
                     Remove Image
                   </Button>
