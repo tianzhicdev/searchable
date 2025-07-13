@@ -791,18 +791,21 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
         if tag_ids:
             # If tags specified, only return users with those tags
             tag_placeholders = ','.join(['%s'] * len(tag_ids))
+            tag_condition = f"ut.tag_id IN ({tag_placeholders})"
+            
+            # Build the complete where clause
+            all_conditions = [tag_condition] + where_conditions
+            where_clause = " WHERE " + " AND ".join(all_conditions)
             
             # Get count with filters
             count_query = f"""
                 SELECT COUNT(DISTINCT u.id)
                 FROM users u
-                {'JOIN user_tags ut ON u.id = ut.user_id' if tag_ids else ''}
-                WHERE 1=1
-                {' AND ut.tag_id IN (' + tag_placeholders + ')' if tag_ids else ''}
-                {' AND ' + ' AND '.join(where_conditions) if where_conditions else ''}
+                JOIN user_tags ut ON u.id = ut.user_id
+                {where_clause}
             """
             
-            count_params = (tag_ids if tag_ids else []) + params
+            count_params = tag_ids + params
             execute_sql(cur, count_query, count_params)
             total = cur.fetchone()[0]
             
@@ -818,15 +821,13 @@ def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
                        COALESCE((SELECT COUNT(*) FROM searchables s WHERE s.user_id = u.id AND s.removed = FALSE), 0) as searchable_count
                 FROM users u
                 LEFT JOIN user_profile up ON u.id = up.user_id
-                {'JOIN user_tags ut ON u.id = ut.user_id' if tag_ids else ''}
-                WHERE 1=1
-                {' AND ut.tag_id IN (' + tag_placeholders + ')' if tag_ids else ''}
-                {' AND ' + ' AND '.join(where_conditions) if where_conditions else ''}
+                JOIN user_tags ut ON u.id = ut.user_id
+                {where_clause}
                 ORDER BY u.id
                 LIMIT %s OFFSET %s
             """
             
-            query_params = (tag_ids if tag_ids else []) + params + [limit, offset]
+            query_params = tag_ids + params + [limit, offset]
             execute_sql(cur, user_query, query_params)
         else:
             # No tags specified - search all users with published items

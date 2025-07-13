@@ -107,7 +107,16 @@ def get_ai_content_by_id(ai_content_id, include_user_info=False, include_file_ur
         # If requested, enrich file data with URIs
         if result and include_file_uris and result.get('metadata') and result['metadata'].get('files'):
             files = result['metadata']['files']
-            file_ids = [f['fileId'] for f in files if 'fileId' in f]
+            # Only get numeric file IDs to avoid SQL type mismatch
+            file_ids = []
+            for f in files:
+                if 'fileId' in f:
+                    try:
+                        file_id = int(f['fileId'])
+                        file_ids.append(file_id)
+                    except (ValueError, TypeError):
+                        # Skip non-numeric file IDs
+                        pass
             
             if file_ids:
                 # Get file URIs from database
@@ -117,12 +126,12 @@ def get_ai_content_by_id(ai_content_id, include_user_info=False, include_file_ur
                     WHERE file_id = ANY(%s)
                 """
                 cursor.execute(file_query, (file_ids,))
-                file_uris = {row['file_id']: row['uri'] for row in cursor.fetchall()}
+                file_uris = {str(row['file_id']): row['uri'] for row in cursor.fetchall()}
                 
                 # Add URIs to files
                 for file_info in files:
-                    if 'fileId' in file_info and file_info['fileId'] in file_uris:
-                        file_info['uri'] = file_uris[file_info['fileId']]
+                    if 'fileId' in file_info and str(file_info['fileId']) in file_uris:
+                        file_info['uri'] = file_uris[str(file_info['fileId'])]
         
         return result
         
@@ -203,13 +212,18 @@ def get_all_ai_contents(status=None, limit=100, offset=0, include_file_uris=Fals
         
         # If requested, enrich file data with URIs
         if include_file_uris:
-            # Collect all file IDs
+            # Collect all numeric file IDs
             all_file_ids = []
             for content in results:
                 if content.get('metadata') and content['metadata'].get('files'):
                     for f in content['metadata']['files']:
                         if 'fileId' in f:
-                            all_file_ids.append(f['fileId'])
+                            try:
+                                file_id = int(f['fileId'])
+                                all_file_ids.append(file_id)
+                            except (ValueError, TypeError):
+                                # Skip non-numeric file IDs
+                                pass
             
             if all_file_ids:
                 # Get all file URIs in one query
@@ -219,14 +233,14 @@ def get_all_ai_contents(status=None, limit=100, offset=0, include_file_uris=Fals
                     WHERE file_id = ANY(%s)
                 """
                 cursor.execute(file_query, (all_file_ids,))
-                file_uris = {row['file_id']: row['uri'] for row in cursor.fetchall()}
+                file_uris = {str(row['file_id']): row['uri'] for row in cursor.fetchall()}
                 
                 # Add URIs to files in each content
                 for content in results:
                     if content.get('metadata') and content['metadata'].get('files'):
                         for file_info in content['metadata']['files']:
-                            if 'fileId' in file_info and file_info['fileId'] in file_uris:
-                                file_info['uri'] = file_uris[file_info['fileId']]
+                            if 'fileId' in file_info and str(file_info['fileId']) in file_uris:
+                                file_info['uri'] = file_uris[str(file_info['fileId'])]
         
         return results
         
