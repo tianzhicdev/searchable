@@ -118,35 +118,30 @@ jest.mock('../../components/BasePublishSearchable', () => {
 // Simple mock component
 const PublishDirectSearchable = () => {
   const [pricingMode, setPricingMode] = React.useState('flexible');
-  const [fixedAmount, setFixedAmount] = React.useState(9.99);
-  const [presetAmounts, setPresetAmounts] = React.useState([4.99, 9.99, 14.99]);
+  const [fixedAmount, setFixedAmount] = React.useState('');
   const [error, setError] = React.useState(null);
   
   const isValid = () => {
     if (pricingMode === 'fixed') {
-      return fixedAmount > 0;
+      return fixedAmount && parseFloat(fixedAmount) > 0;
     }
-    if (pricingMode === 'preset') {
-      return presetAmounts.some(amount => amount > 0);
-    }
-    return true; // flexible is always valid
+    return true;
   };
   
   return (
     <div data-testid="base-publish-searchable">
       <h1>Publish Donation Item</h1>
-      <p>Accept direct donations from your supporters</p>
+      <p>Create a searchable that accepts donations</p>
       <div data-testid="searchable-type">direct</div>
       
       <div>
         <h2>Donation Options</h2>
+        <p>Choose how supporters can donate</p>
         
-        <fieldset>
-          <legend>Pricing Mode</legend>
+        <div>
           <label>
             <input
               type="radio"
-              name="pricingMode"
               value="flexible"
               checked={pricingMode === 'flexible'}
               onChange={(e) => setPricingMode(e.target.value)}
@@ -156,63 +151,27 @@ const PublishDirectSearchable = () => {
           <label>
             <input
               type="radio"
-              name="pricingMode"
               value="fixed"
               checked={pricingMode === 'fixed'}
               onChange={(e) => setPricingMode(e.target.value)}
             />
             Fixed Amount
           </label>
-          <label>
-            <input
-              type="radio"
-              name="pricingMode"
-              value="preset"
-              checked={pricingMode === 'preset'}
-              onChange={(e) => setPricingMode(e.target.value)}
-            />
-            Preset Options
-          </label>
-        </fieldset>
-        
-        {pricingMode === 'flexible' && (
-          <div>
-            <p>Supporters can enter any amount they wish</p>
-            <p>Default quick options ($4.99, $9.99, $14.99, $49.99) will be shown</p>
-          </div>
-        )}
+        </div>
         
         {pricingMode === 'fixed' && (
           <div>
-            <h3>Fixed Donation Amount</h3>
-            <p>Supporters will donate exactly this amount</p>
             <input
               type="number"
               value={fixedAmount}
-              onChange={(e) => setFixedAmount(parseFloat(e.target.value) || 0)}
-              placeholder="Amount"
+              onChange={(e) => setFixedAmount(e.target.value)}
+              placeholder="Enter fixed amount"
             />
           </div>
         )}
         
-        {pricingMode === 'preset' && (
-          <div>
-            <h3>Preset Amount Options</h3>
-            <p>Supporters will choose from these preset amounts</p>
-            {presetAmounts.map((amount, index) => (
-              <div key={index}>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => {
-                    const newAmounts = [...presetAmounts];
-                    newAmounts[index] = parseFloat(e.target.value) || 0;
-                    setPresetAmounts(newAmounts);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+        {pricingMode === 'flexible' && (
+          <p>Supporters can enter any amount they wish to donate</p>
         )}
         
         {error && <div role="alert">{error}</div>}
@@ -222,11 +181,7 @@ const PublishDirectSearchable = () => {
           disabled={!isValid()}
           onClick={() => {
             if (!isValid()) {
-              if (pricingMode === 'fixed' && fixedAmount <= 0) {
-                setError('Please enter a valid fixed amount');
-              } else if (pricingMode === 'preset' && !presetAmounts.some(a => a > 0)) {
-                setError('Please enter at least one valid preset amount');
-              }
+              setError('Please enter a valid amount');
             }
           }}
         >
@@ -299,58 +254,51 @@ describe('PublishDirectSearchable Simple Tests', () => {
     renderWithProviders(<PublishDirectSearchable />);
     
     expect(screen.getByText('Donation Options')).toBeInTheDocument();
+    expect(screen.getByText('Choose how supporters can donate')).toBeInTheDocument();
     expect(screen.getByLabelText('Flexible Amount')).toBeInTheDocument();
     expect(screen.getByLabelText('Fixed Amount')).toBeInTheDocument();
-    expect(screen.getByLabelText('Preset Options')).toBeInTheDocument();
   });
 
-  test('flexible mode is selected by default', () => {
+  test('defaults to flexible pricing mode', () => {
     renderWithProviders(<PublishDirectSearchable />);
     
     expect(screen.getByLabelText('Flexible Amount')).toBeChecked();
-    expect(screen.getByText(/Supporters can enter any amount they wish/i)).toBeInTheDocument();
+    expect(screen.getByText('Supporters can enter any amount they wish to donate')).toBeInTheDocument();
   });
 
-  test('can switch to fixed amount mode', () => {
+  test('switches to fixed pricing mode', () => {
     renderWithProviders(<PublishDirectSearchable />);
     
     fireEvent.click(screen.getByLabelText('Fixed Amount'));
     
     expect(screen.getByLabelText('Fixed Amount')).toBeChecked();
-    expect(screen.getByText('Fixed Donation Amount')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Amount')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter fixed amount')).toBeInTheDocument();
   });
 
-  test('can switch to preset options mode', () => {
-    renderWithProviders(<PublishDirectSearchable />);
-    
-    fireEvent.click(screen.getByLabelText('Preset Options'));
-    
-    expect(screen.getByLabelText('Preset Options')).toBeChecked();
-    expect(screen.getByText('Preset Amount Options')).toBeInTheDocument();
-    expect(screen.getAllByRole('spinbutton')).toHaveLength(3); // 3 default preset amounts
-  });
-
-  test('submit button is enabled for flexible mode', () => {
+  test('enables submit button in flexible mode', () => {
     renderWithProviders(<PublishDirectSearchable />);
     
     const submitButton = screen.getByTestId('submit-button');
     expect(submitButton).toBeEnabled();
   });
 
-  test('validates fixed amount', () => {
+  test('disables submit button in fixed mode without amount', () => {
     renderWithProviders(<PublishDirectSearchable />);
     
     fireEvent.click(screen.getByLabelText('Fixed Amount'));
     
-    const amountInput = screen.getByPlaceholderText('Amount');
-    fireEvent.change(amountInput, { target: { value: '0' } });
-    
     const submitButton = screen.getByTestId('submit-button');
     expect(submitButton).toBeDisabled();
+  });
+
+  test('enables submit button in fixed mode with valid amount', () => {
+    renderWithProviders(<PublishDirectSearchable />);
     
-    // Change to valid amount
+    fireEvent.click(screen.getByLabelText('Fixed Amount'));
+    const amountInput = screen.getByPlaceholderText('Enter fixed amount');
     fireEvent.change(amountInput, { target: { value: '10' } });
+    
+    const submitButton = screen.getByTestId('submit-button');
     expect(submitButton).toBeEnabled();
   });
 });
