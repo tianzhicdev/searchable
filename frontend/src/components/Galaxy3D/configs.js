@@ -92,4 +92,94 @@ export const galaxyConfigs = {
   }
 };
 
+// Moving galaxy configurations for flying/movement effects
+export const movingGalaxyConfigs = {
+  // Moving 1: Tunnel Flying Effect
+  moving1: {
+    particlesCount: 8000,
+    galaxyRadius: 12,
+    rotationSpeed: 0.001,
+    wobbleSpeed: 0.0005,
+    wobbleIntensity: 0.05,
+    innerColor: '#00aaff',
+    outerColor: '#ffffff',
+    backgroundColor: '#000510',
+    cameraPosition: [0, 0, 10],
+    branches: 1,
+    spinAngle: 0,
+    randomnessIntensity: 0.1,
+    randomRadiusIntensity: 0.8,
+    verticalSpread: 0.6,
+    movementType: 'forward',
+    movementSpeed: 0.02,
+    hyperspaceStreaks: false
+  },
+
+  // Moving 2: Banking Turns Through Asteroid Field
+  moving2: {
+    particlesCount: 6000,
+    galaxyRadius: 10,
+    rotationSpeed: 0.002,
+    wobbleSpeed: 0.001,
+    wobbleIntensity: 0.1,
+    innerColor: '#ff6600',
+    outerColor: '#ffaa44',
+    backgroundColor: '#2a1500',
+    cameraPosition: [0, 0, 8],
+    branches: 4,
+    spinAngle: 0.2,
+    randomnessIntensity: 0.15,
+    randomRadiusIntensity: 1.2,
+    verticalSpread: 0.8,
+    movementType: 'banking',
+    movementSpeed: 0.01,
+    bankingAngle: 0.3,
+    spiralRadius: 8,
+    spiralSpeed: 0.003
+  },
+
+  // Moving 3: Spiraling Through Nebula
+  moving3: {
+    particlesCount: 7000,
+    galaxyRadius: 15,
+    rotationSpeed: 0.0015,
+    wobbleSpeed: 0.0008,
+    wobbleIntensity: 0.2,
+    innerColor: '#aa00ff',
+    outerColor: '#ff0080',
+    backgroundColor: '#1a0030',
+    cameraPosition: [0, 2, 12],
+    branches: 5,
+    spinAngle: 0.4,
+    randomnessIntensity: 0.08,
+    randomRadiusIntensity: 0.6,
+    verticalSpread: 0.4,
+    movementType: 'spiral',
+    movementSpeed: 0.015,
+    spiralRadius: 6,
+    spiralSpeed: 0.008
+  },
+
+  // Moving 4: Hyperspace Jump Effect
+  moving4: {
+    particlesCount: 10000,
+    galaxyRadius: 20,
+    rotationSpeed: 0.003,
+    wobbleSpeed: 0.002,
+    wobbleIntensity: 0.1,
+    innerColor: '#ffffff',
+    outerColor: '#00ffff',
+    backgroundColor: '#000820',
+    cameraPosition: [0, 0, 15],
+    branches: 1,
+    spinAngle: 0,
+    randomnessIntensity: 0.2,
+    randomRadiusIntensity: 1.5,
+    verticalSpread: 1.0,
+    movementType: 'hyperspace',
+    movementSpeed: 0.05,
+    hyperspaceStreaks: true
+  }
+};
+
 export default galaxyConfigs;
