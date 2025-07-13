@@ -465,3 +465,30 @@ ALTER TABLE deposit ALTER COLUMN type SET NOT NULL;
 
 -- Add index on type for faster queries
 CREATE INDEX IF NOT EXISTS idx_deposit_type ON deposit(type);
+
+-- AI Content table for managing AI content submissions
+CREATE TABLE IF NOT EXISTS ai_content (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL, -- References users.id
+    title VARCHAR(255) NOT NULL,
+    instructions TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'processed', 'failed', 'rejected')),
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for AI Content table
+CREATE INDEX IF NOT EXISTS idx_ai_content_user_id ON ai_content(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_content_status ON ai_content(status);
+CREATE INDEX IF NOT EXISTS idx_ai_content_created_at ON ai_content(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_content_updated_at ON ai_content(updated_at DESC);
+
+-- Trigger to automatically update updated_at on ai_content changes
+CREATE TRIGGER update_ai_content_updated_at 
+    BEFORE UPDATE ON ai_content 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Add comment explaining metadata fields
+COMMENT ON COLUMN ai_content.metadata IS 'Contains: files (array of file objects), processedAt, processedBy, notes, and other processing metadata';
+COMMENT ON TABLE ai_content IS 'Stores AI content submissions from users for processing by employees';

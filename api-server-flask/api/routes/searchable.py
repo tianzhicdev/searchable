@@ -223,149 +223,149 @@ class SearchSearchables(Resource):
         """Query database for searchable items with pagination and simple text search"""
         try:
             with database_cursor() as (cur, conn):
-            # Calculate offset for pagination
-            offset = (page_number - 1) * page_size
-            
-            # Base query with username join and ratings
-            base_query = """
-                SELECT DISTINCT s.searchable_id, s.type, s.searchable_data, s.user_id, 
-                       u.username, s.created_at,
-                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as avg_rating,
-                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as total_ratings,
-                       COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_rating,
-                       COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_total_ratings
-                FROM searchables s
-                LEFT JOIN users u ON s.user_id = u.id
-            """
-            
-            # Build WHERE conditions
-            where_conditions = ["s.removed = FALSE"]
-            params = []
-            
-            # Add simple text search condition if query_term exists
-            if query_term:
-                # Search in title and description using ILIKE (case-insensitive)
-                where_conditions.append("""
-                    (
-                        s.searchable_data->'payloads'->'public'->>'title' ILIKE %s
-                        OR s.searchable_data->'payloads'->'public'->>'description' ILIKE %s
-                    )
-                """)
-                search_pattern = f"%{query_term}%"
-                params.extend([search_pattern, search_pattern])
-            
-            # Add user_id filtering if provided in filters
-            if filters.get('user_id'):
-                where_conditions.append("s.user_id = %s")
-                params.append(filters['user_id'])
-            
-            # Add tag filtering if needed
-            if tag_ids:
-                tag_placeholders = ','.join(['%s'] * len(tag_ids))
-                where_conditions.append(f"""
-                    EXISTS (
-                        SELECT 1 FROM searchable_tags st 
-                        WHERE st.searchable_id = s.searchable_id 
-                        AND st.tag_id IN ({tag_placeholders})
-                    )
-                """)
-                params.extend(tag_ids)
-            
-            # Combine conditions
-            where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
-            
-            # Order by created_at desc
-            order_clause = "ORDER BY s.created_at DESC"
-            
-            # Get total count first
-            count_query = f"""
-                SELECT COUNT(DISTINCT s.searchable_id)
-                FROM searchables s
-                {where_clause}
-            """
-            
-            execute_sql(cur, count_query, params=params)
-            total_count = cur.fetchone()[0]
-            
-            # Get paginated results
-            final_query = f"""
-                {base_query}
-                {where_clause}
-                {order_clause}
-                LIMIT %s OFFSET %s
-            """
-            
-            params.extend([page_size, offset])
-            execute_sql(cur, final_query, params=params)
-            results = cur.fetchall()
-            
-            # Convert to list format
-            items = []
-            searchable_ids = []
-            searchable_map = {}
-            
-            for result in results:
-                searchable_id, searchable_type, searchable_data, user_id, username, created_at, avg_rating, total_ratings, seller_rating, seller_total_ratings = result
-                searchable_ids.append(searchable_id)
-                searchable_map[searchable_id] = {
-                    'type': searchable_type,
-                    'data': searchable_data,
-                    'user_id': user_id,
-                    'username': username,
-                    'created_at': created_at,
-                    'avg_rating': float(avg_rating) if avg_rating else 0.0,
-                    'total_ratings': total_ratings or 0,
-                    'seller_rating': float(seller_rating) if seller_rating else 0.0,
-                    'seller_total_ratings': seller_total_ratings or 0
-                }
-            
-            # Fetch tags for all searchables in batch
-            searchable_tags_map = {}
-            if searchable_ids:
-                tag_placeholders = ','.join(['%s'] * len(searchable_ids))
-                tag_query = f"""
-                    SELECT st.searchable_id, t.id, t.name, t.tag_type, t.description
-                    FROM searchable_tags st
-                    JOIN tags t ON st.tag_id = t.id
-                    WHERE st.searchable_id IN ({tag_placeholders})
-                    AND t.is_active = true
-                    ORDER BY st.searchable_id, t.name
+                # Calculate offset for pagination
+                offset = (page_number - 1) * page_size
+                
+                # Base query with username join and ratings
+                base_query = """
+                    SELECT DISTINCT s.searchable_id, s.type, s.searchable_data, s.user_id, 
+                           u.username, s.created_at,
+                           COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as avg_rating,
+                           COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.searchable_id = s.searchable_id), 0) as total_ratings,
+                           COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_rating,
+                           COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = s.user_id), 0) as seller_total_ratings
+                    FROM searchables s
+                    LEFT JOIN users u ON s.user_id = u.id
                 """
-                execute_sql(cur, tag_query, params=searchable_ids)
-                tag_results = cur.fetchall()
                 
-                for searchable_id, tag_id, tag_name, tag_type, tag_description in tag_results:
-                    if searchable_id not in searchable_tags_map:
-                        searchable_tags_map[searchable_id] = []
-                    searchable_tags_map[searchable_id].append({
-                        'id': tag_id,
-                        'name': tag_name,
-                        'tag_type': tag_type,
-                        'description': tag_description
-                    })
-            
-            # Build items with all data
-            for searchable_id in searchable_ids:
-                searchable_info = searchable_map[searchable_id]
+                # Build WHERE conditions
+                where_conditions = ["s.removed = FALSE"]
+                params = []
                 
-                # Build item data from searchable_data JSON
-                item_data = dict(searchable_info['data'])
+                # Add simple text search condition if query_term exists
+                if query_term:
+                    # Search in title and description using ILIKE (case-insensitive)
+                    where_conditions.append("""
+                        (
+                            s.searchable_data->'payloads'->'public'->>'title' ILIKE %s
+                            OR s.searchable_data->'payloads'->'public'->>'description' ILIKE %s
+                        )
+                    """)
+                    search_pattern = f"%{query_term}%"
+                    params.extend([search_pattern, search_pattern])
                 
-                # Add metadata
-                item_data['searchable_id'] = searchable_id
-                item_data['type'] = searchable_info['type']
-                item_data['user_id'] = searchable_info['user_id']
-                item_data['username'] = searchable_info['username']
-                item_data['tags'] = searchable_tags_map.get(searchable_id, [])
-                item_data['avg_rating'] = searchable_info['avg_rating']
-                item_data['total_ratings'] = searchable_info['total_ratings']
-                item_data['seller_rating'] = searchable_info['seller_rating']
-                item_data['seller_total_ratings'] = searchable_info['seller_total_ratings']
+                # Add user_id filtering if provided in filters
+                if filters.get('user_id'):
+                    where_conditions.append("s.user_id = %s")
+                    params.append(filters['user_id'])
                 
-                # No relevance score with simple LIKE search
+                # Add tag filtering if needed
+                if tag_ids:
+                    tag_placeholders = ','.join(['%s'] * len(tag_ids))
+                    where_conditions.append(f"""
+                        EXISTS (
+                            SELECT 1 FROM searchable_tags st 
+                            WHERE st.searchable_id = s.searchable_id 
+                            AND st.tag_id IN ({tag_placeholders})
+                        )
+                    """)
+                    params.extend(tag_ids)
                 
-                items.append(item_data)
-            
+                # Combine conditions
+                where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+                
+                # Order by created_at desc
+                order_clause = "ORDER BY s.created_at DESC"
+                
+                # Get total count first
+                count_query = f"""
+                    SELECT COUNT(DISTINCT s.searchable_id)
+                    FROM searchables s
+                    {where_clause}
+                """
+                
+                execute_sql(cur, count_query, params=params)
+                total_count = cur.fetchone()[0]
+                
+                # Get paginated results
+                final_query = f"""
+                    {base_query}
+                    {where_clause}
+                    {order_clause}
+                    LIMIT %s OFFSET %s
+                """
+                
+                params.extend([page_size, offset])
+                execute_sql(cur, final_query, params=params)
+                results = cur.fetchall()
+                
+                # Convert to list format
+                items = []
+                searchable_ids = []
+                searchable_map = {}
+                
+                for result in results:
+                    searchable_id, searchable_type, searchable_data, user_id, username, created_at, avg_rating, total_ratings, seller_rating, seller_total_ratings = result
+                    searchable_ids.append(searchable_id)
+                    searchable_map[searchable_id] = {
+                        'type': searchable_type,
+                        'data': searchable_data,
+                        'user_id': user_id,
+                        'username': username,
+                        'created_at': created_at,
+                        'avg_rating': float(avg_rating) if avg_rating else 0.0,
+                        'total_ratings': total_ratings or 0,
+                        'seller_rating': float(seller_rating) if seller_rating else 0.0,
+                        'seller_total_ratings': seller_total_ratings or 0
+                    }
+                
+                # Fetch tags for all searchables in batch
+                searchable_tags_map = {}
+                if searchable_ids:
+                    tag_placeholders = ','.join(['%s'] * len(searchable_ids))
+                    tag_query = f"""
+                        SELECT st.searchable_id, t.id, t.name, t.tag_type, t.description
+                        FROM searchable_tags st
+                        JOIN tags t ON st.tag_id = t.id
+                        WHERE st.searchable_id IN ({tag_placeholders})
+                        AND t.is_active = true
+                        ORDER BY st.searchable_id, t.name
+                    """
+                    execute_sql(cur, tag_query, params=searchable_ids)
+                    tag_results = cur.fetchall()
+                    
+                    for searchable_id, tag_id, tag_name, tag_type, tag_description in tag_results:
+                        if searchable_id not in searchable_tags_map:
+                            searchable_tags_map[searchable_id] = []
+                        searchable_tags_map[searchable_id].append({
+                            'id': tag_id,
+                            'name': tag_name,
+                            'tag_type': tag_type,
+                            'description': tag_description
+                        })
+                
+                # Build items with all data
+                for searchable_id in searchable_ids:
+                    searchable_info = searchable_map[searchable_id]
+                    
+                    # Build item data from searchable_data JSON
+                    item_data = dict(searchable_info['data'])
+                    
+                    # Add metadata
+                    item_data['searchable_id'] = searchable_id
+                    item_data['type'] = searchable_info['type']
+                    item_data['user_id'] = searchable_info['user_id']
+                    item_data['username'] = searchable_info['username']
+                    item_data['tags'] = searchable_tags_map.get(searchable_id, [])
+                    item_data['avg_rating'] = searchable_info['avg_rating']
+                    item_data['total_ratings'] = searchable_info['total_ratings']
+                    item_data['seller_rating'] = searchable_info['seller_rating']
+                    item_data['seller_total_ratings'] = searchable_info['seller_total_ratings']
+                    
+                    # No relevance score with simple LIKE search
+                    
+                    items.append(item_data)
+                
                 return items, total_count
             
         except Exception as e:

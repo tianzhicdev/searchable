@@ -120,16 +120,15 @@ class UserEvent(Resource):
             return {"error": "Missing visitor_id"}, 400
 
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            execute_sql(cur,
+            row = db_ops.execute_insert(
                 "INSERT INTO user_event (visitor_id, data) VALUES (%s, %s) RETURNING id;",
-                params=(visitor_id, Json(data))
+                (visitor_id, Json(data))
             )
-            event_id = cur.fetchone()[0]
-            conn.commit()
-            cur.close()
-            conn.close()
+            
+            if not row:
+                return {"error": "Failed to create user event"}, 500
+                
+            event_id = row[0]
             return {"success": True, "event_id": event_id}, 201
         except Exception as e:
             return {"error": str(e)}, 500
@@ -162,13 +161,10 @@ class Register(Resource):
         
         # Create user_profile record
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            execute_sql(cur,
+            success = db_ops.execute_update(
                 """INSERT INTO user_profile (user_id, username, metadata) 
                    VALUES (%s, %s, %s)""",
-                params=(
+                (
                     new_user.id,
                     _username,
                     Json({
@@ -178,10 +174,10 @@ class Register(Resource):
                 )
             )
             
-            conn.commit()
-            cur.close()
-            conn.close()
-            logger.info(f"Created user_profile for user {new_user.id}")
+            if success:
+                logger.info(f"Created user_profile for user {new_user.id}")
+            else:
+                logger.warning(f"Failed to create user_profile for user {new_user.id}")
             
         except Exception as e:
             logger.error(f"Failed to create user_profile for user {new_user.id}: {e}")
@@ -200,47 +196,41 @@ class Register(Resource):
         invite_code_used = False
         if _invite_code and len(_invite_code) == 6 and _invite_code.isalpha():
             try:
-                conn = get_db_connection()
-                cur = conn.cursor()
-                
-                # Check if code exists and is active
-                execute_sql(cur,
-                    "SELECT id, active FROM invite_code WHERE code = %s",
-                    params=(_invite_code,)
-                )
-                
-                result = cur.fetchone()
-                if result and result[1]:  # result[1] is the active boolean
-                    invite_code_id = result[0]
-                    
-                    # Mark the invite code as used
+                with database_transaction() as (cur, conn):
+                    # Check if code exists and is active
                     execute_sql(cur,
-                        "UPDATE invite_code SET active = false, used_by_user_id = %s, used_at = NOW() WHERE id = %s",
-                        params=(new_user.id, invite_code_id)
+                        "SELECT id, active FROM invite_code WHERE code = %s",
+                        (_invite_code,)
                     )
                     
-                    # Create a reward record
-                    execute_sql(cur,
-                        """INSERT INTO rewards (amount, currency, user_id, metadata) 
-                           VALUES (%s, %s, %s, %s)""",
-                        params=(
-                            5.0,  # $5 USD reward
-                            'usd',
-                            new_user.id,  # User receiving the reward
-                            Json({
-                                "type": "invite_code_reward", 
-                                "invite_code": _invite_code,
-                                "invite_code_id": invite_code_id
-                            })
+                    result = cur.fetchone()
+                    if result and result[1]:  # result[1] is the active boolean
+                        invite_code_id = result[0]
+                        
+                        # Mark the invite code as used
+                        execute_sql(cur,
+                            "UPDATE invite_code SET active = false, used_by_user_id = %s, used_at = NOW() WHERE id = %s",
+                            (new_user.id, invite_code_id)
                         )
-                    )
-                    
-                    conn.commit()
-                    invite_code_used = True
-                    logger.info(f"Invite code {_invite_code} used by user {new_user.id}, $5 reward credited")
-                
-                cur.close()
-                conn.close()
+                        
+                        # Create a reward record
+                        execute_sql(cur,
+                            """INSERT INTO rewards (amount, currency, user_id, metadata) 
+                               VALUES (%s, %s, %s, %s)""",
+                            (
+                                5.0,  # $5 USD reward
+                                'usd',
+                                new_user.id,  # User receiving the reward
+                                Json({
+                                    "type": "invite_code_reward", 
+                                    "invite_code": _invite_code,
+                                    "invite_code_id": invite_code_id
+                                })
+                            )
+                        )
+                        
+                        invite_code_used = True
+                        logger.info(f"Invite code {_invite_code} used by user {new_user.id}, $5 reward credited")
                     
             except Exception as e:
                 logger.error(f"Error processing invite code: {e}")
@@ -430,18 +420,11 @@ class CheckInviteCode(Resource):
             return {"active": False}, 200
         
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Check if code exists and is active
-            execute_sql(cur,
+            result = db_ops.fetch_one(
                 "SELECT active FROM invite_code WHERE code = %s",
-                params=(invite_code,)
+                (invite_code,)
             )
-            
-            result = cur.fetchone()
-            cur.close()
-            conn.close()
             
             if result and result[0]:  # result[0] is the active boolean
                 return {"active": True}, 200
@@ -464,28 +447,21 @@ class GetActiveInviteCode(Resource):
             # Get optional promoter parameter
             promoter = request.args.get('promoter')
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Build query based on whether promoter is specified
             if promoter:
                 # Get invite codes with specific promoter in metadata
-                execute_sql(cur,
+                result = db_ops.fetch_one(
                     """SELECT code, metadata FROM invite_code 
                        WHERE active = TRUE 
                        AND metadata->>'promoter' = %s 
                        ORDER BY RANDOM() LIMIT 1""",
-                    params=(promoter,)
+                    (promoter,)
                 )
             else:
                 # Get any random active invite code
-                execute_sql(cur,
+                result = db_ops.fetch_one(
                     "SELECT code, metadata FROM invite_code WHERE active = TRUE ORDER BY RANDOM() LIMIT 1"
                 )
-            
-            result = cur.fetchone()
-            cur.close()
-            conn.close()
             
             if result:
                 code = result[0]
