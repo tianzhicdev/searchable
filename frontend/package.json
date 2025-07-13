@@ -80,6 +80,11 @@
   },
   "devDependencies": {
     "@material-ui/codemod": "^5.0.0-alpha.35",
-    "sass": "^1.86.3"
+    "@reduxjs/toolkit": "^2.8.2",
+    "@testing-library/react-hooks": "^8.0.1",
+    "jest-axe": "^10.0.0",
+    "msw": "^2.10.4",
+    "sass": "^1.86.3",
+    "whatwg-fetch": "^3.6.20"
   }
 }
