@@ -41,7 +41,8 @@ class GetSearchableItem(Resource):
     @track_metrics('get_searchable_item_v2')
     def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
-            searchable_data = get_searchable(searchable_id)
+            # Include removed items so they can be viewed via direct URL
+            searchable_data = get_searchable(searchable_id, include_removed=True)
             
             if not searchable_data:
                 return {"error": "Searchable item not found"}, 404

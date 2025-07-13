@@ -120,8 +120,48 @@ const BaseSearchableDetails = ({
     );
   }
 
+  // Check if item is deleted/removed
+  const isRemoved = SearchableItem.removed === true;
+  
+  // Apply greyed-out styling for removed items
+  const removedItemStyle = isRemoved ? {
+    opacity: 0.6,
+    filter: 'grayscale(50%)',
+    pointerEvents: 'none',
+    position: 'relative'
+  } : {};
+
   return (
     <Grid container sx={componentSpacing.pageContainer(theme)}>
+      {/* Deleted item overlay banner */}
+      {isRemoved && (
+        <Grid item xs={12} sx={{ marginBottom: 2 }}>
+          <Paper 
+            style={{ 
+              backgroundColor: '#ffebee', 
+              border: '2px solid #f44336',
+              textAlign: 'center',
+              padding: theme.spacing(2)
+            }}
+          >
+            <Typography 
+              variant="h6" 
+              style={{ 
+                color: '#d32f2f', 
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em'
+              }}
+            >
+              ⚠️ This item has been deleted by the seller
+            </Typography>
+            <Typography variant="body2" style={{ color: '#666', marginTop: 8 }}>
+              This item is no longer available for purchase but can still be viewed for reference.
+            </Typography>
+          </Paper>
+        </Grid>
+      )}
+      
       {/* Back button */}
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
         <PageHeaderButton
@@ -131,7 +171,7 @@ const BaseSearchableDetails = ({
 
       {/* Main content */}
       <Grid item xs={12}>
-        <Paper className={detailClasses.mainContent}>
+        <Paper className={detailClasses.mainContent} style={removedItemStyle}>
           {/* Top section: Title, ratings, description, images */}
           <SearchableDetailsTop
             searchableItem={SearchableItem}
@@ -141,7 +181,7 @@ const BaseSearchableDetails = ({
           />
 
           {/* Type-specific content (items, files, payment options, etc.) */}
-          {renderTypeSpecificContent && (
+          {renderTypeSpecificContent && !isRemoved && (
             <Box className={detailClasses.typeSpecificWrapper}>
               {renderTypeSpecificContent({
                 SearchableItem,
@@ -152,30 +192,32 @@ const BaseSearchableDetails = ({
             </Box>
           )}
 
-          {/* Payment display and button */}
-          <SearchableDetailsPriceDisplay
-            totalPrice={totalPrice}
-            processing={creatingInvoice}
-            onPayButtonClick={onPayment}
-            onDepositPayment={onDepositPayment}
-            onBalancePayment={onBalancePayment}
-            userBalance={userBalance}
-            isOwner={isOwner}
-            onRemoveItem={handleRemoveItem}
-            onEditItem={handleEditItem}
-            isRemoving={isRemoving}
-            payButtonText={payButtonText}
-            showPaymentSummary={true}
-            disabled={disabled}
-            searchableId={id}
-            searchableTitle={SearchableItem?.payloads?.public?.title || 'Untitled'}
-            searchableType={SearchableItem?.type}
-          />
+          {/* Payment display and button - hidden for removed items */}
+          {!isRemoved && (
+            <SearchableDetailsPriceDisplay
+              totalPrice={totalPrice}
+              processing={creatingInvoice}
+              onPayButtonClick={onPayment}
+              onDepositPayment={onDepositPayment}
+              onBalancePayment={onBalancePayment}
+              userBalance={userBalance}
+              isOwner={isOwner}
+              onRemoveItem={handleRemoveItem}
+              onEditItem={handleEditItem}
+              isRemoving={isRemoving}
+              payButtonText={payButtonText}
+              showPaymentSummary={true}
+              disabled={disabled}
+              searchableId={id}
+              searchableTitle={SearchableItem?.payloads?.public?.title || 'Untitled'}
+              searchableType={SearchableItem?.type}
+            />
+          )}
         </Paper>
       </Grid>
 
-      {/* Reviews section - rendered outside main Paper */}
-      {renderReviewsContent && (
+      {/* Reviews section - rendered outside main Paper, hidden for removed items */}
+      {renderReviewsContent && !isRemoved && (
         <Grid item xs={12}>
           <Box className={detailClasses.externalSection}>
             {renderReviewsContent({
@@ -189,8 +231,8 @@ const BaseSearchableDetails = ({
         </Grid>
       )}
 
-      {/* Receipts section - rendered outside main Paper */}
-      {renderReceiptsContent && (
+      {/* Receipts section - rendered outside main Paper, always show for owners to access purchase history */}
+      {renderReceiptsContent && (isOwner || !isRemoved) && (
         <Grid item xs={12}>
           <Box className={detailClasses.externalSection}>
             {renderReceiptsContent({
