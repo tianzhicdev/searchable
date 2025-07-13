@@ -13,6 +13,10 @@ import Landing3D2 from '../views/landing/Landing3D2';
 import Landing3D3 from '../views/landing/Landing3D3';
 import Landing3D4 from '../views/landing/Landing3D4';
 import Landing3DDemo from '../views/landing/Landing3DDemo';
+import Landing3DMoving1 from '../views/landing/Landing3DMoving1';
+import Landing3DMoving2 from '../views/landing/Landing3DMoving2';
+import Landing3DMoving3 from '../views/landing/Landing3DMoving3';
+import Landing3DMoving4 from '../views/landing/Landing3DMoving4';
 import Onboarding1 from '../views/onboarding/Onboarding1';
 import Onboarding2 from '../views/onboarding/Onboarding2';
 import Onboarding3 from '../views/onboarding/Onboarding3';
@@ -30,7 +34,7 @@ const VisitorRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/landing', '/3d-landing', '/3d-landing-1', '/3d-landing-2', '/3d-landing-3', '/3d-landing-4', '/3d-landing-demo', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats']}>
+        <Route path={['/landing', '/3d-landing', '/3d-landing-1', '/3d-landing-2', '/3d-landing-3', '/3d-landing-4', '/3d-landing-demo', '/3d-landing-moving-1', '/3d-landing-moving-2', '/3d-landing-moving-3', '/3d-landing-moving-4', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats']}>
             <Switch location={location} key={location.pathname}>
                 {/* Public routes accessible to unregistered visitors */}
                 <Route exact path="/declaration" component={Declaration} />
@@ -47,6 +51,10 @@ const VisitorRoutes = () => {
                 <Route exact path="/3d-landing-3" component={Landing3D3} />
                 <Route exact path="/3d-landing-4" component={Landing3D4} />
                 <Route exact path="/3d-landing-demo" component={Landing3DDemo} />
+                <Route exact path="/3d-landing-moving-1" component={Landing3DMoving1} />
+                <Route exact path="/3d-landing-moving-2" component={Landing3DMoving2} />
+                <Route exact path="/3d-landing-moving-3" component={Landing3DMoving3} />
+                <Route exact path="/3d-landing-moving-4" component={Landing3DMoving4} />
                 <Route exact path="/onboarding-1" component={Onboarding1} />
                 <Route exact path="/onboarding-2" component={Onboarding2} />
                 <Route exact path="/onboarding-3" component={Onboarding3} />
