@@ -111,10 +111,10 @@ const PublishDirectSearchable = () => {
   const renderDirectPaymentOptions = ({ formData, handleInputChange }) => (
     <Grid item xs={12}>
       <Typography variant="subtitle1" gutterBottom>
-        Payment Options
+        Donation Options
       </Typography>
       <Typography variant="caption" color="textSecondary" paragraph>
-        Choose how buyers can pay for your item
+        Choose how supporters can donate
       </Typography>
       
       <FormControl component="fieldset" fullWidth>
@@ -126,17 +126,17 @@ const PublishDirectSearchable = () => {
           <FormControlLabel 
             value="fixed" 
             control={<Radio color="primary" />} 
-            label="Fixed Price - Buyers pay exactly this amount" 
+            label="Fixed Amount - Supporters donate exactly this amount" 
           />
           <FormControlLabel 
             value="preset" 
             control={<Radio color="primary" />} 
-            label="Preset Options - Buyers choose from up to 3 preset amounts" 
+            label="Preset Options - Supporters choose from up to 3 preset amounts" 
           />
           <FormControlLabel 
             value="flexible" 
             control={<Radio color="primary" />} 
-            label="Flexible - Buyers can choose any amount" 
+            label="Flexible - Supporters can choose any amount" 
           />
         </RadioGroup>
       </FormControl>
@@ -157,7 +157,7 @@ const PublishDirectSearchable = () => {
             InputProps={{
               startAdornment: <InputAdornment position="start">$</InputAdornment>,
             }}
-            helperText="Buyers will pay exactly this amount and cannot change it."
+            helperText="Supporters will donate exactly this amount and cannot change it."
           />
         </Box>
       )}
@@ -203,7 +203,7 @@ const PublishDirectSearchable = () => {
             </Button>
           )}
           <Typography variant="caption" color="textSecondary" display="block" mt={1}>
-            Buyers will choose from these preset amounts only.
+            Supporters will choose from these preset amounts only.
           </Typography>
         </Box>
       )}
@@ -211,7 +211,7 @@ const PublishDirectSearchable = () => {
       {pricingMode === 'flexible' && (
         <Box mt={2}>
           <Typography variant="body2" color="textSecondary">
-            Buyers can enter any amount they want to pay. Default quick options ($4.99, $9.99, $14.99) will be shown.
+            Supporters can enter any amount they want to donate. Default quick options ($4.99, $9.99, $14.99) will be shown.
           </Typography>
         </Box>
       )}
@@ -221,8 +221,8 @@ const PublishDirectSearchable = () => {
   return (
     <BasePublishSearchable
       searchableType="direct"
-      title={editMode ? "Edit Direct Payment Item" : "Publish Direct Payment Item"}
-      subtitle={editMode ? "Update your direct payment item details" : "Create an item where buyers can choose or enter their payment amount"}
+      title={editMode ? "Edit Donation Item" : "Publish Donation Item"}
+      subtitle={editMode ? "Update your donation item details" : "Create an item where supporters can choose or enter their donation amount"}
       renderTypeSpecificContent={renderDirectPaymentOptions}
       getTypeSpecificPayload={getTypeSpecificPayload}
       customRedirectPath={customRedirectPath}
