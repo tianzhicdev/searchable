@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "test:working": "jest --testPathPattern=\\.working\\.test\\.js$ --testPathPattern=\\.simple\\.test\\.js$ --watchAll=false",
+    "test:working:watch": "jest --testPathPattern=\\.working\\.test\\.js$ --testPathPattern=\\.simple\\.test\\.js$ --watch",
+    "test:working:coverage": "jest --testPathPattern=\\.working\\.test\\.js$ --testPathPattern=\\.simple\\.test\\.js$ --coverage --watchAll=false"
+  }
+}
