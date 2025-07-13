@@ -16,7 +16,6 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import PersonIcon from '@material-ui/icons/Person';
 import axios from 'axios';
 // import PaymentList from '../payments/PaymentList';
-import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
@@ -138,7 +137,7 @@ const Profile = () => {
   };
   
   const handleEditClick = () => {
-    openProfileEditor();
+    history.push('/edit-profile');
     handleMenuClose();
   };
   

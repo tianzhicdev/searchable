@@ -831,6 +831,61 @@ const mockHandlers = {
     });
   },
   
+  // v1/profile endpoints (used by EditProfile)
+  'v1/profile': (url, config) => {
+    // Handle both GET and PUT requests
+    if (config?.data) {
+      // PUT request - update profile
+      const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+      console.log('[MOCK] Updating profile via PUT:', data);
+      
+      // Store the updated profile data in mock storage
+      if (data.profile_image_url !== undefined) {
+        console.log('[MOCK] Profile image updated to:', data.profile_image_url || 'REMOVED');
+      }
+      
+      return createMockResponse({
+        success: true,
+        profile: {
+          user_id: 'mock-user-1',
+          username: data.username || 'test_user',
+          email: 'test@example.com',
+          profile_image_url: data.profile_image_url,
+          introduction: data.introduction || '',
+          created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+          metadata: data.metadata || {
+            additional_images: [],
+            socialMedia: {}
+          }
+        }
+      });
+    } else {
+      // GET request - fetch profile
+      console.log('[MOCK] Fetching profile via GET');
+      
+      return createMockResponse({
+        profile: {
+          user_id: 'mock-user-1',
+          username: 'test_user',
+          email: 'test@example.com',
+          profile_image_url: '/api/v1/media/profile-mock-1',
+          introduction: 'Welcome to my profile!',
+          created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+          metadata: {
+            additional_images: [
+              '/api/v1/media/gallery-mock-1',
+              '/api/v1/media/gallery-mock-2'
+            ],
+            socialMedia: {
+              instagram: 'testuser',
+              x: 'testuser'
+            }
+          }
+        }
+      });
+    }
+  },
+  
   // User balance endpoint (different from v1/balance)
   'v1/user-balance': () => {
     console.log('[MOCK] Fetching user balance');

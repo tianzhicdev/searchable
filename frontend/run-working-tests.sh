@@ -50,6 +50,7 @@ run_test "Publish Downloadable Simple" "PublishDownloadableSearchable.simple.tes
 run_test "Publish Offline" "PublishOfflineSearchable.working.test.js"
 run_test "Publish Offline Simple" "PublishOfflineSearchable.simple.test.js"
 run_test "Publish Direct" "PublishDirectSearchable.working.test.js"
+run_test "Publish Direct Simple" "PublishDirectSearchable.simple.test.js"
 run_test "Downloadable Details" "DownloadableSearchableDetails.working.test.js"
 run_test "Downloadable Details Simple" "DownloadableSearchableDetails.simple.test.js"
 run_test "Offline Details" "OfflineSearchableDetails.working.test.js"
