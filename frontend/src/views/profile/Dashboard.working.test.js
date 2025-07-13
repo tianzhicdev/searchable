@@ -52,13 +52,6 @@ jest.mock('./UserInvoices', () => {
   };
 });
 
-jest.mock('./ProfileEditor', () => ({
-  __esModule: true,
-  default: function MockProfileEditor() {
-    return <div data-testid="profile-editor">Profile Editor Component</div>;
-  },
-  openProfileEditor: jest.fn()
-}));
 
 jest.mock('../../components/WithdrawalDialog', () => ({
   __esModule: true,

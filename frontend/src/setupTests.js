@@ -5,6 +5,11 @@ if (!global.TextEncoder) {
   global.TextDecoder = TextDecoder;
 }
 
+// Polyfill TransformStream for MSW
+if (!global.TransformStream) {
+  const { TransformStream } = require('stream/web');
+  global.TransformStream = TransformStream;
+}
 // jest-dom adds custom jest matchers for asserting on DOM nodes.
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)

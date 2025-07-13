@@ -10,7 +10,6 @@ import {
 } from '@material-ui/core';
 import PersonIcon from '@material-ui/icons/Person';
 // import PaymentList from '../payments/PaymentList';
-import ProfileEditor, { openProfileEditor } from './ProfileEditor';
 import UserInvoices from './UserInvoices';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
@@ -118,7 +117,7 @@ const Dashboard = () => {
   };
   
   const handleEditClick = () => {
-    openProfileEditor();
+    history.push('/edit-profile');
   };
   
   // Refill balance functions
@@ -338,7 +337,7 @@ const Dashboard = () => {
       
       
       {/* ProfileEditor component now has no props */}
-      <ProfileEditor />
+      {/* <ProfileEditor /> */}
     </Grid>
   );
 };
