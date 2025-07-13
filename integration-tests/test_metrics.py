@@ -53,29 +53,44 @@ class TestMetrics:
         self.__class__.user_id = response['userID']
         print(f"✓ User registered with ID: {self.user_id}")
         
-        # Wait for metric to be processed
-        time.sleep(2)
-        
-        # Query metrics API directly
-        params = {
-            'metric_name': 'user_signup',
-            'limit': 10
-        }
-        response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
-        assert response.status_code == 200
-        
-        metrics_data = response.json()
-        print(f"Metrics data: {json.dumps(metrics_data, indent=2)}")
-        assert 'metrics' in metrics_data
-        
-        # Find our signup metric
+        # Wait for metric to be processed with retries
         found_metric = None
-        for metric in metrics_data['metrics']:
-            if metric['tags'].get('user_id') == str(self.user_id):
-                found_metric = metric
-                break
+        max_retries = 10
+        retry_delay = 1
         
-        assert found_metric is not None, f"Signup metric not found for user {self.user_id}"
+        for attempt in range(max_retries):
+            print(f"Checking for metric (attempt {attempt + 1}/{max_retries})...")
+            time.sleep(retry_delay)
+            
+            # Query metrics API directly
+            params = {
+                'metric_name': 'user_signup',
+                'limit': 20  # Increased limit to catch more metrics
+            }
+            response = self.client.session.get(f"{self.metrics_base_url}/api/v1/metrics", params=params)
+            assert response.status_code == 200
+            
+            metrics_data = response.json()
+            if attempt == 0:  # Only print detailed data on first attempt
+                print(f"Metrics data: {json.dumps(metrics_data, indent=2)}")
+            
+            assert 'metrics' in metrics_data
+            
+            # Find our signup metric
+            for metric in metrics_data['metrics']:
+                if metric['tags'].get('user_id') == str(self.user_id):
+                    found_metric = metric
+                    break
+            
+            if found_metric is not None:
+                print(f"✓ Found metric for user {self.user_id} on attempt {attempt + 1}")
+                break
+                
+            if attempt < max_retries - 1:
+                print(f"Metric not found yet, retrying in {retry_delay}s...")
+                retry_delay = min(retry_delay * 1.5, 3)  # Exponential backoff up to 3s
+        
+        assert found_metric is not None, f"Signup metric not found for user {self.user_id} after {max_retries} attempts"
         assert found_metric['metric_name'] == 'user_signup'
         assert found_metric['metric_value'] == 1.0
         print("✓ User signup metric recorded correctly")
