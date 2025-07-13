@@ -3,6 +3,7 @@ import time
 import stripe
 from psycopg2.extras import Json
 from .database import get_db_connection, execute_sql
+from .database_context import database_cursor, database_transaction, db
 from .logging_config import setup_logger
 from .models import PaymentStatus, PaymentType, Currency
 from .payment_helpers import calc_invoice
@@ -23,23 +24,12 @@ def get_searchableIds_by_user(user_id):
         List of searchable IDs belonging to the user
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Query searchables with user_id matching the user
-        execute_sql(cur, """
+        rows = db.fetch_all("""
             SELECT searchable_id
             FROM searchables
-            WHERE user_id = %s
-            AND removed = FALSE
-        """, params=(user_id,))
-        
-        searchable_ids = [row[0] for row in cur.fetchall()]
-        
-        cur.close()
-        conn.close()
-        
-        return searchable_ids
+            WHERE user_id = %s AND removed = FALSE
+        """, (user_id,))
+        return [row[0] for row in rows]
     except Exception as e:
         logger.error(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
         return []
@@ -56,30 +46,17 @@ def get_searchable(searchable_id, include_removed=False):
         dict: The searchable data including the searchable_id, or None if not found
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        where_clause = "WHERE searchable_id = %s"
+        if not include_removed:
+            where_clause += " AND removed = FALSE"
+            
+        query = f"""
+            SELECT searchable_id, type, searchable_data, user_id, removed
+            FROM searchables
+            {where_clause}
+        """
         
-        # Build query based on include_removed parameter
-        if include_removed:
-            query = """
-                SELECT searchable_id, type, searchable_data, user_id, removed
-                FROM searchables
-                WHERE searchable_id = %s
-            """
-        else:
-            query = """
-                SELECT searchable_id, type, searchable_data, user_id, removed
-                FROM searchables
-                WHERE searchable_id = %s
-                AND removed = FALSE
-            """
-        
-        execute_sql(cur, query, params=(searchable_id,))
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
+        result = db.fetch_one(query, (searchable_id,))
         
         if not result:
             return None
@@ -97,9 +74,6 @@ def get_searchable(searchable_id, include_removed=False):
         
     except Exception as e:
         logger.error(f"Error retrieving searchable item {searchable_id}: {str(e)}")
-        # Ensure connection is closed even if an error occurs
-        if 'conn' in locals() and conn:
-            conn.close()
         return None
 
 def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=None, status=None):
@@ -108,9 +82,6 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
     Note: Status is now determined by related payment records
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Build query dynamically
         conditions = []
         params = []
@@ -168,10 +139,10 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
         
         query += " ORDER BY i.created_at DESC"
         
-        execute_sql(cur, query, params=params if params else None)
+        rows = db.fetch_all(query, tuple(params) if params else None)
         
         results = []
-        for row in cur.fetchall():
+        for row in rows:
             invoice = {
                 'id': row[0],
                 'buyer_id': row[1],
@@ -188,8 +159,6 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
             }
             results.append(invoice)
         
-        cur.close()
-        conn.close()
         return results
         
     except Exception as e:
@@ -201,9 +170,6 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
     Retrieves payments from the payment table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         conditions = []
         params = []
         
@@ -231,10 +197,10 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query, params=params if params else None)
+        rows = db.fetch_all(query, tuple(params) if params else None)
         
         results = []
-        for row in cur.fetchall():
+        for row in rows:
             payment = {
                 'id': row[0],
                 'invoice_id': row[1],
@@ -249,8 +215,6 @@ def get_payments(invoice_id=None, invoice_ids=None, status=None):
             }
             results.append(payment)
         
-        cur.close()
-        conn.close()
         return results
         
     except Exception as e:
@@ -262,9 +226,6 @@ def get_withdrawals(user_id=None, status=None, currency=None):
     Retrieves withdrawals from the withdrawal table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         conditions = []
         params = []
         
@@ -290,10 +251,10 @@ def get_withdrawals(user_id=None, status=None, currency=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query, params=params if params else None)
+        rows = db.fetch_all(query, tuple(params) if params else None)
         
         results = []
-        for row in cur.fetchall():
+        for row in rows:
             withdrawal = {
                 'id': row[0],
                 'user_id': row[1],
@@ -308,8 +269,6 @@ def get_withdrawals(user_id=None, status=None, currency=None):
             }
             results.append(withdrawal)
         
-        cur.close()
-        conn.close()
         return results
         
     except Exception as e:
@@ -322,20 +281,18 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, in
     Note: Status is now determined by related payment records, not stored in invoice
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         metadata = metadata or {}
         
-        execute_sql(cur, """
+        row = db.execute_insert("""
             INSERT INTO invoice (buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, metadata)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, buyer_id, seller_id, searchable_id, amount, fee, currency, type, external_id, created_at, metadata
-        """, params=(buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, Json(metadata)), commit=True, connection=conn)
+        """, (buyer_id, seller_id, searchable_id, amount, fee, currency, invoice_type, external_id, Json(metadata)))
         
-        row = cur.fetchone()
+        if not row:
+            return None
         
-        invoice = {
+        return {
             'id': row[0],
             'buyer_id': row[1],
             'seller_id': row[2],
@@ -350,10 +307,6 @@ def create_invoice(buyer_id, seller_id, searchable_id, amount, fee, currency, in
             'status': 'pending'  # New invoices start as pending
         }
         
-        cur.close()
-        conn.close()
-        return invoice
-        
     except Exception as e:
         logger.error(f"Error creating invoice: {str(e)}")
         return None
@@ -363,20 +316,18 @@ def create_payment(invoice_id, amount, fee, currency, payment_type, external_id=
     Creates a new payment record
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         metadata = metadata or {}
         
-        execute_sql(cur, """
+        row = db.execute_insert("""
             INSERT INTO payment (invoice_id, amount, fee, currency, type, external_id, metadata)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-        """, params=(invoice_id, amount, fee, currency, payment_type, external_id, Json(metadata)), commit=True, connection=conn)
+        """, (invoice_id, amount, fee, currency, payment_type, external_id, Json(metadata)))
         
-        row = cur.fetchone()
+        if not row:
+            return None
         
-        payment = {
+        return {
             'id': row[0],
             'invoice_id': row[1],
             'amount': float(row[2]),
@@ -388,10 +339,6 @@ def create_payment(invoice_id, amount, fee, currency, payment_type, external_id=
             'created_at': row[8].isoformat() if row[8] else None,
             'metadata': row[9]
         }
-        
-        cur.close()
-        conn.close()
-        return payment
         
     except Exception as e:
         logger.error(f"Error creating payment: {str(e)}")
@@ -402,30 +349,25 @@ def update_payment_status(payment_id, status, metadata=None):
     Updates the status and metadata of an existing payment record
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         if metadata is not None:
-            execute_sql(cur, """
+            row = db.execute_insert("""
                 UPDATE payment 
                 SET status = %s, metadata = %s
                 WHERE id = %s
                 RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-            """, params=(status, Json(metadata), payment_id), commit=True, connection=conn)
+            """, (status, Json(metadata), payment_id))
         else:
-            execute_sql(cur, """
+            row = db.execute_insert("""
                 UPDATE payment 
                 SET status = %s
                 WHERE id = %s
                 RETURNING id, invoice_id, amount, fee, currency, type, external_id, status, created_at, metadata
-            """, params=(status, payment_id), commit=True, connection=conn)
-        
-        row = cur.fetchone()
+            """, (status, payment_id))
         
         if not row:
             return None
             
-        payment = {
+        return {
             'id': row[0],
             'invoice_id': row[1],
             'amount': float(row[2]),
@@ -438,10 +380,6 @@ def update_payment_status(payment_id, status, metadata=None):
             'metadata': row[9]
         }
         
-        cur.close()
-        conn.close()
-        return payment
-        
     except Exception as e:
         logger.error(f"Error updating payment status: {str(e)}")
         return None
@@ -451,20 +389,18 @@ def create_withdrawal(user_id, amount, fee, currency, withdrawal_type, external_
     Creates a new withdrawal record
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         metadata = metadata or {}
         
-        execute_sql(cur, """
+        row = db.execute_insert("""
             INSERT INTO withdrawal (user_id, amount, fee, currency, type, external_id, metadata)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id, user_id, amount, fee, currency, type, external_id, status, created_at, metadata
-        """, params=(user_id, amount, fee, currency, withdrawal_type, external_id, Json(metadata)), commit=True, connection=conn)
+        """, (user_id, amount, fee, currency, withdrawal_type, external_id, Json(metadata)))
         
-        row = cur.fetchone()
+        if not row:
+            return None
         
-        withdrawal = {
+        return {
             'id': row[0],
             'user_id': row[1],
             'amount': float(row[2]),
@@ -476,10 +412,6 @@ def create_withdrawal(user_id, amount, fee, currency, withdrawal_type, external_
             'created_at': row[8].isoformat() if row[8] else None,
             'metadata': row[9]
         }
-        
-        cur.close()
-        conn.close()
-        return withdrawal
         
     except Exception as e:
         logger.error(f"Error creating withdrawal: {str(e)}")
@@ -708,9 +640,6 @@ def get_user_paid_files(user_id, searchable_id):
     Returns a set of file IDs that the user can download
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Get all completed payments by this user for this searchable item
         query = """
             SELECT i.metadata
@@ -721,8 +650,7 @@ def get_user_paid_files(user_id, searchable_id):
             AND p.status = %s
         """
         
-        execute_sql(cur, query, params=(user_id, searchable_id, 'complete'))
-        results = cur.fetchall()
+        results = db.fetch_all(query, (user_id, searchable_id, 'complete'))
         
         paid_file_ids = set()
         
@@ -733,9 +661,6 @@ def get_user_paid_files(user_id, searchable_id):
                 for selection in selections:
                     if selection.get('type') == 'downloadable':
                         paid_file_ids.add(str(selection.get('id')))
-        
-        cur.close()
-        conn.close()
         
         return paid_file_ids
         

@@ -4,6 +4,7 @@ Handles tag operations for users and searchables without SQLAlchemy models
 """
 
 from .database import get_db_connection, execute_sql
+from .database_context import database_cursor, database_transaction, db
 from .logging_config import setup_logger
 
 # Set up logger
@@ -33,12 +34,7 @@ def get_tags(tag_type=None, active_only=True):
         
         query += " ORDER BY name"
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, params)
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = db.fetch_all(query, tuple(params))
         
         return [
             {
@@ -73,12 +69,7 @@ def get_tags_by_ids(tag_ids):
         placeholders = ','.join(['%s'] * len(tag_ids))
         query = f"SELECT id, name, tag_type, description, is_active, created_at FROM tags WHERE id IN ({placeholders})"
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, tag_ids)
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = db.fetch_all(query, tuple(tag_ids))
         
         return [
             {
@@ -115,12 +106,7 @@ def get_user_tags(user_id):
             ORDER BY t.name
         """
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [user_id])
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = db.fetch_all(query, (user_id,))
         
         return [
             {
@@ -150,22 +136,18 @@ def add_user_tags(user_id, tag_ids):
         bool: True if successful, False otherwise
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with database_transaction() as (cur, conn):
+            for tag_id in tag_ids:
+                # Check if association already exists
+                check_query = "SELECT 1 FROM user_tags WHERE user_id = %s AND tag_id = %s"
+                execute_sql(cur, check_query, [user_id, tag_id])
+                existing = cur.fetchone()
+                
+                if not existing:
+                    # Insert new association
+                    insert_query = "INSERT INTO user_tags (user_id, tag_id) VALUES (%s, %s)"
+                    execute_sql(cur, insert_query, [user_id, tag_id])
         
-        for tag_id in tag_ids:
-            # Check if association already exists
-            check_query = "SELECT 1 FROM user_tags WHERE user_id = %s AND tag_id = %s"
-            execute_sql(cur, check_query, [user_id, tag_id])
-            existing = cur.fetchone()
-            
-            if not existing:
-                # Insert new association
-                insert_query = "INSERT INTO user_tags (user_id, tag_id) VALUES (%s, %s)"
-                execute_sql(cur, insert_query, [user_id, tag_id], commit=True, connection=conn)
-        
-        cur.close()
-        conn.close()
         return True
         
     except Exception as e:
@@ -184,16 +166,13 @@ def remove_user_tag(user_id, tag_id):
         bool: True if tag was removed, False if not found or error
     """
     try:
-        query = "DELETE FROM user_tags WHERE user_id = %s AND tag_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [user_id, tag_id], commit=True, connection=conn)
-        
-        # Check if any rows were affected
-        rows_affected = cur.rowcount > 0
-        cur.close()
-        conn.close()
-        return rows_affected
+        with database_transaction() as (cur, conn):
+            query = "DELETE FROM user_tags WHERE user_id = %s AND tag_id = %s"
+            execute_sql(cur, query, [user_id, tag_id])
+            
+            # Check if any rows were affected
+            rows_affected = cur.rowcount > 0
+            return rows_affected
         
     except Exception as e:
         logger.error(f"Error removing user tag {tag_id} for user {user_id}: {str(e)}")
@@ -211,12 +190,7 @@ def get_user_tag_count(user_id):
     """
     try:
         query = "SELECT COUNT(*) FROM user_tags WHERE user_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [user_id])
-        result = cur.fetchone()
-        cur.close()
-        conn.close()
+        result = db.fetch_one(query, (user_id,))
         
         return result[0] if result else 0
         
@@ -243,12 +217,7 @@ def get_searchable_tags(searchable_id):
             ORDER BY t.name
         """
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [searchable_id])
-        result = cur.fetchall()
-        cur.close()
-        conn.close()
+        result = db.fetch_all(query, (searchable_id,))
         
         return [
             {
@@ -278,22 +247,18 @@ def add_searchable_tags(searchable_id, tag_ids):
         bool: True if successful, False otherwise
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        with database_transaction() as (cur, conn):
+            for tag_id in tag_ids:
+                # Check if association already exists
+                check_query = "SELECT 1 FROM searchable_tags WHERE searchable_id = %s AND tag_id = %s"
+                execute_sql(cur, check_query, [searchable_id, tag_id])
+                existing = cur.fetchone()
+                
+                if not existing:
+                    # Insert new association
+                    insert_query = "INSERT INTO searchable_tags (searchable_id, tag_id) VALUES (%s, %s)"
+                    execute_sql(cur, insert_query, [searchable_id, tag_id])
         
-        for tag_id in tag_ids:
-            # Check if association already exists
-            check_query = "SELECT 1 FROM searchable_tags WHERE searchable_id = %s AND tag_id = %s"
-            execute_sql(cur, check_query, [searchable_id, tag_id])
-            existing = cur.fetchone()
-            
-            if not existing:
-                # Insert new association
-                insert_query = "INSERT INTO searchable_tags (searchable_id, tag_id) VALUES (%s, %s)"
-                execute_sql(cur, insert_query, [searchable_id, tag_id], commit=True, connection=conn)
-        
-        cur.close()
-        conn.close()
         return True
         
     except Exception as e:
@@ -312,16 +277,13 @@ def remove_searchable_tag(searchable_id, tag_id):
         bool: True if tag was removed, False if not found or error
     """
     try:
-        query = "DELETE FROM searchable_tags WHERE searchable_id = %s AND tag_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [searchable_id, tag_id], commit=True, connection=conn)
-        
-        # Check if any rows were affected
-        rows_affected = cur.rowcount > 0
-        cur.close()
-        conn.close()
-        return rows_affected
+        with database_transaction() as (cur, conn):
+            query = "DELETE FROM searchable_tags WHERE searchable_id = %s AND tag_id = %s"
+            execute_sql(cur, query, [searchable_id, tag_id])
+            
+            # Check if any rows were affected
+            rows_affected = cur.rowcount > 0
+            return rows_affected
         
     except Exception as e:
         logger.error(f"Error removing searchable tag {tag_id} for searchable {searchable_id}: {str(e)}")
@@ -339,12 +301,7 @@ def get_searchable_tag_count(searchable_id):
     """
     try:
         query = "SELECT COUNT(*) FROM searchable_tags WHERE searchable_id = %s"
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, query, [searchable_id])
-        result = cur.fetchone()
-        cur.close()
-        conn.close()
+        result = db.fetch_one(query, (searchable_id,))
         
         return result[0] if result else 0
         

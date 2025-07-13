@@ -26,6 +26,7 @@ from ..common.data_helpers import (
     get_invoices_for_searchable,
     get_user_all_invoices
 )
+from ..common.database_context import database_cursor, database_transaction, db
 from ..common.tag_helpers import get_searchable_tags
 from ..common.logging_config import setup_logger
 
@@ -67,27 +68,20 @@ class GetSearchableItem(Resource):
             if not user_id:
                 return
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Query username and seller rating for this user_id
-            execute_sql(cur, """
+            result = db.fetch_one("""
                 SELECT u.username,
                        COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_rating,
                        COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_total_ratings
                 FROM users u
                 WHERE u.id = %s
-            """, params=(user_id,))
+            """, (user_id,))
             
-            result = cur.fetchone()
             if result:
                 username, seller_rating, seller_total_ratings = result
                 searchable_data['username'] = username
                 searchable_data['seller_rating'] = float(seller_rating) if seller_rating else 0.0
                 searchable_data['seller_total_ratings'] = seller_total_ratings or 0
-            
-            cur.close()
-            conn.close()
             
         except Exception as e:
             logger.error(f"Error enriching searchable with username and rating: {str(e)}")
@@ -108,9 +102,6 @@ class CreateSearchable(Resource):
             if not data:
                 return {"error": "Invalid input"}, 400
 
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Add user info to the searchable data
             data['user_id'] = str(current_user.id)
             
@@ -120,30 +111,23 @@ class CreateSearchable(Resource):
             # Insert into searchables table with type field
             logger.info("Executing database insert...")
             sql = "INSERT INTO searchables (user_id, type, searchable_data) VALUES (%s, %s, %s) RETURNING searchable_id;"
-            execute_sql(cur, sql, params=(current_user.id, searchable_type, Json(data)))
-            searchable_id = cur.fetchone()[0]
             
+            row = db.execute_insert(sql, (current_user.id, searchable_type, Json(data)))
             
+            if not row:
+                return {"error": "Failed to create searchable"}, 500
+                
+            searchable_id = row[0]
             logger.info(f"Added searchable {searchable_id}")
             
-            conn.commit()
-            cur.close()
-            conn.close()
             return {"searchable_id": searchable_id}, 201
+            
         except Exception as e:
             # Enhanced error logging
             import traceback
             error_traceback = traceback.format_exc()
             logger.error(f"Error creating searchable: {str(e)}")
             logger.error(f"Traceback: {error_traceback}")
-            
-            # Ensure database connection is closed
-            if conn:
-                try:
-                    conn.rollback()
-                    conn.close()
-                except:
-                    pass
             
             return {"error": str(e), "error_details": error_traceback}, 500
 
@@ -237,10 +221,8 @@ class SearchSearchables(Resource):
 
     def _query_database(self, query_term, filters={}, tag_ids=[], page_number=1, page_size=20):
         """Query database for searchable items with pagination and simple text search"""
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         try:
+            with database_cursor() as (cur, conn):
             # Calculate offset for pagination
             offset = (page_number - 1) * page_size
             
@@ -384,19 +366,11 @@ class SearchSearchables(Resource):
                 
                 items.append(item_data)
             
-            cur.close()
-            conn.close()
-            
-            return items, total_count
+                return items, total_count
             
         except Exception as e:
             logger.error(f"Database query error: {str(e)}")
             raise e
-        finally:
-            if 'cur' in locals() and cur:
-                cur.close()
-            if 'conn' in locals() and conn:
-                conn.close()
 
 
     def _format_response(self, results, page_number, page_size, total_count):
@@ -422,30 +396,26 @@ class RemoveSearchableItem(Resource):
     @track_metrics('remove_searchable_item')
     def put(self, current_user, searchable_id, request_origin='unknown'):
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # First, check if the searchable exists and belongs to the current user
-            execute_sql(cur, """
+            result = db.fetch_one("""
                 SELECT 1 FROM searchables 
                 WHERE searchable_id = %s 
                 AND user_id = %s
                 AND removed = FALSE
-            """, params=(searchable_id, current_user.id))
+            """, (searchable_id, current_user.id))
             
-            result = cur.fetchone()
             if not result:
                 return {"error": "Searchable item not found or access denied"}, 404
             
             # Mark as removed using the new column
-            execute_sql(cur, """
+            success = db.execute_update("""
                 UPDATE searchables 
                 SET removed = TRUE, updated_at = CURRENT_TIMESTAMP
                 WHERE searchable_id = %s
-            """, params=(searchable_id,), commit=True, connection=conn)
+            """, (searchable_id,))
             
-            cur.close()
-            conn.close()
+            if not success:
+                return {"error": "Failed to remove searchable item"}, 500
             
             return {"success": True, "message": "Searchable item marked as removed"}, 200
             
@@ -487,9 +457,6 @@ class SearchableRating(Resource):
     @track_metrics('searchable_rating')
     def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Get ratings for this searchable from invoice/payment/rating tables
             sql = """
                 SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
@@ -498,8 +465,7 @@ class SearchableRating(Resource):
                 WHERE i.searchable_id = %s
             """
             
-            execute_sql(cur, sql, params=(searchable_id,))
-            result = cur.fetchone()
+            result = db.fetch_one(sql, (searchable_id,))
             
             if result and result[0] is not None:
                 avg_rating = float(result[0])
@@ -519,10 +485,10 @@ class SearchableRating(Resource):
                 LIMIT 10
             """
             
-            execute_sql(cur, ratings_sql, params=(searchable_id,))
+            rating_rows = db.fetch_all(ratings_sql, (searchable_id,))
             individual_ratings = []
             
-            for row in cur.fetchall():
+            for row in rating_rows:
                 rating, review, created_at, username = row
                 individual_ratings.append({
                     "rating": float(rating),
@@ -530,9 +496,6 @@ class SearchableRating(Resource):
                     "created_at": created_at.isoformat() if created_at else None,
                     "username": username
                 })
-            
-            cur.close()
-            conn.close()
             
             return {
                 "searchable_id": searchable_id,
@@ -554,9 +517,6 @@ class UserRating(Resource):
     @track_metrics('user_rating')
     def get(self, current_user, user_id, request_origin='unknown'):
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Get average rating for all searchables belonging to this terminal
             sql = """
                 SELECT AVG(r.rating::float) as avg_rating, COUNT(r.rating) as total_ratings
@@ -565,8 +525,7 @@ class UserRating(Resource):
                 WHERE i.seller_id = %s
             """
             
-            execute_sql(cur, sql, params=(user_id,))
-            result = cur.fetchone()
+            result = db.fetch_one(sql, (user_id,))
             
             if result and result[0] is not None:
                 avg_rating = float(result[0])
@@ -587,10 +546,10 @@ class UserRating(Resource):
                 LIMIT 10
             """
             
-            execute_sql(cur, ratings_sql, params=(user_id,))
+            rating_rows = db.fetch_all(ratings_sql, (user_id,))
             individual_ratings = []
             
-            for row in cur.fetchall():
+            for row in rating_rows:
                 rating, review, created_at, username, item_title = row
                 individual_ratings.append({
                     "rating": float(rating),
@@ -599,9 +558,6 @@ class UserRating(Resource):
                     "username": username,
                     "item_title": item_title
                 })
-            
-            cur.close()
-            conn.close()
             
             return {
                 "user_id": user_id,
@@ -699,9 +655,6 @@ class UserPurchases(Resource):
     @track_metrics('user_purchases')
     def get(self, current_user, request_origin='unknown'):
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Get all completed payments for this user with invoice and searchable details
             query = """
                 SELECT 
@@ -725,10 +678,10 @@ class UserPurchases(Resource):
                 ORDER BY p.created_at DESC
             """
             
-            execute_sql(cur, query, params=(current_user.id, current_user.id, 'complete'))
+            purchase_rows = db.fetch_all(query, (current_user.id, current_user.id, 'complete'))
             purchases = []
             
-            for row in cur.fetchall():
+            for row in purchase_rows:
                 invoice_id, searchable_id, amount, currency, invoice_created, payment_completed, item_title, item_description, already_rated = row
                 
                 purchase = {
@@ -744,9 +697,6 @@ class UserPurchases(Resource):
                     "can_rate": not bool(already_rated)
                 }
                 purchases.append(purchase)
-            
-            cur.close()
-            conn.close()
             
             return {
                 "purchases": purchases,
@@ -769,21 +719,15 @@ class InvoiceNotes(Resource):
             logger.error(f"DEBUG: GET invoice notes - Step 1: Called for invoice {invoice_id} by user {current_user.id}")
             
             # First, determine user's role for this invoice
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             query = """
                 SELECT buyer_id, seller_id FROM invoice WHERE id = %s
             """
-            execute_sql(cur, query, params=(invoice_id,))
-            result = cur.fetchone()
+            result = db.fetch_one(query, (invoice_id,))
             
             if not result:
                 return {"error": "Invoice not found"}, 404
             
             buyer_id, seller_id = result
-            cur.close()
-            conn.close()
             
             # Determine user role
             if str(current_user.id) == str(buyer_id):
@@ -841,21 +785,15 @@ class CreateInvoiceNote(Resource):
                 return {"error": "Note content cannot be empty"}, 400
             
             # Determine if user is buyer or seller for this invoice
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             query = """
                 SELECT buyer_id, seller_id FROM invoice WHERE id = %s
             """
-            execute_sql(cur, query, params=(invoice_id,))
-            result = cur.fetchone()
+            result = db.fetch_one(query, (invoice_id,))
             
             if not result:
                 return {"error": "Invoice not found"}, 404
             
             buyer_id, seller_id = result
-            cur.close()
-            conn.close()
             
             # Determine user role
             if str(current_user.id) == str(buyer_id):
@@ -988,14 +926,8 @@ class BalanceResource(Resource):
             if not data:
                 return {"error": "Invalid input"}, 400
 
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Terminal table removed - no operation needed
             # Profile data should be stored in user_profile table instead
-            
-            cur.close()
-            conn.close()
             
             return {"success": True, "message": "Profile updated successfully"}, 200
             
@@ -1015,9 +947,6 @@ class DownloadSearchableFile(Resource):
             buyer_id = current_user.id
             
             # First check if buyer has paid for this file
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Query for completed payments for this searchable item by this buyer
             payment_query = """
                 SELECT p.status, i.metadata
@@ -1028,8 +957,7 @@ class DownloadSearchableFile(Resource):
                 AND p.status = 'complete'
             """
             
-            execute_sql(cur, payment_query, params=(searchable_id, buyer_id))
-            payments = cur.fetchall()
+            payments = db.fetch_all(payment_query, (searchable_id, buyer_id))
             
             # Check if any payment includes this file
             has_paid_for_file = False
@@ -1048,9 +976,6 @@ class DownloadSearchableFile(Resource):
                             break
                     if has_paid_for_file:
                         break
-            
-            cur.close()
-            conn.close()
             
             if not has_paid_for_file:
                 return {"error": "Payment required to download this file"}, 403
@@ -1073,24 +998,18 @@ class DownloadSearchableFile(Resource):
                 return {"error": "File server not configured"}, 500
             
             # Get file metadata from database to get the UUID
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             file_query = """
                 SELECT uri, metadata
                 FROM files
                 WHERE file_id = %s
             """
             
-            execute_sql(cur, file_query, params=(file_id,))
-            file_result = cur.fetchone()
+            file_result = db.fetch_one(file_query, (file_id,))
             
             if not file_result:
                 return {"error": "File metadata not found"}, 404
                 
             file_uri, file_metadata = file_result
-            cur.close()
-            conn.close()
             
             # Extract UUID from URI
             try:
