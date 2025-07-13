@@ -1,5 +1,16 @@
 // MSW request handlers
 import { http, HttpResponse } from 'msw';
+import { 
+  mockSearchableItem, 
+  mockDeletedSearchableItem, 
+  mockSearchableRating,
+  mockTerminalRating,
+  mockUserPaidFiles,
+  mockPaymentsBySearchable,
+  mockProfile,
+  mockBalance,
+  mockUserProfile
+} from './mockData';
 
 // Mock data
 const mockUser = {
@@ -169,10 +180,55 @@ export const handlers = [
 
   // Searchable detail
   http.get('/api/v1/searchable/:id', ({ params }) => {
+    console.log('Mock API: Fetching searchable with ID:', params.id);
+    
+    // Handle specific mock items
+    if (params.id === 'mock-item-1') {
+      console.log('Mock API: Returning active mock item');
+      return HttpResponse.json(mockSearchableItem);
+    }
+    
+    if (params.id === 'mock-deleted-item-1') {
+      console.log('Mock API: Returning deleted mock item');
+      return HttpResponse.json(mockDeletedSearchableItem);
+    }
+    
+    // If it's a mock-deleted ID variant, override the generated item
+    if (params.id.includes('mock-deleted')) {
+      console.log('Mock API: Creating deleted version of generated item');
+      // Get the base generated item
+      const searchable = mockSearchables.find(s => s.searchable_id === params.id);
+      if (searchable) {
+        // Mark it as removed and update title
+        const deletedSearchable = {
+          ...searchable,
+          removed: true,
+          payloads: {
+            ...searchable.payloads,
+            public: {
+              ...searchable.payloads.public,
+              title: `DELETED: ${searchable.payloads.public.title}`,
+              description: `This item has been removed by the seller. ${searchable.payloads.public.description}`
+            }
+          }
+        };
+        return HttpResponse.json(deletedSearchable);
+      }
+    }
+    
+    // Fallback to existing mockSearchables for other IDs
     const searchable = mockSearchables.find(s => s.searchable_id === params.id);
     if (searchable) {
-      return HttpResponse.json({ success: true, searchable });
+      console.log('Mock API: Returning searchable from mockSearchables');
+      // Ensure removed field is set for non-deleted items
+      const activeSearchable = {
+        ...searchable,
+        removed: false
+      };
+      return HttpResponse.json(activeSearchable);
     }
+    
+    console.log('Mock API: Searchable not found');
     return HttpResponse.json({ success: false, error: 'Not found' }, { status: 404 });
   }),
 

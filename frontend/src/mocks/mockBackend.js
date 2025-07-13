@@ -617,6 +617,35 @@ const mockHandlers = {
     const searchableId = url.split('/').pop();
     console.log('[MOCK] Fetching searchable details:', searchableId);
     
+    // Special handling for deleted items
+    if (searchableId === 'mock-deleted-item-1') {
+      console.log('[MOCK] Returning DELETED mock item');
+      const deletedSearchable = {
+        searchable_id: searchableId,
+        user_id: '1',
+        removed: true, // Mark as deleted
+        payloads: {
+          public: {
+            title: 'DELETED: Vintage Photography Collection',
+            description: 'This was a beautiful collection of vintage photographs that has been removed by the seller. While you can still view this page for reference, the item is no longer available for purchase.',
+            type: 'direct',
+            currency: 'usd',
+            images: [mockImage1, mockImage2],
+            defaultAmount: 39.99
+          }
+        },
+        created_at: new Date(Date.now() - 86400000).toISOString(), // Created yesterday
+        username: 'DigitalAssetStore',
+        seller_rating: 4.5,
+        seller_total_ratings: 23,
+        tags: [
+          { id: 21, name: 'books', tag_type: 'searchable' },
+          { id: 28, name: 'vintage', tag_type: 'searchable' }
+        ]
+      };
+      return createMockResponse(deletedSearchable);
+    }
+    
     // Find searchable in our mock data
     let searchable = allMockSearchables.find(s => s.searchable_id === searchableId);
     
@@ -625,6 +654,7 @@ const mockHandlers = {
       searchable = {
         searchable_id: searchableId,
         user_id: '1',
+        removed: false, // Explicitly mark as not deleted
         payloads: {
           public: {
             title: 'Mock Searchable Item',
@@ -653,13 +683,16 @@ const mockHandlers = {
       searchable.username = searchable.username || user?.username || 'unknown_user';
       searchable.seller_rating = user?.rating || 4.0;
       searchable.seller_total_ratings = user?.totalRatings || 0;
+      // Ensure removed field is set for non-deleted items
+      searchable.removed = false;
     }
     
     console.log('[MOCK] Returning searchable:', {
       hasPayloads: !!searchable.payloads,
       hasPublic: !!searchable.payloads?.public,
       type: searchable.payloads?.public?.type,
-      searchable_id: searchable.searchable_id
+      searchable_id: searchable.searchable_id,
+      removed: searchable.removed
     });
     
     // Return the searchable data directly, NOT wrapped in { searchable: ... }

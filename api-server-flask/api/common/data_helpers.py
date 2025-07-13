@@ -62,13 +62,13 @@ def get_searchable(searchable_id, include_removed=False):
         # Build query based on include_removed parameter
         if include_removed:
             query = """
-                SELECT searchable_id, type, searchable_data, user_id
+                SELECT searchable_id, type, searchable_data, user_id, removed
                 FROM searchables
                 WHERE searchable_id = %s
             """
         else:
             query = """
-                SELECT searchable_id, type, searchable_data, user_id
+                SELECT searchable_id, type, searchable_data, user_id, removed
                 FROM searchables
                 WHERE searchable_id = %s
                 AND removed = FALSE
@@ -84,13 +84,14 @@ def get_searchable(searchable_id, include_removed=False):
         if not result:
             return None
             
-        searchable_id, searchable_type, searchable_data, user_id = result
+        searchable_id, searchable_type, searchable_data, user_id, removed = result
         
-        # Add searchable_id, type, and user_id to the data object for convenience
+        # Add searchable_id, type, user_id, and removed status to the data object for convenience
         item_data = dict(searchable_data)
         item_data['searchable_id'] = searchable_id
         item_data['type'] = searchable_type
         item_data['user_id'] = user_id
+        item_data['removed'] = removed
         
         return item_data
         

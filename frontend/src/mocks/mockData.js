@@ -11,6 +11,7 @@ export const mockSearchableItem = {
   searchable_id: "mock-item-1",
   user_id: "1",
   username: "DigitalAssetStore",
+  removed: false, // Active item
   tags: [
     { id: 21, name: "books", tag_type: "searchable" },
     { id: 23, name: "art", tag_type: "searchable" }
@@ -49,6 +50,40 @@ export const mockSearchableItem = {
     }
   },
   created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
+// Mock deleted searchable item for testing removed state
+export const mockDeletedSearchableItem = {
+  _id: "mock-deleted-item-1",
+  searchable_id: "mock-deleted-item-1",
+  user_id: "1",
+  username: "DigitalAssetStore",
+  removed: true, // Deleted item
+  tags: [
+    { id: 21, name: "books", tag_type: "searchable" },
+    { id: 28, name: "vintage", tag_type: "searchable" }
+  ],
+  payloads: {
+    public: {
+      title: "DELETED: Vintage Photography Collection",
+      description: "This was a beautiful collection of vintage photographs that has been removed by the seller. While you can still view this page for reference, the item is no longer available for purchase.",
+      images: [mockImage1, mockImage2],
+      imageUrls: [mockImage1, mockImage2],
+      downloadableFiles: [
+        {
+          fileId: "deleted-file-1",
+          name: "Vintage Photography Pack",
+          fileName: "vintage_photos_1920s.zip",
+          description: "A curated collection of vintage photographs from the 1920s era.",
+          price: 39.99
+        }
+      ],
+      currency: "usd",
+      require_address: false
+    }
+  },
+  created_at: new Date(Date.now() - 86400000).toISOString(), // Created yesterday
   updated_at: new Date().toISOString()
 };
 
