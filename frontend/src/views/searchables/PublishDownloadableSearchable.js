@@ -204,7 +204,7 @@ const PublishDownloadableSearchable = () => {
   // Custom validation for downloadable-specific requirements
   const customValidation = () => {
     if (downloadableFiles.length === 0) {
-      return "Please add at least one downloadable file.";
+      return "Please add at least one downloadable content item.";
     }
     return null;
   };
@@ -213,10 +213,10 @@ const PublishDownloadableSearchable = () => {
   const renderDownloadableContent = ({ formData, handleInputChange, setError }) => (
     <Grid item xs={12}>
       <Typography variant="subtitle1">
-        Downloadable Files *
+        Downloadable Content *
       </Typography>
       <Typography variant="caption">
-        Add files that customers can download after purchase
+        Add content that customers can download after purchase
       </Typography>
       
       <Box className={classes.addFileSection}>
@@ -226,7 +226,7 @@ const PublishDownloadableSearchable = () => {
             component="label"
             startIcon={<AttachFileIcon />}
           >
-            Choose File
+            Choose Content
             <input
               type="file"
               id="downloadableFile"
@@ -334,7 +334,7 @@ const PublishDownloadableSearchable = () => {
           ))
         ) : (
           <Typography variant="body2" color="textSecondary">
-            No files added yet. Add at least one downloadable file to continue.
+            No content added yet. Add at least one downloadable item to continue.
           </Typography>
         )}
       </Box>

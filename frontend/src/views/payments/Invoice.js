@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   Card, CardContent, Typography, Divider, Grid, Button, Dialog, 
   DialogTitle, DialogContent, DialogActions, TextField, Box, Paper,
   Chip, Collapse, IconButton, List, ListItem, ListItemText, Avatar,
-  useTheme, useMediaQuery
+  useTheme, useMediaQuery, Link
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { 
@@ -17,6 +18,7 @@ import Backend from '../utilities/Backend';
 import RatingComponent from '../../components/Rating/RatingComponent';
 import useComponentStyles from '../../themes/componentStyles';
 import { touchTargets, componentSpacing } from '../../utils/spacing';
+import { navigateWithStack } from '../../utils/navigationUtils';
 
 const useStyles = makeStyles((theme) => ({
   listItem: {
@@ -52,6 +54,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
     const classes = useComponentStyles();
     const styles = useStyles();
     const theme = useTheme();
+    const history = useHistory();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     
     // State for UI controls
@@ -97,6 +100,12 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
 
     const handleExpandClick = () => {
         setExpanded(!expanded);
+    };
+
+    const handleSearchableClick = () => {
+        if (invoice.searchable_id) {
+            navigateWithStack(history, `/searchable-item/${invoice.searchable_id}`);
+        }
     };
 
     const handleNotesExpandClick = async () => {
@@ -254,9 +263,27 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                     </Box>
 
                     <Box display="flex" justifyContent="space-between" alignItems="center" className={classes.marginSm}>
-                        <Typography variant="body2" className={classes.systemText}>
-                            {userRole === 'buyer' ? 'Seller' : 'Buyer'}: {invoice.other_party_username || 'Unknown'}
-                        </Typography>
+                        <Box style={{ flex: 1, marginRight: '8px' }}>
+                            <Typography variant="body2" className={classes.systemText}>
+                                {userRole === 'buyer' ? 'Seller' : 'Buyer'}: {invoice.other_party_username || 'Unknown'}
+                            </Typography>
+                            {/* Searchable title */}
+                            {invoice.searchable_title && (
+                                <Link 
+                                    component="button" 
+                                    variant="body2" 
+                                    onClick={handleSearchableClick}
+                                    className={classes.userText}
+                                    style={{ 
+                                        textAlign: 'left',
+                                        display: 'block',
+                                        marginTop: '4px'
+                                    }}
+                                >
+                                    {invoice.searchable_title}
+                                </Link>
+                            )}
+                        </Box>
                         <Typography variant="body2" className={classes.systemText}>
                             {formatDate(invoice.payment_date)}
                         </Typography>
@@ -282,7 +309,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                                 return (
                                                     <Box key={`selection-${index}`} display="flex" justifyContent="space-between" alignItems="center">
                                                         <Typography variant="body2" className={classes.userText}>
-                                                            Direct Payment
+                                                            Donation
                                                         </Typography>
                                                         <Typography variant="body2" className={classes.userText}>
                                                             {formatCurrency(selection.amount || 0, invoice.currency)}
@@ -377,9 +404,6 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 <Box mt={2}>
                                     <Typography variant="body2" className={classes.systemText}>
                                         Type: {invoice.type?.toUpperCase() || 'N/A'}
-                                    </Typography>
-                                    <Typography variant="body2" className={classes.systemText}>
-                                        Created: {formatDate(invoice.created_at)}
                                     </Typography>
                                 </Box>
                             </Grid>

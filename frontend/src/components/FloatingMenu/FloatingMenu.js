@@ -23,6 +23,7 @@ import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import StorefrontIcon from '@material-ui/icons/Storefront';
 import SendIcon from '@material-ui/icons/Send';
+import FavoriteIcon from '@material-ui/icons/Favorite';
 import AutoAwesomeMotionIcon from '@material-ui/icons/AutoAwesomeMotion';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import PersonIcon from '@material-ui/icons/Person';
@@ -235,7 +236,7 @@ const FloatingMenu = () => {
     {
       icon: <CloudDownloadIcon />,
       name: 'Downloadable',
-      description: 'Digital files for download',
+      description: 'Digital content for download',
       path: '/publish-searchables'
     },
     {
@@ -245,9 +246,9 @@ const FloatingMenu = () => {
       path: '/publish-offline-searchables'
     },
     {
-      icon: <SendIcon />,
-      name: 'Direct',
-      description: 'Direct payment requests',
+      icon: <FavoriteIcon />,
+      name: 'Donation',
+      description: 'Accept donations',
       path: '/publish-direct-searchables'
     },
     {
