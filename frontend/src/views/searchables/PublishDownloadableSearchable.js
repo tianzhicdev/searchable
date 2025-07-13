@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress, Paper
+  Grid, Typography, Box, TextField, Button, IconButton, CircularProgress, Paper, Divider
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
@@ -278,6 +278,15 @@ const PublishDownloadableSearchable = () => {
           </IconButton>
         </Box>
       </Box>
+      
+      {downloadableFiles.length > 0 && (
+        <Box display="flex" alignItems="center" style={{ margin: '16px 0' }}>
+          <Typography variant="subtitle2" style={{ marginRight: 8 }}>
+            Added Items ({downloadableFiles.length})
+          </Typography>
+          <Box style={{ flex: 1, height: 1, backgroundColor: theme.palette.primary.main }} />
+        </Box>
+      )}
       
       <Box className={classes.fileList}>
         {downloadableFiles.length > 0 ? (

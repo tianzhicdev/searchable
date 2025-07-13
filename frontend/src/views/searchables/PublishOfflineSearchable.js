@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Grid, Typography, Box, TextField, Button, IconButton, Paper
+  Grid, Typography, Box, TextField, Button, IconButton, Paper, Divider
 } from '@material-ui/core';
 import { useLocation } from 'react-router-dom';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -173,10 +173,14 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
         </Box>
         
         {offlineItems.length > 0 && (
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>
-              Items ({offlineItems.length})
-            </Typography>
+          <>
+            <Box display="flex" alignItems="center" style={{ margin: '16px 0' }}>
+              <Typography variant="subtitle2" style={{ marginRight: 8 }}>
+                Added Items ({offlineItems.length})
+              </Typography>
+              <Box style={{ flex: 1, height: 1, backgroundColor: 'currentColor', opacity: 0.3 }} />
+            </Box>
+            <Box>
             {offlineItems.map((item) => (
               <Box key={item.itemId} style={{ marginBottom: 16 }}>
                 <TextField
@@ -220,6 +224,7 @@ const PublishOfflineSearchable = ({ isMinimalMode = false, initialData = {}, onS
               </Box>
             ))}
           </Box>
+          </>
         )}
       </Box>
     </Grid>
