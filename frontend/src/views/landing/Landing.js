@@ -14,6 +14,8 @@ import { useSelector } from 'react-redux';
 import config from '../../config';
 import Logo from '../../ui-component/Logo';
 import backgroundImage from '../../assets/images/bg.png';
+import GalaxyMoving3D from '../../components/Galaxy3D/GalaxyMoving3D';
+import { movingGalaxyConfigs } from '../../components/Galaxy3D/configs';
 
 import abitchaoticLogo from '../../assets/images/abitchaotic.gif';
 
@@ -45,12 +47,24 @@ const Landing = () => {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundImage: `url(${abitchaoticLogo})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
+      {/* 3D Moving Galaxy Background */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1
+        }}
+      >
+        <GalaxyMoving3D config={movingGalaxyConfigs.moving1} />
+      </Box>
+
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
         <Box
           sx={{
@@ -99,10 +113,11 @@ const Landing = () => {
             gutterBottom
             sx={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: theme.palette.primary.main,
+              color: theme.palette.secondary.main,
+              fontWeight: 'bold',
             }}
           >
-            Your Talent Mines Crypto Here
+            Talent Mines Crypto
           </Typography>
 
           {/* Bullet Points */}
@@ -130,25 +145,29 @@ const Landing = () => {
             ))}
           </Box>
 
-          {/* Buttons */}
-          <Box 
-            display="flex" 
-            gap={2} 
-            flexDirection={isMobile ? 'column' : 'row'}
-            width={isMobile ? '100%' : 'auto'}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleJoinNow}
-              size="large"
-              sx={{ fontSize: isMobile ? '1.7rem' : '2rem', padding: '16px 32px', fontStyle: 'bold' }}
-            >
-              WARP TO THE FUTURE
-            </Button>
-          </Box>
-          
-          {/* I'm back link */}
+                <Box 
+                display="flex" 
+                gap={2} 
+                flexDirection={isMobile ? 'column' : 'row'}
+                width={isMobile ? '100%' : 'auto'}
+                >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleJoinNow}
+                  size="large"
+                  sx={{ 
+                  fontSize: isMobile ? '1.7rem' : '2rem', 
+                  padding: '16px 32px', 
+                  fontStyle: 'bold',
+                  color: 'white' // Make text white
+                  }}
+                >
+                  WARP TO THE FUTURE
+                </Button>
+                </Box>
+                
+                {/* I'm back link */}
           <Box sx={{ mt: 3 }}>
             <Link
               component="button"
