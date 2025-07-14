@@ -1,6 +1,6 @@
 import { makeStyles } from '@material-ui/styles';
 import themeConfig from './themeLoader';
-import { borderRadius } from './styleSystem';
+import { borderRadius, components, layouts } from './styleSystem';
 import { spacing, responsiveSpacing, componentSpacing } from '../utils/spacing';
 
 /**
@@ -57,7 +57,7 @@ const useComponentStyles = makeStyles((theme) => ({
     
     // Standard button styling
     button: {
-        ...componentStyles.button.base,
+        ...components.button.base,
         minWidth: 120,
         [theme.breakpoints.down('sm')]: {
             minWidth: 100
@@ -106,10 +106,10 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     // Additional common styles from styleSystem
-    ...styleUtils,
+    ...layouts,
     
     // Common layout patterns
-    flexCenter: styleUtils.center,
+    flexCenter: layouts.centered,
     flexBetween: {
         display: 'flex',
         alignItems: 'center',
