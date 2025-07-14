@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 import { useFormValidation, ValidationBuilder } from '../../utils/validation';
 import { CommonDialog, FormField, ActionButton } from './index';
 
@@ -9,7 +8,7 @@ const useStyles = makeStyles((theme) => ({
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: spacing(2)
+    gap: theme.spacing(2)
   }
 }));
 

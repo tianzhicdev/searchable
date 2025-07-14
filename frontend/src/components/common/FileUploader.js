@@ -8,14 +8,13 @@ import {
   Image as ImageIcon
 } from '@material-ui/icons';
 import { useDropzone } from 'react-dropzone';
-import { spacing } from '../../utils/spacing';
 import ActionButton from './ActionButton';
 
 const useStyles = makeStyles((theme) => ({
   dropzone: {
     border: `2px dashed ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
-    padding: spacing(4),
+    padding: theme.spacing(4),
     textAlign: 'center',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
@@ -33,12 +32,12 @@ const useStyles = makeStyles((theme) => ({
     borderColor: theme.palette.error.main
   },
   icon: {
-    fontSize: spacing(6),
+    fontSize: theme.spacing(6),
     color: theme.palette.text.secondary,
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   text: {
-    marginBottom: spacing(1)
+    marginBottom: theme.spacing(1)
   },
   hint: {
     color: theme.palette.text.secondary,
@@ -47,18 +46,18 @@ const useStyles = makeStyles((theme) => ({
   preview: {
     position: 'relative',
     display: 'inline-block',
-    margin: spacing(1)
+    margin: theme.spacing(1)
   },
   previewImage: {
-    width: spacing(15),
-    height: spacing(15),
+    width: theme.spacing(15),
+    height: theme.spacing(15),
     objectFit: 'cover',
     borderRadius: theme.shape.borderRadius,
     border: `1px solid ${theme.palette.divider}`
   },
   previewFile: {
-    width: spacing(15),
-    height: spacing(15),
+    width: theme.spacing(15),
+    height: theme.spacing(15),
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -69,8 +68,8 @@ const useStyles = makeStyles((theme) => ({
   },
   removeButton: {
     position: 'absolute',
-    top: -spacing(1),
-    right: -spacing(1),
+    top: -theme.spacing(1),
+    right: -theme.spacing(1),
     backgroundColor: theme.palette.background.paper,
     '&:hover': {
       backgroundColor: theme.palette.error.main,
@@ -79,13 +78,13 @@ const useStyles = makeStyles((theme) => ({
   },
   fileName: {
     fontSize: '0.75rem',
-    marginTop: spacing(1),
+    marginTop: theme.spacing(1),
     textAlign: 'center',
     wordBreak: 'break-word'
   },
   error: {
     color: theme.palette.error.main,
-    marginTop: spacing(1),
+    marginTop: theme.spacing(1),
     fontSize: '0.875rem'
   }
 }));

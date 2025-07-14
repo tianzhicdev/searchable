@@ -8,18 +8,17 @@ import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { strengthIndicator, strengthColor } from '../../utils/password-strength';
-import { spacing } from '../../utils/spacing';
 import { CommonDialog, FormField } from '../common';
 
 const useStyles = makeStyles((theme) => ({
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: spacing(2)
+    gap: theme.spacing(2)
   },
   passwordStrength: {
-    marginTop: spacing(-1),
-    marginBottom: spacing(1)
+    marginTop: theme.spacing(-1),
+    marginBottom: theme.spacing(1)
   }
 }));
 

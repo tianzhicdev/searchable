@@ -1,17 +1,16 @@
 import React from 'react';
 import { Box, Typography, Divider } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing, responsiveSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    marginBottom: responsiveSpacing(3)
+    marginBottom: theme.spacing(3)
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   title: {
     fontWeight: 600,
@@ -19,10 +18,10 @@ const useStyles = makeStyles((theme) => ({
   },
   subtitle: {
     color: theme.palette.text.secondary,
-    marginTop: spacing(0.5)
+    marginTop: theme.spacing(0.5)
   },
   divider: {
-    marginTop: spacing(2)
+    marginTop: theme.spacing(2)
   }
 }));
 
