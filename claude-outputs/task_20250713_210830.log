@@ -1,0 +1,15 @@
+Task: conn = get_db_connection() cur = conn.cursor() execute_sql ... cur.close() conn.close() this boilerplate code is everywhere, exammine all the instances where execute_sql is use on the backend.
+Timestamp: Sun Jul 13 21:08:30 EDT 2025
+=================
+You're right - this boilerplate pattern appears **42 times** across the backend. The pattern typically follows:
+
+```python
+conn = get_db_connection()
+cur = conn.cursor()
+execute_sql(cur, query, params)
+# sometimes conn.commit()
+cur.close()
+conn.close()
+```
+
+This repetitive code could be simplified using context managers or decorators. I noticed there's already a `database_context.py` file that provides context managers (`database_context` and `database_transaction`) to handle this pattern more elegantly.

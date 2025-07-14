@@ -2,5 +2,6 @@
 # Status: [ ] = unfinished, [x] = finished, [*] = in progress
 # Lines starting with # are comments
 
-[ ] conn = get_db_connection() cur = conn.cursor() execute_sql ... cur.close() conn.close() this boilerplate code is everywhere, exammine all the instances where execute_sql is use on the backend.
-[ ] examine all the backend py code, improve reusability. 
+[x] (completed: 2025-07-13 21:08) hello
+[x] (completed: 2025-07-13 21:16) conn = get_db_connection() cur = conn.cursor() execute_sql ... cur.close() conn.close() this boilerplate code is everywhere, exammine all the instances where execute_sql is use on the backend.
+[x] (completed: 2025-07-13 21:28) examine all the backend py code, improve reusability. 
