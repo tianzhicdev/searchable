@@ -113,10 +113,11 @@ const Landing = () => {
             gutterBottom
             sx={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: theme.palette.primary.main,
+              color: theme.palette.secondary.main,
+              fontWeight: 'bold',
             }}
           >
-            Your Talent Mines Crypto Here
+            Talent Mines Crypto
           </Typography>
 
           {/* Bullet Points */}
@@ -144,25 +145,29 @@ const Landing = () => {
             ))}
           </Box>
 
-          {/* Buttons */}
-          <Box 
-            display="flex" 
-            gap={2} 
-            flexDirection={isMobile ? 'column' : 'row'}
-            width={isMobile ? '100%' : 'auto'}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleJoinNow}
-              size="large"
-              sx={{ fontSize: isMobile ? '1.7rem' : '2rem', padding: '16px 32px', fontStyle: 'bold' }}
-            >
-              WARP TO THE FUTURE
-            </Button>
-          </Box>
-          
-          {/* I'm back link */}
+                <Box 
+                display="flex" 
+                gap={2} 
+                flexDirection={isMobile ? 'column' : 'row'}
+                width={isMobile ? '100%' : 'auto'}
+                >
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleJoinNow}
+                  size="large"
+                  sx={{ 
+                  fontSize: isMobile ? '1.7rem' : '2rem', 
+                  padding: '16px 32px', 
+                  fontStyle: 'bold',
+                  color: 'white' // Make text white
+                  }}
+                >
+                  WARP TO THE FUTURE
+                </Button>
+                </Box>
+                
+                {/* I'm back link */}
           <Box sx={{ mt: 3 }}>
             <Link
               component="button"
