@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, CircularProgress, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -9,11 +8,11 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing(6),
-    minHeight: spacing(30)
+    padding: theme.spacing(6),
+    minHeight: theme.spacing(30)
   },
   progress: {
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   text: {
     color: theme.palette.text.secondary

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 import ActionButton from './ActionButton';
 
 const useStyles = makeStyles((theme) => ({
@@ -10,31 +9,31 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing(6),
-    minHeight: spacing(30),
+    padding: theme.spacing(6),
+    minHeight: theme.spacing(30),
     textAlign: 'center'
   },
   icon: {
-    fontSize: spacing(10),
+    fontSize: theme.spacing(10),
     color: theme.palette.text.disabled,
-    marginBottom: spacing(2),
+    marginBottom: theme.spacing(2),
     opacity: 0.5
   },
   image: {
-    width: spacing(20),
-    height: spacing(20),
-    marginBottom: spacing(3),
+    width: theme.spacing(20),
+    height: theme.spacing(20),
+    marginBottom: theme.spacing(3),
     opacity: 0.7
   },
   title: {
-    marginBottom: spacing(1),
+    marginBottom: theme.spacing(1),
     fontWeight: 500,
     color: theme.palette.text.primary
   },
   message: {
     color: theme.palette.text.secondary,
-    marginBottom: spacing(3),
-    maxWidth: spacing(60)
+    marginBottom: theme.spacing(3),
+    maxWidth: theme.spacing(60)
   }
 }));
 

@@ -17,7 +17,6 @@ import {
   LocationOn as LocationIcon
 } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
-import { spacing, responsiveSpacing } from '../../utils/spacing';
 import PriceDisplay from './PriceDisplay';
 import UserMiniProfile from './UserMiniProfile';
 import RatingDisplay from './RatingDisplay';
@@ -37,16 +36,16 @@ const useStyles = makeStyles((theme) => ({
     }
   },
   media: {
-    height: spacing(20),
+    height: theme.spacing(20),
     backgroundColor: theme.palette.action.hover
   },
   content: {
     flex: 1,
-    paddingBottom: spacing(1)
+    paddingBottom: theme.spacing(1)
   },
   title: {
     fontWeight: 600,
-    marginBottom: spacing(1),
+    marginBottom: theme.spacing(1),
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     display: '-webkit-box',
@@ -54,7 +53,7 @@ const useStyles = makeStyles((theme) => ({
     '-webkit-box-orient': 'vertical'
   },
   description: {
-    marginBottom: spacing(2),
+    marginBottom: theme.spacing(2),
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     display: '-webkit-box',
@@ -64,34 +63,34 @@ const useStyles = makeStyles((theme) => ({
   },
   typeChip: {
     position: 'absolute',
-    top: spacing(1),
-    right: spacing(1),
+    top: theme.spacing(1),
+    right: theme.spacing(1),
     backgroundColor: theme.palette.background.paper,
     fontWeight: 600
   },
   stats: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing(2),
-    marginTop: spacing(1),
+    gap: theme.spacing(2),
+    marginTop: theme.spacing(1),
     color: theme.palette.text.secondary,
     fontSize: '0.875rem'
   },
   tags: {
     display: 'flex',
-    gap: spacing(1),
+    gap: theme.spacing(1),
     flexWrap: 'wrap',
-    marginTop: spacing(1)
+    marginTop: theme.spacing(1)
   },
   actions: {
-    padding: spacing(2),
+    padding: theme.spacing(2),
     paddingTop: 0,
     justifyContent: 'space-between'
   },
   priceSection: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing(1)
+    gap: theme.spacing(1)
   }
 }));
 

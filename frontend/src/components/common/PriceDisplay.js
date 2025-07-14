@@ -3,13 +3,12 @@ import { Typography, Box, Tooltip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { AttachMoney as MoneyIcon } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
-import { spacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   priceContainer: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: spacing(0.5)
+    gap: theme.spacing(0.5)
   },
   priceText: {
     fontWeight: 600,
@@ -22,12 +21,12 @@ const useStyles = makeStyles((theme) => ({
   originalPrice: {
     textDecoration: 'line-through',
     opacity: 0.6,
-    marginRight: spacing(1)
+    marginRight: theme.spacing(1)
   },
   discount: {
     color: theme.palette.success.main,
     fontWeight: 600,
-    marginLeft: spacing(1)
+    marginLeft: theme.spacing(1)
   },
   free: {
     color: theme.palette.success.main,

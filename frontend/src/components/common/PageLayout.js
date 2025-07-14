@@ -4,31 +4,31 @@ import { NavigateNext as NavigateNextIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { Link as RouterLink } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles';
-import { componentSpacing, responsiveSpacing, spacing } from '../../utils/spacing';
 import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
+import { componentSpacing, responsiveSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
-    paddingTop: responsiveSpacing(3),
-    paddingBottom: responsiveSpacing(6)
+    paddingTop: theme.spacing(3),
+    paddingBottom: theme.spacing(6)
   },
   container: {
     ...componentSpacing.pageContainer(theme)
   },
   header: {
-    marginBottom: responsiveSpacing(3)
+    marginBottom: theme.spacing(3)
   },
   breadcrumbs: {
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   titleSection: {
-    marginBottom: responsiveSpacing(3)
+    marginBottom: theme.spacing(3)
   },
   title: {
     fontWeight: 600,
-    marginBottom: spacing(1)
+    marginBottom: theme.spacing(1)
   },
   subtitle: {
     color: theme.palette.text.secondary
@@ -38,7 +38,7 @@ const useStyles = makeStyles((theme) => ({
   },
   paper: {
     ...componentSpacing.card(theme),
-    padding: responsiveSpacing(3)
+    padding: theme.spacing(3)
   },
   noPadding: {
     padding: 0
