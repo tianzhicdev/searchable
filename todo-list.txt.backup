@@ -6,5 +6,5 @@
 [x] (completed: 2025-07-13 21:16) conn = get_db_connection() cur = conn.cursor() execute_sql ... cur.close() conn.close() this boilerplate code is everywhere, exammine all the instances where execute_sql is use on the backend.
 [x] (completed: 2025-07-13 21:28) examine all the backend py code, improve reusability. 
 [x] (completed: 2025-07-13 23:14) "./exec.sh local test --t deposits" is failing: requests.exceptions.HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5005/api/v1/deposit/create
-[ ] examime all code in frontend dir, the exisitng FRONTEND BEHAVIOUR IS PERFECT but the code can use some refactoring - improve reusability, some styles are here and there - they should ALL be contrally managed
+[x] examime all code in frontend dir, the exisitng FRONTEND BEHAVIOUR IS PERFECT but the code can use some refactoring - improve reusability, some styles are here and there - they should ALL be contrally managed
 [ ] rewrite CLAUDE.md to reflect the latest changes, stress 1. reusability of the code. 2. respect existing code styles. 3. centrally manage sql (backend), components and components styles (frontend) 

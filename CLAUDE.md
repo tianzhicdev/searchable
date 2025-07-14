@@ -2,29 +2,56 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🚨 CRITICAL DEVELOPER INSTRUCTIONS - Added 2025-01-06
+## 🚨 CRITICAL DEVELOPER INSTRUCTIONS - Updated 2025-01-14
+
+### Core Development Principles
+
+#### 1. **CODE REUSABILITY IS PARAMOUNT**
+- **ALWAYS check for existing implementations** before writing new code
+- **Reuse existing components, utilities, and patterns** - NEVER duplicate functionality
+- **Extract common logic** into shared utilities/components when modifying code
+- **DRY (Don't Repeat Yourself)** - If you find yourself writing similar code twice, create a reusable function/component
+
+#### 2. **RESPECT EXISTING CODE STYLES**
+- **MANDATORY: Study existing code patterns** before implementing anything new
+- **Match the exact style** of surrounding code (indentation, naming, structure)
+- **Use existing libraries and utilities** - check package.json/requirements.txt first
+- **Follow established patterns** for similar functionality elsewhere in codebase
+
+#### 3. **CENTRALIZED MANAGEMENT**
+- **Backend SQL**: ALL database queries MUST go through `api/common/data_helpers.py`
+  - NEVER write raw SQL in route handlers
+  - Add new database operations as functions in data_helpers.py
+  - Reuse existing query patterns and helper functions
+- **Frontend Components**: Use and extend components in `frontend/src/components/`
+  - Check for existing components before creating new ones
+  - Extend existing components rather than duplicating
+  - Keep component styles co-located with components
+- **Shared Styles**: Use Material-UI theme and existing style patterns
+  - Leverage existing makeStyles patterns
+  - Use theme variables for consistency
 
 ### Workflow Requirements
 1. **No confirmation needed** - Execute code changes, deployments, and testing immediately
-2. **Always verify changes** - Restart services after changes to catch compile/runtime errors 
-5. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
-6. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them - leave them running so developer can manually verify
-7. **currency consistency** we only use 'usd' in the databse and USDT for displaying on the UI.
-8. **use existing style** before implementing any code, always scan the codebase to use existing patterns and styles.
+2. **Always verify changes** - Restart services after changes to catch compile/runtime errors
+3. **Study before implementing** - ALWAYS scan relevant parts of codebase first
+4. **Mock data required** - For any UI features, add mock data and verify with `REACT_APP_MOCK_MODE=true npm run start`
+5. **Keep services running** - DO NOT stop npm run start servers or Docker containers after starting them
+6. **Currency consistency** - Only use 'usd' in database; USDT for UI display only
 
 ### Development Flow Pattern
 ```
-Make Changes → Restart Services → Verify Working → Fix Errors → say "Task completed at [timestamp]"
+Study Existing Code → Find Reusable Components → Implement Using Existing Patterns → Verify → Fix Errors → say "Task completed at [timestamp]"
 ```
 
 ## Quick Start Commands
 
 ### Frontend Development and Testing
- - run `REACT_APP_MOCK_MODE=true npm run start` to have mock ui rendered on localhost:3000
+- Run `REACT_APP_MOCK_MODE=true npm run start` to have mock UI rendered on localhost:3000
 
 ### Backend Development and Testing
 - Backend Deployment: `./exec.sh remote deploy-all` 
-- Local Deployment: `./exec.sh local deploy-all` (use this instead of docker-compose commands) to start backend on localhost:5005 and frontend at localhost:80 or 443
+- Local Deployment: `./exec.sh local deploy-all` (use instead of docker-compose)
 - Integration Tests: `cd integration-tests && ./run_comprehensive_tests.sh`
   - For local testing: Update `integration-tests/.env` to set `BASE_URL=http://localhost:5005`
 
@@ -39,11 +66,14 @@ Searchable is a declarative framework for building information deposit and retri
 
 ## Core Development Rules
 
-1. **Use history not navigate** - React Router navigation
-2. **Button styling** - Always use `variant="contained"` for all buttons throughout the application
-3. **Mock mode for UI testing** - Always verify UI changes with mock data
-4. **Restart services after changes** - Verify functionality using `./exec.sh local deploy-all` and `cd integration-tests && ./run_comprehensive_tests.sh` before declaring success
-5. **Currency Standardization** - ALWAYS use lowercase 'usd' in the database for all currency fields. USDT is only for UI display purposes.
+1. **Code Reusability First** - Check for existing implementations before writing new code
+2. **Centralized SQL Management** - ALL database operations through `data_helpers.py`
+3. **Component Reuse** - Use existing components from `frontend/src/components/`
+4. **Consistent Styling** - Follow existing Material-UI patterns and theme
+5. **Use history not navigate** - React Router navigation
+6. **Button styling** - Always use `variant="contained"` for all buttons
+7. **Mock mode for UI testing** - Always verify UI changes with mock data
+8. **Currency Standardization** - lowercase 'usd' in database, USDT for UI display
 
 ## Architecture Overview
 
@@ -52,15 +82,50 @@ Searchable is a declarative framework for building information deposit and retri
 - `mocks/`: Mock backend for UI development
 - `routes/`: React Router configuration  
 - `views/`: Main application pages
-- `components/`: Reusable UI components
+- `components/`: **REUSABLE UI COMPONENTS - CHECK HERE FIRST**
 - `store/`: Redux state management
+- `utils/`: Shared utilities and helpers
 
 ### Backend (`api-server-flask/api/`)
-- `common/`: Shared utilities (config, models, data helpers)
-- `routes/`: API endpoints (auth, payment, searchable, files, withdrawals)
+- `common/`: **CENTRALIZED SHARED UTILITIES**
+  - `config.py`: Database and app configuration
+  - `models.py`: SQLAlchemy database models
+  - `data_helpers.py`: **ALL DATABASE OPERATIONS GO HERE**
+  - `payment_helpers.py`: Payment business logic
+- `routes/`: API endpoints (use data_helpers for DB operations)
 
 ### Database
 Normalized tables: invoice, payment, withdrawal, rating, invoice_note
+
+## Code Reusability Examples
+
+### Backend Example - Adding New Database Query
+```python
+# WRONG - Don't write SQL in routes
+@app.route('/api/users/<user_id>/stats')
+def get_user_stats(user_id):
+    result = db.execute("SELECT COUNT(*) FROM searchables WHERE user_id = ?", user_id)
+    
+# CORRECT - Add to data_helpers.py and reuse
+# In data_helpers.py:
+def get_user_searchable_count(user_id):
+    return Searchable.query.filter_by(user_id=user_id).count()
+
+# In route:
+@app.route('/api/users/<user_id>/stats')
+def get_user_stats(user_id):
+    count = get_user_searchable_count(user_id)
+```
+
+### Frontend Example - Creating New Component
+```javascript
+// WRONG - Don't create new button component
+const MyCustomButton = () => <button style={{...}}>Click</button>
+
+// CORRECT - Reuse existing components
+import { Button } from '@mui/material';
+<Button variant="contained">Click</Button>
+```
 
 ## Additional Context (For Reference Only)
 
@@ -97,3 +162,14 @@ Normalized tables: invoice, payment, withdrawal, rating, invoice_note
   - `searchable.py`: Core searchable CRUD operations
   - `files.py`: File upload/download operations
   - `withdrawals.py`: USDT and Lightning withdrawals
+
+</details>
+
+## Remember: Reuse > Recreate
+
+Before implementing ANY feature:
+1. Search for existing implementations
+2. Check data_helpers.py for similar database operations  
+3. Browse components/ for reusable UI elements
+4. Follow the exact patterns you find
+5. Only create new code when absolutely necessary
