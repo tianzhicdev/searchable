@@ -282,7 +282,7 @@ const Dashboard = () => {
       </Grid>
       
       {/* AI Content Status Section */}
-      <Grid item xs={12} sx={{ 
+      {/* <Grid item xs={12} sx={{ 
         p: theme.spacing(0.5), 
         mt: theme.spacing(spacing.element.md),
         [theme.breakpoints.down('sm')]: { 
@@ -291,7 +291,7 @@ const Dashboard = () => {
         } 
       }}>
         <AIContentStatus />
-      </Grid>
+      </Grid> */}
       
       {/* Invoice History Section with view parameter */}
       <Grid item xs={12} sx={{ 
