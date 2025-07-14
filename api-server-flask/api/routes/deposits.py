@@ -16,6 +16,7 @@ from psycopg2.extras import Json
 from .. import rest_api
 from .auth import token_required
 from ..common.database import get_db_connection, execute_sql
+from ..common.database_context import database_cursor, database_transaction, db
 from ..common.logging_config import setup_logger
 
 # Set up logger
@@ -78,135 +79,137 @@ class CreateDeposit(Resource):
             
             # Create deposit record first to get the ID
             logger.info(f"Creating deposit record for user {current_user.id}")
-            conn = get_db_connection()
-            cur = conn.cursor()
             
             try:
-                # Calculate expiration (23 hours from now for USDT, not used for Stripe)
-                expires_at = datetime.now(timezone.utc) + timedelta(hours=23)
-                
-                # First, create deposit record with temporary external_id to get the ID
-                initial_metadata = {'type': deposit_type}
-                execute_sql(cur, """
-                    INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata, type)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    RETURNING id, created_at
-                """, params=(
-                    current_user.id,
-                    amount,
-                    'usd',  # Always use lowercase 'usd'
-                    f'temp_{current_user.id}_{datetime.now().timestamp()}',  # Temporary unique ID
-                    'pending',
-                    Json(initial_metadata),
-                    deposit_type  # Set the type field directly
-                ), commit=True, connection=conn)
-                
-                result = cur.fetchone()
-                deposit_id = result[0]
-                created_at = result[1]
-                
-                logger.info(f"Created deposit record {deposit_id} for user {current_user.id}")
-                
-                if deposit_type == 'stripe':
-                    # Handle Stripe deposit
-                    try:
-                        # Calculate fees
-                        stripe_fee = float(amount) * 0.035  # 3.5% fee
-                        total_charge = float(amount) + stripe_fee
-                        
-                        # Create Stripe checkout session
-                        session = stripe.checkout.Session.create(
-                            line_items=[{
-                                'price_data': {
-                                    'currency': 'usd',
-                                    'product_data': {
-                                        'name': 'Account Balance Refill',
-                                        'description': f'Add ${amount} to your account balance'
-                                    },
-                                    'unit_amount': int(total_charge * 100),  # Stripe uses cents
-                                },
-                                'quantity': 1,
-                            }],
-                            mode='payment',
-                            success_url=success_url,
-                            cancel_url=cancel_url,
-                            metadata={
-                                'deposit_id': str(deposit_id),
-                                'user_id': str(current_user.id),
-                                'type': 'deposit'
-                            }
-                        )
-                        
-                        # Prepare metadata
-                        metadata = {
-                            'type': 'stripe',
-                            'stripe_session_id': session.id,
-                            'stripe_fee': stripe_fee,
-                            'total_charged': total_charge,
-                            'deposit_id': deposit_id,
-                            'payment_intent': session.payment_intent,
-                            'created_at': datetime.now(timezone.utc).isoformat()
-                        }
-                        
-                        # Update deposit record with Stripe session info
-                        execute_sql(cur, """
-                            UPDATE deposit 
-                            SET external_id = %s, metadata = %s
-                            WHERE id = %s
-                        """, params=(
-                            session.id,
-                            Json(metadata),
-                            deposit_id
-                        ), commit=True, connection=conn)
-                        
-                        logger.info(f"Created Stripe deposit {deposit_id} for user {current_user.id} with session {session.id}")
-                        
-                        # Return Stripe checkout URL
-                        return {
-                            'deposit_id': deposit_id,
-                            'url': session.url,
-                            'session_id': session.id,
-                            'amount': str(amount),
-                            'stripe_fee': stripe_fee,
-                            'total_charge': total_charge,
-                            'currency': 'usd',
-                            'status': 'pending',
-                            'created_at': created_at.isoformat()
-                        }, 200
-                        
-                    except stripe.error.StripeError as e:
-                        logger.error(f"Stripe error: {str(e)}")
-                        # Delete the deposit record
-                        execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,), commit=True, connection=conn)
-                        return {"error": "Failed to create payment session"}, 500
-                        
-                else:
-                    # Handle USDT deposit (existing logic)
-                    try:
-                        usdt_response = requests.post(
-                            f"{USDT_SERVICE_URL}/zero-balance-address",
-                            json={'deposit_id': deposit_id},
-                            timeout=10
-                        )
-                        
-                        if usdt_response.status_code != 200:
-                            logger.error(f"USDT service error: {usdt_response.text}")
-                            # Delete the deposit record
-                            execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,), commit=True, connection=conn)
-                            return {"error": "Failed to generate deposit address"}, 500
-                        
-                        usdt_data = usdt_response.json()
-                        eth_address = usdt_data['address']
-                        address_index = usdt_data['index']
-                        
-                    except Exception as e:
-                        logger.error(f"Failed to contact USDT service: {str(e)}")
-                        # Delete the deposit record
-                        execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,), commit=True, connection=conn)
-                        return {"error": "Deposit service temporarily unavailable"}, 503
+                with database_transaction() as (cur, conn):
+                    # Calculate expiration (23 hours from now for USDT, not used for Stripe)
+                    expires_at = datetime.now(timezone.utc) + timedelta(hours=23)
                     
-                    # Prepare metadata for USDT
-                    metadata = {
+                    # First, create deposit record with temporary external_id to get the ID
+                    initial_metadata = {'type': deposit_type}
+                    execute_sql(cur, """
+                        INSERT INTO deposit (user_id, amount, currency, external_id, status, metadata, type)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id, created_at
+                    """, params=(
+                        current_user.id,
+                        amount,
+                        'usd',  # Always use lowercase 'usd'
+                        f'temp_{current_user.id}_{datetime.now().timestamp()}',  # Temporary unique ID
+                        'pending',
+                        Json(initial_metadata),
+                        deposit_type  # Set the type field directly
+                    ))
+                    
+                    result = cur.fetchone()
+                    deposit_id = result[0]
+                    created_at = result[1]
+                    
+                    logger.info(f"Created deposit record {deposit_id} for user {current_user.id}")
+                
+                    if deposit_type == 'stripe':
+                        # Handle Stripe deposit
+                        try:
+                            # Calculate fees
+                            stripe_fee = float(amount) * 0.035  # 3.5% fee
+                            total_charge = float(amount) + stripe_fee
+                        
+                            # Create Stripe checkout session
+                            session = stripe.checkout.Session.create(
+                                line_items=[{
+                                    'price_data': {
+                                        'currency': 'usd',
+                                        'product_data': {
+                                            'name': 'Account Balance Refill',
+                                            'description': f'Add ${amount} to your account balance'
+                                        },
+                                        'unit_amount': int(total_charge * 100),  # Stripe uses cents
+                                    },
+                                    'quantity': 1,
+                                }],
+                                mode='payment',
+                                success_url=success_url,
+                                cancel_url=cancel_url,
+                                metadata={
+                                    'deposit_id': str(deposit_id),
+                                    'user_id': str(current_user.id),
+                                    'type': 'deposit'
+                                }
+                            )
+                            
+                            # Prepare metadata
+                            metadata = {
+                                'type': 'stripe',
+                                'stripe_session_id': session.id,
+                                'stripe_fee': stripe_fee,
+                                'total_charged': total_charge,
+                                'deposit_id': deposit_id,
+                                'payment_intent': session.payment_intent,
+                                'created_at': datetime.now(timezone.utc).isoformat()
+                            }
+                            
+                            # Update deposit record with Stripe session info
+                            execute_sql(cur, """
+                                UPDATE deposit 
+                                SET external_id = %s, metadata = %s
+                                WHERE id = %s
+                            """, params=(
+                                session.id,
+                                Json(metadata),
+                                deposit_id
+                            ))
+                            
+                            logger.info(f"Created Stripe deposit {deposit_id} for user {current_user.id} with session {session.id}")
+                            
+                            # Return Stripe checkout URL
+                            return {
+                                'deposit_id': deposit_id,
+                                'url': session.url,
+                                'session_id': session.id,
+                                'amount': str(amount),
+                                'stripe_fee': stripe_fee,
+                                'total_charge': total_charge,
+                                'currency': 'usd',
+                                'status': 'pending',
+                                'created_at': created_at.isoformat()
+                            }, 200
+                        
+                        except stripe.error.StripeError as e:
+                            logger.error(f"Stripe error: {str(e)}")
+                            # Delete the deposit record
+                            execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,))
+                            # Let the transaction roll back
+                            raise Exception("Failed to create payment session")
+                            
+                    else:
+                        # Handle USDT deposit (existing logic)
+                        try:
+                            usdt_response = requests.post(
+                                f"{USDT_SERVICE_URL}/zero-balance-address",
+                                json={'deposit_id': deposit_id},
+                                timeout=10
+                            )
+                            
+                            if usdt_response.status_code != 200:
+                                logger.error(f"USDT service error: {usdt_response.text}")
+                                # Delete the deposit record
+                                execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,))
+                                # Let the transaction roll back
+                                raise Exception("Failed to generate deposit address")
+                            
+                            usdt_data = usdt_response.json()
+                            eth_address = usdt_data['address']
+                            address_index = usdt_data['index']
+                        
+                        except Exception as e:
+                            logger.error(f"Failed to contact USDT service: {str(e)}")
+                            # Delete the deposit record
+                            execute_sql(cur, "DELETE FROM deposit WHERE id = %s", params=(deposit_id,))
+                            # Let the transaction roll back
+                            raise Exception("Deposit service temporarily unavailable")
+                        
+                        # Prepare metadata for USDT
+                        metadata = {
                         'type': 'usdt',
                         'address_index': address_index,
                         'eth_address': eth_address,
@@ -217,33 +220,40 @@ class CreateDeposit(Resource):
                         'confirmations': 0
                     }
                     
-                    # Update deposit record with actual address
-                    execute_sql(cur, """
-                        UPDATE deposit 
-                        SET external_id = %s, metadata = %s
-                        WHERE id = %s
-                    """, params=(
-                        eth_address,
-                        Json(metadata),
-                        deposit_id
-                    ), commit=True, connection=conn)
-                    
-                    logger.info(f"Created USDT deposit {deposit_id} for user {current_user.id} with address {eth_address}")
-                    
-                    # Return USDT deposit information
-                    return {
-                        'deposit_id': deposit_id,
-                        'address': eth_address,
-                        'amount': str(amount),
-                        'currency': 'USDT',
-                        'status': 'pending',
-                        'expires_at': expires_at.isoformat(),
-                        'created_at': created_at.isoformat()
-                    }, 200
+                        # Update deposit record with actual address
+                        execute_sql(cur, """
+                            UPDATE deposit 
+                            SET external_id = %s, metadata = %s
+                            WHERE id = %s
+                        """, params=(
+                            eth_address,
+                            Json(metadata),
+                            deposit_id
+                        ))
+                        
+                        logger.info(f"Created USDT deposit {deposit_id} for user {current_user.id} with address {eth_address}")
+                        
+                        # Return USDT deposit information
+                        return {
+                            'deposit_id': deposit_id,
+                            'address': eth_address,
+                            'amount': str(amount),
+                            'currency': 'USDT',
+                            'status': 'pending',
+                            'expires_at': expires_at.isoformat(),
+                            'created_at': created_at.isoformat()
+                        }, 200
                 
-            finally:
-                cur.close()
-                conn.close()
+            except stripe.error.StripeError:
+                return {"error": "Failed to create payment session"}, 500
+            except Exception as e:
+                if "temporarily unavailable" in str(e):
+                    return {"error": "Deposit service temporarily unavailable"}, 503
+                elif "generate deposit address" in str(e):
+                    return {"error": "Failed to generate deposit address"}, 500
+                else:
+                    logger.error(f"Error creating deposit: {str(e)}")
+                    return {"error": "Failed to create deposit"}, 500
                 
         except Exception as e:
             logger.error(f"Error creating deposit: {str(e)}")
@@ -257,45 +267,36 @@ class DepositStatus(Resource):
     def get(self, current_user, deposit_id):
         """Get status of a specific deposit"""
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
+            # Get deposit record
+            result = db.fetch_one("""
+                SELECT id, amount, currency, status, metadata, created_at, tx_hash, type
+                FROM deposit
+                WHERE id = %s AND user_id = %s
+            """, (deposit_id, current_user.id))
             
-            try:
-                # Get deposit record
-                execute_sql(cur, """
-                    SELECT id, amount, currency, status, metadata, created_at, tx_hash, type
-                    FROM deposit
-                    WHERE id = %s AND user_id = %s
-                """, params=(deposit_id, current_user.id))
+            if not result:
+                return {"error": "Deposit not found"}, 404
+            
+            dep_id, amount, currency, status, metadata, created_at, tx_hash, deposit_type = result
+            
+            # Extract address from metadata
+            eth_address = metadata.get('eth_address', '')
+            expires_at = metadata.get('expires_at', '')
+            
+            response = {
+                'deposit_id': dep_id,
+                'address': eth_address,
+                'amount': str(amount),
+                'status': status,
+                'type': deposit_type,
+                'expires_at': expires_at,
+                'created_at': created_at.isoformat()
+            }
+            
+            if tx_hash:
+                response['tx_hash'] = tx_hash
                 
-                result = cur.fetchone()
-                if not result:
-                    return {"error": "Deposit not found"}, 404
-                
-                dep_id, amount, currency, status, metadata, created_at, tx_hash, deposit_type = result
-                
-                # Extract address from metadata
-                eth_address = metadata.get('eth_address', '')
-                expires_at = metadata.get('expires_at', '')
-                
-                response = {
-                    'deposit_id': dep_id,
-                    'address': eth_address,
-                    'amount': str(amount),
-                    'status': status,
-                    'type': deposit_type,
-                    'expires_at': expires_at,
-                    'created_at': created_at.isoformat()
-                }
-                
-                if tx_hash:
-                    response['tx_hash'] = tx_hash
-                    
-                return response, 200
-                
-            finally:
-                cur.close()
-                conn.close()
+            return response, 200
                 
         except Exception as e:
             logger.error(f"Error getting deposit status: {str(e)}")
@@ -318,10 +319,7 @@ class ListDeposits(Resource):
                 
             offset = (page - 1) * per_page
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            try:
+            with database_cursor() as (cur, conn):
                 # Get total count
                 execute_sql(cur, """
                     SELECT COUNT(*) FROM deposit WHERE user_id = %s
@@ -371,10 +369,6 @@ class ListDeposits(Resource):
                     'per_page': per_page,
                     'total_pages': (total_count + per_page - 1) // per_page
                 }, 200
-                
-            finally:
-                cur.close()
-                conn.close()
                 
         except Exception as e:
             logger.error(f"Error listing deposits: {str(e)}")

@@ -575,9 +575,6 @@ def get_balance_by_currency(user_id):
     Get user balance from payments and withdrawals using new table structure
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         logger.info(f"Calculating balance for user_id: {user_id}")
         
         # Single query to calculate the entire balance
@@ -648,24 +645,22 @@ def get_balance_by_currency(user_id):
         FROM balance_sources
         """
         
-        execute_sql(cur, query, params=(
-            user_id,  # for sales
-            PaymentStatus.COMPLETE.value,
-            user_id,  # for rewards
-            user_id,  # for deposits
-            user_id,  # for withdrawals
-            PaymentStatus.COMPLETE.value,
-            PaymentStatus.PENDING.value,
-            PaymentStatus.DELAYED.value,
-            user_id,  # for balance payments (buyer_id)
-            PaymentStatus.COMPLETE.value  # for balance payments status
-        ))
-        
-        result = cur.fetchone()
-        total_balance = float(result[0]) if result and result[0] else 0.0
-        
-        cur.close()
-        conn.close()
+        with database_cursor() as (cur, conn):
+            execute_sql(cur, query, params=(
+                user_id,  # for sales
+                PaymentStatus.COMPLETE.value,
+                user_id,  # for rewards
+                user_id,  # for deposits
+                user_id,  # for withdrawals
+                PaymentStatus.COMPLETE.value,
+                PaymentStatus.PENDING.value,
+                PaymentStatus.DELAYED.value,
+                user_id,  # for balance payments (buyer_id)
+                PaymentStatus.COMPLETE.value  # for balance payments status
+            ))
+            
+            result = cur.fetchone()
+            total_balance = float(result[0]) if result and result[0] else 0.0
         
         balance_by_currency = {
             'usd': total_balance
@@ -677,20 +672,12 @@ def get_balance_by_currency(user_id):
     except Exception as e:
         logger.error(f"Error calculating balance for user {user_id}: {str(e)}")
         raise e
-    finally:
-        if 'cur' in locals() and cur:
-            cur.close()
-        if 'conn' in locals() and conn:
-            conn.close()
 
 def get_ratings(invoice_id=None, user_id=None):
     """
     Retrieves ratings from the rating table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         conditions = []
         params = []
         
@@ -711,10 +698,10 @@ def get_ratings(invoice_id=None, user_id=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query, params=params if params else None)
+        rows = db.fetch_all(query, tuple(params) if params else None)
         
         results = []
-        for row in cur.fetchall():
+        for row in rows:
             rating = {
                 'id': row[0],
                 'invoice_id': row[1],
@@ -726,8 +713,6 @@ def get_ratings(invoice_id=None, user_id=None):
             }
             results.append(rating)
         
-        cur.close()
-        conn.close()
         return results
         
     except Exception as e:
@@ -739,40 +724,35 @@ def can_user_rate_invoice(user_id, invoice_id):
     Check if a user can rate an invoice (must have completed payment and not already rated)
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Check if user has a completed payment for this invoice
-        payment_query = """
-            SELECT p.status, i.buyer_id
-            FROM payment p
-            JOIN invoice i ON p.invoice_id = i.id
-            WHERE i.id = %s
-            AND i.buyer_id = %s
-            AND p.status = %s
-        """
-        
-        execute_sql(cur, payment_query, params=(invoice_id, user_id, 'complete'))
-        payment_result = cur.fetchone()
-        
-        if not payment_result:
-            return False, "No completed payment found for this invoice"
-        
-        # Check if user has already rated this invoice
-        rating_query = """
-            SELECT id FROM rating
-            WHERE invoice_id = %s
-            AND user_id = %s
-        """
-        
-        execute_sql(cur, rating_query, params=(invoice_id, user_id))
-        rating_result = cur.fetchone()
-        
-        if rating_result:
-            return False, "You have already rated this item"
-        
-        cur.close()
-        conn.close()
+        with database_cursor() as (cur, conn):
+            # Check if user has a completed payment for this invoice
+            payment_query = """
+                SELECT p.status, i.buyer_id
+                FROM payment p
+                JOIN invoice i ON p.invoice_id = i.id
+                WHERE i.id = %s
+                AND i.buyer_id = %s
+                AND p.status = %s
+            """
+            
+            execute_sql(cur, payment_query, params=(invoice_id, user_id, 'complete'))
+            payment_result = cur.fetchone()
+            
+            if not payment_result:
+                return False, "No completed payment found for this invoice"
+            
+            # Check if user has already rated this invoice
+            rating_query = """
+                SELECT id FROM rating
+                WHERE invoice_id = %s
+                AND user_id = %s
+            """
+            
+            execute_sql(cur, rating_query, params=(invoice_id, user_id))
+            rating_result = cur.fetchone()
+            
+            if rating_result:
+                return False, "You have already rated this item"
         
         return True, "User can rate this invoice"
         
@@ -794,9 +774,6 @@ def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None)
         if not can_rate:
             raise ValueError(message)
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Set default metadata if none provided
         if metadata is None:
             metadata = {}
@@ -808,12 +785,9 @@ def create_rating(user_id, invoice_id, rating_value, review=None, metadata=None)
             RETURNING id
         """
         
-        execute_sql(cur, query, params=(invoice_id, user_id, rating_value, review, Json(metadata)))
-        rating_id = cur.fetchone()[0]
-        
-        conn.commit()
-        cur.close()
-        conn.close()
+        with database_transaction() as (cur, conn):
+            execute_sql(cur, query, params=(invoice_id, user_id, rating_value, review, Json(metadata)))
+            rating_id = cur.fetchone()[0]
         
         logger.info(f"Rating created with ID: {rating_id}")
         return {
@@ -834,9 +808,6 @@ def get_invoice_notes(invoice_id):
     Get all notes for a specific invoice
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         query = """
             SELECT n.id, n.invoice_id, n.user_id, n.buyer_seller, n.content, 
                    n.metadata, n.created_at, u.username
@@ -846,10 +817,10 @@ def get_invoice_notes(invoice_id):
             ORDER BY n.created_at ASC
         """
         
-        execute_sql(cur, query, params=(invoice_id,))
+        rows = db.fetch_all(query, (invoice_id,))
         notes = []
         
-        for row in cur.fetchall():
+        for row in rows:
             metadata = row[5] if row[5] else {}
             note = {
                 'note_id': row[0],  # Use note_id as expected by tests
@@ -868,9 +839,6 @@ def get_invoice_notes(invoice_id):
             }
             notes.append(note)
         
-        cur.close()
-        conn.close()
-        
         return notes
         
     except Exception as e:
@@ -882,9 +850,6 @@ def create_invoice_note(invoice_id, user_id, content, buyer_seller, metadata=Non
     Create a new note for an invoice
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         if metadata is None:
             metadata = {}
         
@@ -894,12 +859,9 @@ def create_invoice_note(invoice_id, user_id, content, buyer_seller, metadata=Non
             RETURNING id
         """
         
-        execute_sql(cur, query, params=(invoice_id, user_id, buyer_seller, content, Json(metadata)))
-        note_id = cur.fetchone()[0]
-        
-        conn.commit()
-        cur.close()
-        conn.close()
+        with database_transaction() as (cur, conn):
+            execute_sql(cur, query, params=(invoice_id, user_id, buyer_seller, content, Json(metadata)))
+            note_id = cur.fetchone()[0]
         
         logger.info(f"Invoice note created with ID: {note_id}")
         return {
@@ -920,74 +882,69 @@ def get_invoices_for_searchable(searchable_id, user_id, user_role='buyer'):
     Get invoices for a searchable item filtered by user role
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        if user_role == 'seller':
-            # Sellers see all invoices for their searchable items
-            query = """
-                SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
-                       i.fee, i.currency, i.type, i.external_id, i.created_at, 
-                       i.metadata, p.status as payment_status, p.created_at as payment_date,
-                       u.username as buyer_username,
-                       s.searchable_data->'payloads'->'public'->>'title' as item_title,
-                       s.type as searchable_type
-                FROM invoice i
-                LEFT JOIN payment p ON i.id = p.invoice_id
-                LEFT JOIN users u ON i.buyer_id = u.id
-                LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
-                WHERE i.searchable_id = %s
-                AND i.seller_id = %s
-                AND p.status = %s
-                ORDER BY i.created_at DESC
-            """
-            execute_sql(cur, query, params=(searchable_id, user_id, 'complete'))
-        else:
-            # Buyers see their own paid invoices and pending invoices from past 24 hours
-            query = """
-                SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
-                       i.fee, i.currency, i.type, i.external_id, i.created_at, 
-                       i.metadata, p.status as payment_status, p.created_at as payment_date,
-                       u.username as seller_username,
-                       s.searchable_data->'payloads'->'public'->>'title' as item_title,
-                       s.type as searchable_type
-                FROM invoice i
-                LEFT JOIN payment p ON i.id = p.invoice_id
-                LEFT JOIN users u ON i.seller_id = u.id
-                LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
-                WHERE i.searchable_id = %s
-                AND i.buyer_id = %s
-                AND (p.status = %s OR (p.status = %s AND i.created_at >= NOW() - INTERVAL '24 hours'))
-                ORDER BY i.created_at DESC
-            """
-            execute_sql(cur, query, params=(searchable_id, user_id, 'complete', 'pending'))
-        invoices = []
-        
-        for row in cur.fetchall():
-            invoice = {
-                'id': row[0],
-                'buyer_id': row[1],
-                'seller_id': row[2],
-                'searchable_id': row[3],
-                'amount': float(row[4]),
-                'fee': float(row[5]) if row[5] else 0,
-                'currency': row[6],
-                'type': row[7],
-                'external_id': row[8],
-                'created_at': row[9].isoformat() if row[9] else None,
-                'metadata': row[10],
-                'payment_status': row[11],
-                'payment_date': row[12].isoformat() if row[12] else None,
-                'other_party_username': row[13],  # buyer_username for seller, seller_username for buyer
-                'item_title': row[14],
-                'searchable_type': row[15]
-            }
-            invoices.append(invoice)
-        
-        cur.close()
-        conn.close()
-        
-        return invoices
+        with database_cursor() as (cur, conn):
+            if user_role == 'seller':
+                # Sellers see all invoices for their searchable items
+                query = """
+                    SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                           i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                           i.metadata, p.status as payment_status, p.created_at as payment_date,
+                           u.username as buyer_username,
+                           s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                           s.type as searchable_type
+                    FROM invoice i
+                    LEFT JOIN payment p ON i.id = p.invoice_id
+                    LEFT JOIN users u ON i.buyer_id = u.id
+                    LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
+                    WHERE i.searchable_id = %s
+                    AND i.seller_id = %s
+                    AND p.status = %s
+                    ORDER BY i.created_at DESC
+                """
+                execute_sql(cur, query, params=(searchable_id, user_id, 'complete'))
+            else:
+                # Buyers see their own paid invoices and pending invoices from past 24 hours
+                query = """
+                    SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
+                           i.fee, i.currency, i.type, i.external_id, i.created_at, 
+                           i.metadata, p.status as payment_status, p.created_at as payment_date,
+                           u.username as seller_username,
+                           s.searchable_data->'payloads'->'public'->>'title' as item_title,
+                           s.type as searchable_type
+                    FROM invoice i
+                    LEFT JOIN payment p ON i.id = p.invoice_id
+                    LEFT JOIN users u ON i.seller_id = u.id
+                    LEFT JOIN searchables s ON i.searchable_id = s.searchable_id
+                    WHERE i.searchable_id = %s
+                    AND i.buyer_id = %s
+                    AND (p.status = %s OR (p.status = %s AND i.created_at >= NOW() - INTERVAL '24 hours'))
+                    ORDER BY i.created_at DESC
+                """
+                execute_sql(cur, query, params=(searchable_id, user_id, 'complete', 'pending'))
+            invoices = []
+            
+            for row in cur.fetchall():
+                invoice = {
+                    'id': row[0],
+                    'buyer_id': row[1],
+                    'seller_id': row[2],
+                    'searchable_id': row[3],
+                    'amount': float(row[4]),
+                    'fee': float(row[5]) if row[5] else 0,
+                    'currency': row[6],
+                    'type': row[7],
+                    'external_id': row[8],
+                    'created_at': row[9].isoformat() if row[9] else None,
+                    'metadata': row[10],
+                    'payment_status': row[11],
+                    'payment_date': row[12].isoformat() if row[12] else None,
+                    'other_party_username': row[13],  # buyer_username for seller, seller_username for buyer
+                    'item_title': row[14],
+                    'searchable_type': row[15]
+                }
+                invoices.append(invoice)
+            
+            return invoices
         
     except Exception as e:
         logger.error(f"Error retrieving invoices for searchable: {str(e)}")
@@ -998,9 +955,6 @@ def get_user_all_invoices(user_id):
     Get all invoices for a user (both as buyer and seller)
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Get invoices where user is buyer
         buyer_query = """
             SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, 
@@ -1041,10 +995,10 @@ def get_user_all_invoices(user_id):
             ORDER BY payment_date DESC
         """
         
-        execute_sql(cur, combined_query, params=(user_id, 'complete', user_id, 'complete'))
+        rows = db.fetch_all(combined_query, (user_id, 'complete', user_id, 'complete'))
         invoices = []
         
-        for row in cur.fetchall():
+        for row in rows:
             invoice = {
                 'id': row[0],
                 'buyer_id': row[1],
@@ -1066,9 +1020,6 @@ def get_user_all_invoices(user_id):
             }
             invoices.append(invoice)
         
-        cur.close()
-        conn.close()
-        
         return invoices
         
     except Exception as e:
@@ -1086,20 +1037,12 @@ def get_user_profile(user_id):
         dict: The user profile data or None if not found
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        execute_sql(cur, """
+        result = db.fetch_one("""
             SELECT id, user_id, username, profile_image_url, introduction, 
                    metadata, created_at, updated_at
             FROM user_profile
             WHERE user_id = %s
-        """, params=(user_id,))
-        
-        result = cur.fetchone()
-        
-        cur.close()
-        conn.close()
+        """, (user_id,))
         
         if not result:
             return None
@@ -1133,35 +1076,30 @@ def create_user_profile(user_id, username, profile_image_url=None, introduction=
         dict: The created user profile data or None if failed
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         metadata = metadata or {}
         
-        execute_sql(cur, """
-            INSERT INTO user_profile (user_id, username, profile_image_url, introduction, metadata)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, user_id, username, profile_image_url, introduction, 
-                      metadata, created_at, updated_at
-        """, params=(user_id, username, profile_image_url, introduction, Json(metadata)), 
-        commit=True, connection=conn)
-        
-        result = cur.fetchone()
-        
-        profile = {
-            'id': result[0],
-            'user_id': result[1],
-            'username': result[2],
-            'profile_image_url': result[3],
-            'introduction': result[4],
-            'metadata': result[5],
-            'created_at': result[6].isoformat() if result[6] else None,
-            'updated_at': result[7].isoformat() if result[7] else None
-        }
-        
-        cur.close()
-        conn.close()
-        return profile
+        with database_transaction() as (cur, conn):
+            execute_sql(cur, """
+                INSERT INTO user_profile (user_id, username, profile_image_url, introduction, metadata)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id, user_id, username, profile_image_url, introduction, 
+                          metadata, created_at, updated_at
+            """, params=(user_id, username, profile_image_url, introduction, Json(metadata)))
+            
+            result = cur.fetchone()
+            
+            profile = {
+                'id': result[0],
+                'user_id': result[1],
+                'username': result[2],
+                'profile_image_url': result[3],
+                'introduction': result[4],
+                'metadata': result[5],
+                'created_at': result[6].isoformat() if result[6] else None,
+                'updated_at': result[7].isoformat() if result[7] else None
+            }
+            
+            return profile
         
     except Exception as e:
         logger.error(f"Error creating user profile: {str(e)}")
@@ -1182,9 +1120,6 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
         dict: The updated user profile data or None if failed
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Build dynamic update query based on provided fields
         update_fields = []
         params = []
@@ -1210,8 +1145,6 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
         
         if not update_fields:
             # No fields to update
-            cur.close()
-            conn.close()
             return get_user_profile(user_id)
         
         query = f"""
@@ -1222,29 +1155,26 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
                       metadata, created_at, updated_at
         """
         
-        execute_sql(cur, query, params=params, commit=True, connection=conn)
-        
-        result = cur.fetchone()
-        
-        if not result:
-            cur.close()
-            conn.close()
-            return None
+        with database_transaction() as (cur, conn):
+            execute_sql(cur, query, params=params)
             
-        profile = {
-            'id': result[0],
-            'user_id': result[1],
-            'username': result[2],
-            'profile_image_url': result[3],
-            'introduction': result[4],
-            'metadata': result[5],
-            'created_at': result[6].isoformat() if result[6] else None,
-            'updated_at': result[7].isoformat() if result[7] else None
-        }
-        
-        cur.close()
-        conn.close()
-        return profile
+            result = cur.fetchone()
+            
+            if not result:
+                return None
+                
+            profile = {
+                'id': result[0],
+                'user_id': result[1],
+                'username': result[2],
+                'profile_image_url': result[3],
+                'introduction': result[4],
+                'metadata': result[5],
+                'created_at': result[6].isoformat() if result[6] else None,
+                'updated_at': result[7].isoformat() if result[7] else None
+            }
+            
+            return profile
         
     except Exception as e:
         logger.error(f"Error updating user profile: {str(e)}")
@@ -1255,9 +1185,6 @@ def get_rewards(user_id=None):
     Retrieves rewards from the rewards table
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         conditions = []
         params = []
         
@@ -1274,10 +1201,10 @@ def get_rewards(user_id=None):
             ORDER BY created_at DESC
         """
         
-        execute_sql(cur, query, params=params if params else None)
+        rows = db.fetch_all(query, tuple(params) if params else ())
         
         results = []
-        for row in cur.fetchall():
+        for row in rows:
             reward = {
                 'id': row[0],
                 'amount': float(row[1]),
@@ -1288,8 +1215,6 @@ def get_rewards(user_id=None):
             }
             results.append(reward)
         
-        cur.close()
-        conn.close()
         return results
         
     except Exception as e:
@@ -1307,9 +1232,6 @@ def get_downloadable_items_by_user_id(user_id):
         list: List of downloadable items with their details
     """
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
         # Query to get all completed purchases for the user
         query = """
             SELECT 
@@ -1331,10 +1253,10 @@ def get_downloadable_items_by_user_id(user_id):
             ORDER BY p.created_at DESC
         """
         
-        execute_sql(cur, query, params=(user_id, 'complete'))
+        rows = db.fetch_all(query, (user_id, 'complete'))
         downloadable_items = []
         
-        for row in cur.fetchall():
+        for row in rows:
             invoice_id = row[0]
             searchable_id = row[1]
             amount = float(row[2])
@@ -1389,9 +1311,6 @@ def get_downloadable_items_by_user_id(user_id):
             }
             
             downloadable_items.append(item)
-        
-        cur.close()
-        conn.close()
         
         logger.info(f"Retrieved {len(downloadable_items)} downloadable items for user {user_id}")
         return downloadable_items

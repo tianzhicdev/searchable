@@ -10,6 +10,7 @@ from decimal import Decimal
 
 # Import from the new common modules
 from api.common.database import get_db_connection, execute_sql
+from api.common.database_context import database_cursor, database_transaction, db
 from api.common.data_helpers import (
     get_invoices, 
     get_payments, 
@@ -72,24 +73,20 @@ def check_invoice_payments():
         cutoff_time = datetime.now() - timedelta(hours=MAX_INVOICE_AGE_HOURS)
         
         # Get all invoices from the last 24 hours that don't have completed payments
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Query for invoices without completed payments within the time window
-        # Exclude 'balance' type invoices as they are processed instantly
-        execute_sql(cur, """
-            SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
-                   i.amount, i.currency, i.created_at, i.metadata
-            FROM invoice i 
-            LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = %s
-            WHERE i.created_at >= %s
-            AND p.id IS NULL
-            AND i.type != 'balance'
-        """, params=(PaymentStatus.COMPLETE.value, cutoff_time))
-        
-        invoices = cur.fetchall()
-        cur.close()
-        conn.close()
+        with database_cursor() as (cur, conn):
+            # Query for invoices without completed payments within the time window
+            # Exclude 'balance' type invoices as they are processed instantly
+            execute_sql(cur, """
+                SELECT i.id, i.external_id, i.type, i.searchable_id, i.buyer_id, i.seller_id,
+                       i.amount, i.currency, i.created_at, i.metadata
+                FROM invoice i 
+                LEFT JOIN payment p ON i.id = p.invoice_id AND p.status = %s
+                WHERE i.created_at >= %s
+                AND p.id IS NULL
+                AND i.type != 'balance'
+            """, params=(PaymentStatus.COMPLETE.value, cutoff_time))
+            
+            invoices = cur.fetchall()
         
         # Track processed invoices
         processed_count = 0
@@ -152,17 +149,16 @@ def process_pending_withdrawals():
     """
     logger.info("Starting withdrawal sender job")
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        execute_sql(cur, f"""
-            SELECT id, user_id, amount, currency, type, external_id, metadata
-            FROM withdrawal 
-            WHERE status = '{PaymentStatus.PENDING.value}'
-            ORDER BY created_at ASC
-            LIMIT 1
-        """) # do we need "FOR UPDATE" 
-        
-        pending_withdrawals = cur.fetchall()
+        with database_cursor() as (cur, conn):
+            execute_sql(cur, f"""
+                SELECT id, user_id, amount, currency, type, external_id, metadata
+                FROM withdrawal 
+                WHERE status = '{PaymentStatus.PENDING.value}'
+                ORDER BY created_at ASC
+                LIMIT 1
+            """) # do we need "FOR UPDATE" 
+            
+            pending_withdrawals = cur.fetchall()
         
         processed_count = 0
         
@@ -195,92 +191,87 @@ def process_pending_withdrawals():
                     response_data = response.json()
                     logger.info(f"USDT API response for withdrawal {withdrawal_id}: {response_data}")
                     
-                    if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')) and 'status' in response_data and response_data.get('status') == 'complete':
-                        # Success - got txHash, mark as 'sent'
-                        tx_hash = response_data.get('txHash')
+                    with database_transaction() as (cur, conn):
+                        if 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')) and 'status' in response_data and response_data.get('status') == 'complete':
+                            # Success - got txHash, mark as 'sent'
+                            tx_hash = response_data.get('txHash')
 
-                        # Preserve existing metadata and add new fields
-                        complete_metadata = metadata.copy()
-                        complete_metadata.update({
-                            'tx_hash': tx_hash,
-                            'complete_timestamp': int(time.time()),
-                            # Ensure important fields are preserved
-                            'address': metadata.get('address'),
-                            'original_amount': metadata.get('original_amount'),
-                            'fee_percentage': metadata.get('fee_percentage'),
-                            'amount_after_fee': metadata.get('amount_after_fee')
-                        })
-                        
-                        cur.execute("""
-                            UPDATE withdrawal 
-                            SET status = %s,
-                                external_id = %s,
-                                metadata = %s
-                            WHERE id = %s
-                        """, (PaymentStatus.COMPLETE.value, tx_hash, safe_json_dumps(complete_metadata), withdrawal_id))
-                        
-                        logger.info(f"✅ Withdrawal {withdrawal_id} sent successfully - txHash: {tx_hash}")
-                        
-                    elif 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
-                        # we should check the status code to be 5xx
-                        tx_hash = response_data.get('txHash')
-                        error = response_data.get('error', 'Unknown error')
-                        logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error} - txHash: {tx_hash}")
-                        # Preserve existing metadata and add new fields
-                        sent_metadata = metadata.copy()
-                        sent_metadata.update({
-                            'tx_hash': tx_hash,
-                            'complete_timestamp': int(time.time()),
-                            # Ensure important fields are preserved
-                            'address': metadata.get('address'),
-                            'original_amount': metadata.get('original_amount'),
-                            'fee_percentage': metadata.get('fee_percentage'),
-                            'amount_after_fee': metadata.get('amount_after_fee'),
-                            'error': error
-                        })
-                        
-                        cur.execute("""
-                            UPDATE withdrawal 
-                            SET status = %s,
-                                external_id = %s,
-                                metadata = %s
-                            WHERE id = %s
-                        """, (PaymentStatus.DELAYED.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
-                    else:
-                        # Preserve existing metadata and add error timestamp
-                        error_metadata = metadata.copy()
+                            # Preserve existing metadata and add new fields
+                            complete_metadata = metadata.copy()
+                            complete_metadata.update({
+                                'tx_hash': tx_hash,
+                                'complete_timestamp': int(time.time()),
+                                # Ensure important fields are preserved
+                                'address': metadata.get('address'),
+                                'original_amount': metadata.get('original_amount'),
+                                'fee_percentage': metadata.get('fee_percentage'),
+                                'amount_after_fee': metadata.get('amount_after_fee')
+                            })
+                            
+                            cur.execute("""
+                                UPDATE withdrawal 
+                                SET status = %s,
+                                    external_id = %s,
+                                    metadata = %s
+                                WHERE id = %s
+                            """, (PaymentStatus.COMPLETE.value, tx_hash, safe_json_dumps(complete_metadata), withdrawal_id))
+                            
+                            logger.info(f"✅ Withdrawal {withdrawal_id} sent successfully - txHash: {tx_hash}")
+                            
+                        elif 'txHash' in response_data and is_valid_tx_hash(response_data.get('txHash')):
+                            # we should check the status code to be 5xx
+                            tx_hash = response_data.get('txHash')
+                            error = response_data.get('error', 'Unknown error')
+                            logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error} - txHash: {tx_hash}")
+                            # Preserve existing metadata and add new fields
+                            sent_metadata = metadata.copy()
+                            sent_metadata.update({
+                                'tx_hash': tx_hash,
+                                'complete_timestamp': int(time.time()),
+                                # Ensure important fields are preserved
+                                'address': metadata.get('address'),
+                                'original_amount': metadata.get('original_amount'),
+                                'fee_percentage': metadata.get('fee_percentage'),
+                                'amount_after_fee': metadata.get('amount_after_fee'),
+                                'error': error
+                            })
+                            
+                            cur.execute("""
+                                UPDATE withdrawal 
+                                SET status = %s,
+                                    external_id = %s,
+                                    metadata = %s
+                                WHERE id = %s
+                            """, (PaymentStatus.DELAYED.value, tx_hash, safe_json_dumps(sent_metadata), withdrawal_id))
+                        else:
+                            # Preserve existing metadata and add error timestamp
+                            error_metadata = metadata.copy()
 
-                        error = response_data.get('error', 'Unknown error')
-                        logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error} - txHash: {tx_hash}")
-                        
-                        error_metadata.update({
-                            'error_timestamp': int(time.time()),
-                            # Ensure important fields are preserved
-                            'address': metadata.get('address'),
-                            'original_amount': metadata.get('original_amount'),
-                            'fee_percentage': metadata.get('fee_percentage'),
-                            'amount_after_fee': metadata.get('amount_after_fee'),
-                            'error': error
-                        })
-                        # todo: error should be excluded from balance calculation
-                        cur.execute("""
-                            UPDATE withdrawal 
-                            SET status = %s,
-                                metadata = %s
-                            WHERE id = %s
-                        """, (PaymentStatus.ERROR.value, safe_json_dumps(error_metadata), withdrawal_id))
+                            error = response_data.get('error', 'Unknown error')
+                            logger.error(f"❌ Withdrawal {withdrawal_id} sent but failed with error: {error}")
+                            
+                            error_metadata.update({
+                                'error_timestamp': int(time.time()),
+                                # Ensure important fields are preserved
+                                'address': metadata.get('address'),
+                                'original_amount': metadata.get('original_amount'),
+                                'fee_percentage': metadata.get('fee_percentage'),
+                                'amount_after_fee': metadata.get('amount_after_fee'),
+                                'error': error
+                            })
+                            # todo: error should be excluded from balance calculation
+                            cur.execute("""
+                                UPDATE withdrawal 
+                                SET status = %s,
+                                    metadata = %s
+                                WHERE id = %s
+                            """, (PaymentStatus.ERROR.value, safe_json_dumps(error_metadata), withdrawal_id))
                         
                 else:
                     raise Exception(f"Unsupported currency for withdrawal: {currency}")
                 
             except Exception as e:
                 logger.error(f"Error processing withdrawal {withdrawal_id}: {str(e)}")
-                
-            
-            conn.commit()
-        
-        cur.close()
-        conn.close()
         
         logger.info(f"Withdrawal sender job completed: processed {processed_count} withdrawals")
         
@@ -296,19 +287,17 @@ def check_delayed_withdrawals():
     """
     logger.info("Starting status checker job")
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        execute_sql(cur, f"""
-            SELECT id, user_id, amount, currency, metadata, external_id, status
-            FROM withdrawal 
-            WHERE status = '{PaymentStatus.DELAYED.value}'
-            AND external_id IS NOT NULL
-            ORDER BY created_at ASC
-            LIMIT 1
-        """)
-        
-        sent_withdrawals = cur.fetchall()
+        with database_cursor() as (cur, conn):
+            execute_sql(cur, f"""
+                SELECT id, user_id, amount, currency, metadata, external_id, status
+                FROM withdrawal 
+                WHERE status = '{PaymentStatus.DELAYED.value}'
+                AND external_id IS NOT NULL
+                ORDER BY created_at ASC
+                LIMIT 1
+            """)
+            
+            sent_withdrawals = cur.fetchall()
         
         checked_count = 0
         
@@ -333,54 +322,53 @@ def check_delayed_withdrawals():
                         tx_status = response.json()
                         logger.info(f"Transaction status for withdrawal {withdrawal_id}: {tx_status}")
                         
-                        if tx_status['status'] == 'complete':
-                            # Transaction confirmed and successful - preserve existing metadata
-                            updated_metadata = metadata.copy()
-                            updated_metadata.update({
-                                'tx_hash': tx_hash,
-                                'confirmed_timestamp': int(time.time()),
-                                # Ensure important fields are preserved
-                                'address': metadata.get('address'),
-                                'original_amount': metadata.get('original_amount'),
-                                'fee_percentage': metadata.get('fee_percentage'),
-                                'amount_after_fee': metadata.get('amount_after_fee')
-                            })
-                            
-                            cur.execute("""
-                                UPDATE withdrawal 
-                                SET status = %s,
-                                    metadata = %s
-                                WHERE id = %s
-                            """, (PaymentStatus.COMPLETE.value, safe_json_dumps(updated_metadata), withdrawal_id))
-                            
-                            logger.info(f"✅ Withdrawal {withdrawal_id} confirmed as complete ")
-                            
-                        elif tx_status['status'] == 'failed':
-                            # Transaction confirmed but reverted/failed - preserve existing metadata
-                            updated_metadata = metadata.copy()
-                            updated_metadata.update({
-                                'tx_hash': tx_hash,
-                                'failed_timestamp': int(time.time()),
-                                # Ensure important fields are preserved
-                                'address': metadata.get('address'),
-                                'original_amount': metadata.get('original_amount'),
-                                'fee_percentage': metadata.get('fee_percentage'),
-                                'amount_after_fee': metadata.get('amount_after_fee')
-                            })
-                            
-                            cur.execute("""
-                                UPDATE withdrawal 
-                                SET status = %s,
-                                    metadata = %s
-                                WHERE id = %s
-                            """, (PaymentStatus.FAILED.value, safe_json_dumps(updated_metadata), withdrawal_id))
-                            
-                            logger.error(f"❌ Withdrawal {withdrawal_id} failed - transaction reverted on-chain")
-                        else:
-                            # Transaction is still pending - leave as 'sent' for now
-                            logger.info(f"⏳ Withdrawal {withdrawal_id} still pending on blockchain, will check again later")
-
-                        conn.commit()
+                        with database_transaction() as (cur, conn):
+                            if tx_status['status'] == 'complete':
+                                # Transaction confirmed and successful - preserve existing metadata
+                                updated_metadata = metadata.copy()
+                                updated_metadata.update({
+                                    'tx_hash': tx_hash,
+                                    'confirmed_timestamp': int(time.time()),
+                                    # Ensure important fields are preserved
+                                    'address': metadata.get('address'),
+                                    'original_amount': metadata.get('original_amount'),
+                                    'fee_percentage': metadata.get('fee_percentage'),
+                                    'amount_after_fee': metadata.get('amount_after_fee')
+                                })
+                                
+                                cur.execute("""
+                                    UPDATE withdrawal 
+                                    SET status = %s,
+                                        metadata = %s
+                                    WHERE id = %s
+                                """, (PaymentStatus.COMPLETE.value, safe_json_dumps(updated_metadata), withdrawal_id))
+                                
+                                logger.info(f"✅ Withdrawal {withdrawal_id} confirmed as complete ")
+                                
+                            elif tx_status['status'] == 'failed':
+                                # Transaction confirmed but reverted/failed - preserve existing metadata
+                                updated_metadata = metadata.copy()
+                                updated_metadata.update({
+                                    'tx_hash': tx_hash,
+                                    'failed_timestamp': int(time.time()),
+                                    # Ensure important fields are preserved
+                                    'address': metadata.get('address'),
+                                    'original_amount': metadata.get('original_amount'),
+                                    'fee_percentage': metadata.get('fee_percentage'),
+                                    'amount_after_fee': metadata.get('amount_after_fee')
+                                })
+                                
+                                cur.execute("""
+                                    UPDATE withdrawal 
+                                    SET status = %s,
+                                        metadata = %s
+                                    WHERE id = %s
+                                """, (PaymentStatus.FAILED.value, safe_json_dumps(updated_metadata), withdrawal_id))
+                                
+                                logger.error(f"❌ Withdrawal {withdrawal_id} failed - transaction reverted on-chain")
+                            else:
+                                # Transaction is still pending - leave as 'sent' for now
+                                logger.info(f"⏳ Withdrawal {withdrawal_id} still pending on blockchain, will check again later")
 
                     else:
                         # Other error - log but keep as 'sent' for now
@@ -391,9 +379,6 @@ def check_delayed_withdrawals():
                 except Exception as e:
                     logger.error(f"Error checking sent withdrawal {withdrawal_id}: {str(e)}")
                     # Keep as 'sent' and retry later
-        
-        cur.close()
-        conn.close()
         
         logger.info(f"Status checker job completed: checked {checked_count} withdrawals")
         
@@ -430,7 +415,7 @@ def deposit_check_thread():
     """Thread function that periodically checks pending deposits"""
     while True:
         try:
-            check_pending_deposits()
+            check_deposit_confirmations()
         except Exception as e:
             logger.error(f"Error in deposit check thread: {str(e)}")
             logger.error(traceback.format_exc())
@@ -451,15 +436,12 @@ def status_checker_thread():
 
 
 
-def check_pending_deposits():
+def check_deposit_confirmations():
     """Check pending deposits for USDT balance and Stripe payment status"""
     try:
         logger.info("Checking pending deposits...")
         
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        try:
+        with database_cursor() as (cur, conn):
             # Get pending deposits that haven't expired
             # Stripe deposits don't expire like USDT deposits
             execute_sql(cur, """
@@ -475,24 +457,25 @@ def check_pending_deposits():
             
             pending_deposits = cur.fetchall()
             logger.info(f"Found {len(pending_deposits)} pending deposits to check")
+        
+        for deposit in pending_deposits:
+            time.sleep(2) # Reduced delay since we're checking both USDT and Stripe
+            deposit_id, user_id, expected_amount, metadata, created_at, external_id, deposit_type = deposit
             
-            for deposit in pending_deposits:
-                time.sleep(2) # Reduced delay since we're checking both USDT and Stripe
-                deposit_id, user_id, expected_amount, metadata, created_at, external_id, deposit_type = deposit
-                
-                try:
-                    # Handle Stripe deposits
-                    if deposit_type == 'stripe':
-                        logger.info(f"Checking Stripe deposit {deposit_id}")
+            try:
+                # Handle Stripe deposits
+                if deposit_type == 'stripe':
+                    logger.info(f"Checking Stripe deposit {deposit_id}")
+                    
+                    # Check Stripe payment status
+                    session_id = external_id
+                    if not session_id:
+                        logger.error(f"Stripe deposit {deposit_id} missing session_id")
+                        continue
                         
-                        # Check Stripe payment status
-                        session_id = external_id
-                        if not session_id:
-                            logger.error(f"Stripe deposit {deposit_id} missing session_id")
-                            continue
-                            
-                        payment_data = refresh_stripe_payment(session_id)
-                        
+                    payment_data = refresh_stripe_payment(session_id)
+                    
+                    with database_transaction() as (cur, conn):
                         if payment_data.get('status') == 'paid':
                             # Payment successful, mark deposit as complete
                             metadata['completed_at'] = datetime.utcnow().isoformat()
@@ -503,7 +486,7 @@ def check_pending_deposits():
                                 SET status = 'complete',
                                     metadata = %s
                                 WHERE id = %s
-                            """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                            """, params=(Json(metadata), deposit_id))
                             
                             logger.info(f"Stripe deposit {deposit_id} completed for ${expected_amount}")
                             
@@ -517,103 +500,109 @@ def check_pending_deposits():
                                 SET status = 'failed',
                                     metadata = %s
                                 WHERE id = %s
-                            """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
+                            """, params=(Json(metadata), deposit_id))
                             
                             logger.info(f"Stripe deposit {deposit_id} expired")
-                    
-                    # Handle USDT deposits (existing logic)
-                    else:
-                        # Check if deposit has expired (1 hour for USDT)
-                        if datetime.utcnow() - created_at.replace(tzinfo=None) > timedelta(hours=1):
-                            logger.info(f"USDT deposit {deposit_id} has expired, marking as failed")
-                            metadata['error'] = 'Deposit expired after 1 hour'
+                
+                # Handle USDT deposits (existing logic)
+                else:
+                    # Check if deposit has expired (1 hour for USDT)
+                    if datetime.utcnow() - created_at.replace(tzinfo=None) > timedelta(hours=1):
+                        logger.info(f"USDT deposit {deposit_id} has expired, marking as failed")
+                        metadata['error'] = 'Deposit expired after 1 hour'
+                        with database_transaction() as (cur, conn):
                             execute_sql(cur, """
                                 UPDATE deposit 
                                 SET status = 'failed', metadata = %s
                                 WHERE id = %s
-                            """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
-                            continue
-                        
-                        eth_address = metadata.get('eth_address')
-                        if not eth_address:
-                            logger.error(f"Deposit {deposit_id} missing eth_address in metadata")
-                            continue
-                        
-                        # Check for transactions to the deposit address
-                        logger.info(f"Checking transactions for deposit {deposit_id} at address {eth_address}")
-                        
-                        tx_response = requests.get(
-                            f"{USDT_SERVICE_URL}/transactions/{eth_address}",
-                            timeout=10
-                        )
+                            """, params=(Json(metadata), deposit_id))
+                        continue
                     
-                        if tx_response.status_code != 200:
-                            logger.error(f"Failed to check transactions for {eth_address}: {tx_response.text}")
-                            continue
-                        
-                        tx_data = tx_response.json()
-                        transactions = tx_data.get('transactions', [])
-                        
-                        if not transactions:
-                            # No transactions found, just update checked_at
-                            metadata['checked_at'] = datetime.utcnow().isoformat()
+                    eth_address = metadata.get('eth_address')
+                    if not eth_address:
+                        logger.error(f"Deposit {deposit_id} missing eth_address in metadata")
+                        continue
+                    
+                    # Check for transactions to the deposit address
+                    logger.info(f"Checking transactions for deposit {deposit_id} at address {eth_address}")
+                    
+                    tx_response = requests.get(
+                        f"{USDT_SERVICE_URL}/transactions/{eth_address}",
+                        timeout=10
+                    )
+                
+                    if tx_response.status_code != 200:
+                        logger.error(f"Failed to check transactions for {eth_address}: {tx_response.text}")
+                        continue
+                    
+                    tx_data = tx_response.json()
+                    transactions = tx_data.get('transactions', [])
+                    
+                    if not transactions:
+                        # No transactions found, just update checked_at
+                        metadata['checked_at'] = datetime.utcnow().isoformat()
+                        with database_transaction() as (cur, conn):
                             execute_sql(cur, """
                                 UPDATE deposit 
                                 SET metadata = %s
                                 WHERE id = %s
-                            """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
-                            continue
+                            """, params=(Json(metadata), deposit_id))
+                        continue
+                
+                    # Sort transactions by block number descending to get the latest
+                    transactions.sort(key=lambda x: int(x.get('blockNumber', 0)), reverse=True)
+                    latest_tx = transactions[0]
                     
-                        # Sort transactions by block number descending to get the latest
-                        transactions.sort(key=lambda x: int(x.get('blockNumber', 0)), reverse=True)
-                        latest_tx = transactions[0]
-                        
-                        tx_hash = latest_tx['txHash']
-                        tx_value_wei = int(latest_tx['value'])
+                    tx_hash = latest_tx['txHash']
+                    tx_value_wei = int(latest_tx['value'])
+                
+                    # Check the full transaction status to get accurate amount
+                    try:
+                        tx_status_response = requests.get(
+                            f"{USDT_SERVICE_URL}/tx-status/{tx_hash}",
+                            timeout=10
+                        )
+                        if tx_status_response.status_code == 200:
+                            tx_status_data = tx_status_response.json()
+                            if 'usdtAmount' in tx_status_data:
+                                tx_value_wei = int(tx_status_data['usdtAmount'])
+                    except Exception as e:
+                        logger.warning(f"Could not get detailed tx status for {tx_hash}: {e}")
                     
-                        # Check the full transaction status to get accurate amount
-                        try:
-                            tx_status_response = requests.get(
-                                f"{USDT_SERVICE_URL}/tx-status/{tx_hash}",
-                                timeout=10
-                            )
-                            if tx_status_response.status_code == 200:
-                                tx_status_data = tx_status_response.json()
-                                if 'usdtAmount' in tx_status_data:
-                                    tx_value_wei = int(tx_status_data['usdtAmount'])
-                        except Exception as e:
-                            logger.warning(f"Could not get detailed tx status for {tx_hash}: {e}")
-                        
-                        tx_amount = Decimal(tx_value_wei) / Decimal(10 ** USDT_DECIMALS)
-                        
-                        logger.info(f"Deposit {deposit_id}: Found latest transaction {tx_hash} with amount {tx_amount} USDT")
+                    tx_amount = Decimal(tx_value_wei) / Decimal(10 ** USDT_DECIMALS)
                     
-                        # Check if this tx_hash is already used by any deposit
+                    logger.info(f"Deposit {deposit_id}: Found latest transaction {tx_hash} with amount {tx_amount} USDT")
+                
+                    # Check if this tx_hash is already used by any deposit
+                    with database_cursor() as (cur, conn):
                         execute_sql(cur, """
                             SELECT id FROM deposit 
                             WHERE tx_hash = %s
                         """, params=(tx_hash,))
                         
                         existing_deposit = cur.fetchone()
-                        if existing_deposit:
-                            logger.info(f"Transaction {tx_hash} already credited to deposit {existing_deposit[0]}")
-                            # Update checked_at and continue
-                            metadata['checked_at'] = datetime.utcnow().isoformat()
-                            metadata['skipped_tx'] = tx_hash
+                    
+                    if existing_deposit:
+                        logger.info(f"Transaction {tx_hash} already credited to deposit {existing_deposit[0]}")
+                        # Update checked_at and continue
+                        metadata['checked_at'] = datetime.utcnow().isoformat()
+                        metadata['skipped_tx'] = tx_hash
+                        with database_transaction() as (cur, conn):
                             execute_sql(cur, """
                                 UPDATE deposit 
                                 SET metadata = %s
                                 WHERE id = %s
-                            """, params=(Json(metadata), deposit_id), commit=True, connection=conn)
-                            continue
+                            """, params=(Json(metadata), deposit_id))
+                        continue
+                
+                    # Transaction is unique, credit this deposit
+                    metadata['tx_hash'] = tx_hash
+                    metadata['tx_from'] = latest_tx['from']
+                    metadata['tx_amount'] = str(tx_amount)
+                    metadata['tx_block'] = str(latest_tx['blockNumber'])
+                    metadata['completed_at'] = datetime.utcnow().isoformat()
                     
-                        # Transaction is unique, credit this deposit
-                        metadata['tx_hash'] = tx_hash
-                        metadata['tx_from'] = latest_tx['from']
-                        metadata['tx_amount'] = str(tx_amount)
-                        metadata['tx_block'] = str(latest_tx['blockNumber'])
-                        metadata['completed_at'] = datetime.utcnow().isoformat()
-                        
+                    with database_transaction() as (cur, conn):
                         execute_sql(cur, """
                             UPDATE deposit 
                             SET status = 'complete', 
@@ -621,20 +610,16 @@ def check_pending_deposits():
                                 metadata = %s,
                                 tx_hash = %s
                             WHERE id = %s
-                        """, params=(tx_amount, Json(metadata), tx_hash, deposit_id), commit=True, connection=conn)
-                        
-                        logger.info(f"Deposit {deposit_id} completed with tx {tx_hash} for {tx_amount} USDT")
-                        
-                except Exception as e:
-                    logger.error(f"Error processing deposit {deposit_id}: {str(e)}")
-                    logger.error(traceback.format_exc())
+                        """, params=(tx_amount, Json(metadata), tx_hash, deposit_id))
                     
-        finally:
-            cur.close()
-            conn.close()
+                    logger.info(f"Deposit {deposit_id} completed with tx {tx_hash} for {tx_amount} USDT")
+                    
+            except Exception as e:
+                logger.error(f"Error processing deposit {deposit_id}: {str(e)}")
+                logger.error(traceback.format_exc())
             
     except Exception as e:
-        logger.error(f"Error in check_pending_deposits: {str(e)}")
+        logger.error(f"Error in check_deposit_confirmations: {str(e)}")
         logger.error(traceback.format_exc())
 
 

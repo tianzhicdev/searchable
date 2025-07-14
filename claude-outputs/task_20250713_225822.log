@@ -1,0 +1,4 @@
+Task: "./exec.sh local test --t deposits" is failing: requests.exceptions.HTTPError: 500 Server Error: INTERNAL SERVER ERROR for url: http://localhost:5005/api/v1/deposit/create
+Timestamp: Sun Jul 13 22:58:22 EDT 2025
+=================
+The deposit test is now passing. The issue was incorrect indentation in `api-server-flask/api/routes/deposits.py:106-145`. Fixed by properly indenting the Stripe/USDT handling blocks inside the database transaction context.
