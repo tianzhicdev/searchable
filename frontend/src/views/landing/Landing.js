@@ -14,6 +14,8 @@ import { useSelector } from 'react-redux';
 import config from '../../config';
 import Logo from '../../ui-component/Logo';
 import backgroundImage from '../../assets/images/bg.png';
+import GalaxyMoving3D from '../../components/Galaxy3D/GalaxyMoving3D';
+import { movingGalaxyConfigs } from '../../components/Galaxy3D/configs';
 
 import abitchaoticLogo from '../../assets/images/abitchaotic.gif';
 
@@ -45,12 +47,24 @@ const Landing = () => {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundImage: `url(${abitchaoticLogo})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
+      {/* 3D Moving Galaxy Background */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1
+        }}
+      >
+        <GalaxyMoving3D config={movingGalaxyConfigs.moving1} />
+      </Box>
+
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 2 }}>
         <Box
           sx={{
