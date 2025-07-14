@@ -1,5 +1,7 @@
 import { makeStyles } from '@material-ui/styles';
 import themeConfig from './themeLoader';
+import { componentStyles, borderRadius, styleUtils } from './styleSystem';
+import { spacing, responsiveSpacing, componentSpacing } from '../utils/spacing';
 
 /**
  * SIMPLIFIED COMPONENT STYLES - Using centralized theme config
@@ -26,50 +28,36 @@ const useComponentStyles = makeStyles((theme) => ({
 
     // Centralized component styling
     paper: {
-        padding: theme.spacing(2.5),
-        [theme.breakpoints.down('sm')]: {
-            padding: theme.spacing(1.5)
-        },
-        marginBottom: themeConfig.spacingSm,
+        ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
         border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
-        borderRadius: themeConfig.borderRadius
+        borderRadius: borderRadius.lg
     },
     
     // Paper style without borders - for account pages and similar content
     paperNoBorder: {
-        padding: theme.spacing(2.5),
-        [theme.breakpoints.down('sm')]: {
-            padding: theme.spacing(1.5)
-        },
-        marginBottom: themeConfig.spacingSm,
+        ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        borderRadius: themeConfig.borderRadius
+        borderRadius: borderRadius.lg
     },
     
     box: {
-        padding: themeConfig.spacingXs,
-        margin: themeConfig.spacing2xs
+        padding: spacing(1),
+        margin: spacing(0.5)
     },
     
     grid: {
-        padding: themeConfig.spacingXs
+        padding: spacing(1)
     },
     
     // Form actions container for buttons
     formActions: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: theme.spacing(2),
-        marginTop: theme.spacing(3),
-        [theme.breakpoints.down('sm')]: {
-            gap: theme.spacing(1.5),
-            marginTop: theme.spacing(2)
-        }
+        ...componentSpacing.formActions(theme)
     },
     
     // Standard button styling
     button: {
+        ...componentStyles.button.base,
         minWidth: 120,
         [theme.breakpoints.down('sm')]: {
             minWidth: 100
@@ -115,7 +103,84 @@ const useComponentStyles = makeStyles((theme) => ({
         fontFamily: themeConfig.fontPrimary,
         wordBreak: 'break-word',
         overflowWrap: 'break-word'
-    }
+    },
+    
+    // Additional common styles from styleSystem
+    ...styleUtils,
+    
+    // Common layout patterns
+    flexCenter: styleUtils.center,
+    flexBetween: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+    },
+    flexColumn: {
+        display: 'flex',
+        flexDirection: 'column'
+    },
+    
+    // Responsive utilities
+    mobileOnly: {
+        [theme.breakpoints.up('sm')]: {
+            display: 'none'
+        }
+    },
+    desktopOnly: {
+        [theme.breakpoints.down('sm')]: {
+            display: 'none'
+        }
+    },
+    
+    // Common spacing patterns
+    sectionSpacing: {
+        marginBottom: responsiveSpacing(4)
+    },
+    elementSpacing: {
+        marginBottom: spacing(2)
+    },
+    
+    // Card variants
+    cardHover: {
+        ...componentSpacing.card(theme),
+        backgroundColor: themeConfig.bgSecondary,
+        borderRadius: borderRadius.lg,
+        transition: 'all 0.3s ease',
+        cursor: 'pointer',
+        '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: theme.shadows[4]
+        }
+    },
+    
+    // Dialog styles
+    dialog: componentSpacing.dialog(theme),
+    dialogContent: {
+        padding: spacing(3)
+    },
+    dialogActions: {
+        padding: spacing(2),
+        gap: spacing(2),
+        display: 'flex',
+        justifyContent: 'flex-end'
+    },
+    
+    // Loading and empty states
+    centerContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: spacing(6),
+        minHeight: spacing(30),
+        textAlign: 'center'
+    },
+    
+    // Status colors
+    success: { color: theme.palette.success.main },
+    error: { color: theme.palette.error.main },
+    warning: { color: theme.palette.warning.main },
+    info: { color: theme.palette.info.main }
 }));
 
 export default useComponentStyles;

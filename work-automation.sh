@@ -125,7 +125,7 @@ run_cicd_until_pass() {
                     echo "=================" >> "$fix_log"
                     
                     # Show Claude's output in real-time and log it
-                    $CLAUDE_CMD -p "The CI/CD tests failed. Please analyze and fix the issues. The current task is: $task" 2>&1 | tee -a "$fix_log"
+                    $CLAUDE_CMD --dangerously-skip-permissions -p "The CI/CD tests failed. Please analyze and fix the issues. The current task is: $task" 2>&1 | tee -a "$fix_log"
                     
                     log_message "Claude CI/CD fix output saved to: $fix_log"
                     echo
@@ -210,7 +210,7 @@ main() {
             local task_log="$CLAUDE_LOG_DIR/task_${timestamp}.log"
             
             # Debug: Show exact command being run
-            echo "[DEBUG] Running command: $CLAUDE_CMD -p \"$task_desc\" 2>&1"
+            echo "[DEBUG] Running command: $CLAUDE_CMD --dangerously-skip-permissions -p \"$task_desc\" 2>&1"
             echo "[DEBUG] Logging to: $task_log"
             
             # Run Claude and capture output to both screen and log file
@@ -219,7 +219,7 @@ main() {
             echo "=================" >> "$task_log"
             
             # Show Claude's output in real-time and log it
-            $CLAUDE_CMD -p "$task_desc" 2>&1 | tee -a "$task_log"
+            $CLAUDE_CMD --dangerously-skip-permissions -p "$task_desc" 2>&1 | tee -a "$task_log"
             
             echo "[DEBUG] Claude command finished"
             echo "[DEBUG] Output saved to: $task_log"
