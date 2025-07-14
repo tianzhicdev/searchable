@@ -1401,6 +1401,14 @@ def get_downloadable_items_by_user_id(user_id):
         raise e
 
 
+def get_receipts(user_id):
+    """
+    Get receipts for a user (alias for get_downloadable_items_by_user_id).
+    This function returns all items that a user has purchased.
+    """
+    return get_downloadable_items_by_user_id(user_id)
+
+
 __all__ = [
     'get_searchableIds_by_user', 
     'get_searchable',

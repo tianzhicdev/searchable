@@ -756,13 +756,8 @@ local_cicd() {
     fi
     log_output ""
     
-    # Confirm before proceeding
-    read -p "Continue with CI/CD workflow? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_output "${YELLOW}CI/CD workflow cancelled.${NC}"
-        exit 0
-    fi
+    # Start CI/CD workflow immediately without confirmation
+    log_output "${BLUE}Starting CI/CD workflow...${NC}"
     
     DOCKER_COMPOSE=$(get_docker_compose_cmd)
     
