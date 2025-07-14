@@ -1,14 +1,14 @@
 import React from 'react';
 import { Button, CircularProgress, Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { componentSpacing, spacing } from '../../utils/spacing';
+import { componentSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   button: {
     ...componentSpacing.button(theme),
     textTransform: 'none',
     position: 'relative',
-    minWidth: spacing(10)
+    minWidth: theme.spacing(10)
   },
   loadingWrapper: {
     display: 'flex',
@@ -16,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'center'
   },
   buttonProgress: {
-    marginRight: spacing(1)
+    marginRight: theme.spacing(1)
   },
   fullWidth: {
     width: '100%'

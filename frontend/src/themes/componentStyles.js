@@ -1,7 +1,7 @@
 import { makeStyles } from '@material-ui/styles';
 import themeConfig from './themeLoader';
 import { borderRadius, components, layouts } from './styleSystem';
-import { spacing, responsiveSpacing, componentSpacing } from '../utils/spacing';
+import { componentSpacing } from '../utils/spacing';
 
 /**
  * SIMPLIFIED COMPONENT STYLES - Using centralized theme config
@@ -137,10 +137,10 @@ const useComponentStyles = makeStyles((theme) => ({
     
     // Common spacing patterns
     sectionSpacing: {
-        marginBottom: responsiveSpacing(4)
+        marginBottom: theme.spacing(4)
     },
     elementSpacing: {
-        marginBottom: spacing(2)
+        marginBottom: theme.spacing(2)
     },
     
     // Card variants
@@ -159,11 +159,11 @@ const useComponentStyles = makeStyles((theme) => ({
     // Dialog styles
     dialog: componentSpacing.dialog(theme),
     dialogContent: {
-        padding: spacing(3)
+        padding: theme.spacing(3)
     },
     dialogActions: {
-        padding: spacing(2),
-        gap: spacing(2),
+        padding: theme.spacing(2),
+        gap: theme.spacing(2),
         display: 'flex',
         justifyContent: 'flex-end'
     },
@@ -174,8 +174,8 @@ const useComponentStyles = makeStyles((theme) => ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: spacing(6),
-        minHeight: spacing(30),
+        padding: theme.spacing(6),
+        minHeight: theme.spacing(30),
         textAlign: 'center'
     },
     

@@ -2,7 +2,6 @@ import React from 'react';
 import { Box, Typography, Button } from '@material-ui/core';
 import { Error as ErrorIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 import ActionButton from './ActionButton';
 
 const useStyles = makeStyles((theme) => ({
@@ -11,23 +10,23 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing(6),
-    minHeight: spacing(30),
+    padding: theme.spacing(6),
+    minHeight: theme.spacing(30),
     textAlign: 'center'
   },
   icon: {
-    fontSize: spacing(8),
+    fontSize: theme.spacing(8),
     color: theme.palette.error.main,
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   title: {
-    marginBottom: spacing(1),
+    marginBottom: theme.spacing(1),
     fontWeight: 500
   },
   message: {
     color: theme.palette.text.secondary,
-    marginBottom: spacing(3),
-    maxWidth: spacing(60)
+    marginBottom: theme.spacing(3),
+    maxWidth: theme.spacing(60)
   }
 }));
 

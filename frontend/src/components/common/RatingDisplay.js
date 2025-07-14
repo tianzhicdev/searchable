@@ -1,13 +1,12 @@
 import React from 'react';
 import { Box, Typography, Rating } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   container: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: spacing(1)
+    gap: theme.spacing(1)
   },
   rating: {
     color: theme.palette.warning.main
