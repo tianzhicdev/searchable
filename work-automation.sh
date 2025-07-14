@@ -8,12 +8,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-TODO_FILE="todo-list.txt"
-TODO_BACKUP="todo-list.backup.txt"
+TODO_FILE="${TODO_FILE:-todo-list.txt}"
+TODO_BACKUP="${TODO_FILE}.backup"
 LOG_FILE="work-automation.log"
+CLAUDE_LOG_DIR="claude-outputs"
 CLAUDE_CMD="claude"
 EXEC_CMD="./exec.sh"
 MAX_RETRIES=5
+
+# Create log directory for Claude outputs
+mkdir -p "$CLAUDE_LOG_DIR"
 
 # Function to log messages
 log_message() {
@@ -82,9 +86,12 @@ run_cicd_until_pass() {
     local retry_count=0
     local task="$1"
     
+    echo "[DEBUG] Entering run_cicd_until_pass function"
+    
     while [ $retry_count -lt $MAX_RETRIES ]; do
         print_colored "$BLUE" "Running CI/CD tests (attempt $((retry_count + 1))/$MAX_RETRIES)..."
         
+        echo "[DEBUG] About to run: $EXEC_CMD local cicd"
         # Run CI/CD with proper exit code handling
         if $EXEC_CMD local cicd; then
             print_colored "$GREEN" "✅ CI/CD tests passed!"
@@ -100,10 +107,27 @@ run_cicd_until_pass() {
                 # Call Claude to fix issues
                 if command -v $CLAUDE_CMD >/dev/null 2>&1; then
                     print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                    print_colored "$YELLOW" "Claude is analyzing and fixing CI/CD failures..."
+                    print_colored "$YELLOW" "CI/CD Failed - Claude is analyzing and fixing..."
                     print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    print_colored "$BLUE" "Claude's fix attempt:"
                     echo
-                    $CLAUDE_CMD --print "The CI/CD tests failed. Please analyze and fix the issues. The current task is: $task"
+                    
+                    # Create log file for this CI/CD fix
+                    local fix_timestamp=$(date '+%Y%m%d_%H%M%S')
+                    local fix_log="$CLAUDE_LOG_DIR/fix_${fix_timestamp}.log"
+                    
+                    echo "[DEBUG] Logging CI/CD fix to: $fix_log"
+                    
+                    # Log the fix attempt
+                    echo "CI/CD Fix for Task: $task" > "$fix_log"
+                    echo "Timestamp: $(date)" >> "$fix_log"
+                    echo "Attempt: $((retry_count + 1))" >> "$fix_log"
+                    echo "=================" >> "$fix_log"
+                    
+                    # Show Claude's output in real-time and log it
+                    $CLAUDE_CMD -p "The CI/CD tests failed. Please analyze and fix the issues. The current task is: $task" 2>&1 | tee -a "$fix_log"
+                    
+                    log_message "Claude CI/CD fix output saved to: $fix_log"
                     echo
                     print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                     print_colored "$GREEN" "✅ Claude has finished fixing the issues"
@@ -171,17 +195,35 @@ main() {
         mark_in_progress "$line_num"
         
         # Call Claude to work on the task
+        echo "[DEBUG] Checking for claude command..."
         if command -v $CLAUDE_CMD >/dev/null 2>&1; then
+            echo "[DEBUG] Claude command found at: $(which $CLAUDE_CMD)"
             print_colored "$BLUE" "🤖 Calling Claude to work on the task..."
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             print_colored "$YELLOW" "Task: $task_desc"
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             print_colored "$BLUE" "Claude's output:"
             echo
-            # Show Claude's output in real-time with no buffering
-            $CLAUDE_CMD --print "$task_desc" 2>&1 | while IFS= read -r line; do
-                echo "$line"
-            done
+            
+            # Create log file for this task
+            local timestamp=$(date '+%Y%m%d_%H%M%S')
+            local task_log="$CLAUDE_LOG_DIR/task_${timestamp}.log"
+            
+            # Debug: Show exact command being run
+            echo "[DEBUG] Running command: $CLAUDE_CMD -p \"$task_desc\" 2>&1"
+            echo "[DEBUG] Logging to: $task_log"
+            
+            # Run Claude and capture output to both screen and log file
+            echo "Task: $task_desc" > "$task_log"
+            echo "Timestamp: $(date)" >> "$task_log"
+            echo "=================" >> "$task_log"
+            
+            # Show Claude's output in real-time and log it
+            $CLAUDE_CMD -p "$task_desc" 2>&1 | tee -a "$task_log"
+            
+            echo "[DEBUG] Claude command finished"
+            echo "[DEBUG] Output saved to: $task_log"
+            log_message "Claude output saved to: $task_log"
             echo
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             print_colored "$GREEN" "✅ Claude has finished working on the task"
