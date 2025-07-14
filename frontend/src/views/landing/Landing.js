@@ -74,31 +74,6 @@ const Landing = () => {
           }}
         >
           {/* Title */}
-            <Typography 
-            variant={isMobile ? 'h3' : 'h2'} 
-            component="h1" 
-            gutterBottom
-            sx={{ 
-              fontWeight: 'bold', 
-              mb: 4, 
-              fontSize: isMobile ? '2.5rem' : '3.5rem',
-              color: theme.palette.primary.main,
-            }}
-          >
-            {config.BRANDING_CONFIG.landingIntro}
-          </Typography>
-                      <Typography 
-            variant={isMobile ? 'h3' : 'h2'} 
-            component="h2" 
-            gutterBottom
-            sx={{ 
-              fontWeight: 'bold', 
-              mb: 4, 
-              fontSize: isMobile ? '1.5rem' : '2.5rem',
-            }}
-          >
-            {/* {config.BRANDING_CONFIG.landingIntro} */}
-          </Typography>
           <Typography 
             variant={isMobile ? 'h4' : 'h3'} 
             // component="h2" 
@@ -136,26 +111,47 @@ const Landing = () => {
             ))}
           </Box>
 
-                <Box 
-                display="flex" 
+          <Box 
+            display="flex" 
                 gap={2} 
-                flexDirection={isMobile ? 'column' : 'row'}
+                flexDirection={'column'}
                 width={isMobile ? '100%' : 'auto'}
                 >
-                <Button
+          <Button
                   variant="contained"
                   color="primary"
                   onClick={handleJoinNow}
                   size="large"
                   sx={{ 
-                  fontSize: isMobile ? '1.7rem' : '2rem', 
-                  padding: '16px 32px', 
-                  fontStyle: 'bold',
-                  color: 'white' // Make text white
+                  fontSize: isMobile ? '2.0rem' : '2.5rem', 
+                  padding: '26px 32px', 
+                  // fontWeight: 1200,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '& .MuiButton-label': {
+                    background: 'linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent',
+                    fontWeight: 1800,
+                  }
                   }}
                 >
                   WARP TO THE FUTURE
-                </Button>
+          </Button>
+          <Typography 
+            variant={isMobile ? 'h3' : 'h2'} 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 'bold', 
+              mb: 4, 
+              fontSize: isMobile ? '1.5rem' : '2rem',
+              color: theme.palette.primary.main,
+            }}
+          >
+            {config.BRANDING_CONFIG.landingIntro}
+          </Typography>
                 </Box>
                 
                 {/* I'm back link */}
