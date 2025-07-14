@@ -42,17 +42,20 @@ const useComponentStyles = makeStyles((theme) => ({
     },
     
     box: {
-        padding: spacing(1),
-        margin: spacing(0.5)
+        padding: theme.spacing(1),
+        margin: theme.spacing(0.5)
     },
     
     grid: {
-        padding: spacing(1)
+        padding: theme.spacing(1)
     },
     
     // Form actions container for buttons
     formActions: {
-        ...componentSpacing.formActions(theme)
+        display: 'flex',
+        gap: theme.spacing(1),
+        justifyContent: 'flex-end',
+        marginTop: theme.spacing(2)
     },
     
     // Standard button styling
