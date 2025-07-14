@@ -1,6 +1,6 @@
 import { makeStyles } from '@material-ui/styles';
 import themeConfig from './themeLoader';
-import { componentStyles, borderRadius, styleUtils } from './styleSystem';
+import { borderRadius } from './styleSystem';
 import { spacing, responsiveSpacing, componentSpacing } from '../utils/spacing';
 
 /**
