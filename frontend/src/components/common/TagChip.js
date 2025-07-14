@@ -1,11 +1,10 @@
 import React from 'react';
 import { Chip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { spacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   chip: {
-    borderRadius: spacing(1),
+    borderRadius: theme.spacing(1),
     fontWeight: 500,
     '&:hover': {
       backgroundColor: theme.palette.primary.main,
@@ -30,11 +29,11 @@ const useStyles = makeStyles((theme) => ({
     }
   },
   small: {
-    height: spacing(3),
+    height: theme.spacing(3),
     fontSize: '0.75rem',
     '& .MuiChip-label': {
-      paddingLeft: spacing(1),
-      paddingRight: spacing(1)
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1)
     }
   }
 }));

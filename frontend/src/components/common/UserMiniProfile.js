@@ -4,14 +4,13 @@ import { makeStyles } from '@material-ui/styles';
 import { Person as PersonIcon, Verified as VerifiedIcon } from '@material-ui/icons';
 import { Link } from 'react-router-dom';
 import useComponentStyles from '../../themes/componentStyles';
-import { spacing } from '../../utils/spacing';
 import RatingDisplay from './RatingDisplay';
 
 const useStyles = makeStyles((theme) => ({
   container: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: spacing(1.5),
+    gap: theme.spacing(1.5),
     textDecoration: 'none',
     color: 'inherit',
     '&:hover': {
@@ -21,48 +20,48 @@ const useStyles = makeStyles((theme) => ({
     }
   },
   avatar: {
-    width: spacing(5),
-    height: spacing(5),
+    width: theme.spacing(5),
+    height: theme.spacing(5),
     backgroundColor: theme.palette.primary.main
   },
   avatarSmall: {
-    width: spacing(4),
-    height: spacing(4)
+    width: theme.spacing(4),
+    height: theme.spacing(4)
   },
   avatarLarge: {
-    width: spacing(6),
-    height: spacing(6)
+    width: theme.spacing(6),
+    height: theme.spacing(6)
   },
   info: {
     display: 'flex',
     flexDirection: 'column',
-    gap: spacing(0.5)
+    gap: theme.spacing(0.5)
   },
   nameRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing(0.5)
+    gap: theme.spacing(0.5)
   },
   username: {
     fontWeight: 500,
     color: theme.palette.text.primary
   },
   verifiedIcon: {
-    fontSize: spacing(2),
+    fontSize: theme.spacing(2),
     color: theme.palette.primary.main
   },
   role: {
     fontSize: '0.75rem',
-    height: spacing(2.5),
+    height: theme.spacing(2.5),
     '& .MuiChip-label': {
-      paddingLeft: spacing(1),
-      paddingRight: spacing(1)
+      paddingLeft: theme.spacing(1),
+      paddingRight: theme.spacing(1)
     }
   },
   stats: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing(1),
+    gap: theme.spacing(1),
     fontSize: '0.875rem',
     color: theme.palette.text.secondary
   }

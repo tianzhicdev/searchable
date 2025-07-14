@@ -13,17 +13,17 @@ import {
 import { Close as CloseIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
-import { componentSpacing, spacing } from '../../utils/spacing';
 import ActionButton from './ActionButton';
+import { componentSpacing } from '../../utils/spacing';
 
 const useStyles = makeStyles((theme) => ({
   dialog: {
     '& .MuiDialog-paper': {
       ...componentSpacing.dialog(theme),
       [theme.breakpoints.down('sm')]: {
-        margin: spacing(2),
+        margin: theme.spacing(2),
         maxHeight: '90vh',
-        width: `calc(100% - ${spacing(4)}px)`
+        width: `calc(100% - ${theme.spacing(4)}px)`
       }
     }
   },
@@ -31,29 +31,30 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingRight: spacing(1)
+    paddingRight: theme.spacing(1)
   },
   dialogContent: {
-    paddingTop: spacing(2),
-    paddingBottom: spacing(2)
+    paddingTop: theme.spacing(2),
+    paddingBottom: theme.spacing(2)
   },
   dialogActions: {
-    ...componentSpacing.formActions(theme),
-    padding: spacing(2),
-    gap: spacing(2)
+    display: 'flex',
+    justifyContent: 'flex-end',
+    padding: theme.spacing(2),
+    gap: theme.spacing(2)
   },
   closeButton: {
-    marginLeft: spacing(2),
-    padding: spacing(1)
+    marginLeft: theme.spacing(2),
+    padding: theme.spacing(1)
   },
   errorAlert: {
-    marginBottom: spacing(2)
+    marginBottom: theme.spacing(2)
   },
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: spacing(20)
+    minHeight: theme.spacing(20)
   }
 }));
 
