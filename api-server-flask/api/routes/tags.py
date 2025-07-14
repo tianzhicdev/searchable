@@ -14,6 +14,7 @@ from ..common.tag_helpers import (
     search_users_by_tags, search_searchables_by_tags, search_users_by_tag_ids, search_searchables_by_tag_ids
 )
 from ..common.data_helpers import get_db_connection, execute_sql, get_searchable
+from ..common.database_context import db
 from ..common.logging_config import setup_logger
 from .auth import token_required
 
@@ -22,15 +23,11 @@ logger = setup_logger(__name__, 'tags.log')
 
 def user_exists(user_id):
     """Check if a user exists in the users table"""
-    conn = get_db_connection()
-    cur = conn.cursor()
     try:
-        execute_sql(cur, "SELECT 1 FROM users WHERE id = %s LIMIT 1", params=(user_id,))
-        result = cur.fetchone()
+        result = db.fetch_one("SELECT 1 FROM users WHERE id = %s LIMIT 1", (user_id,))
         return result is not None
-    finally:
-        cur.close()
-        conn.close()
+    except Exception:
+        return False
 
 # Flask-RESTX models for request/response data
 tag_model = rest_api.model('Tag', {

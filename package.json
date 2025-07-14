@@ -1,6 +1,6 @@
 {
   "name": "searchable",
-  "version": "1.5.71",
+  "version": "1.5.72",
   "description": "Searchable - Declarative framework for building information deposit and retrieval systems",
   "main": "index.js",
   "scripts": {

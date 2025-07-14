@@ -131,8 +131,8 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
       case 'downloadable':
         return {
           icon: <ShoppingCart className={classes.storeIcon} />,
-          title: '🎉 Congratulations! Your Digital Store is Live!',
-          subtitle: 'Your files are ready to be sold. Customers can now discover and purchase your digital content.',
+          title: 'Congratulations! Your Digital Store is Live!',
+          subtitle: 'Your content is ready to be sold. Customers can now discover and purchase your digital content.',
           storeLabel: 'Store Name',
           tips: [
             'Share your store link on social media',

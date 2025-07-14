@@ -1,41 +1,25 @@
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
   Typography,
   Box,
-  IconButton,
-  FormControl,
-  FormHelperText,
-  InputAdornment,
   Grid
 } from '@material-ui/core';
-import {
-  Close as CloseIcon,
-  Visibility,
-  VisibilityOff
-} from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { strengthIndicator, strengthColor } from '../../utils/password-strength';
-import { componentSpacing, touchTargets } from '../../utils/spacing';
+import { spacing } from '../../utils/spacing';
+import { CommonDialog, FormField } from '../common';
 
 const useStyles = makeStyles((theme) => ({
-  formContainer: componentSpacing.formContainer(theme),
-  button: componentSpacing.button(theme),
-  dialogContent: componentSpacing.dialog(theme),
-  dialog: {
-    '& .MuiDialog-paper': {
-      [theme.breakpoints.down('sm')]: {
-        margin: theme.spacing(2),
-        maxHeight: '90vh'
-      }
-    }
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing(2)
+  },
+  passwordStrength: {
+    marginTop: spacing(-1),
+    marginBottom: spacing(1)
   }
 }));
 
@@ -54,32 +38,8 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
   const [strength, setStrength] = useState(0);
   const [level, setLevel] = useState('');
-
-  const handleClickShowPassword = (type) => {
-    switch (type) {
-      case 'current':
-        setShowCurrentPassword(!showCurrentPassword);
-        break;
-      case 'new':
-        setShowNewPassword(!showNewPassword);
-        break;
-      case 'confirm':
-        setShowConfirmPassword(!showConfirmPassword);
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleMouseDownPassword = (event) => {
-    event.preventDefault();
-  };
 
   const changePassword = (value) => {
     const temp = strengthIndicator(value);
@@ -215,190 +175,106 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
     onClose();
   };
 
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+    handleSubmit(event);
+  };
+
+  const dialogActions = [
+    {
+      label: 'Cancel',
+      onClick: handleClose,
+      disabled: isSubmitting
+    },
+    {
+      label: 'Change Password',
+      onClick: handleFormSubmit,
+      variant: 'contained',
+      primary: true,
+      disabled: isSubmitting,
+      loading: isSubmitting,
+      loadingText: 'Changing...'
+    }
+  ];
+
   return (
-    <Dialog
+    <CommonDialog
       open={open}
       onClose={handleClose}
+      title="Change Password"
+      actions={dialogActions}
+      error={submitError}
       maxWidth="sm"
-      fullWidth
-      className={styles.dialog}
     >
-      <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6" className={classes.staticText}>
-            Change Password
-          </Typography>
-          <IconButton onClick={handleClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-      
-      <form noValidate onSubmit={handleSubmit}>
-        <DialogContent className={`${styles.formContainer} ${styles.dialogContent}`}>
-          <Typography variant="body2" className={classes.staticText} gutterBottom>
-            Please enter your current password and choose a new password.
-          </Typography>
-          
-          {/* Current Password */}
-          <FormControl 
-            fullWidth 
-            error={Boolean(touched.currentPassword && formErrors.currentPassword)}
-          >
-            <TextField
-              id="current-password"
-              type={showCurrentPassword ? 'text' : 'password'}
-              value={formValues.currentPassword}
-              name="currentPassword"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              placeholder="Enter your current password"
-              error={touched.currentPassword && Boolean(formErrors.currentPassword)}
-              InputProps={{
-                style: { minHeight: touchTargets.input.mobileHeight },
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => handleClickShowPassword('current')}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                    >
-                      {showCurrentPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-            {touched.currentPassword && formErrors.currentPassword && (
-              <FormHelperText error>
-                {formErrors.currentPassword}
-              </FormHelperText>
-            )}
-          </FormControl>
-
-          {/* New Password */}
-          <FormControl 
-            fullWidth 
-            error={Boolean(touched.newPassword && formErrors.newPassword)}
-          >
-            <TextField
-              id="new-password"
-              type={showNewPassword ? 'text' : 'password'}
-              value={formValues.newPassword}
-              name="newPassword"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              placeholder="Enter your new password"
-              error={touched.newPassword && Boolean(formErrors.newPassword)}
-              InputProps={{
-                style: { minHeight: touchTargets.input.mobileHeight },
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => handleClickShowPassword('new')}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                    >
-                      {showNewPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-            {touched.newPassword && formErrors.newPassword && (
-              <FormHelperText error>
-                {formErrors.newPassword}
-              </FormHelperText>
-            )}
-          </FormControl>
-
-          {/* Password Strength Indicator */}
-          {strength !== 0 && (
-            <FormControl fullWidth>
-              <Box>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item>
-                    <Box
-                      backgroundColor={level.color}
-                      sx={{
-                        width: 85,
-                        height: 8,
-                        borderRadius: '7px'
-                      }}
-                    ></Box>
-                  </Grid>
-                  <Grid item>
-                    <Typography variant="subtitle1" fontSize="0.75rem">
-                      {level.label}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </Box>
-            </FormControl>
-          )}
-
-          {/* Confirm Password */}
-          <FormControl 
-            fullWidth 
-            error={Boolean(touched.confirmPassword && formErrors.confirmPassword)}
-          >
-            <TextField
-              id="confirm-password"
-              label="Confirm New Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={formValues.confirmPassword}
-              name="confirmPassword"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              placeholder="Confirm your new password"
-              error={touched.confirmPassword && Boolean(formErrors.confirmPassword)}
-              InputProps={{
-                style: { minHeight: touchTargets.input.mobileHeight },
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => handleClickShowPassword('confirm')}
-                      onMouseDown={handleMouseDownPassword}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <Visibility /> : <VisibilityOff />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }}
-            />
-            {touched.confirmPassword && formErrors.confirmPassword && (
-              <FormHelperText error>
-                {formErrors.confirmPassword}
-              </FormHelperText>
-            )}
-          </FormControl>
-
-          {submitError && (
-            <Box mb={2}>
-              <FormHelperText error>{submitError}</FormHelperText>
-            </Box>
-          )}
-        </DialogContent>
+      <form noValidate onSubmit={handleFormSubmit} className={styles.form}>
+        <Typography variant="body2" className={classes.staticText} gutterBottom>
+          Please enter your current password and choose a new password.
+        </Typography>
         
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isSubmitting} className={styles.button}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            disabled={isSubmitting}
-            className={styles.button}
-          >
-            {isSubmitting ? 'Changing...' : 'Change Password'}
-          </Button>
-        </DialogActions>
+        {/* Current Password */}
+        <FormField
+          name="currentPassword"
+          label="Current Password"
+          type="password"
+          value={formValues.currentPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={touched.currentPassword && formErrors.currentPassword}
+          placeholder="Enter your current password"
+          showPasswordToggle
+          autoFocus
+        />
+
+        {/* New Password */}
+        <FormField
+          name="newPassword"
+          label="New Password"
+          type="password"
+          value={formValues.newPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={touched.newPassword && formErrors.newPassword}
+          placeholder="Enter your new password"
+          showPasswordToggle
+        />
+
+        {/* Password Strength Indicator */}
+        {strength !== 0 && (
+          <Box className={styles.passwordStrength}>
+            <Grid container spacing={2} alignItems="center">
+              <Grid item>
+                <Box
+                  style={{
+                    backgroundColor: level.color,
+                    width: 85,
+                    height: 8,
+                    borderRadius: 7
+                  }}
+                />
+              </Grid>
+              <Grid item>
+                <Typography variant="subtitle1" fontSize="0.75rem">
+                  {level.label}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        )}
+
+        {/* Confirm Password */}
+        <FormField
+          name="confirmPassword"
+          label="Confirm New Password"
+          type="password"
+          value={formValues.confirmPassword}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={touched.confirmPassword && formErrors.confirmPassword}
+          placeholder="Confirm your new password"
+          showPasswordToggle
+        />
       </form>
-    </Dialog>
+    </CommonDialog>
   );
 };
 
