@@ -1,0 +1,21 @@
+Task: rewrite CLAUDE.md to reflect the latest changes, stress 1. reusability of the code. 2. respect existing code styles. 3. centrally manage sql (backend), components and components styles (frontend) 
+Timestamp: Mon Jul 14 11:13:10 EDT 2025
+=================
+I've successfully rewritten the CLAUDE.md file with the following key improvements:
+
+1. **Code Reusability** - Added as the #1 core development principle with clear guidelines to always check for existing implementations, reuse components/utilities, and follow DRY principles.
+
+2. **Respect Existing Code Styles** - Emphasized as principle #2 with mandatory requirements to study existing patterns, match surrounding code style exactly, and use established patterns.
+
+3. **Centralized Management** - Added as principle #3 with specific instructions:
+   - Backend: ALL SQL queries must go through `data_helpers.py` 
+   - Frontend: Use and extend existing components in `components/` directory
+   - Styles: Use Material-UI theme and existing patterns
+
+4. **Updated Development Flow** - Changed from "Make Changes" to "Study Existing Code → Find Reusable Components → Implement Using Existing Patterns"
+
+5. **Added Code Examples** - Included concrete examples showing wrong vs correct approaches for both backend (SQL queries) and frontend (component creation).
+
+6. **Clear Visual Emphasis** - Used bold text and ALL CAPS for critical points like "REUSABLE UI COMPONENTS - CHECK HERE FIRST" and "ALL DATABASE OPERATIONS GO HERE".
+
+The updated CLAUDE.md now strongly emphasizes these three principles throughout the document, making it clear that code reusability and respecting existing patterns are paramount in this codebase.
