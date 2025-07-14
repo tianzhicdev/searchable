@@ -98,11 +98,8 @@ const Landing = () => {
             gutterBottom
             sx={{ 
               fontWeight: 'bold', 
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               mb: 4, 
               fontSize: isMobile ? '1.5rem' : '2.5rem',
-              // color: 'white',
-              // textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
           >
             {/* {config.BRANDING_CONFIG.landingIntro} */}
@@ -112,7 +109,6 @@ const Landing = () => {
             // component="h2" 
             gutterBottom
             sx={{ 
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               color: theme.palette.secondary.main,
               fontWeight: 'bold',
             }}
