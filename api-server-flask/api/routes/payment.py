@@ -19,6 +19,7 @@ from ..common.data_helpers import (
     get_invoices,
     get_user_paid_files
 )
+from ..common.database_context import database_cursor, database_transaction, db
 from ..common.payment_helpers import (
     calc_invoice,
     create_balance_invoice_and_payment,
@@ -471,40 +472,29 @@ class TestCompletePayment(Resource):
                 return {"error": "session_id is required"}, 400
             
             # Find the invoice with this session_id
-            from ..common.database import get_db_connection, execute_sql
             from ..common.models import PaymentStatus
             import json
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
             # Get the invoice
-            execute_sql(cur, """
+            invoice_row = db.fetch_one("""
                 SELECT i.id, i.buyer_id, i.seller_id, i.searchable_id, i.amount, i.currency, i.metadata
                 FROM invoice i 
                 WHERE i.external_id = %s AND i.type = 'stripe'
-            """, params=(session_id,))
+            """, (session_id,))
             
-            invoice_row = cur.fetchone()
             if not invoice_row:
-                cur.close()
-                conn.close()
                 return {"error": "Invoice not found"}, 404
             
             invoice_id, buyer_id, seller_id, searchable_id, amount, currency, metadata = invoice_row
             
             # Check if payment already exists
-            execute_sql(cur, """
+            existing_payment = db.fetch_one("""
                 SELECT id, status FROM payment WHERE invoice_id = %s
-            """, params=(invoice_id,))
-            
-            existing_payment = cur.fetchone()
+            """, (invoice_id,))
             
             if existing_payment:
                 payment_id, current_status = existing_payment
                 if current_status == PaymentStatus.COMPLETE.value:
-                    cur.close()
-                    conn.close()
                     return {
                         "message": "Payment already completed",
                         "invoice_id": invoice_id,
@@ -522,25 +512,26 @@ class TestCompletePayment(Resource):
             if existing_payment:
                 # Update existing payment
                 payment_id = existing_payment[0]
-                execute_sql(cur, """
+                success = db.execute_update("""
                     UPDATE payment 
                     SET status = %s, metadata = %s
                     WHERE id = %s
-                """, params=(PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
+                """, (PaymentStatus.COMPLETE.value, json.dumps(payment_metadata), payment_id))
+                
+                if not success:
+                    return {"error": "Failed to update payment"}, 500
             else:
                 # Create new payment record
-                execute_sql(cur, """
+                payment_result = db.execute_insert("""
                     INSERT INTO payment (invoice_id, amount, currency, type, external_id, status, metadata)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
-                """, params=(invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
+                """, (invoice_id, amount, currency, 'stripe', session_id, PaymentStatus.COMPLETE.value, json.dumps(payment_metadata)))
                 
-                payment_result = cur.fetchone()
-                payment_id = payment_result[0] if payment_result else None
-            
-            conn.commit()
-            cur.close()
-            conn.close()
+                if not payment_result:
+                    return {"error": "Failed to create payment"}, 500
+                    
+                payment_id = payment_result[0]
             
             logger.info(f"Test payment completion: session_id={session_id}, invoice_id={invoice_id}, payment_id={payment_id}")
             

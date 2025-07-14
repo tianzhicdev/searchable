@@ -22,7 +22,7 @@ from ..common.ai_helpers import (
 
 # User endpoints (authenticated)
 
-@rest_api.route('/v1/ai-content', methods=['POST'])
+@rest_api.route('/api/v1/ai-content', methods=['POST'])
 class CreateAIContent(Resource):
     @token_required
     def post(self, current_user):
@@ -88,7 +88,7 @@ class CreateAIContent(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/ai-content', methods=['GET'])
+@rest_api.route('/api/v1/ai-content', methods=['GET'])
 class GetUserAIContents(Resource):
     @token_required
     def get(self, current_user):
@@ -121,7 +121,7 @@ class GetUserAIContents(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/ai-content/<int:ai_content_id>', methods=['GET'])
+@rest_api.route('/api/v1/ai-content/<int:ai_content_id>', methods=['GET'])
 class GetAIContentDetail(Resource):
     @token_required
     def get(self, ai_content_id, current_user):
@@ -156,7 +156,7 @@ class GetAIContentDetail(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/ai-content/<int:ai_content_id>', methods=['DELETE'])
+@rest_api.route('/api/v1/ai-content/<int:ai_content_id>', methods=['DELETE'])
 class DeleteAIContent(Resource):
     @token_required
     def delete(self, ai_content_id, current_user):
@@ -183,7 +183,7 @@ class DeleteAIContent(Resource):
 
 # Employee endpoints (no auth for now)
 
-@rest_api.route('/v1/employee/ai-content', methods=['GET'])
+@rest_api.route('/api/v1/employee/ai-content', methods=['GET'])
 class EmployeeGetAllAIContents(Resource):
     def get(self):
         """Get all AI content submissions (employee endpoint)"""
@@ -225,7 +225,7 @@ class EmployeeGetAllAIContents(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/employee/ai-content/<int:ai_content_id>', methods=['GET'])
+@rest_api.route('/api/v1/employee/ai-content/<int:ai_content_id>', methods=['GET'])
 class EmployeeGetAIContentDetail(Resource):
     def get(self, ai_content_id):
         """Get specific AI content with full details (employee endpoint)"""
@@ -256,7 +256,7 @@ class EmployeeGetAIContentDetail(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/employee/ai-content/<int:ai_content_id>', methods=['PUT'])
+@rest_api.route('/api/v1/employee/ai-content/<int:ai_content_id>', methods=['PUT'])
 class EmployeeUpdateAIContentStatus(Resource):
     def put(self, ai_content_id):
         """Update AI content status (employee endpoint)"""
@@ -295,7 +295,7 @@ class EmployeeUpdateAIContentStatus(Resource):
             return {"success": False, "msg": "Internal server error"}, 500
 
 
-@rest_api.route('/v1/employee/ai-content/export', methods=['GET'])
+@rest_api.route('/api/v1/employee/ai-content/export', methods=['GET'])
 class EmployeeExportAIContents(Resource):
     def get(self):
         """Bulk export endpoint for companion script"""
