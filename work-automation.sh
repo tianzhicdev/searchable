@@ -174,11 +174,14 @@ main() {
         if command -v $CLAUDE_CMD >/dev/null 2>&1; then
             print_colored "$BLUE" "🤖 Calling Claude to work on the task..."
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            print_colored "$YELLOW" "Claude is now working on: $task_desc"
+            print_colored "$YELLOW" "Task: $task_desc"
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            print_colored "$BLUE" "Claude's output:"
             echo
-            # Show Claude's output in real-time
-            $CLAUDE_CMD --print "$task_desc"
+            # Show Claude's output in real-time with no buffering
+            $CLAUDE_CMD --print "$task_desc" 2>&1 | while IFS= read -r line; do
+                echo "$line"
+            done
             echo
             print_colored "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             print_colored "$GREEN" "✅ Claude has finished working on the task"
