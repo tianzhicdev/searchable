@@ -12,12 +12,8 @@ import {
 } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import config from '../../config';
-import Logo from '../../ui-component/Logo';
-import backgroundImage from '../../assets/images/bg.png';
 import GalaxyMoving3D from '../../components/Galaxy3D/GalaxyMoving3D';
 import { movingGalaxyConfigs } from '../../components/Galaxy3D/configs';
-
-import abitchaoticLogo from '../../assets/images/abitchaotic.gif';
 
 const Landing = () => {
   const history = useHistory();
@@ -84,7 +80,6 @@ const Landing = () => {
             gutterBottom
             sx={{ 
               fontWeight: 'bold', 
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               mb: 4, 
               fontSize: isMobile ? '2.5rem' : '3.5rem',
               color: theme.palette.primary.main,
