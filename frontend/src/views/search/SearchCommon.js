@@ -26,6 +26,7 @@ import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
 import { navigateWithStack } from '../../utils/navigationUtils';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   searchBarContainer: {
@@ -64,7 +65,7 @@ const SearchCommon = ({
   const filterTitle = isUserSearch ? "Filter by User Tags" : "Filter by Content Tags";
 
   return (
-    <Box>
+    <Box data-testid={testIds.page.container(`search-${searchType}`)}>
       <Grid container margin={0} spacing={0} padding={0}>
         <Grid item xs={12} className={classes.searchBarContainer}>
           <SearchBar
@@ -97,7 +98,7 @@ const SearchCommon = ({
         )}
         
         {/* Results Section */}
-        <Grid item xs={12} className={classes.resultsContainer}>
+        <Grid item xs={12} className={classes.resultsContainer} data-testid={testIds.page.content(`search-${searchType}-results`)}>
           {children}
         </Grid>
       </Grid>
