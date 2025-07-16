@@ -15,6 +15,7 @@ import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import ActionButton from './ActionButton';
 import { componentSpacing } from '../../utils/spacing';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   dialog: {
@@ -75,6 +76,7 @@ const CommonDialog = ({
   actionsClassName,
   disableBackdropClick = false,
   disableEscapeKeyDown = false,
+  'data-testid': testId,
   ...dialogProps
 }) => {
   const classes = useStyles();
@@ -91,7 +93,10 @@ const CommonDialog = ({
     if (!actions || actions.length === 0) return null;
 
     return (
-      <DialogActions className={`${classes.dialogActions} ${actionsClassName || ''}`}>
+      <DialogActions 
+        className={`${classes.dialogActions} ${actionsClassName || ''}`}
+        data-testid={testId ? `${testId}-actions` : undefined}
+      >
         {actions.map((action, index) => {
           if (action.component) {
             return <React.Fragment key={index}>{action.component}</React.Fragment>;
@@ -110,6 +115,7 @@ const CommonDialog = ({
               startIcon={action.startIcon}
               endIcon={action.endIcon}
               className={action.className}
+              data-testid={action.testId}
             >
               {action.label}
             </ActionButton>
@@ -126,12 +132,14 @@ const CommonDialog = ({
       maxWidth={maxWidth}
       fullWidth={fullWidth}
       className={`${classes.dialog} ${className || ''}`}
+      data-testid={testId}
       {...dialogProps}
     >
       {title && (
         <DialogTitle 
           disableTypography 
           className={`${classes.dialogTitle} ${titleClassName || ''}`}
+          data-testid={testId ? `${testId}-header` : undefined}
         >
           <Typography variant="h6" component="div">
             {title}
@@ -142,6 +150,7 @@ const CommonDialog = ({
               className={classes.closeButton}
               disabled={loading}
               size="small"
+              data-testid={testId ? `${testId}-close` : testIds.button.nav('dialog-close')}
             >
               <CloseIcon />
             </IconButton>
@@ -149,7 +158,10 @@ const CommonDialog = ({
         </DialogTitle>
       )}
       
-      <DialogContent className={`${classes.dialogContent} ${contentClassName || ''}`}>
+      <DialogContent 
+        className={`${classes.dialogContent} ${contentClassName || ''}`}
+        data-testid={testId ? `${testId}-content` : undefined}
+      >
         {error && (
           <Alert severity="error" className={classes.errorAlert}>
             {error}

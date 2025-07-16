@@ -11,6 +11,7 @@ import {
   FilterList as FilterIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   searchContainer: {
@@ -72,8 +73,8 @@ const SearchBar = ({
   };
 
   return (
-    <Box className={classes.searchContainer}>
-      <form onSubmit={handleSubmit} className={classes.searchForm}>
+    <Box className={classes.searchContainer} data-testid={testIds.page.container('search-bar')}>
+      <form onSubmit={handleSubmit} className={classes.searchForm} data-testid={testIds.form.container('search')}>
         <TextField
           className={classes.searchField}
           placeholder={placeholder}
@@ -81,12 +82,14 @@ const SearchBar = ({
           size="medium"
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
+          data-testid={testIds.input.search('main')}
           InputProps={{
             endAdornment: searchTerm && (
               <InputAdornment position="end">
                 <IconButton
                   size="small"
                   onClick={() => onSearchTermChange('')}
+                  data-testid={testIds.button.nav('clear-search')}
                 >
                   <ClearIcon />
                 </IconButton>
@@ -101,6 +104,7 @@ const SearchBar = ({
           color="primary"
           disabled={loading}
           className={classes.iconButton}
+          data-testid={testIds.button.submit('search')}
         >
           <SearchIcon />
         </IconButton>
@@ -110,6 +114,7 @@ const SearchBar = ({
           color={showFilters ? "primary" : "default"}
           onClick={onToggleFilters}
           className={classes.iconButton}
+          data-testid={testIds.button.nav('toggle-filters')}
         >
           <FilterIcon />
         </IconButton>
