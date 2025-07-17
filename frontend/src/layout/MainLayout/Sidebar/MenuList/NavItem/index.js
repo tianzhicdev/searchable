@@ -13,6 +13,7 @@ import { MENU_OPEN, SET_MENU } from '../../../../../store/actions';
 
 // assets
 import FiberManualRecordIcon from '@material-ui/icons/FiberManualRecord';
+import { testIdProps } from '../../../../../utils/testIds';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -105,21 +106,33 @@ const NavItem = ({ item, level }) => {
             onClick={() => itemHandler(item.id)}
             target={itemTarget}
             style={{ paddingLeft: level * 23 + 'px' }}
+            {...testIdProps('nav', 'menu', `item-${item.id}`)}
         >
-            <ListItemIcon className={itemIconClass}>{itemIcon}</ListItemIcon>
+            <ListItemIcon className={itemIconClass} {...testIdProps('icon', 'menu', `item-${item.id}`)}>{itemIcon}</ListItemIcon>
             <ListItemText
                 primary={
-                    <Typography variant={customization.isOpen.findIndex((id) => id === item.id) > -1 ? 'h5' : 'body1'} color="inherit">
+                    <Typography 
+                        variant={customization.isOpen.findIndex((id) => id === item.id) > -1 ? 'h5' : 'body1'} 
+                        color="inherit"
+                        {...testIdProps('text', 'menu', `title-${item.id}`)}
+                    >
                         {item.title}
                     </Typography>
                 }
                 secondary={
                     item.caption && (
-                        <Typography variant="caption" className={classes.subMenuCaption} display="block" gutterBottom>
+                        <Typography 
+                            variant="caption" 
+                            className={classes.subMenuCaption} 
+                            display="block" 
+                            gutterBottom
+                            {...testIdProps('text', 'menu', `caption-${item.id}`)}
+                        >
                             {item.caption}
                         </Typography>
                     )
                 }
+                {...testIdProps('text', 'menu', `content-${item.id}`)}
             />
             {item.chip && (
                 <Chip
@@ -128,6 +141,7 @@ const NavItem = ({ item, level }) => {
                     size={item.chip.size}
                     label={item.chip.label}
                     avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
+                    {...testIdProps('chip', 'menu', `badge-${item.id}`)}
                 />
             )}
         </ListItemButton>
