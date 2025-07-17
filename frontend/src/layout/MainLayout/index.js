@@ -25,6 +25,7 @@ import { IconChevronRight } from '@tabler/icons';
 
 // Import spacing utilities
 import { componentSpacing, spacing } from '../../utils/spacing';
+import { testIdProps } from '../../utils/testIds';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -103,7 +104,7 @@ const MainLayout = ({ children }) => {
     }, [matchDownMd]);
 
     return (
-        <div className={classes.root}>
+        <div className={classes.root} {...testIdProps('layout', 'main', 'container')}>
             <CssBaseline />
             {/* header */}
             <AppBar
@@ -112,8 +113,9 @@ const MainLayout = ({ children }) => {
                 color="inherit"
                 elevation={0}
                 className={leftDrawerOpened ? classes.appBarWidth : classes.appBar}
+                {...testIdProps('layout', 'main', 'header')}
             >
-                <Toolbar>
+                <Toolbar {...testIdProps('layout', 'header', 'toolbar')}>
                     <Header handleLeftDrawerToggle={handleLeftDrawerToggle} />
                 </Toolbar>
             </AppBar>
@@ -129,11 +131,12 @@ const MainLayout = ({ children }) => {
                         [classes.contentShift]: leftDrawerOpened
                     }
                 ])}
+                {...testIdProps('layout', 'main', 'content')}
             >
                 {/* <Main open={leftDrawerOpened}> */}
                 {/* breadcrumb */}
                 <Breadcrumbs separator={IconChevronRight} navigation={navigation} icon title rightAlign />
-                <div>{children}</div>
+                <div {...testIdProps('section', 'main', 'children')}>{children}</div>
                 {/* </Main> */}
             </main>
             {/* <Customization /> */}
