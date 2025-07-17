@@ -163,11 +163,21 @@ export const findDuplicateTestIds = (element) => {
  * @param {string} componentType - Type of component
  * @param {string} componentName - Name/context of the component  
  * @param {string} elementType - Type of element
- * @returns {object} Props object with data-testid
+ * @param {boolean} includeId - Whether to include id attribute (default: true)
+ * @returns {object} Props object with data-testid and optionally id
  */
-export const testIdProps = (componentType, componentName, elementType) => ({
-  'data-testid': generateTestId(componentType, componentName, elementType)
-});
+export const testIdProps = (componentType, componentName, elementType, includeId = true) => {
+  const testId = generateTestId(componentType, componentName, elementType);
+  const props = {
+    'data-testid': testId
+  };
+  
+  if (includeId) {
+    props.id = testId;
+  }
+  
+  return props;
+};
 
 // Export common test ID constants for high-usage components
 export const commonTestIds = {
