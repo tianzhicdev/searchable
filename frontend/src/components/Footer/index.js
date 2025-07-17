@@ -4,6 +4,7 @@ import { makeStyles } from '@material-ui/styles';
 import config from '../../config';
 import { APP_VERSION } from '../../version';
 import { spacing } from '../../utils/spacing';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   footer: {
@@ -34,24 +35,51 @@ const Footer = () => {
   const classes = useStyles();
   
   return (
-    <Box component="footer" className={classes.footer}>
-      <Container maxWidth="lg">
-        <Typography variant="body2" color="textSecondary" align="center" className={classes.copyright}>
+    <Box component="footer" className={classes.footer} {...testIdProps('component', 'footer', 'container')}>
+      <Container maxWidth="lg" {...testIdProps('container', 'footer', 'content')}>
+        <Typography 
+          variant="body2" 
+          color="textSecondary" 
+          align="center" 
+          className={classes.copyright}
+          {...testIdProps('text', 'footer', 'copyright')}
+        >
           {'Copyright © '}
             {config.BRANDING_CONFIG.domain}
             {' '}
           {currentYear}
         </Typography>
-        <Typography variant="body2" color="textSecondary" align="center" className={classes.links}>
-          <Link color="inherit" href="/faq" underline="hover">
+        <Typography 
+          variant="body2" 
+          color="textSecondary" 
+          align="center" 
+          className={classes.links}
+          {...testIdProps('nav', 'footer', 'links')}
+        >
+          <Link 
+            color="inherit" 
+            href="/faq" 
+            underline="hover"
+            {...testIdProps('link', 'footer', 'faq')}
+          >
             FAQ
           </Link>
           {' | '}
-          <Link color="inherit" href="/declaration" underline="hover">
+          <Link 
+            color="inherit" 
+            href="/declaration" 
+            underline="hover"
+            {...testIdProps('link', 'footer', 'about')}
+          >
             About Us
           </Link>
           {' | '}
-          <Link color="inherit" href="/contact-info" underline="hover">
+          <Link 
+            color="inherit" 
+            href="/contact-info" 
+            underline="hover"
+            {...testIdProps('link', 'footer', 'contact')}
+          >
             Contact Information
           </Link>
           {' | '}
@@ -59,7 +87,10 @@ const Footer = () => {
             Getting Started
           </Link>
           {' | '} */}
-          <span style={{ fontSize: '0.875rem', opacity: 0.8 }}>
+          <span 
+            style={{ fontSize: '0.875rem', opacity: 0.8 }}
+            {...testIdProps('text', 'footer', 'version')}
+          >
             {APP_VERSION}
           </span>
         </Typography>
