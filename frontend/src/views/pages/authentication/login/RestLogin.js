@@ -153,7 +153,8 @@ const RestLogin = (props, { ...others }) => {
                 error={Boolean(touched.email && formErrors.email)}
             >
                 <TextField
-                    id="outlined-adornment-email-login"
+                    id="login-input-email"
+                    data-testid="login-input-email"
                     type="email"
                     value={formValues.email}
                     name="email"
@@ -177,7 +178,8 @@ const RestLogin = (props, { ...others }) => {
                 error={Boolean(touched.password && formErrors.password)}
             >
                 <TextField
-                    id="outlined-adornment-password-login"
+                    id="login-input-password"
+                    data-testid="login-input-password"
                     type={showPassword ? 'text' : 'password'}
                     value={formValues.password}
                     name="password"
@@ -190,6 +192,8 @@ const RestLogin = (props, { ...others }) => {
                         endAdornment: (
                             <InputAdornment position="end">
                                 <IconButton
+                                    id="login-button-toggle-password"
+                                    data-testid="login-button-toggle-password"
                                     aria-label="toggle password visibility"
                                     onClick={handleClickShowPassword}
                                     onMouseDown={handleMouseDownPassword}
@@ -216,6 +220,8 @@ const RestLogin = (props, { ...others }) => {
             <Box display="flex" justifyContent="space-between">
                 <Box></Box>
                 <Button
+                    id="login-button-submit"
+                    data-testid="login-button-submit"
                     variant="contained"
                     disabled={isSubmitting}
                     fullWidth

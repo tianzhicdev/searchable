@@ -75,6 +75,8 @@ const Landing = () => {
         >
           {/* Title */}
           <Typography 
+            id="landing-text-title"
+            data-testid="landing-text-title"
             variant={isMobile ? 'h4' : 'h3'} 
             // component="h2" 
             gutterBottom
@@ -118,6 +120,8 @@ const Landing = () => {
                 width={isMobile ? '100%' : 'auto'}
                 >
           <Button
+                  id="landing-button-join"
+                  data-testid="landing-button-join"
                   variant="contained"
                   color="primary"
                   onClick={handleJoinNow}
@@ -140,6 +144,8 @@ const Landing = () => {
                   WARP TO THE FUTURE
           </Button>
           <Typography 
+            id="landing-text-intro"
+            data-testid="landing-text-intro"
             variant={isMobile ? 'h3' : 'h2'} 
             component="h1" 
             gutterBottom
@@ -157,6 +163,8 @@ const Landing = () => {
                 {/* I'm back link */}
           <Box sx={{ mt: 3 }}>
             <Link
+              id="landing-link-im-back"
+              data-testid="landing-link-im-back"
               component="button"
               variant="body2"
               onClick={handleImBack}

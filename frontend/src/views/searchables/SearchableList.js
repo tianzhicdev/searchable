@@ -193,12 +193,13 @@ const SearchableList = ({ criteria, onPageChange }) => {
         <>
           {/* Results in column layout - fills left column first, then right */}
           <ColumnLayout columns={2}>
-            {searchResults.map((item) => (
+            {searchResults.map((item, index) => (
               <MiniProfile 
                 key={`${item.searchable_id}-${pagination.page}`}
                 type="searchable"
                 data={item}
                 onClick={() => handleItemClick(item)} 
+                index={index}
               />
             ))}
           </ColumnLayout>

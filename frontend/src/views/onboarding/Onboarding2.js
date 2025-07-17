@@ -121,16 +121,32 @@ const Onboarding2 = () => {
     <Box className={classes.root}>
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            className={classes.backButton} 
+            onClick={handleBack}
+            id="onboarding2-button-back"
+            data-testid="onboarding2-button-back"
+          >
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" className={classes.title}>
+            <Typography 
+              variant="h3" 
+              className={classes.title}
+              id="onboarding2-text-title"
+              data-testid="onboarding2-text-title"
+            >
               Your first posting
             </Typography>
           </Box>
-          <Typography variant="h6" className={classes.subtitle} color="textSecondary">
+          <Typography 
+            variant="h6" 
+            className={classes.subtitle} 
+            color="textSecondary"
+            id="onboarding2-text-subtitle"
+            data-testid="onboarding2-text-subtitle"
+          >
             Choose how you want to start earning
           </Typography>
           
@@ -138,8 +154,17 @@ const Onboarding2 = () => {
             <Grid container spacing={3}>
               {options.map((option, index) => (
                 <Grid item xs={12} key={index}>
-                  <Card className={classes.optionCard} elevation={0}>
-                    <CardActionArea onClick={() => handleOptionClick(option.path)}>
+                  <Card 
+                    className={classes.optionCard} 
+                    elevation={0}
+                    id={`onboarding2-card-option-${index}`}
+                    data-testid={`onboarding2-card-option-${index}`}
+                  >
+                    <CardActionArea 
+                      onClick={() => handleOptionClick(option.path)}
+                      id={`onboarding2-button-${option.path.replace('/onboarding-', 'type-')}`}
+                      data-testid={`onboarding2-button-${option.path.replace('/onboarding-', 'type-')}`}
+                    >
                       <CardContent className={classes.cardContent}>
                         {option.icon}
                         <Typography variant="h5" className={classes.optionTitle}>

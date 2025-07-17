@@ -207,6 +207,8 @@ const DirectSearchableDetails = () => {
               <ButtonGroup fullWidth>
                 {availableAmounts.map((amount) => (
                   <Button
+                    id={`direct-button-amount-${amount}`}
+                    data-testid={`direct-button-amount-${amount}`}
                     key={amount}
                     variant={paymentAmount === amount ? 'contained' : 'outlined'}
                     onClick={() => setPaymentAmount(amount)}
@@ -222,6 +224,8 @@ const DirectSearchableDetails = () => {
             {allowCustomAmount && (
               <Box className={classes.customAmountSection}>
                 <TextField
+                  id="direct-input-custom-amount"
+                  data-testid="direct-input-custom-amount"
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}

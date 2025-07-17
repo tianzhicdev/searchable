@@ -146,6 +146,8 @@ const PayButton = ({
         <Box mt={2} display="flex" flexDirection="row" gap={2} justifyContent="center">
           {/* Buy with Balance Button */}
           <Button
+            id="pay-button-balance"
+            data-testid="pay-button-balance"
             variant={variant}
             onClick={handleBalanceClick}
             disabled={processing}
@@ -159,6 +161,8 @@ const PayButton = ({
           
           {/* Pay with Stripe Button */}
           <Button
+            id="pay-button-stripe-1"
+            data-testid="pay-button-stripe-1"
             variant="outlined"
             onClick={handleCreditCardClick}
             disabled={processing}
@@ -216,6 +220,8 @@ const PayButton = ({
         <Box mt={2} display="flex" flexDirection="row" gap={2} justifyContent="center">
           {/* Pay with Stripe Button */}
           <Button
+            id="pay-button-stripe-2"
+            data-testid="pay-button-stripe-2"
             variant={variant}
             onClick={handleCreditCardClick}
             disabled={processing}
@@ -229,6 +235,8 @@ const PayButton = ({
           
           {/* Refill Balance Button */}
           <Button
+            id="pay-button-refill-balance"
+            data-testid="pay-button-refill-balance"
             variant="outlined"
             onClick={() => setRefillDialogOpen(true)}
             disabled={processing}
@@ -286,6 +294,8 @@ const PayButton = ({
       {/* Payment Button with Dropdown */}
       <Box mt={2} display="flex" justifyContent="center">
         <Button
+          id="pay-button-dropdown"
+          data-testid="pay-button-dropdown"
           variant={variant}
           onClick={handleMenuOpen}
           disabled={processing}
@@ -314,7 +324,10 @@ const PayButton = ({
           horizontal: 'center',
         }}
       >
-        <MenuItem onClick={handleCreditCardClick}>
+        <MenuItem 
+          id="pay-menu-credit-card"
+          data-testid="pay-menu-credit-card"
+          onClick={handleCreditCardClick}>
           <CreditCardIcon />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
@@ -326,7 +339,10 @@ const PayButton = ({
           </Box>
         </MenuItem>
         
-        <MenuItem onClick={handleDepositClick}>
+        <MenuItem 
+          id="pay-menu-usdt-deposit"
+          data-testid="pay-menu-usdt-deposit"
+          onClick={handleDepositClick}>
           <WalletIcon />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
@@ -342,6 +358,8 @@ const PayButton = ({
           <>
             <Divider />
             <MenuItem 
+              id="pay-menu-balance"
+              data-testid="pay-menu-balance"
               onClick={handleBalanceClick}
               disabled={!canPayWithBalance}
             >

@@ -113,7 +113,8 @@ const useStyles = makeStyles((theme) => ({
 const MiniProfile = ({ 
   type = 'searchable', // 'searchable' or 'user'
   data,
-  onClick
+  onClick,
+  index = 0
 }) => {
   console.log('MiniProfile data:', data);
   const classes = useStyles();
@@ -196,7 +197,12 @@ const MiniProfile = ({
   };
   
   return (
-    <Paper className={classes.profileCard} onClick={handleClick}>
+    <Paper 
+      id={`search-result-card-${index}`}
+      data-testid={`search-result-card-${index}`}
+      className={classes.profileCard} 
+      onClick={handleClick}
+    >
       {/* Type icon at the very top */}
       {type === 'searchable' && metaInfo.searchableType && (
         <Box className={classes.typeIconContainer}>

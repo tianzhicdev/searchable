@@ -15,6 +15,8 @@ const PageHeaderButton = ({
   
   return (
     <Button
+      id="page-button-back"
+      data-testid="page-button-back"
       onClick={onClick}
       className={classes.backButton}
       variant="text"

@@ -75,6 +75,8 @@ const SearchBar = ({
     <Box className={classes.searchContainer}>
       <form onSubmit={handleSubmit} className={classes.searchForm}>
         <TextField
+          id="search-input-term"
+          data-testid="search-input-term"
           className={classes.searchField}
           placeholder={placeholder}
           variant="outlined"
@@ -85,6 +87,8 @@ const SearchBar = ({
             endAdornment: searchTerm && (
               <InputAdornment position="end">
                 <IconButton
+                  id="search-button-clear"
+                  data-testid="search-button-clear"
                   size="small"
                   onClick={() => onSearchTermChange('')}
                 >
@@ -96,6 +100,8 @@ const SearchBar = ({
         />
         
         <IconButton
+          id="search-button-submit"
+          data-testid="search-button-submit"
           type="submit"
           variant="contained"
           color="primary"
@@ -106,6 +112,8 @@ const SearchBar = ({
         </IconButton>
         
         <IconButton
+          id="search-button-toggle-filters"
+          data-testid="search-button-toggle-filters"
           variant="contained"
           color={showFilters ? "primary" : "default"}
           onClick={onToggleFilters}

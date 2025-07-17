@@ -228,6 +228,8 @@ const Profile = () => {
       }}>
         <div>
           <Button 
+            id="profile-button-back"
+            data-testid="profile-button-back"
             variant="contained" 
             className={classes.iconButton}
             onClick={() => {
@@ -241,7 +243,8 @@ const Profile = () => {
         </div>
         <div>
           <Button 
-
+            id="profile-button-menu"
+            data-testid="profile-button-menu"
             variant='contained'
             onClick={handleMenuOpen}
           >
@@ -252,30 +255,42 @@ const Profile = () => {
             open={Boolean(anchorEl)}
             onClose={handleMenuClose}
           >
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              navigateWithStack(history, `/profile/${account.user._id}`);
-            }}>
+            <MenuItem 
+              id="profile-menu-profile-page"
+              data-testid="profile-menu-profile-page"
+              onClick={() => {
+                handleMenuClose();
+                navigateWithStack(history, `/profile/${account.user._id}`);
+              }}>
               Profile Page
             </MenuItem>
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              navigateWithStack(history, '/my-downloads');
-            }}>
+            <MenuItem 
+              id="profile-menu-my-downloads"
+              data-testid="profile-menu-my-downloads"
+              onClick={() => {
+                handleMenuClose();
+                navigateWithStack(history, '/my-downloads');
+              }}>
               My Downloads
             </MenuItem>
             {balance.usd > 0 && !loading && (
-              <MenuItem onClick={() => {
-                handleMenuClose();
-                handleWithdrawalUSDTClick();
-              }}>
+              <MenuItem 
+                id="profile-menu-withdraw-usdt"
+                data-testid="profile-menu-withdraw-usdt"
+                onClick={() => {
+                  handleMenuClose();
+                  handleWithdrawalUSDTClick();
+                }}>
                 Withdraw USDT
               </MenuItem>
             )}
-            <MenuItem onClick={() => {
-              handleMenuClose();
-              handleEditClick();
-            }}>
+            <MenuItem 
+              id="profile-menu-edit-profile"
+              data-testid="profile-menu-edit-profile"
+              onClick={() => {
+                handleMenuClose();
+                handleEditClick();
+              }}>
               Edit Profile
             </MenuItem>
           </Menu>
@@ -319,6 +334,8 @@ const Profile = () => {
                     
                     return (
                       <IconButton
+                        id={`profile-social-${platform.id}`}
+                        data-testid={`profile-social-${platform.id}`}
                         key={platform.id}
                         component="a"
                         href={url}
@@ -431,7 +448,8 @@ const Profile = () => {
         <DialogTitle>Withdraw USDT</DialogTitle>
         <DialogContent className={styles.dialogContent}>
           <TextField
-            id="usdt-address"
+            id="profile-input-usdt-address"
+            data-testid="profile-input-usdt-address"
             type="text"
             value={usdtWithdrawalAddress}
             onChange={handleUsdtAddressChange}
@@ -441,7 +459,8 @@ const Profile = () => {
             margin="normal"
           />
           <TextField
-            id="usdt-amount"
+            id="profile-input-usdt-amount"
+            data-testid="profile-input-usdt-amount"
             type="text"
             value={usdtWithdrawalAmount}
             onChange={handleUsdtAmountChange}
@@ -463,10 +482,16 @@ const Profile = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUsdtWithdrawDialog} className={styles.button}>
+          <Button 
+            id="profile-button-cancel-withdrawal"
+            data-testid="profile-button-cancel-withdrawal"
+            onClick={handleCloseUsdtWithdrawDialog} 
+            className={styles.button}>
             Cancel
           </Button>
           <Button 
+            id="profile-button-submit-withdrawal"
+            data-testid="profile-button-submit-withdrawal"
             onClick={handleSubmitUsdtWithdrawal} 
             variant="contained"
             color="primary"

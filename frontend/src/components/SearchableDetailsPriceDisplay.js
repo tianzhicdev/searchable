@@ -56,6 +56,8 @@ const SearchableDetailsPriceDisplay = ({
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Button
+                id="details-button-share"
+                data-testid="details-button-share"
                 variant="contained"
                 color="primary"
                 onClick={() => setShareDialogOpen(true)}
@@ -68,6 +70,8 @@ const SearchableDetailsPriceDisplay = ({
             </Grid>
             <Grid item xs={12} sm={4}>
               <Button
+                id="details-button-edit"
+                data-testid="details-button-edit"
                 variant="contained"
                 onClick={onEditItem}
                 fullWidth
@@ -79,6 +83,8 @@ const SearchableDetailsPriceDisplay = ({
             </Grid>
             <Grid item xs={12} sm={4}>
               <Button
+                id="details-button-delete"
+                data-testid="details-button-delete"
                 variant="contained"
                 color="secondary"
                 onClick={onRemoveItem}

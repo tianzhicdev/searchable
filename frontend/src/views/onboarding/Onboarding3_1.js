@@ -144,21 +144,39 @@ const Onboarding3_1 = () => {
     <Box className={classes.root}>
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            id="onboarding3_1-button-back"
+            data-testid="onboarding3_1-button-back"
+            className={classes.backButton} 
+            onClick={handleBack}
+          >
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography 
+              id="onboarding3_1-text-title"
+              data-testid="onboarding3_1-text-title"
+              variant="h3" 
+              gutterBottom
+            >
               Set Up Your Store
             </Typography>
           </Box>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Typography 
+            id="onboarding3_1-text-subtitle"
+            data-testid="onboarding3_1-text-subtitle"
+            variant="h6" 
+            color="textSecondary" 
+            gutterBottom
+          >
             Name your store and set prices for your products
           </Typography>
 
           <Box className={classes.section}>
             <TextField
+              id="onboarding3_1-input-store-name"
+              data-testid="onboarding3_1-input-store-name"
               fullWidth
               variant="outlined"
               value={storeTitle}
@@ -184,6 +202,8 @@ const Onboarding3_1 = () => {
                     style={{ flex: 1 }}
                   />
                   <TextField
+                    id={`onboarding3_1-input-price-${file.id}`}
+                    data-testid={`onboarding3_1-input-price-${file.id}`}
                     type="number"
                     value={file.price}
                     onChange={(e) => handlePriceChange(file.id, e.target.value)}
@@ -201,6 +221,8 @@ const Onboarding3_1 = () => {
           </Box>
 
           <Button
+            id="onboarding3_1-button-next"
+            data-testid="onboarding3_1-button-next"
             variant="contained"
             color="primary"
             size="large"

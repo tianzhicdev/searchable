@@ -212,7 +212,8 @@ const RestRegister = ({ ...others }) => {
                 error={Boolean(touched.email && formErrors.email)}
             >
                 <TextField
-                    id="outlined-adornment-email-register"
+                    id="register-input-email"
+                    data-testid="register-input-email"
                     type="email"
                     value={formValues.email}
                     name="email"
@@ -236,7 +237,8 @@ const RestRegister = ({ ...others }) => {
             >
                 <TextField
                     name="username"
-                    id="username"
+                    id="register-input-username"
+                    data-testid="register-input-username"
                     type="text"
                     value={formValues.username}
                     onBlur={handleBlur}
@@ -259,7 +261,8 @@ const RestRegister = ({ ...others }) => {
             >
                 <TextField
                     name="invite_code"
-                    id="invite_code"
+                    id="register-input-invite-code"
+                    data-testid="register-input-invite-code"
                     type="text"
                     value={formValues.invite_code}
                     onBlur={handleBlur}
@@ -291,7 +294,8 @@ const RestRegister = ({ ...others }) => {
             
             <FormControl fullWidth error={Boolean(touched.password && formErrors.password)}>
                 <TextField
-                    id="outlined-adornment-password-register"
+                    id="register-input-password"
+                    data-testid="register-input-password"
                     type={showPassword ? 'text' : 'password'}
                     value={formValues.password}
                     name="password"
@@ -304,6 +308,8 @@ const RestRegister = ({ ...others }) => {
                         endAdornment: (
                             <InputAdornment position="end">
                                 <IconButton
+                                    id="register-button-toggle-password"
+                                    data-testid="register-button-toggle-password"
                                     aria-label="toggle password visibility"
                                     onClick={handleClickShowPassword}
                                     onMouseDown={handleMouseDownPassword}
@@ -351,6 +357,8 @@ const RestRegister = ({ ...others }) => {
                     <FormControlLabel
                         control={
                             <Checkbox
+                                id="register-checkbox-terms"
+                                data-testid="register-checkbox-terms"
                                 checked={checked}
                                 onChange={(event) => setChecked(event.target.checked)}
                                 name="checked"
@@ -381,6 +389,8 @@ const RestRegister = ({ ...others }) => {
 
             <Box>
                 <Button
+                    id="register-button-submit"
+                    data-testid="register-button-submit"
                     disabled={isSubmitting || strength <= 2}
                     fullWidth
                     type="submit"

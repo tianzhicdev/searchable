@@ -270,7 +270,12 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                             <Typography variant="h6" className={classes.invoiceAmount}>
                                 {formatCurrency(invoice.amount, invoice.currency)}
                             </Typography>
-                            <IconButton size="small" onClick={handleExpandClick} className={classes.iconButton}>
+                            <IconButton 
+                                id={`invoice-button-expand-${invoice.id}`}
+                                data-testid={`invoice-button-expand-${invoice.id}`}
+                                size="small" 
+                                onClick={handleExpandClick} 
+                                className={classes.iconButton}>
                                 {expanded ? <ExpandLess className={classes.iconColor} /> : <ExpandMore className={classes.iconColor} />}
                             </IconButton>
                         </Box>
@@ -284,6 +289,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                             {/* Searchable title */}
                             {(invoice.searchable_title || invoice.item_title) && (
                                 <Link 
+                                    id={`invoice-link-searchable-${invoice.id}`}
+                                    data-testid={`invoice-link-searchable-${invoice.id}`}
                                     component="button" 
                                     variant="body2" 
                                     onClick={handleSearchableClick}
@@ -426,6 +433,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                         {/* Action Buttons */}
                         <Box className={`${classes.marginMd} ${classes.paddingXs}`} display="flex">
                             <Button
+                                id={`invoice-button-notes-${invoice.id}`}
+                                data-testid={`invoice-button-notes-${invoice.id}`}
                                 startIcon={<Message className={classes.iconColor} />}
                                 onClick={handleNotesExpandClick}
                                 size="small"
@@ -438,6 +447,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                             
                             {userRole === 'buyer' && !hasRated && !loadingRatingStatus && (
                                 <Button
+                                    id={`invoice-button-rate-${invoice.id}`}
+                                    data-testid={`invoice-button-rate-${invoice.id}`}
                                     startIcon={<Star className={classes.iconColor} />}
                                     onClick={() => setRatingDialogOpen(true)}
                                     size="small"
@@ -493,6 +504,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                 {/* Add Note Input */}
                                 <Box display="flex" style={{ marginTop: theme.spacing(2), gap: theme.spacing(1) }}>
                                     <TextField
+                                        id={`invoice-input-note-${invoice.id}`}
+                                        data-testid={`invoice-input-note-${invoice.id}`}
                                         fullWidth
                                         placeholder="Add a message..."
                                         value={newNote}
@@ -509,6 +522,8 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         className={`${classes.eightBitDragonFont} ${styles.messageInput}`}
                                     />
                                     <Button
+                                        id={`invoice-button-send-note-${invoice.id}`}
+                                        data-testid={`invoice-button-send-note-${invoice.id}`}
                                         onClick={handleSubmitNote}
                                         disabled={!newNote.trim() || submittingNote}
                                         variant="contained"

@@ -164,7 +164,12 @@ const Onboarding4_1 = () => {
             </Box>
           )}
           
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            id="onboarding4_1-button-back"
+            data-testid="onboarding4_1-button-back"
+            className={classes.backButton} 
+            onClick={handleBack}
+          >
             <ArrowBack />
           </IconButton>
           

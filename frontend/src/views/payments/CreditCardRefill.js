@@ -141,6 +141,8 @@ const CreditCardRefill = () => {
           
           <Box mb={3}>
             <TextField
+              id="creditcard-input-amount"
+              data-testid="creditcard-input-amount"
               fullWidth
               // placeholder="Amount to Add"
               variant="outlined"
@@ -189,6 +191,8 @@ const CreditCardRefill = () => {
           )}
           
           <Button
+            id="creditcard-button-submit"
+            data-testid="creditcard-button-submit"
             fullWidth
             variant="contained"
             size="large"

@@ -120,22 +120,24 @@ const PublishDirectSearchable = () => {
       <FormControl component="fieldset" fullWidth>
         <FormLabel component="legend">Pricing Mode</FormLabel>
         <RadioGroup 
+          id="publish-direct-radio-pricing-mode"
+          data-testid="publish-direct-radio-pricing-mode"
           value={pricingMode} 
           onChange={(e) => setPricingMode(e.target.value)}
         >
           <FormControlLabel 
             value="fixed" 
-            control={<Radio color="primary" />} 
+            control={<Radio id="publish-direct-radio-fixed" data-testid="publish-direct-radio-fixed" color="primary" />} 
             label="Fixed Amount - Supporters donate exactly this amount" 
           />
           <FormControlLabel 
             value="preset" 
-            control={<Radio color="primary" />} 
+            control={<Radio id="publish-direct-radio-preset" data-testid="publish-direct-radio-preset" color="primary" />} 
             label="Preset Options - Supporters choose from up to 3 preset amounts" 
           />
           <FormControlLabel 
             value="flexible" 
-            control={<Radio color="primary" />} 
+            control={<Radio id="publish-direct-radio-flexible" data-testid="publish-direct-radio-flexible" color="primary" />} 
             label="Flexible - Supporters can choose any amount" 
           />
         </RadioGroup>
@@ -147,6 +149,8 @@ const PublishDirectSearchable = () => {
             Fixed Amount
           </Typography>
           <TextField
+            id="publish-direct-input-fixed-amount"
+            data-testid="publish-direct-input-fixed-amount"
             type="number"
             value={fixedAmount}
             onChange={(e) => setFixedAmount(parseFloat(e.target.value) || 0)}
@@ -170,6 +174,8 @@ const PublishDirectSearchable = () => {
           {presetAmounts.map((amount, index) => (
             <Box key={index} display="flex" alignItems="center" mb={1}>
               <TextField
+                id={`publish-direct-input-preset-${index}`}
+                data-testid={`publish-direct-input-preset-${index}`}
                 type="number"
                 value={amount}
                 onChange={(e) => updatePresetAmount(index, e.target.value)}
@@ -183,6 +189,8 @@ const PublishDirectSearchable = () => {
               />
               {presetAmounts.length > 1 && (
                 <IconButton 
+                  id={`publish-direct-button-remove-preset-${index}`}
+                  data-testid={`publish-direct-button-remove-preset-${index}`}
                   onClick={() => removePresetAmount(index)}
                   size="small"
                   color="secondary"
@@ -194,6 +202,8 @@ const PublishDirectSearchable = () => {
           ))}
           {presetAmounts.length < 3 && (
             <Button 
+              id="publish-direct-button-add-preset"
+              data-testid="publish-direct-button-add-preset"
               onClick={addPresetAmount}
               variant="outlined" 
               size="small"

@@ -95,21 +95,39 @@ const Onboarding5 = () => {
     <Box className={classes.root}>
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            id="onboarding5-button-back"
+            data-testid="onboarding5-button-back"
+            className={classes.backButton} 
+            onClick={handleBack}
+          >
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography 
+              id="onboarding5-text-title"
+              data-testid="onboarding5-text-title"
+              variant="h3" 
+              gutterBottom
+            >
               Create Your Donation Page
             </Typography>
           </Box>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Typography 
+            id="onboarding5-text-subtitle"
+            data-testid="onboarding5-text-subtitle"
+            variant="h6" 
+            color="textSecondary" 
+            gutterBottom
+          >
             Set up a simple way to receive donations
           </Typography>
 
           <form className={classes.form}>
             <TextField
+              id="onboarding5-input-title"
+              data-testid="onboarding5-input-title"
               fullWidth
               variant="outlined"
               value={title}
@@ -122,6 +140,8 @@ const Onboarding5 = () => {
             />
 
             <TextField
+              id="onboarding5-input-amount"
+              data-testid="onboarding5-input-amount"
               fullWidth
               variant="outlined"
               type="number"
@@ -163,6 +183,8 @@ const Onboarding5 = () => {
             )}
 
             <Button
+              id="onboarding5-button-next"
+              data-testid="onboarding5-button-next"
               variant="contained"
               color="primary"
               size="large"

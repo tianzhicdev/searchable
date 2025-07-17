@@ -25,7 +25,8 @@ const PublishSearchableCommon = ({
         </Typography>
         <TextField
           fullWidth
-          id="title"
+          id="publish-input-title"
+          data-testid="publish-input-title"
           name="title"
           value={formData.title}
           onChange={onInputChange}
@@ -42,7 +43,8 @@ const PublishSearchableCommon = ({
         </Typography>
         <TextField
           fullWidth
-          id="description"
+          id="publish-input-description"
+          data-testid="publish-input-description"
           name="description"
           value={formData.description}
           onChange={onInputChange}

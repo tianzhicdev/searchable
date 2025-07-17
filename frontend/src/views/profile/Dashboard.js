@@ -194,6 +194,8 @@ const Dashboard = () => {
                     
                     return (
                       <IconButton
+                        id={`dashboard-social-${platform.id}`}
+                        data-testid={`dashboard-social-${platform.id}`}
                         key={platform.id}
                         component="a"
                         href={url}

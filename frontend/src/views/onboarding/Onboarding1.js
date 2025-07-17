@@ -129,15 +129,29 @@ const Onboarding1 = () => {
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
 
-          <Typography variant="h5" className={classes.subtitle} gutterBottom>
+          <Typography 
+            variant="h5" 
+            className={classes.subtitle} 
+            gutterBottom
+            id="onboarding1-text-title"
+            data-testid="onboarding1-text-title"
+          >
             What would you like to do?
           </Typography>
           
           <Box style={{ marginTop: 32 }}>
             <Grid container spacing={3} id="container-1">
               <Grid item xs={12} className={classes.optionCard}>
-                <Card elevation={0}>
-                  <CardActionArea onClick={handleSellerClick}>
+                <Card 
+                  elevation={0}
+                  id="onboarding1-card-earn"
+                  data-testid="onboarding1-card-earn"
+                >
+                  <CardActionArea 
+                    onClick={handleSellerClick}
+                    id="onboarding1-button-earn"
+                    data-testid="onboarding1-button-earn"
+                  >
                     <CardContent className={classes.cardContent}>
                       <Storefront className={classes.icon} />
                       <Typography variant="h5" className={classes.optionTitle}>
@@ -152,8 +166,16 @@ const Onboarding1 = () => {
               </Grid>
               
               <Grid item xs={12} className={classes.optionCard}>
-                <Card elevation={0}>
-                  <CardActionArea onClick={handleShopperClick}>
+                <Card 
+                  elevation={0}
+                  id="onboarding1-card-shop"
+                  data-testid="onboarding1-card-shop"
+                >
+                  <CardActionArea 
+                    onClick={handleShopperClick}
+                    id="onboarding1-button-shop"
+                    data-testid="onboarding1-button-shop"
+                  >
                     <CardContent className={classes.cardContent}>
                       <ShoppingCart className={classes.icon} />
                       <Typography variant="h5" className={classes.optionTitle}>

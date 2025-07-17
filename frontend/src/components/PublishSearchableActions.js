@@ -18,6 +18,8 @@ const PublishSearchableActions = ({
     <Grid item xs={12}>
       <Box className={classes.formActions}>
         <Button 
+          id="publish-button-cancel"
+          data-testid="publish-button-cancel"
           variant="contained"
           className={classes.button} 
           onClick={() => navigateWithStack(history, '/search')}
@@ -25,6 +27,8 @@ const PublishSearchableActions = ({
           Cancel
         </Button>
         <Button 
+          id="publish-button-submit"
+          data-testid="publish-button-submit"
           type="submit"
           variant="contained" 
           className={classes.button}

@@ -122,21 +122,39 @@ const Onboarding4 = () => {
     <Box className={classes.root}>
       <Container maxWidth="md">
         <Paper className={classes.paper} elevation={0}>
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            id="onboarding4-button-back"
+            data-testid="onboarding4-button-back"
+            className={classes.backButton} 
+            onClick={handleBack}
+          >
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography 
+              id="onboarding4-text-title"
+              data-testid="onboarding4-text-title"
+              variant="h3" 
+              gutterBottom
+            >
               Create Your Catalog
             </Typography>
           </Box>
-          <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Typography 
+            id="onboarding4-text-subtitle"
+            data-testid="onboarding4-text-subtitle"
+            variant="h6" 
+            color="textSecondary" 
+            gutterBottom
+          >
             Set up your store catalog with items and prices
           </Typography>
 
           <form className={classes.form}>
             <TextField
+              id="onboarding4-input-store-name"
+              data-testid="onboarding4-input-store-name"
               fullWidth
               variant="outlined"
               value={storeName}
@@ -152,6 +170,8 @@ const Onboarding4 = () => {
               
               <Box className={classes.itemRow}>
                 <TextField
+                  id="onboarding4-input-item-name"
+                  data-testid="onboarding4-input-item-name"
                   variant="outlined"
                   size="small"
                   value={newItem.name}
@@ -160,6 +180,8 @@ const Onboarding4 = () => {
                   style={{ flex: 2 }}
                 />
                 <TextField
+                  id="onboarding4-input-item-price"
+                  data-testid="onboarding4-input-item-price"
                   variant="outlined"
                   size="small"
                   type="number"
@@ -169,6 +191,8 @@ const Onboarding4 = () => {
                   style={{ flex: 1 }}
                 />
                 <Button
+                  id="onboarding4-button-add-item"
+                  data-testid="onboarding4-button-add-item"
                   variant="contained"
                   color="primary"
                   onClick={handleAddItem}
@@ -194,6 +218,8 @@ const Onboarding4 = () => {
                       <Typography style={{ flex: 2 }}>{item.name}</Typography>
                       <Typography style={{ flex: 1 }}>{formatUSD(item.price)}</Typography>
                       <IconButton
+                        id={`onboarding4-button-delete-${item.id}`}
+                        data-testid={`onboarding4-button-delete-${item.id}`}
                         size="small"
                         onClick={() => handleRemoveItem(item.id)}
                         color="secondary"
@@ -207,6 +233,8 @@ const Onboarding4 = () => {
             </Box>
 
             <Button
+              id="onboarding4-button-next"
+              data-testid="onboarding4-button-next"
               variant="contained"
               color="primary"
               size="large"

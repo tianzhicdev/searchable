@@ -181,9 +181,18 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
     <Box className={classes.root}>
       <Container maxWidth="sm">
         <Paper className={classes.paper} elevation={0}>
-          <CheckCircle className={classes.successIcon} />
+          <CheckCircle 
+            id="onboarding-congrats-icon-success"
+            data-testid="onboarding-congrats-icon-success"
+            className={classes.successIcon} 
+          />
           
-          <Typography variant="h4" className={classes.title}>
+          <Typography 
+            id="onboarding-congrats-text-title"
+            data-testid="onboarding-congrats-text-title"
+            variant="h4" 
+            className={classes.title}
+          >
             {content.title.split('').map((char, i) => (
               <span key={i} style={{ animationDelay: `${1 + i * 0.05}s` }}>
                 {char === ' ' ? '\u00A0' : char}
@@ -191,16 +200,31 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
             ))}
           </Typography>
           
-          <Typography variant="h6" className={classes.subtitle}>
+          <Typography 
+            id="onboarding-congrats-text-subtitle"
+            data-testid="onboarding-congrats-text-subtitle"
+            variant="h6" 
+            className={classes.subtitle}
+          >
             {content.subtitle}
           </Typography>
 
           <Box className={classes.storeInfo}>
             {content.icon}
-            <Typography variant="body2" color="textSecondary">
+            <Typography 
+              id="onboarding-congrats-text-store-label"
+              data-testid="onboarding-congrats-text-store-label"
+              variant="body2" 
+              color="textSecondary"
+            >
               {content.storeLabel}
             </Typography>
-            <Typography variant="h5" className={classes.highlight}>
+            <Typography 
+              id="onboarding-congrats-text-store-name"
+              data-testid="onboarding-congrats-text-store-name"
+              variant="h5" 
+              className={classes.highlight}
+            >
               {storeName}
             </Typography>
           </Box>
@@ -217,6 +241,8 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
           </Box>
 
           <Button
+            id="onboarding-congrats-button-enter"
+            data-testid="onboarding-congrats-button-enter"
             variant="contained"
             color="primary"
             size="large"

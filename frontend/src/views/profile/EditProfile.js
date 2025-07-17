@@ -444,11 +444,14 @@ const EditProfile = () => {
                   accept="image/*"
                   style={{ display: 'none' }}
                   id="profile-image-input"
+                  data-testid="editprofile-input-image"
                   type="file"
                   onChange={handleImageChange}
                 />
                 <label htmlFor="profile-image-input">
                   <IconButton
+                    id="editprofile-button-upload-image"
+                    data-testid="editprofile-button-upload-image"
                     className={styles.uploadButton}
                     aria-label="upload picture"
                     component="span"
@@ -460,6 +463,8 @@ const EditProfile = () => {
               {((profileImagePreview || profileData.profile_image_url) && !profileImageRemoved) && (
                 <Box mt={1}>
                   <Button 
+                    id="editprofile-button-remove-image"
+                    data-testid="editprofile-button-remove-image"
                     size="small" 
                     onClick={removeProfileImage} 
                   >
@@ -471,6 +476,8 @@ const EditProfile = () => {
 
             {/* Introduction */}
             <TextField
+              id="editprofile-input-introduction"
+              data-testid="editprofile-input-introduction"
               name="introduction"
               label="Introduction"
               type="text"
@@ -510,6 +517,8 @@ const EditProfile = () => {
                 const Icon = platform.icon;
                 return (
                   <TextField
+                    id={`editprofile-input-social-${platform.id}`}
+                    data-testid={`editprofile-input-social-${platform.id}`}
                     key={platform.id}
                     name={platform.id}
                     type="text"
@@ -554,6 +563,8 @@ const EditProfile = () => {
             {/* Submit Button */}
             <Box display="flex" gap={2} mt={3}>
               <Button
+                id="editprofile-button-submit"
+                data-testid="editprofile-button-submit"
                 type="submit"
                 variant="contained"
                 color="primary"

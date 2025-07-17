@@ -127,6 +127,8 @@ const RefillUSDT = () => {
               )}
 
               <Button
+                id="refill-button-create-deposit"
+                data-testid="refill-button-create-deposit"
                 onClick={handleCreateDeposit}
                 variant="contained"
                 color="primary"
@@ -158,6 +160,8 @@ const RefillUSDT = () => {
               
               {/* Address Display */}
               <Box 
+                id="refill-box-address"
+                data-testid="refill-box-address"
                 className={styles.addressBox}
                 mb={3}
                 onClick={() => handleCopyAddress(depositAddress)}
@@ -170,6 +174,8 @@ const RefillUSDT = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Button
+                    id="refill-button-copy-address"
+                    data-testid="refill-button-copy-address"
                     onClick={() => handleCopyAddress(depositAddress)}
                     variant="contained"
                     color="primary"
@@ -180,6 +186,8 @@ const RefillUSDT = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Button
+                    id="refill-button-check-deposits"
+                    data-testid="refill-button-check-deposits"
                     onClick={handleCheckDeposits}
                     variant="contained"
                     fullWidth
@@ -204,6 +212,8 @@ const RefillUSDT = () => {
 
               <Box mt={3}>
                 <Button
+                  id="refill-button-new-deposit"
+                  data-testid="refill-button-new-deposit"
                   onClick={() => {
                     setDepositAddress('');
                     setDepositExpiresAt(null);

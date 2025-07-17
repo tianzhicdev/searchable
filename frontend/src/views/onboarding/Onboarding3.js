@@ -176,12 +176,22 @@ const Onboarding3 = () => {
             </Box>
           )}
           
-          <IconButton className={classes.backButton} onClick={handleBack}>
+          <IconButton 
+            className={classes.backButton} 
+            onClick={handleBack}
+            id="onboarding3-button-back"
+            data-testid="onboarding3-button-back"
+          >
             <ArrowBack />
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography 
+              variant="h3" 
+              gutterBottom
+              id="onboarding3-text-title"
+              data-testid="onboarding3-text-title"
+            >
               Upload Your Digital Content
             </Typography>
           </Box>
@@ -192,6 +202,8 @@ const Onboarding3 = () => {
           <Box
             className={classes.uploadSection}
             onClick={() => fileInputRef.current?.click()}
+            id="onboarding3-upload-dropzone"
+            data-testid="onboarding3-upload-dropzone"
           >
             <CloudUpload className={classes.uploadIcon} />
             <Typography variant="h6">
@@ -205,6 +217,8 @@ const Onboarding3 = () => {
               color="primary"
               startIcon={<AttachFile />}
               style={{ marginTop: 16 }}
+              id="onboarding3-button-select-files"
+              data-testid="onboarding3-button-select-files"
             >
               Select Files
             </Button>
@@ -217,6 +231,8 @@ const Onboarding3 = () => {
             onChange={handleFileSelect}
             className={classes.fileInput}
             accept=".pdf,.zip,.mp4,.mp3,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            id="onboarding3-input-file"
+            data-testid="onboarding3-input-file"
           />
 
           {uploadedFiles.length > 0 && (
@@ -237,6 +253,8 @@ const Onboarding3 = () => {
                         aria-label="delete"
                         onClick={() => handleRemoveFile(file.id)}
                         disabled={uploading}
+                        id={`onboarding3-button-delete-file-${file.id}`}
+                        data-testid={`onboarding3-button-delete-file-${file.id}`}
                       >
                         <Delete />
                       </IconButton>
@@ -255,6 +273,8 @@ const Onboarding3 = () => {
             className={classes.nextButton}
             onClick={handleNext}
             disabled={uploading}
+            id="onboarding3-button-next"
+            data-testid="onboarding3-button-next"
           >
             Next
           </Button>
