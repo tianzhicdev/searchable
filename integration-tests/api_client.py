@@ -90,6 +90,14 @@ class APIClient:
         response.raise_for_status()
         return response.json()
     
+    def update_searchable(self, searchable_id: int, searchable_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing searchable item"""
+        url = f"{self.base_url}/v1/searchable/{searchable_id}"
+        
+        response = self.session.put(url, json=searchable_data, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    
     def get_searchable(self, searchable_id: int) -> Dict[str, Any]:
         """Retrieve a searchable item by ID"""
         url = f"{self.base_url}/v1/searchable/{searchable_id}"

@@ -126,10 +126,14 @@ const PublishAllInOneSearchable = () => {
             enabled: componentsData.downloadable?.enabled || false,
             files: (componentsData.downloadable?.files || []).map(file => ({
               id: file.id || uuidv4(),
+              fileId: file.fileId,
+              uuid: file.uuid,
               name: file.name || '',
               description: file.description || '',
               price: file.price || 0,
-              size: file.size || 0
+              fileName: file.fileName,
+              fileType: file.fileType,
+              size: file.fileSize || file.size || 0
             }))
           },
           offline: {
@@ -260,31 +264,64 @@ const PublishAllInOneSearchable = () => {
     }));
   };
 
-  const handleAddFile = () => {
+  const handleAddFile = async () => {
     if (!newFile.file || !newFile.price) {
       setError('Please select a file and enter a price');
       return;
     }
     
-    const fileItem = {
-      id: uuidv4(),
-      name: newFile.name,
-      description: newFile.description,
-      size: newFile.file.size,
-      price: parseFloat(newFile.price)
-    };
-    
-    setComponents(prev => ({
-      ...prev,
-      downloadable: {
-        ...prev.downloadable,
-        files: [...prev.downloadable.files, fileItem]
+    setUploadingFiles(true);
+    try {
+      // Upload file to get fileId
+      const formData = new FormData();
+      formData.append('file', newFile.file);
+      
+      // Add metadata
+      const metadata = {
+        description: newFile.description,
+        type: 'downloadable_content'
+      };
+      formData.append('metadata', JSON.stringify(metadata));
+      
+      const uploadResponse = await backend.post('v1/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (uploadResponse.data.success) {
+        const fileItem = {
+          id: uuidv4(),
+          fileId: uploadResponse.data.file_id,
+          uuid: uploadResponse.data.uuid,
+          name: newFile.name,
+          description: newFile.description,
+          fileName: newFile.file.name,
+          fileType: newFile.file.type,
+          size: newFile.file.size,
+          price: parseFloat(newFile.price)
+        };
+        
+        setComponents(prev => ({
+          ...prev,
+          downloadable: {
+            ...prev.downloadable,
+            files: [...prev.downloadable.files, fileItem]
+          }
+        }));
+        
+        setNewFile({ name: '', description: '', price: '', file: null });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setError('');
+      } else {
+        throw new Error("Failed to upload file");
       }
-    }));
-    
-    setNewFile({ name: '', description: '', price: '', file: null });
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setError('');
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setError(error.response?.data?.error || "Failed to upload file. Please try again.");
+    } finally {
+      setUploadingFiles(false);
+    }
   };
 
   const handleUpdateFile = (fileId, field, value) => {
@@ -421,6 +458,33 @@ const PublishAllInOneSearchable = () => {
     setError('');
     
     try {
+      // Format the components data for backend
+      const formattedComponents = {
+        downloadable: {
+          enabled: components.downloadable.enabled,
+          files: components.downloadable.files.map(file => ({
+            id: file.id,
+            fileId: file.fileId,
+            name: file.name,
+            description: file.description,
+            fileName: file.fileName,
+            fileType: file.fileType,
+            fileSize: file.size,
+            price: file.price
+          }))
+        },
+        offline: {
+          enabled: components.offline.enabled,
+          items: components.offline.items.map(item => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price
+          }))
+        },
+        donation: components.donation
+      };
+      
       const searchableData = {
         payloads: {
           public: {
@@ -428,7 +492,7 @@ const PublishAllInOneSearchable = () => {
             title: formData.title,
             description: formData.description,
             images: images,
-            components: components
+            components: formattedComponents
           }
         },
         tags: selectedTags
@@ -436,10 +500,8 @@ const PublishAllInOneSearchable = () => {
       
       let response;
       if (existingSearchable) {
-        response = await backend.put(
-          `v1/searchable/${existingSearchable.searchable_id}`,
-          searchableData
-        );
+        // Use the new update endpoint
+        response = await backend.put(`v1/searchable/${existingSearchable.searchable_id}`, searchableData);
       } else {
         response = await backend.post('v1/searchable/create', searchableData);
       }
@@ -479,26 +541,29 @@ const PublishAllInOneSearchable = () => {
   }
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography variant="h4" gutterBottom>
-          {existingSearchable ? 'Edit' : 'Create'} All-In-One Offering
-        </Typography>
-        <Typography variant="body2" color="textSecondary" paragraph>
-          Combine digital downloads, physical items, and donations in a single listing
-        </Typography>
-      </Grid>
+    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Typography variant="h4" gutterBottom>
+            {existingSearchable ? 'Edit' : 'Create'} All-In-One Offering
+          </Typography>
+          <Typography variant="body2" color="textSecondary" paragraph>
+            Combine digital downloads, physical items, and donations in a single listing
+          </Typography>
+        </Grid>
 
       {/* Common fields */}
-      <PublishSearchableCommon
-        formData={formData}
-        onInputChange={handleInputChange}
-        images={images}
-        onImagesChange={handleImagesChange}
-        selectedTags={selectedTags}
-        onTagsChange={handleTagsChange}
-        onError={setError}
-      />
+      <Grid item xs={12}>
+        <PublishSearchableCommon
+          formData={formData}
+          onInputChange={handleInputChange}
+          images={images}
+          onImagesChange={handleImagesChange}
+          selectedTags={selectedTags}
+          onTagsChange={handleTagsChange}
+          onError={setError}
+        />
+      </Grid>
 
       {/* Downloadable component section */}
       <Grid item xs={12}>
@@ -583,10 +648,10 @@ const PublishAllInOneSearchable = () => {
                 />
                 <IconButton
                   onClick={handleAddFile}
-                  disabled={!newFile.file || !newFile.price}
+                  disabled={!newFile.file || !newFile.price || uploadingFiles}
                   color="primary"
                 >
-                  <Add />
+                  {uploadingFiles ? <CircularProgress size={20} /> : <Add />}
                 </IconButton>
               </Box>
             </Paper>
@@ -894,13 +959,16 @@ const PublishAllInOneSearchable = () => {
       )}
 
       {/* Actions */}
-      <PublishSearchableActions
-        loading={loading}
-        onSubmit={handleSubmit}
-        submitText={existingSearchable ? 'Update' : 'Publish'}
-        disabled={!formData.title || !Object.values(components).some(c => c.enabled)}
-      />
-    </Grid>
+      <Grid item xs={12}>
+        <PublishSearchableActions
+          loading={loading}
+          onSubmit={handleSubmit}
+          submitText={existingSearchable ? 'Update' : 'Publish'}
+          disabled={!formData.title || !Object.values(components).some(c => c.enabled)}
+        />
+      </Grid>
+      </Grid>
+    </Box>
   );
 };
 
