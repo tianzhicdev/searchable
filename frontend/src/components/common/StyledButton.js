@@ -7,6 +7,7 @@
 import React from 'react';
 import { Button } from '@material-ui/core';
 import { components } from '../../themes/styleSystem';
+import { testIdProps } from '../../utils/testIds';
 
 const StyledButton = ({ 
   children, 
@@ -19,6 +20,7 @@ const StyledButton = ({
   onClick,
   type = 'button',
   sx = {},
+  testId,
   ...props 
 }) => {
   // Get the appropriate button style from our style system
@@ -27,6 +29,9 @@ const StyledButton = ({
     ...(components.button[color] || components.button.primary),
     ...sx
   };
+
+  // Generate test ID from testId prop or children text
+  const buttonTestId = testId || (typeof children === 'string' ? children.toLowerCase().replace(/\s+/g, '-') : 'styled-button');
 
   return (
     <Button
@@ -40,6 +45,7 @@ const StyledButton = ({
       onClick={onClick}
       type={type}
       sx={buttonStyles}
+      {...testIdProps('button', 'styled', buttonTestId)}
       {...props}
     >
       {children}

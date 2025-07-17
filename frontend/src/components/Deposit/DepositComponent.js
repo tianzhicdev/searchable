@@ -18,6 +18,7 @@ import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { useHistory } from 'react-router-dom';
 import { componentSpacing } from '../../utils/spacing';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -115,9 +116,9 @@ const DepositComponent = ({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog}>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogContent className={styles.dialogContent}>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog} {...testIdProps('dialog', 'deposit', 'container')}>
+        <DialogTitle {...testIdProps('dialog', 'deposit', 'title')}>{title}</DialogTitle>
+        <DialogContent className={styles.dialogContent} {...testIdProps('dialog', 'deposit', 'content')}>
           {!depositAddress ? (
             <>
               {showInstructions && (
@@ -179,6 +180,7 @@ const DepositComponent = ({
                 onClick={() => handleCopyAddress(depositAddress)}
                 variant="contained"
                 fullWidth
+                {...testIdProps('button', 'deposit', 'copy-address')}
               >
                 Copy Address
               </Button>
@@ -192,6 +194,7 @@ const DepositComponent = ({
                   }}
                   variant="outlined"
                   fullWidth
+                  {...testIdProps('button', 'deposit', 'check-deposits')}
                 >
                   Check My Deposits
                 </Button>
@@ -212,8 +215,8 @@ const DepositComponent = ({
             </>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} className={styles.button}>
+        <DialogActions {...testIdProps('dialog', 'deposit', 'actions')}>
+          <Button onClick={handleClose} className={styles.button} {...testIdProps('button', 'deposit', 'close')}>
             {depositAddress ? 'Close' : 'Cancel'}
           </Button>
           {!depositAddress && (
@@ -223,6 +226,7 @@ const DepositComponent = ({
               disabled={depositLoading}
               startIcon={depositLoading ? <CircularProgress size={20} /> : null}
               className={styles.button}
+              {...testIdProps('button', 'deposit', 'create')}
             >
               {depositLoading ? 'Creating...' : 'Create Deposit'}
             </Button>

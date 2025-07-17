@@ -8,6 +8,7 @@ import usePublishSearchable from '../hooks/usePublishSearchable';
 import { componentSpacing } from '../utils/spacing';
 import PageHeaderButton from './Navigation/PageHeaderButton';
 import { PageLayout, SectionHeader, ErrorState, LoadingState } from './common';
+import { testIdProps } from '../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   section: {
@@ -204,7 +205,7 @@ const EnhancedBasePublishSearchable = ({
         variant: ui.variant
       }}
     >
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} {...testIdProps('form', 'publish-searchable', 'container')}>
         <Grid container spacing={ui.spacing}>
           {/* Custom header component */}
           {components.header && (

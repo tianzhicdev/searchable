@@ -15,6 +15,7 @@ import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStac
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import SearchableList from '../searchables/SearchableList';
+import { testIdProps } from '../../utils/testIds';
 
 const UserProfile = () => {
   const classes = useComponentStyles();
@@ -108,9 +109,9 @@ const UserProfile = () => {
   }
 
   return (
-    <Grid container>
+    <Grid container {...testIdProps('page', 'user-profile', 'container')}>
       {/* Header */}
-      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
+      <Grid item xs={12} sx={componentSpacing.pageHeader(theme)} {...testIdProps('section', 'profile', 'header')}>
         <PageHeaderButton
           onClick={handleBackClick}
         />
@@ -118,10 +119,10 @@ const UserProfile = () => {
 
       {/* Profile Information */}
       <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
-        <Paper elevation={3} sx={componentSpacing.card(theme)}>
-          <Box display="flex" flexDirection="column" alignItems="center" textAlign="center">
+        <Paper elevation={3} sx={componentSpacing.card(theme)} {...testIdProps('card', 'profile', 'info')}>
+          <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" {...testIdProps('section', 'profile', 'content')}>
             {/* Profile Image */}
-            <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
+            <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }} {...testIdProps('section', 'profile', 'image')}>
               {profileData.profile_image_url ? (
                 <Avatar 
                   src={getMediaUrl(profileData.profile_image_url)} 
@@ -134,6 +135,7 @@ const UserProfile = () => {
                       height: 80
                     }
                   }}
+                  {...testIdProps('image', 'profile', 'avatar')}
                 />
               ) : (
                 <Avatar sx={{ 
@@ -144,20 +146,20 @@ const UserProfile = () => {
                     width: 80,
                     height: 80
                   }
-                }}>
+                }} {...testIdProps('image', 'profile', 'default-avatar')}>
                   <PersonIcon sx={{ fontSize: 60, [theme.breakpoints.down('sm')]: { fontSize: 48 } }} />
                 </Avatar>
               )}
             </Box>
 
             {/* Username */}
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom {...testIdProps('text', 'profile', 'username')}>
               {profileData.username}
             </Typography>
 
             {/* Display tags below name */}
             {profileData.tags && profileData.tags.length > 0 && (
-              <Box style={{ marginTop: 8, marginBottom: 16 }}>
+              <Box style={{ marginTop: 8, marginBottom: 16 }} {...testIdProps('section', 'profile', 'tags')}>
                 <TagsOnProfile tags={profileData.tags} />
               </Box>
             )}
@@ -172,8 +174,8 @@ const UserProfile = () => {
                   mb: theme.spacing(spacing.element.xs),
                   px: theme.spacing(1)
                 }
-              }}>
-                <Typography variant="body1" color="textSecondary">
+              }} {...testIdProps('section', 'profile', 'introduction')}>
+                <Typography variant="body1" color="textSecondary" {...testIdProps('text', 'profile', 'introduction-text')}>
                   {profileData.introduction}
                 </Typography>
               </Box>
@@ -181,8 +183,8 @@ const UserProfile = () => {
 
             {/* Seller Rating */}
             {typeof profileData.seller_rating === 'number' && profileData.seller_total_ratings > 0 && (
-              <Box mt={1}>
-                <Typography variant="body1">
+              <Box mt={1} {...testIdProps('section', 'profile', 'rating')}>
+                <Typography variant="body1" {...testIdProps('text', 'profile', 'rating-value')}>
                   ★ {profileData.seller_rating.toFixed(1)} ({profileData.seller_total_ratings} reviews)
                 </Typography>
               </Box>
@@ -190,7 +192,7 @@ const UserProfile = () => {
 
             {/* Member since */}
             {profileData.created_at && (
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="textSecondary" {...testIdProps('text', 'profile', 'member-since')}>
                 Member since {new Date(profileData.created_at).toLocaleDateString()}
               </Typography>
             )}

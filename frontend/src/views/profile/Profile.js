@@ -22,6 +22,7 @@ import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),

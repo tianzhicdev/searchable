@@ -1,3 +1,3 @@
 // Auto-generated version file
 // This file is updated by the release script
-export const APP_VERSION = '1.5.80';
+export const APP_VERSION = '1.5.81';

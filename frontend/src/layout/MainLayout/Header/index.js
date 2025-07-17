@@ -10,6 +10,7 @@ import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
+import { testIds } from '../../../utils/testIds';
 
 // assets
 import { IconMenu2 } from '@tabler/icons';
@@ -60,12 +61,21 @@ const Header = ({ handleLeftDrawerToggle }) => {
     return (
         <React.Fragment>
             {/* logo & toggler button */}
-            <div className={classes.boxContainer}>
+            <div className={classes.boxContainer} data-testid={testIds.nav.menu('header-container')}>
                 <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
                     <LogoSection />
                 </Box>
-                <ButtonBase sx={{ borderRadius: '12px', overflow: 'hidden' }}>
-                    <Avatar variant="rounded" className={classes.headerAvatar} onClick={handleLeftDrawerToggle} color="inherit">
+                <ButtonBase 
+                    sx={{ borderRadius: '12px', overflow: 'hidden' }}
+                    data-testid={testIds.button.nav('menu-toggle')}
+                >
+                    <Avatar 
+                        variant="rounded" 
+                        className={classes.headerAvatar} 
+                        onClick={handleLeftDrawerToggle} 
+                        color="inherit"
+                        data-testid="avatar-menu-toggle"
+                    >
                         <IconMenu2 stroke={1.5} size="1.3rem" />
                     </Avatar>
                 </ButtonBase>

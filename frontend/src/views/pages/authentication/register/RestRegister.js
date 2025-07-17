@@ -27,6 +27,7 @@ import axios from 'axios';
 import useScriptRef from '../../../../hooks/useScriptRef';
 import { strengthColor, strengthIndicator } from '../../../../utils/password-strength';
 import { componentSpacing, touchTargets } from '../../../../utils/spacing';
+import { testIdProps } from '../../../../utils/testIds';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -205,7 +206,7 @@ const RestRegister = ({ ...others }) => {
     }, []);
 
     return (
-        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...others}>
+        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...testIdProps('form', 'rest-register', 'container')} {...others}>
                         
             <FormControl 
                 fullWidth 
@@ -223,6 +224,7 @@ const RestRegister = ({ ...others }) => {
                     InputProps={{
                         style: { minHeight: touchTargets.input.mobileHeight }
                     }}
+                    {...testIdProps('input', 'rest-register', 'email-field')}
                 />
                 {touched.email && formErrors.email && (
                     <FormHelperText error id="standard-weight-helper-text--register">
@@ -246,6 +248,7 @@ const RestRegister = ({ ...others }) => {
                     InputProps={{
                         style: { minHeight: touchTargets.input.mobileHeight }
                     }}
+                    {...testIdProps('input', 'rest-register', 'username-field')}
                 />
                 {touched.username && formErrors.username && (
                     <FormHelperText error id="standard-weight-helper-text--register">
@@ -280,6 +283,7 @@ const RestRegister = ({ ...others }) => {
                             </InputAdornment>
                         )
                     }}
+                    {...testIdProps('input', 'rest-register', 'invite-code-field')}
                 />
                 <FormHelperText>
                     {formValues.invite_code.length === 0 && "Enter a 6-letter invite code for a $5 reward"}
@@ -308,12 +312,14 @@ const RestRegister = ({ ...others }) => {
                                     onClick={handleClickShowPassword}
                                     onMouseDown={handleMouseDownPassword}
                                     edge="end"
+                                    {...testIdProps('button', 'rest-register', 'password-visibility-toggle')}
                                 >
                                     {showPassword ? <Visibility /> : <VisibilityOff />}
                                 </IconButton>
                             </InputAdornment>
                         )
                     }}
+                    {...testIdProps('input', 'rest-register', 'password-field')}
                 />
                 {touched.password && formErrors.password && (
                     <FormHelperText error id="standard-weight-helper-text-password-register">
@@ -387,6 +393,7 @@ const RestRegister = ({ ...others }) => {
                     variant="contained"
                     color="primary"
                     className={classes.button}
+                    {...testIdProps('button', 'rest-register', 'submit')}
                 >
                     Sign Up
                 </Button>
