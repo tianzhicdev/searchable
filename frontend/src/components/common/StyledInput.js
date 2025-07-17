@@ -6,6 +6,7 @@
 import React from 'react';
 import { TextField, InputAdornment } from '@material-ui/core';
 import { components } from '../../themes/styleSystem';
+import { testIdProps } from '../../utils/testIds';
 
 const StyledInput = ({ 
   value,
@@ -31,6 +32,7 @@ const StyledInput = ({
   sx = {},
   variant = 'outlined',
   size = 'medium',
+  testId,
   ...props
 }) => {
   // Get the appropriate input style from our style system
@@ -43,6 +45,9 @@ const StyledInput = ({
       ...(error ? components.input.error : {})
     }
   };
+
+  // Generate test ID based on name, id, or provided testId
+  const fieldTestId = testId || name || id || 'styled-input';
 
   return (
     <TextField
@@ -73,6 +78,10 @@ const StyledInput = ({
         endAdornment: endAdornment && (
           <InputAdornment position="end">{endAdornment}</InputAdornment>
         ),
+        ...inputProps
+      }}
+      inputProps={{
+        ...testIdProps('input', fieldTestId, 'field'),
         ...inputProps
       }}
       {...props}

@@ -18,6 +18,7 @@ import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import backend from '../../../../views/utilities/Backend';
 import { componentSpacing, touchTargets } from '../../../../utils/spacing';
+import { testIdProps } from '../../../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -171,34 +172,38 @@ const Registration = ({ stepConfig }) => {
   const summary = getSummaryText();
 
   return (
-    <Box>
+    <Box {...testIdProps('component', 'registration', 'container')}>
       {!registrationSuccess && (
         <>
-          <Box className={classes.summary}>
-            <Typography variant="h6" gutterBottom>
+          <Box className={classes.summary} {...testIdProps('section', 'registration', 'summary')}>
+            <Typography variant="h6" gutterBottom {...testIdProps('text', 'summary', 'title')}>
               Your Store Summary
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" {...testIdProps('text', 'summary', 'store-name')}>
               <strong>Store:</strong> {summary.storeName}
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" {...testIdProps('text', 'summary', 'content-type')}>
               <strong>Content Type:</strong> {summary.contentType}
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" {...testIdProps('text', 'summary', 'pricing')}>
               <strong>Pricing:</strong> {summary.pricingModel}
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" {...testIdProps('text', 'summary', 'files')}>
               <strong>Products Ready:</strong> {summary.filesUploaded} file{summary.filesUploaded !== 1 ? 's' : ''}
             </Typography>
           </Box>
 
           {errors.general && (
-            <Alert severity="error" style={{ marginBottom: 16 }}>
+            <Alert 
+              severity="error" 
+              style={{ marginBottom: 16 }}
+              {...testIdProps('alert', 'registration', 'error')}
+            >
               {errors.general}
             </Alert>
           )}
 
-          <Box className={classes.form}>
+          <Box className={classes.form} {...testIdProps('form', 'registration', 'container')}>
             <TextField
               placeholder="Email Address"
               type="email"
@@ -212,6 +217,7 @@ const Registration = ({ stepConfig }) => {
               InputProps={{
                 style: { minHeight: touchTargets.input.mobileHeight }
               }}
+              inputProps={testIdProps('input', 'registration', 'email-field')}
             />
 
             <TextField
@@ -231,12 +237,14 @@ const Registration = ({ stepConfig }) => {
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
+                      {...testIdProps('button', 'registration', 'password-visibility')}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
+              inputProps={testIdProps('input', 'registration', 'password-field')}
             />
 
             <TextField
@@ -252,12 +260,13 @@ const Registration = ({ stepConfig }) => {
               InputProps={{
                 style: { minHeight: touchTargets.input.mobileHeight }
               }}
+              inputProps={testIdProps('input', 'registration', 'confirm-password-field')}
             />
           </Box>
 
           {password && (
-            <Box className={classes.passwordRequirements}>
-              <Typography variant="subtitle2" gutterBottom>
+            <Box className={classes.passwordRequirements} {...testIdProps('section', 'password', 'requirements')}>
+              <Typography variant="subtitle2" gutterBottom {...testIdProps('text', 'password', 'requirements-title')}>
                 Password Requirements:
               </Typography>
               {passwordRequirements.map((req) => (
@@ -266,6 +275,7 @@ const Registration = ({ stepConfig }) => {
                   className={`${classes.requirement} ${
                     req.check(password) ? classes.requirementMet : classes.requirementUnmet
                   }`}
+                  {...testIdProps('text', 'password', `requirement-${req.id}`)}
                 >
                   <CheckCircle fontSize="small" />
                   <Typography variant="body2">{req.text}</Typography>
@@ -282,9 +292,10 @@ const Registration = ({ stepConfig }) => {
             className={classes.continueButton}
             onClick={handleRegister}
             disabled={isLoading}
+            {...testIdProps('button', 'registration', 'submit')}
           >
             {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
+              <CircularProgress size={24} color="inherit" {...testIdProps('spinner', 'registration', 'loading')} />
             ) : (
               stepConfig.nextButton?.text || 'Create Account'
             )}
@@ -293,11 +304,11 @@ const Registration = ({ stepConfig }) => {
       )}
 
       {registrationSuccess && (
-        <Alert severity="success" className={classes.successMessage}>
-          <Typography variant="h6" gutterBottom>
+        <Alert severity="success" className={classes.successMessage} {...testIdProps('alert', 'registration', 'success')}>
+          <Typography variant="h6" gutterBottom {...testIdProps('text', 'success', 'title')}>
             Account Created Successfully!
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" {...testIdProps('text', 'success', 'message')}>
             Setting up your store...
           </Typography>
         </Alert>

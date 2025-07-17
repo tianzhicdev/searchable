@@ -1,6 +1,7 @@
 import React from 'react';
 import { LinearProgress, Box, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { testIdProps } from '../../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -22,13 +23,18 @@ const ProgressBar = ({ progress }) => {
   const classes = useStyles();
 
   return (
-    <Box className={classes.root}>
+    <Box className={classes.root} {...testIdProps('component', 'onboarding-progress', 'container')}>
       <LinearProgress
         variant="determinate"
         value={progress}
         className={classes.progressBar}
+        {...testIdProps('progress', 'onboarding', 'bar')}
       />
-      <Typography className={classes.progressText} align="right">
+      <Typography 
+        className={classes.progressText} 
+        align="right"
+        {...testIdProps('text', 'progress', 'percentage')}
+      >
         {Math.round(progress)}% Complete
       </Typography>
     </Box>

@@ -4,6 +4,7 @@ import { useTheme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
 import { isMockMode } from '../mocks/mockBackend';
 import { touchTargets } from '../utils/spacing';
+import { testIdProps } from '../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   indicator: {
@@ -43,8 +44,12 @@ const MockModeIndicator = () => {
   if (!isMockMode) return null;
 
   return (
-    <Box className={classes.indicator}>
-      <Typography variant="body2" className={classes.text}>
+    <Box className={classes.indicator} {...testIdProps('indicator', 'mock-mode', 'container')}>
+      <Typography 
+        variant="body2" 
+        className={classes.text}
+        {...testIdProps('text', 'mock-mode', 'label')}
+      >
         {isMobile ? '🔧 MOCK' : '🔧 MOCK MODE'}
       </Typography>
     </Box>
