@@ -117,30 +117,62 @@ const useSearchableDetails = () => {
     if (!SearchableItem) return;
     
     const itemType = SearchableItem.type;
-    let editPath;
     
-    switch (itemType) {
-      case 'downloadable':
-        editPath = '/publish-searchables';
-        break;
-      case 'offline':
-        editPath = '/publish-offline-searchables';
-        break;
-      case 'direct':
-        editPath = '/publish-direct-searchables';
-        break;
-      default:
-        editPath = '/publish-searchables';
+    // For old searchable types, redirect to allinone editor
+    if (itemType === 'downloadable' || itemType === 'offline' || itemType === 'direct') {
+      // Convert old searchable to allinone format
+      const convertedSearchable = {
+        ...SearchableItem,
+        payloads: {
+          ...SearchableItem.payloads,
+          public: {
+            ...SearchableItem.payloads?.public,
+            type: 'allinone',
+            components: {
+              downloadable: {
+                enabled: itemType === 'downloadable',
+                files: itemType === 'downloadable' ? (SearchableItem.payloads?.public?.files || []) : []
+              },
+              offline: {
+                enabled: itemType === 'offline',
+                items: itemType === 'offline' ? (SearchableItem.payloads?.public?.items || []) : []
+              },
+              donation: {
+                enabled: itemType === 'direct',
+                pricingMode: itemType === 'direct' ? (SearchableItem.payloads?.public?.pricingMode || 'flexible') : 'flexible',
+                fixedAmount: itemType === 'direct' ? (SearchableItem.payloads?.public?.fixedAmount || 10.00) : 10.00,
+                presetAmounts: itemType === 'direct' ? (SearchableItem.payloads?.public?.presetAmounts || [5, 10, 20]) : [5, 10, 20]
+              }
+            }
+          }
+        }
+      };
+      
+      // Navigate to allinone edit page with converted data
+      console.log('Converting old searchable to allinone:', convertedSearchable);
+      navigateWithStack(history, '/publish-allinone', {
+        additionalState: {
+          editMode: true,
+          editData: convertedSearchable
+        }
+      });
+    } else if (itemType === 'allinone') {
+      // For allinone type, just navigate to allinone editor
+      navigateWithStack(history, '/publish-allinone', {
+        additionalState: {
+          editMode: true,
+          editData: SearchableItem
+        }
+      });
+    } else {
+      // Fallback for any unknown types
+      navigateWithStack(history, '/publish-allinone', {
+        additionalState: {
+          editMode: true,
+          editData: SearchableItem
+        }
+      });
     }
-    
-    // Navigate to edit page with current data
-    console.log('Navigating to edit with data:', SearchableItem);
-    navigateWithStack(history, editPath, {
-      additionalState: {
-        editMode: true,
-        editData: SearchableItem
-      }
-    });
   };
 
   // Common create invoice function - can be extended by specific types

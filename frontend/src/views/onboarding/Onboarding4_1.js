@@ -87,23 +87,30 @@ const Onboarding4_1 = () => {
       // Small delay to ensure Redux state is propagated
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Create the offline searchable
+      // Create the allinone searchable with offline component enabled
       const searchablePayload = {
         payloads: {
           public: {
             title: catalogData.storeName,
             description: `Store catalog by ${userData.username}`,
-            currency: 'usd',
-            type: 'offline',
-            offlineItems: catalogData.items.map(item => ({
-              itemId: `item_${item.id}`,
-              name: item.name,
-              price: parseFloat(item.price),
-              description: ''
-            })),
-            visibility: {
-              udf: "always_true",
-              data: {}
+            type: 'allinone',
+            components: {
+              downloadable: {
+                enabled: false,
+                files: []
+              },
+              offline: {
+                enabled: true,
+                items: catalogData.items.map(item => ({
+                  id: `item_${item.id}`,
+                  name: item.name,
+                  price: parseFloat(item.price)
+                }))
+              },
+              donation: {
+                enabled: false,
+                pricingMode: 'flexible'
+              }
             }
           }
         }
@@ -122,7 +129,7 @@ const Onboarding4_1 = () => {
       sessionStorage.setItem('onboarding_success', JSON.stringify({
         type: 'offline',
         storeName: catalogData.storeName,
-        redirectPath: `/offline-item/${searchableResponse.data.searchable_id}`
+        redirectPath: `/allinone-item/${searchableResponse.data.searchable_id}`
       }));
       
       // Redirect to congratulations page
