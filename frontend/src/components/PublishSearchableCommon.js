@@ -3,6 +3,7 @@ import { Grid, Typography, TextField } from '@material-ui/core';
 import ImageUploader from './ImageUploader';
 import TagSelector from './Tags/TagSelector';
 import useComponentStyles from '../themes/componentStyles';
+import { testIds } from '../utils/testIds';
 
 const PublishSearchableCommon = ({
   formData,
@@ -18,7 +19,7 @@ const PublishSearchableCommon = ({
   const classes = useComponentStyles();
 
   return (
-    <>
+    <div data-testid={testIds.form.container('publish-searchable')}>
       <Grid item xs={12} className={classes.formGroup}>
         <Typography variant="subtitle1" className={classes.formLabel}>
           Title *
@@ -33,6 +34,7 @@ const PublishSearchableCommon = ({
           size="small"
           required
           className={classes.textInput}
+          data-testid={testIds.input.field('publish', 'title')}
         />
       </Grid>
       
@@ -50,6 +52,7 @@ const PublishSearchableCommon = ({
           multiline
           rows={4}
           className={classes.textInput}
+          data-testid={testIds.input.field('publish', 'description')}
         />
       </Grid>
       
@@ -68,6 +71,7 @@ const PublishSearchableCommon = ({
               onTagsChange={onTagsChange}
               maxTags={3}
               placeholder="Select tags..."
+              data-testid={testIds.input.field('publish', 'tags')}
             />
           </Grid>
           
@@ -80,11 +84,12 @@ const PublishSearchableCommon = ({
               description={imageDescription}
               imageSize={100}
               onError={onError}
+              data-testid={testIds.input.field('publish', 'images')}
             />
           </Grid>
         </>
       )}
-    </>
+    </div>
   );
 };
 

@@ -9,6 +9,7 @@ import useComponentStyles from '../../themes/componentStyles';
 import backend from '../../views/utilities/Backend';
 import { strengthIndicator, strengthColor } from '../../utils/password-strength';
 import { CommonDialog, FormField } from '../common';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -183,7 +184,8 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
     {
       label: 'Cancel',
       onClick: handleClose,
-      disabled: isSubmitting
+      disabled: isSubmitting,
+      testId: testIds.button.cancel('change-password')
     },
     {
       label: 'Change Password',
@@ -192,7 +194,8 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
       primary: true,
       disabled: isSubmitting,
       loading: isSubmitting,
-      loadingText: 'Changing...'
+      loadingText: 'Changing...',
+      testId: testIds.button.submit('change-password')
     }
   ];
 
@@ -204,8 +207,9 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
       actions={dialogActions}
       error={submitError}
       maxWidth="sm"
+      data-testid={testIds.dialog.container('change-password')}
     >
-      <form noValidate onSubmit={handleFormSubmit} className={styles.form}>
+      <form noValidate onSubmit={handleFormSubmit} className={styles.form} data-testid={testIds.form.container('change-password')}>
         <Typography variant="body2" className={classes.staticText} gutterBottom>
           Please enter your current password and choose a new password.
         </Typography>
@@ -222,6 +226,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           placeholder="Enter your current password"
           showPasswordToggle
           autoFocus
+          data-testid={testIds.input.field('change-password', 'current-password')}
         />
 
         {/* New Password */}
@@ -235,6 +240,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           error={touched.newPassword && formErrors.newPassword}
           placeholder="Enter your new password"
           showPasswordToggle
+          data-testid={testIds.input.field('change-password', 'new-password')}
         />
 
         {/* Password Strength Indicator */}
@@ -271,6 +277,7 @@ const ChangePasswordDialog = ({ open, onClose, onSuccess }) => {
           error={touched.confirmPassword && formErrors.confirmPassword}
           placeholder="Confirm your new password"
           showPasswordToggle
+          data-testid={testIds.input.field('change-password', 'confirm-password')}
         />
       </form>
     </CommonDialog>

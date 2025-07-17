@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, CircularProgress, Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { componentSpacing } from '../../utils/spacing';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   button: {
@@ -43,6 +44,7 @@ const ActionButton = ({
   startIcon,
   endIcon,
   type = 'button',
+  testId,
   ...buttonProps
 }) => {
   const classes = useStyles();
@@ -59,11 +61,12 @@ const ActionButton = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <Box className={classes.loadingWrapper}>
+        <Box className={classes.loadingWrapper} {...testIdProps('component', 'loading', 'wrapper')}>
           <CircularProgress 
             size={size === 'small' ? 16 : size === 'large' ? 24 : 20} 
             className={classes.buttonProgress}
             color="inherit"
+            {...testIdProps('spinner', 'button', 'loading')}
           />
           {loadingText || children}
         </Box>
@@ -71,6 +74,9 @@ const ActionButton = ({
     }
     return children;
   };
+
+  // Generate test ID from testId prop or children text
+  const buttonTestId = testId || (typeof children === 'string' ? children.toLowerCase().replace(/\s+/g, '-') : 'action-button');
 
   return (
     <Button
@@ -83,6 +89,7 @@ const ActionButton = ({
       startIcon={!loading ? startIcon : undefined}
       endIcon={!loading ? endIcon : undefined}
       type={type}
+      {...testIdProps('button', 'action', buttonTestId)}
       {...buttonProps}
     >
       {renderContent()}

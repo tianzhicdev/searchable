@@ -15,6 +15,7 @@ import {
 } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { components } from '../../themes/styleSystem';
+import { testIdProps } from '../../utils/testIds';
 
 const StyledDialog = ({
   open,
@@ -33,6 +34,7 @@ const StyledDialog = ({
   contentSx = {},
   titleSx = {},
   actionsSx = {},
+  testId,
   ...props
 }) => {
   const handleClose = (event, reason) => {
@@ -40,6 +42,9 @@ const StyledDialog = ({
     if (disableEscapeKeyDown && reason === 'escapeKeyDown') return;
     onClose(event, reason);
   };
+
+  // Generate test ID from testId prop or title
+  const dialogTestId = testId || (typeof title === 'string' ? title.toLowerCase().replace(/\s+/g, '-') : 'styled-dialog');
 
   return (
     <Dialog
@@ -54,12 +59,13 @@ const StyledDialog = ({
           ...sx
         }
       }}
+      {...testIdProps('dialog', dialogTestId, 'container')}
       {...props}
     >
       {title && (
         <>
-          <DialogTitle sx={{ ...components.dialog.title, ...titleSx }}>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <DialogTitle sx={{ ...components.dialog.title, ...titleSx }} {...testIdProps('dialog', dialogTestId, 'title')}>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} {...testIdProps('text', 'dialog', 'title-text')}>
               {title}
             </Typography>
             {showCloseButton && (
@@ -72,6 +78,7 @@ const StyledDialog = ({
                   top: 8,
                   color: (theme) => theme.palette.grey[500]
                 }}
+                {...testIdProps('button', 'dialog', 'close')}
               >
                 <CloseIcon />
               </IconButton>
@@ -84,6 +91,7 @@ const StyledDialog = ({
       <DialogContent 
         dividers={dividers}
         sx={{ ...components.dialog.content, ...contentSx }}
+        {...testIdProps('dialog', dialogTestId, 'content')}
       >
         {children}
       </DialogContent>
@@ -91,7 +99,7 @@ const StyledDialog = ({
       {actions && (
         <>
           {dividers && <Divider />}
-          <DialogActions sx={{ ...components.dialog.actions, ...actionsSx }}>
+          <DialogActions sx={{ ...components.dialog.actions, ...actionsSx }} {...testIdProps('dialog', dialogTestId, 'actions')}>
             {actions}
           </DialogActions>
         </>

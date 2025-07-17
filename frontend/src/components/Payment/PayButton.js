@@ -19,6 +19,7 @@ import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
 import RefillBalanceDialog from './RefillBalanceDialog';
 import BalancePaymentDialog from './BalancePaymentDialog';
+import { testIds } from '../../utils/testIds';
 
 /**
  * PayButton Component
@@ -111,6 +112,7 @@ const PayButton = ({
           fullWidth={fullWidth}
           size={size}
           startIcon={processing ? <CircularProgress size={20} /> : null}
+          data-testid={testIds.button.pay('disabled')}
         >
           <Typography variant="body2" className={classes.staticText}>
             {processing ? 'Processing...' : payButtonText}
@@ -151,6 +153,7 @@ const PayButton = ({
             disabled={processing}
             size={size}
             startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
+            data-testid={testIds.button.pay('balance')}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : `Buy with Balance ${formatCurrency(totalPrice)}`}
@@ -164,6 +167,7 @@ const PayButton = ({
             disabled={processing}
             size={size}
             startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            data-testid={testIds.button.pay('stripe')}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
@@ -221,6 +225,7 @@ const PayButton = ({
             disabled={processing}
             size={size}
             startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            data-testid={testIds.button.pay('stripe')}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : `Pay with Stripe(3.5% fee) ${formatCurrency(totalPrice * 1.035)}`}
@@ -234,6 +239,7 @@ const PayButton = ({
             disabled={processing}
             size={size}
             startIcon={processing ? <CircularProgress size={20} /> : <WalletIcon />}
+            data-testid={testIds.button.nav('refill-balance')}
           >
             <Typography variant="body2" className={classes.staticText}>
               {processing ? 'Processing...' : 'Refill Balance'}
@@ -293,6 +299,7 @@ const PayButton = ({
           size={size}
           endIcon={<ExpandMoreIcon />}
           startIcon={processing ? <CircularProgress size={20} /> : null}
+          data-testid={testIds.button.pay('dropdown')}
         >
           <Typography variant="body2" className={classes.staticText}>
             {processing ? 'Processing...' : `${payButtonText} ${formatCurrency(totalPrice * 1.035)}`}
@@ -313,8 +320,9 @@ const PayButton = ({
           vertical: 'top',
           horizontal: 'center',
         }}
+        data-testid={testIds.nav.menu('payment-options')}
       >
-        <MenuItem onClick={handleCreditCardClick}>
+        <MenuItem onClick={handleCreditCardClick} data-testid={testIds.nav.item('payment-stripe')}>
           <CreditCardIcon />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
@@ -326,7 +334,7 @@ const PayButton = ({
           </Box>
         </MenuItem>
         
-        <MenuItem onClick={handleDepositClick}>
+        <MenuItem onClick={handleDepositClick} data-testid={testIds.nav.item('payment-usdt')}>
           <WalletIcon />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
@@ -344,6 +352,7 @@ const PayButton = ({
             <MenuItem 
               onClick={handleBalanceClick}
               disabled={!canPayWithBalance}
+              data-testid={testIds.nav.item('payment-balance')}
             >
               <BalanceIcon color={canPayWithBalance ? "inherit" : "disabled"} />
               <Box ml={1}>
