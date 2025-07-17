@@ -21,6 +21,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import backend from '../../../../views/utilities/Backend';
+import { testIdProps } from '../../../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   dropzone: {
@@ -185,13 +186,14 @@ const FileUpload = ({ stepConfig }) => {
   };
 
   return (
-    <Box>
+    <Box {...testIdProps('component', 'file-upload', 'container')}>
       <Box
         className={`${classes.dropzone} ${isDragOver ? classes.dropzoneActive : ''}`}
         onClick={handleClick}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        {...testIdProps('zone', 'file-upload', 'dropzone')}
       >
         <input
           ref={fileInputRef}
@@ -200,16 +202,25 @@ const FileUpload = ({ stepConfig }) => {
           onChange={handleInputChange}
           style={{ display: 'none' }}
           accept={stepConfig.validation?.allowedTypes?.map(type => `.${type}`).join(',')}
+          {...testIdProps('input', 'file-upload', 'file-input')}
         />
-        <CloudUploadIcon className={classes.uploadIcon} />
-        <Typography variant="h6">
+        <CloudUploadIcon className={classes.uploadIcon} {...testIdProps('icon', 'file-upload', 'upload')} />
+        <Typography variant="h6" {...testIdProps('text', 'file-upload', 'title')}>
           {isDragOver ? 'Drop files here' : 'Drag & drop files here'}
         </Typography>
-        <Typography variant="body2" color="textSecondary">
+        <Typography 
+          variant="body2" 
+          color="textSecondary"
+          {...testIdProps('text', 'file-upload', 'subtitle')}
+        >
           or click to browse
         </Typography>
         {stepConfig.validation?.allowedTypes && (
-          <Typography variant="caption" color="textSecondary">
+          <Typography 
+            variant="caption" 
+            color="textSecondary"
+            {...testIdProps('text', 'file-upload', 'formats')}
+          >
             Supported formats: {stepConfig.validation.allowedTypes.join(', ')}
           </Typography>
         )}
@@ -220,26 +231,33 @@ const FileUpload = ({ stepConfig }) => {
           variant="determinate"
           value={uploadProgress}
           className={classes.progressBar}
+          {...testIdProps('progress', 'file-upload', 'bar')}
         />
       )}
 
       {localError && (
-        <Alert severity="error" className={classes.error} onClose={() => setLocalError(null)}>
+        <Alert 
+          severity="error" 
+          className={classes.error} 
+          onClose={() => setLocalError(null)}
+          {...testIdProps('alert', 'file-upload', 'error')}
+        >
           {localError}
         </Alert>
       )}
 
       {uploadedFiles.length > 0 && (
-        <Paper className={classes.fileList} elevation={0}>
-          <List>
+        <Paper className={classes.fileList} elevation={0} {...testIdProps('list', 'uploaded-files', 'container')}>
+          <List {...testIdProps('list', 'uploaded-files', 'list')}>
             {uploadedFiles.map((file) => (
-              <ListItem key={file.id} className={classes.fileItem}>
+              <ListItem key={file.id} className={classes.fileItem} {...testIdProps('list', 'uploaded-files', `item-${file.id}`)}>
                 <ListItemIcon>
-                  <FileIcon />
+                  <FileIcon {...testIdProps('icon', 'file', 'document')} />
                 </ListItemIcon>
                 <ListItemText
                   primary={file.name}
                   secondary={formatFileSize(file.size)}
+                  {...testIdProps('text', 'file', 'details')}
                 />
                 <ListItemSecondaryAction>
                   <IconButton
@@ -247,6 +265,7 @@ const FileUpload = ({ stepConfig }) => {
                     aria-label="delete"
                     onClick={() => handleRemoveFile(file.id)}
                     disabled={uploading}
+                    {...testIdProps('button', 'file', 'delete')}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -265,6 +284,7 @@ const FileUpload = ({ stepConfig }) => {
         className={classes.continueButton}
         onClick={handleContinue}
         disabled={uploading}
+        {...testIdProps('button', 'file-upload', 'continue')}
       >
         {stepConfig.nextButton?.text || 'Continue'}
       </Button>

@@ -6,6 +6,7 @@
 import React from 'react';
 import { Card, CardContent, CardActions, CardMedia, CardHeader } from '@material-ui/core';
 import { components, combineStyles } from '../../themes/styleSystem';
+import { testIdProps } from '../../utils/testIds';
 
 const StyledCard = ({ 
   children,
@@ -22,6 +23,7 @@ const StyledCard = ({
   sx = {},
   contentSx = {},
   actionsSx = {},
+  testId,
   ...props 
 }) => {
   // Combine base card styles with optional hover and clickable styles
@@ -34,11 +36,15 @@ const StyledCard = ({
 
   const handleClick = clickable && onClick ? onClick : undefined;
 
+  // Generate test ID if provided
+  const cardTestId = testId || 'styled-card';
+
   return (
     <Card 
       elevation={elevation} 
       sx={cardStyles} 
       onClick={handleClick}
+      {...testIdProps('card', cardTestId, 'container')}
       {...props}
     >
       {header && (
@@ -47,6 +53,7 @@ const StyledCard = ({
           subheader={header.subtitle}
           action={header.action}
           avatar={header.avatar}
+          {...testIdProps('card', cardTestId, 'header')}
         />
       )}
       
@@ -54,6 +61,7 @@ const StyledCard = ({
         <CardHeader
           title={title}
           subheader={subtitle}
+          {...testIdProps('card', cardTestId, 'title-header')}
         />
       )}
       
@@ -64,15 +72,16 @@ const StyledCard = ({
           image={media.image || media}
           alt={media.alt || 'Card media'}
           sx={media.sx}
+          {...testIdProps('card', cardTestId, 'media')}
         />
       )}
       
-      <CardContent sx={{ ...contentSx }}>
+      <CardContent sx={{ ...contentSx }} {...testIdProps('card', cardTestId, 'content')}>
         {children}
       </CardContent>
       
       {actions && (
-        <CardActions sx={{ ...actionsSx }}>
+        <CardActions sx={{ ...actionsSx }} {...testIdProps('card', cardTestId, 'actions')}>
           {actions}
         </CardActions>
       )}
