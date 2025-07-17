@@ -36,7 +36,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish-allinone/:id', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -50,6 +50,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/publish-offline-searchables" component={PublishOfflineRedirect} />
                     <Route exact path="/publish-direct-searchables" component={PublishDirectRedirect} />
                     <Route exact path="/publish-allinone" component={PublishAllInOneSearchable} />
+                    <Route exact path="/publish-allinone/:id" component={PublishAllInOneSearchable} />
                     <Route exact path="/publish/ai-content" component={PublishAIContent} />
                     <Route exact path="/dashboard" component={Dashboard} />
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
