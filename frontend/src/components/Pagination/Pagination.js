@@ -9,6 +9,7 @@ import {
   ChevronRight as ChevronRightIcon
 } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   paginationContainer: {
@@ -53,7 +54,7 @@ const Pagination = ({
   };
   
   return (
-    <Box className={classes.paginationContainer}>
+    <Box className={classes.paginationContainer} {...testIdProps('pagination', 'main', 'container')}>
       {/* Previous page button - only show if not on first page */}
       {currentPage > 1 && (
         <Button
@@ -62,6 +63,7 @@ const Pagination = ({
           size="small"
           onClick={handlePreviousPage}
           disabled={disabled}
+          {...testIdProps('button', 'pagination', 'previous')}
         >
           <ChevronLeftIcon />
         </Button>
@@ -74,6 +76,7 @@ const Pagination = ({
         color="primary"
         size="small"
         disabled
+        {...testIdProps('button', 'pagination', 'current-page')}
       >
         {currentPage}
       </Button>
@@ -86,6 +89,7 @@ const Pagination = ({
           size="small"
           onClick={handleNextPage}
           disabled={disabled}
+          {...testIdProps('button', 'pagination', 'next')}
         >
           <ChevronRightIcon />
         </Button>
