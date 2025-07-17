@@ -156,22 +156,8 @@ const usePublishSearchable = (searchableType, options = {}) => {
       let response;
       
       if (isEditMode && searchableId) {
-        // Note: The backend doesn't currently support updating searchables
-        // Create a new searchable and remove the old one
-        
-        // Create as new searchable
-        response = await backend.post('v1/searchable/create', searchableData);
-        
-        // Remove the old searchable after successful creation
-        if (response.data?.searchable_id) {
-          try {
-            await backend.put(`v1/searchable/remove/${searchableId}`, {});
-            console.log(`Successfully removed old searchable ${searchableId}`);
-          } catch (removeError) {
-            console.error('Failed to remove old searchable:', removeError);
-            // Don't fail the whole operation if removal fails
-          }
-        }
+        // Use the new update endpoint
+        response = await backend.put(`v1/searchable/${searchableId}`, searchableData);
       } else {
         // Create new searchable
         response = await backend.post('v1/searchable/create', searchableData);
@@ -210,23 +196,8 @@ const usePublishSearchable = (searchableType, options = {}) => {
           ? customRedirectPath(response) 
           : customRedirectPath;
       } else if (newSearchableId) {
-        // Redirect to the appropriate detail page based on type
-        switch (searchableType) {
-          case 'downloadable':
-            redirectPath = `/searchable-item/${newSearchableId}`;
-            break;
-          case 'offline':
-            redirectPath = `/offline-item/${newSearchableId}`;
-            break;
-          case 'direct':
-            redirectPath = `/direct-item/${newSearchableId}`;
-            break;
-          case 'allinone':
-            redirectPath = `/allinone-item/${newSearchableId}`;
-            break;
-          default:
-            redirectPath = `/searchable-item/${newSearchableId}`;
-        }
+        // Always redirect to allinone-item for backward compatibility
+        redirectPath = `/allinone-item/${newSearchableId}`;
       }
 
       // Redirect after a delay
