@@ -13,6 +13,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useLogout } from '../LogoutHandler';
+import { testIdProps } from '../../utils/testIds';
 
 // Icons
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
@@ -246,11 +247,12 @@ const FloatingBottomBar = () => {
   return (
     <>
       <Zoom in={true}>
-        <Paper className={classes.floatingBar} elevation={8}>
+        <Paper className={classes.floatingBar} elevation={8} {...testIdProps('paper', 'floating-bottom-bar', 'container')}>
           <IconButton
             className={`${classes.iconButton} ${accountMenuAnchor ? classes.activeIcon : ''}`}
             onClick={handleAccountClick}
             aria-label="My Account"
+            {...testIdProps('button', 'floating-bottom-bar', 'account')}
           >
             <AccountCircleIcon />
           </IconButton>
@@ -259,6 +261,7 @@ const FloatingBottomBar = () => {
             className={`${classes.iconButton} ${discoverMenuAnchor ? classes.activeIcon : ''}`}
             onClick={handleDiscoverClick}
             aria-label="Discover"
+            {...testIdProps('button', 'floating-bottom-bar', 'discover')}
           >
             <SearchIcon />
           </IconButton>
@@ -267,6 +270,7 @@ const FloatingBottomBar = () => {
             className={`${classes.iconButton} ${createMenuAnchor ? classes.activeIcon : ''}`}
             onClick={handleCreateClick}
             aria-label="Create"
+            {...testIdProps('button', 'floating-bottom-bar', 'create')}
           >
             <AddIcon />
           </IconButton>
@@ -287,8 +291,9 @@ const FloatingBottomBar = () => {
           vertical: 'bottom',
           horizontal: 'center',
         }}
+        {...testIdProps('menu', 'floating-bottom-bar', 'account')}
       >
-        <div className={classes.menuHeader}>My Account</div>
+        <div className={classes.menuHeader} {...testIdProps('div', 'floating-bottom-bar', 'account-header')}>My Account</div>
         {accountMenuItems.map((item, index) => (
           item.divider ? (
             <Box key={index} sx={{ my: 1, borderBottom: 1, borderColor: 'divider' }} />
@@ -297,6 +302,7 @@ const FloatingBottomBar = () => {
               key={item.label}
               onClick={item.onClick}
               className={classes.menuItem}
+              {...testIdProps('menuitem', 'floating-bottom-bar', `account-${item.label.toLowerCase().replace(/\s+/g, '-')}`)}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
@@ -319,13 +325,15 @@ const FloatingBottomBar = () => {
           vertical: 'bottom',
           horizontal: 'center',
         }}
+        {...testIdProps('menu', 'floating-bottom-bar', 'discover')}
       >
-        <div className={classes.menuHeader}>Discover</div>
+        <div className={classes.menuHeader} {...testIdProps('div', 'floating-bottom-bar', 'discover-header')}>Discover</div>
         {discoverMenuItems.map((item) => (
           <MenuItem
             key={item.label}
             onClick={item.onClick}
             className={classes.menuItem}
+            {...testIdProps('menuitem', 'floating-bottom-bar', `discover-${item.label.toLowerCase().replace(/\s+/g, '-')}`)}
           >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.label} />
@@ -347,13 +355,15 @@ const FloatingBottomBar = () => {
           vertical: 'bottom',
           horizontal: 'center',
         }}
+        {...testIdProps('menu', 'floating-bottom-bar', 'create')}
       >
-        <div className={classes.menuHeader}>Create New Posting</div>
+        <div className={classes.menuHeader} {...testIdProps('div', 'floating-bottom-bar', 'create-header')}>Create New Posting</div>
         {createMenuItems.map((item) => (
           <MenuItem
             key={item.label}
             onClick={item.onClick}
             className={classes.menuItem}
+            {...testIdProps('menuitem', 'floating-bottom-bar', `create-${item.label.toLowerCase().replace(/\s+/g, '-')}`)}
           >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText 

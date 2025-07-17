@@ -18,6 +18,7 @@ import { makeStyles } from '@material-ui/styles';
 import useScriptRef from '../../../../hooks/useScriptRef';
 import { performLogin } from '../../../../services/authService';
 import { componentSpacing, touchTargets } from '../../../../utils/spacing';
+import { testIdProps } from '../../../../utils/testIds';
 
 // assets
 import Visibility from '@material-ui/icons/Visibility';
@@ -147,7 +148,7 @@ const RestLogin = (props, { ...others }) => {
     };
 
     return (
-        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...others}>
+        <form noValidate onSubmit={handleSubmit} className={classes.formContainer} {...testIdProps('form', 'rest-login', 'container')} {...others}>
             <FormControl 
                 fullWidth 
                 error={Boolean(touched.email && formErrors.email)}
@@ -164,6 +165,7 @@ const RestLogin = (props, { ...others }) => {
                     InputProps={{
                         style: { minHeight: touchTargets.input.mobileHeight }
                     }}
+                    {...testIdProps('input', 'rest-login', 'email-field')}
                 />
                 {touched.email && formErrors.email && (
                     <FormHelperText error id="standard-weight-helper-text-email-login">
@@ -194,12 +196,14 @@ const RestLogin = (props, { ...others }) => {
                                     onClick={handleClickShowPassword}
                                     onMouseDown={handleMouseDownPassword}
                                     edge="end"
+                                    {...testIdProps('button', 'rest-login', 'password-visibility-toggle')}
                                 >
                                     {showPassword ? <Visibility /> : <VisibilityOff />}
                                 </IconButton>
                             </InputAdornment>
                         )
                     }}
+                    {...testIdProps('input', 'rest-login', 'password-field')}
                 />
                 {touched.password && formErrors.password && (
                     <FormHelperText error id="standard-weight-helper-text-password-login">
@@ -221,6 +225,7 @@ const RestLogin = (props, { ...others }) => {
                     fullWidth
                     type="submit"
                     className={classes.button}
+                    {...testIdProps('button', 'rest-login', 'submit')}
                 >
                     Sign In
                 </Button>

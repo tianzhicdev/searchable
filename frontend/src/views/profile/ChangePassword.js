@@ -26,6 +26,7 @@ import { strengthIndicator, strengthColor } from '../../utils/password-strength'
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -223,7 +224,7 @@ const ChangePassword = () => {
             Change Password
           </Typography>
           
-          <form onSubmit={handleSubmit} className={styles.formContainer}>
+          <form onSubmit={handleSubmit} className={styles.formContainer} {...testIdProps('form', 'change-password', 'container')}>
             {/* Current Password */}
             <FormControl fullWidth error={Boolean(formErrors.currentPassword && touched.currentPassword)}>
               <TextField
@@ -243,12 +244,14 @@ const ChangePassword = () => {
                         onClick={() => handleClickShowPassword('current')}
                         onMouseDown={handleMouseDownPassword}
                         edge="end"
+                        {...testIdProps('button', 'change-password', 'current-password-visibility-toggle')}
                       >
                         {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
                   )
                 }}
+                {...testIdProps('input', 'change-password', 'current-password-field')}
               />
               {formErrors.currentPassword && touched.currentPassword && (
                 <FormHelperText>{formErrors.currentPassword}</FormHelperText>

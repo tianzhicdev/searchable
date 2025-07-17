@@ -3,6 +3,7 @@ import { useLocation, useHistory } from 'react-router-dom';
 import { makeStyles } from '@material-ui/styles';
 import SearchByContent from '../search/SearchByContent';
 import SearchByUser from '../search/SearchByUser';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -29,7 +30,7 @@ const Landing = () => {
   const showCreators = tab === 'creators' || !tab;
   
   return (
-      <div>
+      <div data-testid={testIds.page.container('search')}>
         {showCreators ? (
           <SearchByUser />
         ) : (

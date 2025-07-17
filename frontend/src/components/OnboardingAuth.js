@@ -14,6 +14,7 @@ import { makeStyles } from '@material-ui/styles';
 import { useDispatch } from 'react-redux';
 import { performLogin, performRegistrationAndLogin } from '../services/authService';
 import { componentSpacing, touchTargets } from '../utils/spacing';
+import { testIdProps } from '../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -160,7 +161,7 @@ const OnboardingAuth = ({
         }
       </Typography>
 
-      <form onSubmit={handleSubmit} className={classes.form}>
+      <form onSubmit={handleSubmit} className={classes.form} {...testIdProps('form', 'onboarding-auth', 'container')}>
         {!isLoginMode && (
           <FormControl 
             fullWidth 
@@ -180,6 +181,7 @@ const OnboardingAuth = ({
               InputProps={{
                 style: { minHeight: touchTargets.input.mobileHeight }
               }}
+              {...testIdProps('input', 'onboarding-auth', 'username-field')}
             />
           </FormControl>
         )}
@@ -203,6 +205,7 @@ const OnboardingAuth = ({
             InputProps={{
               style: { minHeight: touchTargets.input.mobileHeight }
             }}
+            {...testIdProps('input', 'onboarding-auth', 'email-field')}
           />
         </FormControl>
 
@@ -229,12 +232,14 @@ const OnboardingAuth = ({
                   <IconButton
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
+                    {...testIdProps('button', 'onboarding-auth', 'password-visibility-toggle')}
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
+            {...testIdProps('input', 'onboarding-auth', 'password-field')}
           />
         </FormControl>
 
@@ -253,6 +258,7 @@ const OnboardingAuth = ({
           className={classes.submitButton}
           disabled={isSubmitting}
           startIcon={submitButtonIcon}
+          {...testIdProps('button', 'onboarding-auth', 'submit')}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
@@ -275,6 +281,7 @@ const OnboardingAuth = ({
             setError('');
           }}
           style={{ textTransform: 'none', marginTop: 8 }}
+          {...testIdProps('button', 'onboarding-auth', 'toggle-mode')}
         >
           {isLoginMode ? 'Create Account' : 'Sign In Instead'}
         </Button>

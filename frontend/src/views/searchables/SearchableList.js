@@ -10,6 +10,7 @@ import Pagination from '../../components/Pagination/Pagination';
 import ColumnLayout from '../../components/Layout/ColumnLayout';
 import backend from '../utilities/Backend';
 import { navigateWithStack } from '../../utils/navigationUtils';
+import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   errorPaper: {
@@ -172,10 +173,10 @@ const SearchableList = ({ criteria, onPageChange }) => {
   };
 
   return (
-    <>
+    <div data-testid={testIds.list.container('searchables')}>
       {error && (
         <Grid item xs={12}>
-          <Paper className={classes.errorPaper}>
+          <Paper className={classes.errorPaper} data-testid={testIds.list.empty('searchables-error')}>
             <Typography variant="body1">{error}</Typography>
           </Paper>
         </Grid>
@@ -183,7 +184,7 @@ const SearchableList = ({ criteria, onPageChange }) => {
 
       {loading && (
         <Grid item xs={12}>
-          <Box className={classes.loadingBox}>
+          <Box className={classes.loadingBox} data-testid={testIds.loading.spinner('searchables')}>
             <CircularProgress />
           </Box>
         </Grid>
@@ -192,18 +193,19 @@ const SearchableList = ({ criteria, onPageChange }) => {
       {!loading && searchResults.length > 0 && (
         <>
           {/* Results in column layout - fills left column first, then right */}
-          <ColumnLayout columns={2}>
-            {searchResults.map((item) => (
+          <ColumnLayout columns={2} data-testid={testIds.list.container('searchables-grid')}>
+            {searchResults.map((item, index) => (
               <MiniProfile 
                 key={`${item.searchable_id}-${pagination.page}`}
                 type="searchable"
                 data={item}
-                onClick={() => handleItemClick(item)} 
+                onClick={() => handleItemClick(item)}
+                data-testid={testIds.list.item('searchable', index)}
               />
             ))}
           </ColumnLayout>
 
-          <Box className={classes.paginationBox}>
+          <Box className={classes.paginationBox} data-testid={testIds.page.container('pagination')}>
             {console.log('[SEARCHABLE LIST] Rendering pagination:', { 
               currentPage: pagination.page, 
               totalPages: pagination.totalPages,
@@ -223,14 +225,14 @@ const SearchableList = ({ criteria, onPageChange }) => {
 
       {!loading && searchResults.length === 0 && criteria.searchTerm !== undefined && (
         <Grid item xs={12}>
-          <Paper elevation={2} className={classes.emptyPaper}>
+          <Paper elevation={2} className={classes.emptyPaper} data-testid={testIds.list.empty('searchables')}>
             <Typography variant="body1">
               No items found.
             </Typography>
           </Paper>
         </Grid>
       )}
-    </>
+    </div>
   );
 };
 
