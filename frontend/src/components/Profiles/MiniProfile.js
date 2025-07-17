@@ -169,6 +169,8 @@ const MiniProfile = ({
       clickPath = `/offline-item/${data.searchable_id}`;
     } else if (searchableType === 'direct') {
       clickPath = `/direct-item/${data.searchable_id}`;
+    } else if (searchableType === 'allinone') {
+      clickPath = `/allinone-item/${data.searchable_id}`;
     }
   } else if (type === 'user') {
     title = data.displayName || data.username;

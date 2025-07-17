@@ -115,6 +115,9 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                 case 'direct':
                     path = `/direct-item/${invoice.searchable_id}`;
                     break;
+                case 'allinone':
+                    path = `/allinone-item/${invoice.searchable_id}`;
+                    break;
                 default:
                     path = `/searchable-item/${invoice.searchable_id}`;
             }

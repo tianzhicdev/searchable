@@ -1,9 +1,8 @@
 import React from 'react';
 import { Route, Switch, useLocation } from 'react-router-dom';
 import AuthGuard from './../utils/route-guard/AuthGuard';
-import PublishDownloadableSearchable from '../views/searchables/PublishDownloadableSearchable';
-import PublishOfflineSearchable from '../views/searchables/PublishOfflineSearchable';
-import PublishDirectSearchable from '../views/searchables/PublishDirectSearchable';
+import { PublishDownloadableRedirect, PublishOfflineRedirect, PublishDirectRedirect } from '../views/searchables/PublishSearchableRedirects';
+import PublishAllInOneSearchable from '../views/searchables/PublishAllInOneSearchable';
 import PublishAIContent from '../views/publish/PublishAIContent';
 import Dashboard from '../views/profile/Dashboard';
 import PurchaseRatings from '../views/ratings/PurchaseRatings';
@@ -11,6 +10,7 @@ import Search from '../views/search/Search';
 import DownloadableSearchableDetails from '../views/searchables/DownloadableSearchableDetails';
 import OfflineSearchableDetails from '../views/searchables/OfflineSearchableDetails';
 import DirectSearchableDetails from '../views/searchables/DirectSearchableDetails';
+import AllInOneSearchableDetails from '../views/searchables/AllInOneSearchableDetails';
 import UserProfile from '../views/profile/UserProfile';
 import MyDownloads from '../views/profile/MyDownloads';
 import CreditCardRefill from '../views/payments/CreditCardRefill';
@@ -36,7 +36,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -44,10 +44,12 @@ const SearchableRoutes = () => {
                     <Route exact path="/searchable-item/:id" component={DownloadableSearchableDetails} />
                     <Route exact path="/offline-item/:id" component={OfflineSearchableDetails} />
                     <Route exact path="/direct-item/:id" component={DirectSearchableDetails} />
+                    <Route exact path="/allinone-item/:id" component={AllInOneSearchableDetails} />
                     <Route path="/profile/:identifier" component={UserProfile} />
-                    <Route exact path="/publish-searchables" component={PublishDownloadableSearchable} />
-                    <Route exact path="/publish-offline-searchables" component={PublishOfflineSearchable} />
-                    <Route exact path="/publish-direct-searchables" component={PublishDirectSearchable} />
+                    <Route exact path="/publish-searchables" component={PublishDownloadableRedirect} />
+                    <Route exact path="/publish-offline-searchables" component={PublishOfflineRedirect} />
+                    <Route exact path="/publish-direct-searchables" component={PublishDirectRedirect} />
+                    <Route exact path="/publish-allinone" component={PublishAllInOneSearchable} />
                     <Route exact path="/publish/ai-content" component={PublishAIContent} />
                     <Route exact path="/dashboard" component={Dashboard} />
                     <Route exact path="/my-purchases" component={PurchaseRatings} />

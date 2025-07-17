@@ -88,24 +88,32 @@ const Onboarding3_2 = () => {
       // Small delay to ensure Redux state is propagated
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Create the downloadable searchable
+      // Create the allinone searchable with downloadable component enabled
       const searchablePayload = {
         payloads: {
           public: {
             title: storeData.title,
             description: `Digital content store by ${userData.username}`,
-            currency: 'usd',
-            type: 'downloadable',
-            downloadableFiles: storeData.files.map(file => ({
-              name: file.name,
-              description: '',
-              price: parseFloat(file.price),
-              fileId: file.id,
-              uuid: file.uuid
-            })),
-            visibility: {
-              udf: "always_true",
-              data: {}
+            type: 'allinone',
+            components: {
+              downloadable: {
+                enabled: true,
+                files: storeData.files.map(file => ({
+                  id: file.id,
+                  name: file.name,
+                  size: file.size || 0,
+                  price: parseFloat(file.price),
+                  uuid: file.uuid
+                }))
+              },
+              offline: {
+                enabled: false,
+                items: []
+              },
+              donation: {
+                enabled: false,
+                pricingMode: 'flexible'
+              }
             }
           }
         }
@@ -125,7 +133,7 @@ const Onboarding3_2 = () => {
       sessionStorage.setItem('onboarding_success', JSON.stringify({
         type: 'downloadable',
         storeName: storeData.title,
-        redirectPath: `/searchable-item/${searchableResponse.data.searchable_id}`
+        redirectPath: `/allinone-item/${searchableResponse.data.searchable_id}`
       }));
       
       // Redirect to congratulations page
