@@ -63,8 +63,22 @@ const generateSearchableTitle = (index, type) => {
     'Local Music Venue Tickets'
   ];
   
+  const allinoneTitles = [
+    'Complete Creative Studio',
+    'Digital & Physical Art Store',
+    'Multi-Service Creative Hub',
+    'Comprehensive Design Studio',
+    'All-in-One Creative Shop',
+    'Digital Art & Merch Store',
+    'Creator Multi-Platform',
+    'Hybrid Creative Business',
+    'Everything Creative Store',
+    'Full-Service Creator Hub'
+  ];
+  
   if (type === 'downloadable') return downloadableTitles[index % 10];
   if (type === 'direct') return directTitles[index % 10];
+  if (type === 'allinone') return allinoneTitles[index % 10];
   return offlineTitles[index % 10];
 };
 
@@ -174,7 +188,7 @@ const generateMockUsers = () => {
 // Generate mock searchables programmatically
 const generateMockSearchables = () => {
   const searchables = [];
-  const types = ['downloadable', 'direct', 'offline'];
+  const types = ['downloadable', 'direct', 'offline', 'allinone'];
   const tagCombinations = [
     [21, 23],      // books, art
     [22, 25],      // music, videos
@@ -334,6 +348,69 @@ const generateMockSearchables = () => {
           description: `Fresh, high-quality ${offlineProductNames[itemIndex].toLowerCase()}`
         };
       });
+    } else if (type === 'allinone') {
+      // All-in-one includes all three types of content
+      
+      // Add downloadable files (1-3 files)
+      const fileCount = Math.floor(Math.random() * 3) + 1;
+      const fileNames = [
+        'Premium_Resource_Pack.zip', 'Exclusive_Templates.psd', 'Digital_Assets_Bundle.ai',
+        'Professional_Toolkit.fig', 'Creative_Masterclass.mp4', 'Brand_Guidelines.pdf'
+      ];
+      const fileDescriptions = [
+        'Premium digital resources for professionals',
+        'Exclusive templates and designs',
+        'Complete digital asset collection',
+        'Professional design toolkit',
+        'Comprehensive creative course',
+        'Complete brand identity package'
+      ];
+      
+      searchable.payloads.public.downloadableFiles = Array(fileCount).fill(null).map((_, idx) => {
+        const fileIndex = (i * 3 + idx) % fileNames.length;
+        return {
+          fileId: `file-${i}-${idx}`,
+          name: fileNames[fileIndex],
+          description: fileDescriptions[fileIndex],
+          price: Math.floor(Math.random() * 80) + 4.99 // Random price from 4.99 to 84.99
+        };
+      });
+      
+      // Add offline items (1-5 items)
+      const itemCount = Math.floor(Math.random() * 5) + 1;
+      const physicalItems = [
+        'Custom Design Service', 'Physical Print', 'Branded Merchandise',
+        'Consultation Session', 'Workshop Ticket', 'Handmade Product'
+      ];
+      
+      searchable.payloads.public.offlineItems = Array(itemCount).fill(null).map((_, idx) => {
+        const itemIndex = (i * 5 + idx) % physicalItems.length;
+        return {
+          itemId: `allinone-item-${i}-${idx}`,
+          name: physicalItems[itemIndex],
+          price: Math.floor(Math.random() * 100) + 9.99,
+          description: `Professional ${physicalItems[itemIndex].toLowerCase()}`
+        };
+      });
+      
+      // Add direct payment (randomly choose pricing mode)
+      const pricingModes = ['fixed', 'preset', 'flexible'];
+      const randomMode = pricingModes[Math.floor(Math.random() * pricingModes.length)];
+      
+      if (randomMode === 'fixed') {
+        const fixedAmount = Math.floor(Math.random() * 30) + 4.99;
+        searchable.payloads.public.pricingMode = 'fixed';
+        searchable.payloads.public.fixedAmount = fixedAmount;
+        searchable.payloads.public.defaultAmount = fixedAmount;
+      } else if (randomMode === 'preset') {
+        const presetAmounts = [4.99, 9.99, 19.99].map(base => base + Math.random() * 10);
+        searchable.payloads.public.pricingMode = 'preset';
+        searchable.payloads.public.presetAmounts = presetAmounts;
+        searchable.payloads.public.defaultAmount = presetAmounts[0];
+      } else {
+        searchable.payloads.public.pricingMode = 'flexible';
+        searchable.payloads.public.defaultAmount = null;
+      }
     }
     
     // Add some searchables with extreme/edge case prices
@@ -1735,6 +1812,42 @@ const mockHandlers = {
                 name: 'Direct Payment',
                 price: searchable?.payloads?.public?.defaultAmount || 25.00
               }];
+            } else if (type === 'allinone') {
+              // For all-in-one, include selections from all types
+              const selections = [];
+              
+              // Add some downloadable files
+              if (searchable?.payloads?.public?.downloadableFiles?.length > 0) {
+                selections.push(...searchable.payloads.public.downloadableFiles.slice(0, 2).map(f => ({
+                  id: f.fileId,
+                  type: 'downloadable',
+                  name: f.name,
+                  price: f.price
+                })));
+              }
+              
+              // Add some offline items
+              if (searchable?.payloads?.public?.offlineItems?.length > 0) {
+                selections.push(...searchable.payloads.public.offlineItems.slice(0, 1).map(item => ({
+                  id: item.itemId,
+                  type: 'offline',
+                  name: item.name,
+                  price: item.price,
+                  count: 1
+                })));
+              }
+              
+              // Add direct payment if configured
+              if (searchable?.payloads?.public?.defaultAmount || searchable?.payloads?.public?.fixedAmount) {
+                selections.push({
+                  id: 'direct-payment',
+                  type: 'direct',
+                  name: 'Direct Payment',
+                  price: searchable?.payloads?.public?.fixedAmount || searchable?.payloads?.public?.defaultAmount || 15.00
+                });
+              }
+              
+              return selections;
             }
             return [];
           })()

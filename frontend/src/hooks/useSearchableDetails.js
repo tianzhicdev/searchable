@@ -129,6 +129,9 @@ const useSearchableDetails = () => {
       case 'direct':
         editPath = '/publish-direct-searchables';
         break;
+      case 'allinone':
+        editPath = '/publish-allinone-searchables';
+        break;
       default:
         editPath = '/publish-searchables';
     }

@@ -33,6 +33,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import LockIcon from '@material-ui/icons/Lock';
 import CreditCardIcon from '@material-ui/icons/CreditCard';
 import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
+import StoreIcon from '@material-ui/icons/Store';
 
 const useStyles = makeStyles((theme) => ({
   fab: {
@@ -250,6 +251,12 @@ const FloatingMenu = () => {
       name: 'Donation',
       description: 'Accept donations',
       path: '/publish-direct-searchables'
+    },
+    {
+      icon: <StoreIcon />,
+      name: 'All-in-One Store',
+      description: 'Digital, physical & donations',
+      path: '/publish-allinone-searchables'
     },
     {
       icon: <AutoAwesomeMotionIcon />,
