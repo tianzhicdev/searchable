@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import SearchCommon from './SearchCommon';
 import SearchableList from '../searchables/SearchableList';
+import { testIds } from '../../utils/testIds';
 
 const SearchByContent = () => {
   const history = useHistory();

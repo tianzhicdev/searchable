@@ -33,6 +33,7 @@ import Transitions from '../../../../ui-component/extended/Transitions';
 import UpgradePlanCard from './UpgradePlanCard';
 import { useLogout } from '../../../../components/LogoutHandler';
 import { touchTargets } from '../../../../utils/spacing';
+import { testIds } from '../../../../utils/testIds';
 
 // assets
 import { IconLogout, IconSearch, IconSettings } from '@tabler/icons';
@@ -167,6 +168,7 @@ const ProfileSection = () => {
                         aria-controls={open ? 'menu-list-grow' : undefined}
                         aria-haspopup="true"
                         color="inherit"
+                        data-testid="avatar-profile-user"
                     />
                 }
                 label={<IconSettings stroke={1.5} size="1.5rem" color={theme.palette.primary.main} />}
@@ -176,6 +178,7 @@ const ProfileSection = () => {
                 aria-haspopup="true"
                 onClick={handleToggle}
                 color="primary"
+                data-testid={testIds.button.nav('profile-menu')}
             />
             <Popper
                 placement="bottom-end"
@@ -194,6 +197,7 @@ const ProfileSection = () => {
                         }
                     ]
                 }}
+                data-testid={testIds.nav.menu('profile-dropdown')}
             >
                 {({ TransitionProps }) => (
                     <Transitions in={open} {...TransitionProps}>
@@ -227,6 +231,7 @@ const ProfileSection = () => {
                                             inputProps={{
                                                 'aria-label': 'weight'
                                             }}
+                                            data-testid={testIds.input.search('profile')}
                                         />
                                         <Divider />
                                         <PerfectScrollbar className={classes.ScrollHeight}>
@@ -276,6 +281,7 @@ const ProfileSection = () => {
                                                     sx={{ borderRadius: customization.borderRadius + 'px' }}
                                                     selected={selectedIndex === 4}
                                                     onClick={handleLogout}
+                                                    data-testid={testIds.button.nav('logout')}
                                                 >
                                                     <ListItemIcon>
                                                         <IconLogout stroke={1.5} size="1.3rem" />

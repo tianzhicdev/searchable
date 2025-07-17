@@ -12,6 +12,7 @@ import Logo from './../../../../ui-component/Logo';
 import RestRegister from './RestRegister';
 import AuthFooter from './../../../../ui-component/cards/AuthFooter';
 import useComponentStyles from '../../../../themes/componentStyles';
+import { testIdProps } from '../../../../utils/testIds';
 
 // assets
 
@@ -23,23 +24,24 @@ const Register = () => {
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
-        <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column">
+        <Grid container spacing={2} alignItems="center" justifyContent="center" flexDirection="column" {...testIdProps('page', 'register', 'container')}>
             <Grid item sx={{ mb: 2 }}></Grid>
-            <Grid item sx={{ mb: 3 }}>
-                <RouterLink to="#">
+            <Grid item sx={{ mb: 3 }} {...testIdProps('section', 'register', 'logo')}>
+                <RouterLink to="#" {...testIdProps('link', 'register', 'logo-link')}>
                     <Logo />
                 </RouterLink>
             </Grid>
-            <Grid item xs={12} width={'60%'} maxWidth={'100%'}>
+            <Grid item xs={12} width={'60%'} maxWidth={'100%'} {...testIdProps('section', 'register', 'form')}>
                 <RestRegister />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} {...testIdProps('section', 'register', 'login-link')}>
                 <Grid item container direction="column" alignItems="center" xs={12}>
                     <Typography
                         component={RouterLink}
                         to="/login"
                         variant="subtitle1"
                         className={classes.textLink}
+                        {...testIdProps('link', 'register', 'login')}
                     >
                         Already have an account?
                     </Typography>

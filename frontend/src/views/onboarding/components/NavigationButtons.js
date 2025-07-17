@@ -3,6 +3,7 @@ import { Box, Button, Typography } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../OnboardingProvider';
 import onboardingConfig from '../../../onboarding.json';
+import { testIdProps } from '../../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -47,12 +48,14 @@ const NavigationButtons = ({ stepConfig }) => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Box className={classes.leftSection}>
+    <Box className={classes.root} {...testIdProps('component', 'onboarding-navigation', 'container')}>
+      <Box className={classes.leftSection} {...testIdProps('section', 'navigation', 'left')}>
         {showBackButton && (
           <Button
             onClick={handleBack}
             disabled={isLoading}
+            variant="contained"
+            {...testIdProps('button', 'onboarding', 'back')}
           >
             Back
           </Button>
@@ -62,6 +65,8 @@ const NavigationButtons = ({ stepConfig }) => {
             className={classes.skipButton}
             onClick={handleSkip}
             disabled={isLoading}
+            variant="contained"
+            {...testIdProps('button', 'onboarding', 'skip')}
           >
             {stepConfig.skipOption.text}
           </Button>
@@ -69,7 +74,11 @@ const NavigationButtons = ({ stepConfig }) => {
       </Box>
 
       {stepConfig?.type === 'component' && (
-        <Typography variant="caption" color="textSecondary">
+        <Typography 
+          variant="caption" 
+          color="textSecondary"
+          {...testIdProps('text', 'onboarding', 'hint')}
+        >
           Click continue when ready
         </Typography>
       )}
