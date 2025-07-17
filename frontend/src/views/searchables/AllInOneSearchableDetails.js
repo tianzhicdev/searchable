@@ -69,10 +69,10 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   fileInfo: {
-    ...detailPageStyles.itemInfo(theme),
+    ...detailPageStyles.subSection(theme),
   },
   fileName: {
-    ...detailPageStyles.itemTitle(theme),
+    ...detailPageStyles.sectionTitle(theme),
   },
   fileDescription: {
     ...detailPageStyles.description(theme),
@@ -82,7 +82,7 @@ const useStyles = makeStyles((theme) => ({
     fontWeight: 'bold',
   },
   downloadButton: {
-    ...detailPageStyles.button(theme),
+    ...detailPageStyles.formField(theme),
   },
   
   // Offline items styles
