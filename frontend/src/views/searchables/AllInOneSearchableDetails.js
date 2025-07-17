@@ -1,49 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import {
-  Container,
-  Paper,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Grid,
-  Chip,
-  CircularProgress,
-  Divider,
-  TextField,
-  InputAdornment,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  IconButton
+import { 
+  Grid, Typography, Paper, Box, Tabs, Tab, Button,
+  List, ListItem, ListItemText, Chip, TextField,
+  InputAdornment, RadioGroup, FormControlLabel, Radio,
+  Checkbox, FormGroup
 } from '@material-ui/core';
-import {
-  CloudDownload,
-  Storefront,
-  Favorite,
-  Edit,
-  Delete,
-  GetApp,
-  ShoppingCart,
-  AttachMoney
-} from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
-import backend from '../utilities/Backend';
-import { formatUSD } from '../../utils/format';
-import PaymentSelection from '../../components/PaymentSelection';
-import SearchableDetailsBase from '../../components/SearchableDetailsBase';
+import {
+  CloudDownload, Storefront, Favorite,
+  ShoppingCart, AttachMoney
+} from '@material-ui/icons';
+import BaseSearchableDetails from '../../components/BaseSearchableDetails';
+import useSearchableDetails from '../../hooks/useSearchableDetails';
+import { formatUSD } from '../../utils/searchableUtils';
+import useComponentStyles from '../../themes/componentStyles';
+import { detailPageStyles } from '../../utils/detailPageSpacing';
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    padding: theme.spacing(3),
-    marginTop: theme.spacing(2),
-  },
   componentChip: {
     marginRight: theme.spacing(1),
     marginBottom: theme.spacing(1),
@@ -52,35 +25,43 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: theme.spacing(3),
   },
   fileItem: {
-    backgroundColor: theme.palette.background.paper,
+    ...detailPageStyles.card(theme),
     marginBottom: theme.spacing(1),
-    borderRadius: theme.shape.borderRadius,
-    border: `1px solid ${theme.palette.divider}`,
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+    },
   },
   priceTag: {
     fontWeight: 'bold',
     color: theme.palette.primary.main,
   },
-  actionButton: {
-    marginTop: theme.spacing(2),
-  },
   emptyState: {
     textAlign: 'center',
     padding: theme.spacing(3),
     color: theme.palette.text.secondary,
+  },
+  totalSection: {
+    ...detailPageStyles.subSection(theme),
+    backgroundColor: theme.palette.background.default,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(2),
   }
 }));
 
 const AllInOneSearchableDetails = () => {
-  const classes = useStyles();
-  const { id } = useParams();
-  const history = useHistory();
-  const account = useSelector((state) => state.account);
-  const [searchable, setSearchable] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const classes = useComponentStyles();
+  const detailClasses = useStyles();
+  
+  const {
+    SearchableItem,
+    createInvoice,
+    createBalancePayment,
+    formatCurrency
+  } = useSearchableDetails();
+  
+  // Component state
   const [activeTab, setActiveTab] = useState(0);
-  const [showPayment, setShowPayment] = useState(false);
   const [selectedItems, setSelectedItems] = useState({
     downloadable: [],
     offline: [],
@@ -88,26 +69,12 @@ const AllInOneSearchableDetails = () => {
   });
   const [donationAmount, setDonationAmount] = useState('');
   const [selectedPreset, setSelectedPreset] = useState('');
-
+  const [processing, setProcessing] = useState(false);
+  
   useEffect(() => {
-    fetchSearchableDetails();
-  }, [id]);
-
-  const fetchSearchableDetails = async () => {
-    try {
-      const response = await backend.get(`v1/searchable/${id}`);
-      const data = response.data;
-      
-      // Verify this is an allinone searchable
-      if (data.payloads?.public?.type !== 'allinone') {
-        setError('Invalid searchable type');
-        return;
-      }
-      
-      setSearchable(data);
-      
+    if (SearchableItem) {
+      const components = SearchableItem.payloads?.public?.components || {};
       // Set initial tab to first enabled component
-      const components = data.payloads?.public?.components || {};
       if (components.downloadable?.enabled) {
         setActiveTab(0);
       } else if (components.offline?.enabled) {
@@ -115,30 +82,8 @@ const AllInOneSearchableDetails = () => {
       } else if (components.donation?.enabled) {
         setActiveTab(2);
       }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load searchable');
-    } finally {
-      setLoading(false);
     }
-  };
-
-  const handleEdit = () => {
-    history.push('/publish-allinone', {
-      editMode: true,
-      editData: searchable
-    });
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-    
-    try {
-      await backend.delete(`v1/searchable/${id}`);
-      history.push('/dashboard');
-    } catch (err) {
-      setError('Failed to delete searchable');
-    }
-  };
+  }, [SearchableItem]);
 
   const handleFileToggle = (fileId) => {
     setSelectedItems(prev => ({
@@ -159,22 +104,21 @@ const AllInOneSearchableDetails = () => {
   };
 
   const handleDonationSelect = () => {
-    const components = searchable?.payloads?.public?.components || {};
+    const components = SearchableItem?.payloads?.public?.components || {};
     const donation = components.donation || {};
     
     if (donation.pricingMode === 'fixed') {
       setSelectedItems(prev => ({ ...prev, donation: donation.fixedAmount }));
-    } else if (donation.pricingMode === 'preset' && selectedPreset) {
-      setSelectedItems(prev => ({ ...prev, donation: parseFloat(selectedPreset) }));
-    } else if (donation.pricingMode === 'flexible' && donationAmount) {
+    } else if ((donation.pricingMode === 'flexible' || donation.pricingMode === 'preset') && donationAmount) {
+      // Handle both flexible and legacy preset mode the same way
       setSelectedItems(prev => ({ ...prev, donation: parseFloat(donationAmount) }));
     }
   };
 
   const calculateTotal = () => {
-    if (!searchable) return 0;
+    if (!SearchableItem) return 0;
     
-    const components = searchable.payloads?.public?.components || {};
+    const components = SearchableItem.payloads?.public?.components || {};
     let total = 0;
     
     // Add downloadable files
@@ -203,63 +147,90 @@ const AllInOneSearchableDetails = () => {
     return total;
   };
 
-  const handleProceedToPayment = () => {
-    const total = calculateTotal();
-    if (total > 0) {
-      setShowPayment(true);
+  const handlePayment = async () => {
+    if (!SearchableItem) return;
+    
+    setProcessing(true);
+    try {
+      const invoiceData = {
+        searchable_id: SearchableItem.searchable_id,
+        selections: {
+          downloadable: selectedItems.downloadable,
+          offline: selectedItems.offline,
+          donation: selectedItems.donation
+        }
+      };
+      
+      await createInvoice(invoiceData);
+    } catch (error) {
+      console.error('Payment failed:', error);
+    } finally {
+      setProcessing(false);
     }
   };
 
-  const handlePaymentComplete = (paymentData) => {
-    // Navigate to success page or refresh
-    history.push('/my-downloads');
+  const handleBalancePayment = async () => {
+    if (!SearchableItem) return;
+    
+    setProcessing(true);
+    try {
+      const paymentData = {
+        searchable_id: SearchableItem.searchable_id,
+        amount: calculateTotal(),
+        selections: {
+          downloadable: selectedItems.downloadable,
+          offline: selectedItems.offline,
+          donation: selectedItems.donation
+        }
+      };
+      
+      await createBalancePayment(paymentData);
+    } catch (error) {
+      console.error('Balance payment failed:', error);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  if (loading) return <Container><CircularProgress /></Container>;
-  if (error) return <Container><Typography color="error">{error}</Typography></Container>;
-  if (!searchable) return null;
-
-  const publicData = searchable.payloads?.public || {};
-  const components = publicData.components || {};
-  const isOwner = account.user?._id === searchable.user_id;
-  
-  // Count enabled components
-  const enabledComponents = Object.entries(components)
-    .filter(([_, comp]) => comp.enabled)
-    .map(([type, _]) => type);
-
-  return (
-    <Container maxWidth="lg">
-      <SearchableDetailsBase
-        searchable={searchable}
-        onEdit={isOwner ? handleEdit : null}
-        onDelete={isOwner ? handleDelete : null}
-      >
+  const renderTypeSpecificContent = () => {
+    if (!SearchableItem) return null;
+    
+    const publicData = SearchableItem.payloads?.public || {};
+    const components = publicData.components || {};
+    
+    // Count enabled components for tab indexing
+    let tabIndex = 0;
+    const downloadableTabIndex = components.downloadable?.enabled ? tabIndex++ : -1;
+    const offlineTabIndex = components.offline?.enabled ? tabIndex++ : -1;
+    const donationTabIndex = components.donation?.enabled ? tabIndex++ : -1;
+    
+    return (
+      <Grid item xs={12}>
         {/* Component chips */}
         <Box mb={2}>
-          {enabledComponents.includes('downloadable') && (
+          {components.downloadable?.enabled && (
             <Chip
               icon={<CloudDownload />}
               label="Digital Downloads"
-              className={classes.componentChip}
+              className={detailClasses.componentChip}
               color="primary"
               variant="outlined"
             />
           )}
-          {enabledComponents.includes('offline') && (
+          {components.offline?.enabled && (
             <Chip
               icon={<Storefront />}
               label="Physical Items"
-              className={classes.componentChip}
+              className={detailClasses.componentChip}
               color="primary"
               variant="outlined"
             />
           )}
-          {enabledComponents.includes('donation') && (
+          {components.donation?.enabled && (
             <Chip
               icon={<Favorite />}
               label="Donations"
-              className={classes.componentChip}
+              className={detailClasses.componentChip}
               color="primary"
               variant="outlined"
             />
@@ -267,7 +238,7 @@ const AllInOneSearchableDetails = () => {
         </Box>
 
         {/* Component tabs */}
-        <Paper className={classes.root}>
+        <Paper elevation={1}>
           <Tabs
             value={activeTab}
             onChange={(e, newValue) => setActiveTab(newValue)}
@@ -285,9 +256,9 @@ const AllInOneSearchableDetails = () => {
             )}
           </Tabs>
 
-          <Box className={classes.tabPanel}>
+          <Box className={detailClasses.tabPanel}>
             {/* Downloadable tab */}
-            {components.downloadable?.enabled && activeTab === 0 && (
+            {components.downloadable?.enabled && activeTab === downloadableTabIndex && (
               <Box>
                 <Typography variant="h6" gutterBottom>
                   Available Files
@@ -297,23 +268,25 @@ const AllInOneSearchableDetails = () => {
                     {components.downloadable.files.map((file) => (
                       <ListItem
                         key={file.id}
-                        className={classes.fileItem}
-                        button
+                        className={detailClasses.fileItem}
                         onClick={() => handleFileToggle(file.id)}
-                        selected={selectedItems.downloadable.includes(file.id)}
                       >
+                        <Checkbox
+                          checked={selectedItems.downloadable.includes(file.id)}
+                          color="primary"
+                        />
                         <ListItemText
                           primary={file.name}
-                          secondary={`Size: ${formatFileSize(file.size)}`}
+                          secondary={formatFileSize(file.size)}
                         />
-                        <Typography className={classes.priceTag}>
+                        <Typography className={detailClasses.priceTag}>
                           {formatUSD(file.price)}
                         </Typography>
                       </ListItem>
                     ))}
                   </List>
                 ) : (
-                  <Typography className={classes.emptyState}>
+                  <Typography className={detailClasses.emptyState}>
                     No files available
                   </Typography>
                 )}
@@ -321,8 +294,7 @@ const AllInOneSearchableDetails = () => {
             )}
 
             {/* Offline tab */}
-            {components.offline?.enabled && 
-              activeTab === (components.downloadable?.enabled ? 1 : 0) && (
+            {components.offline?.enabled && activeTab === offlineTabIndex && (
               <Box>
                 <Typography variant="h6" gutterBottom>
                   Physical Items
@@ -332,20 +304,22 @@ const AllInOneSearchableDetails = () => {
                     {components.offline.items.map((item) => (
                       <ListItem
                         key={item.id}
-                        className={classes.fileItem}
-                        button
+                        className={detailClasses.fileItem}
                         onClick={() => handleOfflineToggle(item.id)}
-                        selected={selectedItems.offline.includes(item.id)}
                       >
+                        <Checkbox
+                          checked={selectedItems.offline.includes(item.id)}
+                          color="primary"
+                        />
                         <ListItemText primary={item.name} />
-                        <Typography className={classes.priceTag}>
+                        <Typography className={detailClasses.priceTag}>
                           {formatUSD(item.price)}
                         </Typography>
                       </ListItem>
                     ))}
                   </List>
                 ) : (
-                  <Typography className={classes.emptyState}>
+                  <Typography className={detailClasses.emptyState}>
                     No items available
                   </Typography>
                 )}
@@ -353,10 +327,7 @@ const AllInOneSearchableDetails = () => {
             )}
 
             {/* Donation tab */}
-            {components.donation?.enabled && 
-              activeTab === 
-                (components.downloadable?.enabled ? 1 : 0) + 
-                (components.offline?.enabled ? 1 : 0) && (
+            {components.donation?.enabled && activeTab === donationTabIndex && (
               <Box>
                 <Typography variant="h6" gutterBottom>
                   Support the Creator
@@ -367,37 +338,53 @@ const AllInOneSearchableDetails = () => {
                     <Typography variant="body1" paragraph>
                       Fixed donation amount:
                     </Typography>
-                    <Typography variant="h4" className={classes.priceTag}>
+                    <Typography variant="h4" className={detailClasses.priceTag}>
                       {formatUSD(components.donation.fixedAmount)}
                     </Typography>
-                  </Box>
-                )}
-
-                {components.donation.pricingMode === 'preset' && (
-                  <Box>
-                    <Typography variant="body1" paragraph>
-                      Choose a donation amount:
-                    </Typography>
-                    <RadioGroup
-                      value={selectedPreset}
-                      onChange={(e) => setSelectedPreset(e.target.value)}
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => setSelectedItems(prev => ({ 
+                        ...prev, 
+                        donation: components.donation.fixedAmount 
+                      }))}
+                      style={{ marginTop: 16 }}
                     >
-                      {components.donation.presetAmounts?.map((amount, index) => (
-                        <FormControlLabel
-                          key={index}
-                          value={amount.toString()}
-                          control={<Radio color="primary" />}
-                          label={formatUSD(amount)}
-                        />
-                      ))}
-                    </RadioGroup>
+                      Select Amount
+                    </Button>
                   </Box>
                 )}
 
-                {components.donation.pricingMode === 'flexible' && (
+                {(components.donation.pricingMode === 'flexible' || components.donation.pricingMode === 'preset') && (
                   <Box>
                     <Typography variant="body1" paragraph>
-                      Enter your donation amount:
+                      Choose or enter a donation amount:
+                    </Typography>
+                    
+                    {/* Quick amount buttons */}
+                    {components.donation.presetAmounts?.length > 0 && (
+                      <Box mb={3}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Quick Selection:
+                        </Typography>
+                        <Box display="flex" gap={1} flexWrap="wrap">
+                          {components.donation.presetAmounts.map((amount, index) => (
+                            <Button
+                              key={index}
+                              variant={donationAmount === amount.toString() ? "contained" : "outlined"}
+                              color="primary"
+                              onClick={() => setDonationAmount(amount.toString())}
+                            >
+                              {formatUSD(amount)}
+                            </Button>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+                    
+                    {/* Custom amount input */}
+                    <Typography variant="subtitle2" gutterBottom>
+                      Or enter custom amount:
                     </Typography>
                     <TextField
                       type="number"
@@ -409,105 +396,69 @@ const AllInOneSearchableDetails = () => {
                         startAdornment: <InputAdornment position="start">$</InputAdornment>,
                       }}
                       inputProps={{ min: 0.01, step: 0.01 }}
+                      placeholder="Enter any amount"
                     />
-                    <Box mt={2}>
-                      <Typography variant="caption" color="textSecondary">
-                        Quick options:
-                      </Typography>
-                      <Box display="flex" gap={1} mt={1}>
-                        {[5, 10, 20].map(amount => (
-                          <Button
-                            key={amount}
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setDonationAmount(amount.toString())}
-                          >
-                            ${amount}
-                          </Button>
-                        ))}
-                      </Box>
-                    </Box>
+                    
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleDonationSelect}
+                      disabled={!donationAmount || parseFloat(donationAmount) <= 0}
+                      style={{ marginTop: 16 }}
+                      fullWidth
+                    >
+                      Select Amount: {donationAmount ? formatUSD(parseFloat(donationAmount)) : '$0.00'}
+                    </Button>
                   </Box>
                 )}
-
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className={classes.actionButton}
-                  onClick={handleDonationSelect}
-                  disabled={
-                    (components.donation.pricingMode === 'preset' && !selectedPreset) ||
-                    (components.donation.pricingMode === 'flexible' && !donationAmount)
-                  }
-                >
-                  Add Donation
-                </Button>
               </Box>
             )}
           </Box>
-
-          {/* Cart summary */}
-          {(selectedItems.downloadable.length > 0 || 
-            selectedItems.offline.length > 0 || 
-            selectedItems.donation) && (
-            <Box mt={3} p={2} bgcolor="background.default" borderRadius={1}>
-              <Typography variant="h6" gutterBottom>
-                Selected Items
-              </Typography>
-              
-              {selectedItems.downloadable.length > 0 && (
-                <Typography variant="body2">
-                  {selectedItems.downloadable.length} file(s) selected
-                </Typography>
-              )}
-              
-              {selectedItems.offline.length > 0 && (
-                <Typography variant="body2">
-                  {selectedItems.offline.length} item(s) selected
-                </Typography>
-              )}
-              
-              {selectedItems.donation && (
-                <Typography variant="body2">
-                  Donation: {formatUSD(selectedItems.donation)}
-                </Typography>
-              )}
-              
-              <Divider style={{ margin: '12px 0' }} />
-              
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Typography variant="h6">
-                  Total: {formatUSD(calculateTotal())}
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleProceedToPayment}
-                  startIcon={<ShoppingCart />}
-                >
-                  Proceed to Payment
-                </Button>
-              </Box>
-            </Box>
-          )}
         </Paper>
 
-        {/* Payment modal */}
-        {showPayment && (
-          <PaymentSelection
-            searchableId={id}
-            amount={calculateTotal()}
-            selections={{
-              downloadable: selectedItems.downloadable,
-              offline: selectedItems.offline,
-              donation: selectedItems.donation
-            }}
-            onClose={() => setShowPayment(false)}
-            onComplete={handlePaymentComplete}
-          />
+        {/* Cart summary */}
+        {(selectedItems.downloadable.length > 0 || 
+          selectedItems.offline.length > 0 || 
+          selectedItems.donation) && (
+          <Box className={detailClasses.totalSection} mt={3}>
+            <Typography variant="h6" gutterBottom>
+              Selected Items
+            </Typography>
+            
+            {selectedItems.downloadable.length > 0 && (
+              <Typography variant="body2">
+                {selectedItems.downloadable.length} file(s) selected
+              </Typography>
+            )}
+            
+            {selectedItems.offline.length > 0 && (
+              <Typography variant="body2">
+                {selectedItems.offline.length} item(s) selected
+              </Typography>
+            )}
+            
+            {selectedItems.donation && (
+              <Typography variant="body2">
+                Donation: {formatUSD(selectedItems.donation)}
+              </Typography>
+            )}
+          </Box>
         )}
-      </SearchableDetailsBase>
-    </Container>
+      </Grid>
+    );
+  };
+
+  const totalPrice = calculateTotal();
+
+  return (
+    <BaseSearchableDetails
+      renderTypeSpecificContent={renderTypeSpecificContent}
+      onPayment={handlePayment}
+      onBalancePayment={handleBalancePayment}
+      totalPrice={totalPrice}
+      payButtonText="Pay Now"
+      disabled={totalPrice === 0 || processing}
+    />
   );
 };
 

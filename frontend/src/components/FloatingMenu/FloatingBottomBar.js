@@ -32,6 +32,7 @@ import StorefrontIcon from '@material-ui/icons/Storefront';
 import SendIcon from '@material-ui/icons/Send';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import CategoryIcon from '@material-ui/icons/Category';
+import AllInclusiveIcon from '@material-ui/icons/AllInclusive';
 
 const useStyles = makeStyles((theme) => ({
   floatingBar: {
@@ -223,6 +224,12 @@ const FloatingBottomBar = () => {
   ];
 
   const createMenuItems = [
+    {
+      icon: <AllInclusiveIcon />,
+      label: 'All-In-One',
+      description: 'Combine all options',
+      onClick: () => handleNavigation('/publish-allinone')
+    },
     {
       icon: <CloudDownloadIcon />,
       label: 'Digital Content',

@@ -1,20 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import {
   Grid,
   Typography,
   Box,
-  Tabs,
-  Tab,
   FormControlLabel,
   Switch,
   TextField,
   Button,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   InputAdornment,
   RadioGroup,
@@ -22,7 +16,7 @@ import {
   FormControl,
   FormLabel,
   Paper,
-  Divider
+  CircularProgress
 } from '@material-ui/core';
 import {
   CloudUpload,
@@ -39,125 +33,49 @@ import PublishSearchableActions from '../../components/PublishSearchableActions'
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 
-const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = null }) => {
+const PublishAllInOneSearchable = () => {
   const classes = useComponentStyles();
   const history = useHistory();
+  const { id } = useParams();
   const account = useSelector((state) => state.account);
   const fileInputRef = useRef(null);
   
+  // Loading state for fetching existing data
+  const [fetchingData, setFetchingData] = useState(false);
+  const [existingSearchable, setExistingSearchable] = useState(null);
+  
   // Common form data
   const [formData, setFormData] = useState({
-    title: existingSearchable?.payloads?.public?.title || '',
-    description: existingSearchable?.payloads?.public?.description || ''
+    title: '',
+    description: ''
   });
+  
+  // Images and tags state
+  const [images, setImages] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   
   // Component states
-  const [components, setComponents] = useState(() => {
-    const existing = existingSearchable?.payloads?.public?.components;
-    const existingType = existingSearchable?.payloads?.public?.type || existingSearchable?.type;
-    
-    // If there's an initial preset and no existing searchable, enable only that component
-    if (initialPreset && !existingSearchable) {
-      return {
-        downloadable: {
-          enabled: initialPreset === 'downloadable',
-          files: []
-        },
-        offline: {
-          enabled: initialPreset === 'offline',
-          items: []
-        },
-        donation: {
-          enabled: initialPreset === 'donation',
-          pricingMode: 'flexible',
-          fixedAmount: 10.00,
-          presetAmounts: [5, 10, 20]
-        }
-      };
+  const [components, setComponents] = useState({
+    downloadable: {
+      enabled: false,
+      files: []
+    },
+    offline: {
+      enabled: false,
+      items: []
+    },
+    donation: {
+      enabled: false,
+      pricingMode: 'flexible',
+      fixedAmount: 10.00,
+      presetAmounts: [5, 10, 20],
+      allowCustomAmount: true
     }
-    
-    // Handle conversion from old searchable types
-    if (existingSearchable && existingType !== 'allinone') {
-      const publicData = existingSearchable.payloads?.public || {};
-      
-      if (existingType === 'downloadable') {
-        return {
-          downloadable: {
-            enabled: true,
-            files: publicData.files || []
-          },
-          offline: {
-            enabled: false,
-            items: []
-          },
-          donation: {
-            enabled: false,
-            pricingMode: 'flexible',
-            fixedAmount: 10.00,
-            presetAmounts: [5, 10, 20]
-          }
-        };
-      } else if (existingType === 'offline') {
-        return {
-          downloadable: {
-            enabled: false,
-            files: []
-          },
-          offline: {
-            enabled: true,
-            items: publicData.items || []
-          },
-          donation: {
-            enabled: false,
-            pricingMode: 'flexible',
-            fixedAmount: 10.00,
-            presetAmounts: [5, 10, 20]
-          }
-        };
-      } else if (existingType === 'direct') {
-        return {
-          downloadable: {
-            enabled: false,
-            files: []
-          },
-          offline: {
-            enabled: false,
-            items: []
-          },
-          donation: {
-            enabled: true,
-            pricingMode: publicData.pricingMode || 'flexible',
-            fixedAmount: publicData.fixedAmount || publicData.defaultAmount || 10.00,
-            presetAmounts: publicData.presetAmounts || [5, 10, 20]
-          }
-        };
-      }
-    }
-    
-    // Otherwise use existing allinone data or defaults
-    return {
-      downloadable: {
-        enabled: existing?.downloadable?.enabled || false,
-        files: existing?.downloadable?.files || []
-      },
-      offline: {
-        enabled: existing?.offline?.enabled || false,
-        items: existing?.offline?.items || []
-      },
-      donation: {
-        enabled: existing?.donation?.enabled || false,
-        pricingMode: existing?.donation?.pricingMode || 'flexible',
-        fixedAmount: existing?.donation?.fixedAmount || 10.00,
-        presetAmounts: existing?.donation?.presetAmounts || [5, 10, 20]
-      }
-    };
   });
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState(0);
-  
   // New item states
-  const [newOfflineItem, setNewOfflineItem] = useState({ name: '', price: '' });
+  const [newFile, setNewFile] = useState({ name: '', description: '', price: '', file: null });
+  const [newOfflineItem, setNewOfflineItem] = useState({ name: '', description: '', price: '' });
   
   // Loading state
   const [loading, setLoading] = useState(false);
@@ -166,9 +84,158 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
   // Error state
   const [error, setError] = useState('');
 
+  // Fetch existing searchable data if ID is provided
+  useEffect(() => {
+    if (id) {
+      fetchSearchableData();
+    }
+  }, [id]);
+
+  const fetchSearchableData = async () => {
+    setFetchingData(true);
+    try {
+      const response = await backend.get(`v1/searchable/${id}`);
+      const data = response.data;
+      
+      // Verify ownership
+      if (data.user_id !== account.user?._id) {
+        setError('You do not have permission to edit this item');
+        return;
+      }
+      
+      setExistingSearchable(data);
+      
+      // Load common data
+      setFormData({
+        title: data.payloads?.public?.title || '',
+        description: data.payloads?.public?.description || ''
+      });
+      
+      setImages(data.payloads?.public?.images || []);
+      setSelectedTags(data.tags || []);
+      
+      // Load component data based on type
+      const publicData = data.payloads?.public || {};
+      const searchableType = publicData.type || data.type;
+      
+      if (searchableType === 'allinone') {
+        // Load allinone data
+        const componentsData = publicData.components || {};
+        setComponents({
+          downloadable: {
+            enabled: componentsData.downloadable?.enabled || false,
+            files: (componentsData.downloadable?.files || []).map(file => ({
+              id: file.id || uuidv4(),
+              name: file.name || '',
+              description: file.description || '',
+              price: file.price || 0,
+              size: file.size || 0
+            }))
+          },
+          offline: {
+            enabled: componentsData.offline?.enabled || false,
+            items: (componentsData.offline?.items || []).map(item => ({
+              id: item.id || uuidv4(),
+              name: item.name || '',
+              description: item.description || '',
+              price: item.price || 0
+            }))
+          },
+          donation: {
+            enabled: componentsData.donation?.enabled || false,
+            pricingMode: componentsData.donation?.pricingMode === 'preset' ? 'flexible' : (componentsData.donation?.pricingMode || 'flexible'),
+            fixedAmount: componentsData.donation?.fixedAmount || 10.00,
+            presetAmounts: componentsData.donation?.presetAmounts || [5, 10, 20],
+            allowCustomAmount: componentsData.donation?.allowCustomAmount !== false
+          }
+        });
+      } else {
+        // Convert old searchable types to allinone
+        if (searchableType === 'downloadable') {
+          setComponents({
+            downloadable: {
+              enabled: true,
+              files: (publicData.downloadableFiles || publicData.files || []).map(file => ({
+                id: file.id || file.fileId || uuidv4(),
+                name: file.name || '',
+                description: file.description || '',
+                price: file.price || 0,
+                size: file.size || 0
+              }))
+            },
+            offline: {
+              enabled: false,
+              items: []
+            },
+            donation: {
+              enabled: false,
+              pricingMode: 'flexible',
+              fixedAmount: 10.00,
+              presetAmounts: [5, 10, 20],
+              allowCustomAmount: true
+            }
+          });
+        } else if (searchableType === 'offline') {
+          setComponents({
+            downloadable: {
+              enabled: false,
+              files: []
+            },
+            offline: {
+              enabled: true,
+              items: (publicData.offlineItems || publicData.items || []).map(item => ({
+                id: item.id || item.itemId || uuidv4(),
+                name: item.name || '',
+                description: item.description || '',
+                price: item.price || 0
+              }))
+            },
+            donation: {
+              enabled: false,
+              pricingMode: 'flexible',
+              fixedAmount: 10.00,
+              presetAmounts: [5, 10, 20],
+              allowCustomAmount: true
+            }
+          });
+        } else if (searchableType === 'direct') {
+          setComponents({
+            downloadable: {
+              enabled: false,
+              files: []
+            },
+            offline: {
+              enabled: false,
+              items: []
+            },
+            donation: {
+              enabled: true,
+              pricingMode: publicData.pricingMode === 'preset' ? 'flexible' : (publicData.pricingMode || 'flexible'),
+              fixedAmount: publicData.fixedAmount || publicData.defaultAmount || 10.00,
+              presetAmounts: publicData.presetAmounts || [5, 10, 20],
+              allowCustomAmount: true
+            }
+          });
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load searchable data');
+    } finally {
+      setFetchingData(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleImagesChange = (newImages) => {
+    setImages(newImages.map(img => img.uri || img));
+  };
+  
+  const handleTagsChange = (tags) => {
+    setSelectedTags(tags);
   };
 
   const handleComponentToggle = (component) => {
@@ -183,52 +250,61 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
 
   // Downloadable component handlers
   const handleFileSelect = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
     
-    setUploadingFiles(true);
-    try {
-      // In a real implementation, you would upload files here
-      // For now, we'll create file objects
-      const newFiles = files.map(file => ({
-        id: uuidv4(),
-        name: file.name,
-        size: file.size,
-        price: 9.99 // Default price
-      }));
-      
-      setComponents(prev => ({
-        ...prev,
-        downloadable: {
-          ...prev.downloadable,
-          files: [...prev.downloadable.files, ...newFiles]
-        }
-      }));
-    } catch (err) {
-      setError('Failed to process files');
-    } finally {
-      setUploadingFiles(false);
-    }
+    setNewFile(prev => ({
+      ...prev,
+      file: file,
+      name: file.name
+    }));
   };
 
-  const handleFileRemove = (fileId) => {
+  const handleAddFile = () => {
+    if (!newFile.file || !newFile.price) {
+      setError('Please select a file and enter a price');
+      return;
+    }
+    
+    const fileItem = {
+      id: uuidv4(),
+      name: newFile.name,
+      description: newFile.description,
+      size: newFile.file.size,
+      price: parseFloat(newFile.price)
+    };
+    
     setComponents(prev => ({
       ...prev,
       downloadable: {
         ...prev.downloadable,
-        files: prev.downloadable.files.filter(f => f.id !== fileId)
+        files: [...prev.downloadable.files, fileItem]
       }
     }));
+    
+    setNewFile({ name: '', description: '', price: '', file: null });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setError('');
   };
 
-  const handleFilePrice = (fileId, price) => {
+  const handleUpdateFile = (fileId, field, value) => {
     setComponents(prev => ({
       ...prev,
       downloadable: {
         ...prev.downloadable,
         files: prev.downloadable.files.map(f => 
-          f.id === fileId ? { ...f, price: parseFloat(price) || 0 } : f
+          f.id === fileId ? { ...f, [field]: field === 'price' ? parseFloat(value) || 0 : value } : f
         )
+      }
+    }));
+  };
+
+  const handleRemoveFile = (fileId) => {
+    setComponents(prev => ({
+      ...prev,
+      downloadable: {
+        ...prev.downloadable,
+        files: prev.downloadable.files.filter(f => f.id !== fileId)
       }
     }));
   };
@@ -243,6 +319,7 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
     const item = {
       id: uuidv4(),
       name: newOfflineItem.name,
+      description: newOfflineItem.description,
       price: parseFloat(newOfflineItem.price)
     };
     
@@ -254,8 +331,20 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
       }
     }));
     
-    setNewOfflineItem({ name: '', price: '' });
+    setNewOfflineItem({ name: '', description: '', price: '' });
     setError('');
+  };
+
+  const handleUpdateOfflineItem = (itemId, field, value) => {
+    setComponents(prev => ({
+      ...prev,
+      offline: {
+        ...prev.offline,
+        items: prev.offline.items.map(i => 
+          i.id === itemId ? { ...i, [field]: field === 'price' ? parseFloat(value) || 0 : value } : i
+        )
+      }
+    }));
   };
 
   const handleRemoveOfflineItem = (itemId) => {
@@ -338,9 +427,11 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
             type: 'allinone',
             title: formData.title,
             description: formData.description,
+            images: images,
             components: components
           }
-        }
+        },
+        tags: selectedTags
       };
       
       let response;
@@ -379,6 +470,14 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
     }).format(amount);
   };
 
+  if (fetchingData) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
@@ -394,317 +493,398 @@ const PublishAllInOneSearchable = ({ existingSearchable = null, initialPreset = 
       <PublishSearchableCommon
         formData={formData}
         onInputChange={handleInputChange}
+        images={images}
+        onImagesChange={handleImagesChange}
+        selectedTags={selectedTags}
+        onTagsChange={handleTagsChange}
+        onError={setError}
       />
 
-      {/* Component toggles */}
+      {/* Downloadable component section */}
       <Grid item xs={12}>
-        <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }}>
-          <Typography variant="h6" gutterBottom>
-            Enable Components
-          </Typography>
-          <Box display="flex" gap={3} flexWrap="wrap">
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={components.downloadable.enabled}
-                  onChange={() => handleComponentToggle('downloadable')}
-                  color="primary"
-                />
-              }
-              label={
-                <Box display="flex" alignItems="center">
-                  <CloudDownload style={{ marginRight: 8 }} />
-                  Digital Downloads
-                </Box>
-              }
+        <FormControlLabel
+          control={
+            <Switch
+              checked={components.downloadable.enabled}
+              onChange={() => handleComponentToggle('downloadable')}
+              color="primary"
             />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={components.offline.enabled}
-                  onChange={() => handleComponentToggle('offline')}
-                  color="primary"
-                />
-              }
-              label={
-                <Box display="flex" alignItems="center">
-                  <Storefront style={{ marginRight: 8 }} />
-                  Physical Items
-                </Box>
-              }
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={components.donation.enabled}
-                  onChange={() => handleComponentToggle('donation')}
-                  color="primary"
-                />
-              }
-              label={
-                <Box display="flex" alignItems="center">
-                  <Favorite style={{ marginRight: 8 }} />
-                  Donations
-                </Box>
-              }
-            />
-          </Box>
-        </Paper>
-      </Grid>
-
-      {/* Component tabs */}
-      {(components.downloadable.enabled || components.offline.enabled || components.donation.enabled) && (
-        <Grid item xs={12}>
-          <Paper elevation={1}>
-            <Tabs
-              value={activeTab}
-              onChange={(e, newValue) => setActiveTab(newValue)}
-              indicatorColor="primary"
-              textColor="primary"
-            >
-              {components.downloadable.enabled && (
-                <Tab label="Digital Downloads" icon={<CloudDownload />} />
-              )}
-              {components.offline.enabled && (
-                <Tab label="Physical Items" icon={<Storefront />} />
-              )}
-              {components.donation.enabled && (
-                <Tab label="Donation Settings" icon={<Favorite />} />
-              )}
-            </Tabs>
+          }
+          label={
+            <Box display="flex" alignItems="center">
+              <CloudDownload style={{ marginRight: 8 }} />
+              <Typography variant="h6">Digital Downloads</Typography>
+            </Box>
+          }
+        />
+        
+        {components.downloadable.enabled && (
+          <Box mt={2} pl={2}>
+            <Typography variant="body2" color="textSecondary" paragraph>
+              Add digital content that customers can download after purchase
+            </Typography>
             
-            <Box p={3}>
-              {/* Downloadable tab content */}
-              {components.downloadable.enabled && activeTab === 0 && (
-                <Box>
-                  <Box
-                    border={2}
-                    borderColor="divider"
-                    borderRadius={2}
-                    p={3}
-                    textAlign="center"
-                    style={{ cursor: 'pointer', borderStyle: 'dashed' }}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <CloudUpload style={{ fontSize: 48, color: '#ccc' }} />
-                    <Typography variant="h6">
-                      Click to upload files
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Supported formats: PDF, ZIP, MP4, MP3, PNG, JPG, and more
-                    </Typography>
-                  </Box>
-                  
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    onChange={handleFileSelect}
-                    style={{ display: 'none' }}
-                    accept=".pdf,.zip,.mp4,.mp3,.png,.jpg,.jpeg,.doc,.docx"
-                  />
-                  
-                  {components.downloadable.files.length > 0 && (
-                    <Box mt={3}>
-                      <Typography variant="h6" gutterBottom>
-                        Uploaded Files ({components.downloadable.files.length})
-                      </Typography>
-                      <List>
-                        {components.downloadable.files.map((file) => (
-                          <ListItem key={file.id} divider>
-                            <ListItemText
-                              primary={file.name}
-                              secondary={formatFileSize(file.size)}
-                            />
-                            <TextField
-                              type="number"
-                              value={file.price}
-                              onChange={(e) => handleFilePrice(file.id, e.target.value)}
-                              style={{ width: 120, marginRight: 16 }}
-                              InputProps={{
-                                startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                              }}
-                              inputProps={{ min: 0, step: 0.01 }}
-                            />
-                            <ListItemSecondaryAction>
-                              <IconButton
-                                edge="end"
-                                onClick={() => handleFileRemove(file.id)}
-                              >
-                                <Delete />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
-                </Box>
+            {/* Add new file section */}
+            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }}>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AttachFile />}
+                style={{ marginBottom: 12 }}
+              >
+                Choose File
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  hidden
+                />
+              </Button>
+              {newFile.file && (
+                <Typography variant="caption" display="block" gutterBottom>
+                  Selected: {newFile.file.name} ({formatFileSize(newFile.file.size)})
+                </Typography>
               )}
               
-              {/* Offline tab content */}
-              {components.offline.enabled && activeTab === (components.downloadable.enabled ? 1 : 0) && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Add Physical Items
-                  </Typography>
-                  
-                  <Box display="flex" gap={2} mb={3}>
-                    <TextField
-                      value={newOfflineItem.name}
-                      onChange={(e) => setNewOfflineItem(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Item name"
-                      variant="outlined"
-                      size="small"
-                      style={{ flex: 2 }}
-                    />
-                    <TextField
-                      type="number"
-                      value={newOfflineItem.price}
-                      onChange={(e) => setNewOfflineItem(prev => ({ ...prev, price: e.target.value }))}
-                      placeholder="Price"
-                      variant="outlined"
-                      size="small"
-                      style={{ flex: 1 }}
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      }}
-                    />
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleAddOfflineItem}
-                      startIcon={<Add />}
-                    >
-                      Add
-                    </Button>
-                  </Box>
-                  
-                  {components.offline.items.length > 0 && (
-                    <List>
-                      {components.offline.items.map((item) => (
-                        <ListItem key={item.id} divider>
-                          <ListItemText
-                            primary={item.name}
-                            secondary={formatUSD(item.price)}
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton
-                              edge="end"
-                              onClick={() => handleRemoveOfflineItem(item.id)}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                </Box>
-              )}
+              <TextField
+                value={newFile.name}
+                onChange={(e) => setNewFile(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="File name"
+                fullWidth
+                variant="outlined"
+                size="small"
+                style={{ marginBottom: 8 }}
+              />
               
-              {/* Donation tab content */}
-              {components.donation.enabled && activeTab === 
-                (components.downloadable.enabled ? 1 : 0) + 
-                (components.offline.enabled ? 1 : 0)
-              && (
-                <Box>
-                  <Typography variant="h6" gutterBottom>
-                    Donation Settings
-                  </Typography>
-                  
-                  <FormControl component="fieldset" fullWidth>
-                    <FormLabel component="legend">Pricing Mode</FormLabel>
-                    <RadioGroup
-                      value={components.donation.pricingMode}
-                      onChange={handleDonationModeChange}
-                    >
-                      <FormControlLabel
-                        value="fixed"
-                        control={<Radio color="primary" />}
-                        label="Fixed Amount - Supporters donate exactly this amount"
-                      />
-                      <FormControlLabel
-                        value="preset"
-                        control={<Radio color="primary" />}
-                        label="Preset Options - Supporters choose from preset amounts"
-                      />
-                      <FormControlLabel
-                        value="flexible"
-                        control={<Radio color="primary" />}
-                        label="Flexible - Supporters can choose any amount"
-                      />
-                    </RadioGroup>
-                  </FormControl>
-                  
-                  {components.donation.pricingMode === 'fixed' && (
-                    <Box mt={2}>
+              <TextField
+                value={newFile.description}
+                onChange={(e) => setNewFile(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Description (optional)"
+                fullWidth
+                variant="outlined"
+                size="small"
+                multiline
+                rows={2}
+                style={{ marginBottom: 8 }}
+              />
+              
+              <Box display="flex" alignItems="center">
+                <TextField
+                  value={newFile.price}
+                  onChange={(e) => setNewFile(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="Price"
+                  type="number"
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  style={{ flex: 1, marginRight: 8 }}
+                />
+                <IconButton
+                  onClick={handleAddFile}
+                  disabled={!newFile.file || !newFile.price}
+                  color="primary"
+                >
+                  <Add />
+                </IconButton>
+              </Box>
+            </Paper>
+            
+            {/* File list */}
+            {components.downloadable.files.length > 0 && (
+              <>
+                <Typography variant="subtitle2" gutterBottom>
+                  Added Files ({components.downloadable.files.length})
+                </Typography>
+                {components.downloadable.files.map((file) => (
+                  <Box key={file.id} style={{ marginBottom: 16 }}>
+                    <TextField
+                      value={file.name}
+                      onChange={(e) => handleUpdateFile(file.id, 'name', e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      style={{ marginBottom: 4 }}
+                    />
+                    <TextField
+                      value={file.description}
+                      onChange={(e) => handleUpdateFile(file.id, 'description', e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      multiline
+                      rows={2}
+                      placeholder="Description (optional)"
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Box display="flex" alignItems="center">
                       <TextField
+                        value={file.price}
+                        onChange={(e) => handleUpdateFile(file.id, 'price', e.target.value)}
                         type="number"
-                        value={components.donation.fixedAmount}
-                        onChange={(e) => setComponents(prev => ({
-                          ...prev,
-                          donation: {
-                            ...prev.donation,
-                            fixedAmount: parseFloat(e.target.value) || 0
-                          }
-                        }))}
-                        fullWidth
                         variant="outlined"
-                        label="Fixed Amount"
+                        size="small"
                         InputProps={{
                           startAdornment: <InputAdornment position="start">$</InputAdornment>,
                         }}
+                        style={{ flex: 1, marginRight: 8 }}
                       />
+                      <IconButton
+                        onClick={() => handleRemoveFile(file.id)}
+                        size="small"
+                      >
+                        <Delete />
+                      </IconButton>
                     </Box>
-                  )}
-                  
-                  {components.donation.pricingMode === 'preset' && (
-                    <Box mt={2}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        Preset Amount Options (1-3 options)
-                      </Typography>
-                      {components.donation.presetAmounts.map((amount, index) => (
-                        <Box key={index} display="flex" alignItems="center" mb={1}>
-                          <TextField
-                            type="number"
-                            value={amount}
-                            onChange={(e) => handlePresetAmountChange(index, e.target.value)}
-                            variant="outlined"
-                            size="small"
-                            InputProps={{
-                              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                            }}
-                            style={{ flex: 1, marginRight: 8 }}
-                          />
-                          {components.donation.presetAmounts.length > 1 && (
-                            <IconButton
-                              onClick={() => handleRemovePresetAmount(index)}
-                              size="small"
-                            >
-                              <Delete />
-                            </IconButton>
-                          )}
-                        </Box>
-                      ))}
-                      {components.donation.presetAmounts.length < 3 && (
-                        <Button
-                          onClick={handleAddPresetAmount}
-                          variant="outlined"
+                  </Box>
+                ))}
+              </>
+            )}
+          </Box>
+        )}
+      </Grid>
+
+      {/* Offline component section */}
+      <Grid item xs={12}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={components.offline.enabled}
+              onChange={() => handleComponentToggle('offline')}
+              color="primary"
+            />
+          }
+          label={
+            <Box display="flex" alignItems="center">
+              <Storefront style={{ marginRight: 8 }} />
+              <Typography variant="h6">Physical Items</Typography>
+            </Box>
+          }
+        />
+        
+        {components.offline.enabled && (
+          <Box mt={2} pl={2}>
+            <Typography variant="body2" color="textSecondary" paragraph>
+              Add physical products or services
+            </Typography>
+            
+            {/* Add new item section */}
+            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }}>
+              <TextField
+                value={newOfflineItem.name}
+                onChange={(e) => setNewOfflineItem(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Item name"
+                fullWidth
+                variant="outlined"
+                size="small"
+                style={{ marginBottom: 8 }}
+              />
+              
+              <TextField
+                value={newOfflineItem.description}
+                onChange={(e) => setNewOfflineItem(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Description (optional)"
+                fullWidth
+                variant="outlined"
+                size="small"
+                multiline
+                rows={2}
+                style={{ marginBottom: 8 }}
+              />
+              
+              <Box display="flex" alignItems="center">
+                <TextField
+                  value={newOfflineItem.price}
+                  onChange={(e) => setNewOfflineItem(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="Price"
+                  type="number"
+                  variant="outlined"
+                  size="small"
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                  }}
+                  style={{ flex: 1, marginRight: 8 }}
+                />
+                <IconButton
+                  onClick={handleAddOfflineItem}
+                  disabled={!newOfflineItem.name || !newOfflineItem.price}
+                  color="primary"
+                >
+                  <Add />
+                </IconButton>
+              </Box>
+            </Paper>
+            
+            {/* Item list */}
+            {components.offline.items.length > 0 && (
+              <>
+                <Typography variant="subtitle2" gutterBottom>
+                  Added Items ({components.offline.items.length})
+                </Typography>
+                {components.offline.items.map((item) => (
+                  <Box key={item.id} style={{ marginBottom: 16 }}>
+                    <TextField
+                      value={item.name}
+                      onChange={(e) => handleUpdateOfflineItem(item.id, 'name', e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      style={{ marginBottom: 4 }}
+                    />
+                    <TextField
+                      value={item.description}
+                      onChange={(e) => handleUpdateOfflineItem(item.id, 'description', e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      size="small"
+                      multiline
+                      rows={2}
+                      placeholder="Description (optional)"
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Box display="flex" alignItems="center">
+                      <TextField
+                        value={item.price}
+                        onChange={(e) => handleUpdateOfflineItem(item.id, 'price', e.target.value)}
+                        type="number"
+                        variant="outlined"
+                        size="small"
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        }}
+                        style={{ flex: 1, marginRight: 8 }}
+                      />
+                      <IconButton
+                        onClick={() => handleRemoveOfflineItem(item.id)}
+                        size="small"
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                ))}
+              </>
+            )}
+          </Box>
+        )}
+      </Grid>
+
+      {/* Donation component section */}
+      <Grid item xs={12}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={components.donation.enabled}
+              onChange={() => handleComponentToggle('donation')}
+              color="primary"
+            />
+          }
+          label={
+            <Box display="flex" alignItems="center">
+              <Favorite style={{ marginRight: 8 }} />
+              <Typography variant="h6">Donations</Typography>
+            </Box>
+          }
+        />
+        
+        {components.donation.enabled && (
+          <Box mt={2} pl={2}>
+            <Typography variant="body2" color="textSecondary" paragraph>
+              Accept donations from supporters
+            </Typography>
+            
+            <Paper elevation={1} style={{ padding: 16 }}>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend">Donation Type</FormLabel>
+                <RadioGroup
+                  value={components.donation.pricingMode}
+                  onChange={handleDonationModeChange}
+                >
+                  <FormControlLabel
+                    value="fixed"
+                    control={<Radio color="primary" />}
+                    label="Fixed Amount - Supporters donate exactly this amount"
+                  />
+                  <FormControlLabel
+                    value="flexible"
+                    control={<Radio color="primary" />}
+                    label="Flexible - Supporters can choose from preset amounts or enter their own"
+                  />
+                </RadioGroup>
+              </FormControl>
+              
+              {components.donation.pricingMode === 'fixed' && (
+                <Box mt={2}>
+                  <TextField
+                    type="number"
+                    value={components.donation.fixedAmount}
+                    onChange={(e) => setComponents(prev => ({
+                      ...prev,
+                      donation: {
+                        ...prev.donation,
+                        fixedAmount: parseFloat(e.target.value) || 0
+                      }
+                    }))}
+                    fullWidth
+                    variant="outlined"
+                    label="Fixed Donation Amount"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                    }}
+                  />
+                </Box>
+              )}
+              
+              {components.donation.pricingMode === 'flexible' && (
+                <Box mt={2}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Quick Amount Options (1-3 options)
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary" display="block" gutterBottom>
+                    Set up to 3 quick selection amounts. Users can also enter custom amounts.
+                  </Typography>
+                  {components.donation.presetAmounts.map((amount, index) => (
+                    <Box key={index} display="flex" alignItems="center" mb={1}>
+                      <TextField
+                        type="number"
+                        value={amount}
+                        onChange={(e) => handlePresetAmountChange(index, e.target.value)}
+                        variant="outlined"
+                        size="small"
+                        placeholder="Quick amount option"
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                        }}
+                        style={{ flex: 1, marginRight: 8 }}
+                      />
+                      {components.donation.presetAmounts.length > 1 && (
+                        <IconButton
+                          onClick={() => handleRemovePresetAmount(index)}
                           size="small"
-                          style={{ marginTop: 8 }}
                         >
-                          Add Option
-                        </Button>
+                          <Delete />
+                        </IconButton>
                       )}
                     </Box>
+                  ))}
+                  {components.donation.presetAmounts.length < 3 && (
+                    <Button
+                      onClick={handleAddPresetAmount}
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Add />}
+                      style={{ marginTop: 8 }}
+                    >
+                      Add Quick Option
+                    </Button>
                   )}
                 </Box>
               )}
-            </Box>
-          </Paper>
-        </Grid>
-      )}
+            </Paper>
+          </Box>
+        )}
+      </Grid>
 
       {/* Error display */}
       {error && (
