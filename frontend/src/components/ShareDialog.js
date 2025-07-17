@@ -17,6 +17,7 @@ import { makeStyles } from '@material-ui/styles';
 import QRCode from 'react-qr-code';
 import useComponentStyles from '../themes/componentStyles';
 import { componentSpacing } from '../utils/spacing';
+import { testIdProps } from '../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -74,17 +75,17 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog}>
-        <DialogTitle>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog} {...testIdProps('dialog', 'share', 'container')}>
+        <DialogTitle {...testIdProps('dialog', 'share', 'title')}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Share "{title}"</Typography>
-            <IconButton onClick={handleClose} size="small">
+            <IconButton onClick={handleClose} size="small" {...testIdProps('button', 'share', 'close')}>
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
         
-        <DialogContent className={styles.dialogContent}>
+        <DialogContent className={styles.dialogContent} {...testIdProps('dialog', 'share', 'content')}>
           <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
             {/* QR Code */}
             <Box
@@ -117,11 +118,13 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
                   InputProps={{
                     readOnly: true,
                   }}
+                  {...testIdProps('input', 'share', 'url-field')}
                 />
                 <IconButton
                   onClick={handleCopyToClipboard}
                   color="primary"
                   title="Copy to clipboard"
+                  {...testIdProps('button', 'share', 'copy-url')}
                 >
                   <ContentCopy />
                 </IconButton>
@@ -137,8 +140,8 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
           </Box>
         </DialogContent>
         
-        <DialogActions>
-          <Button onClick={handleClose} color="primary" variant="contained" className={styles.button}>
+        <DialogActions {...testIdProps('dialog', 'share', 'actions')}>
+          <Button onClick={handleClose} color="primary" variant="contained" className={styles.button} {...testIdProps('button', 'share', 'close-action')}>
             Close
           </Button>
         </DialogActions>
