@@ -22,6 +22,7 @@ import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import ChangePasswordDialog from '../../components/Auth/ChangePasswordDialog';
 import WithdrawalDialog, { openWithdrawalDialog } from '../../components/WithdrawalDialog';
 import AIContentStatus from '../../components/AIContentStatus';
+import { testIdProps } from '../../utils/testIds';
 
 const Dashboard = () => {
   const classes = useComponentStyles(); // Use shared component styles

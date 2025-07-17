@@ -31,6 +31,7 @@ import { SOCIAL_MEDIA_PLATFORMS, validateSocialMediaUrl } from '../../components
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
