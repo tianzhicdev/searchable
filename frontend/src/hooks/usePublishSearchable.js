@@ -221,6 +221,9 @@ const usePublishSearchable = (searchableType, options = {}) => {
           case 'direct':
             redirectPath = `/direct-item/${newSearchableId}`;
             break;
+          case 'allinone':
+            redirectPath = `/allinone-item/${newSearchableId}`;
+            break;
           default:
             redirectPath = `/searchable-item/${newSearchableId}`;
         }
