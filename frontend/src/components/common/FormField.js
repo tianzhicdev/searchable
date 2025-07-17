@@ -3,6 +3,7 @@ import { TextField, InputAdornment, IconButton } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
 import { touchTargets } from '../../utils/spacing';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   textField: {
@@ -72,6 +73,7 @@ const FormField = ({
             edge="end"
             size="small"
             tabIndex={-1}
+            {...testIdProps('button', 'form-field', `${name}-password-toggle`)}
           >
             {showPassword ? <VisibilityOff /> : <Visibility />}
           </IconButton>
@@ -116,6 +118,7 @@ const FormField = ({
       FormHelperTextProps={{
         className: classes.helperText
       }}
+      {...testIdProps('input', 'form-field', name || 'field')}
       {...textFieldProps}
     />
   );
