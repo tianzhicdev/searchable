@@ -1,6 +1,7 @@
 import React from 'react';
 import { Chip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
+import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   chip: {
@@ -47,6 +48,7 @@ const TagChip = ({
   variant = 'outlined',
   selected = false,
   className,
+  testId,
   ...chipProps
 }) => {
   const classes = useStyles();
@@ -63,6 +65,9 @@ const TagChip = ({
     return classNames.join(' ');
   };
 
+  // Generate test ID from testId prop or label
+  const chipTestId = testId || (typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : 'tag-chip');
+
   return (
     <Chip
       label={label}
@@ -71,6 +76,7 @@ const TagChip = ({
       size={size === 'small' ? 'small' : 'medium'}
       variant={selected ? 'default' : variant}
       className={getClassName()}
+      {...testIdProps('chip', 'tag', chipTestId)}
       {...chipProps}
     />
   );
