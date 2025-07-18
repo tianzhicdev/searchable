@@ -20,11 +20,7 @@ import DashboardIcon from '@material-ui/icons/Dashboard';
 import SearchIcon from '@material-ui/icons/Search';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import StorefrontIcon from '@material-ui/icons/Storefront';
 import SendIcon from '@material-ui/icons/Send';
-import FavoriteIcon from '@material-ui/icons/Favorite';
-import AutoAwesomeMotionIcon from '@material-ui/icons/AutoAwesomeMotion';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import PersonIcon from '@material-ui/icons/Person';
 import GetAppIcon from '@material-ui/icons/GetApp';
@@ -114,7 +110,6 @@ const FloatingMenu = () => {
   const logout = useLogout();
   const account = useSelector((state) => state.account);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const [submenuAnchorEl, setSubmenuAnchorEl] = useState(null);
   const [accountSubmenuAnchorEl, setAccountSubmenuAnchorEl] = useState(null);
   const fabRef = useRef(null);
 
@@ -128,18 +123,14 @@ const FloatingMenu = () => {
 
   const handleClose = () => {
     setMenuAnchorEl(null);
-    setSubmenuAnchorEl(null);
     setAccountSubmenuAnchorEl(null);
   };
 
   const handleAddPosting = (event) => {
     event.stopPropagation();
-    setSubmenuAnchorEl(event.currentTarget);
+    handleNavigation('/publish-allinone');
   };
 
-  const handleSubmenuClose = () => {
-    setSubmenuAnchorEl(null);
-  };
 
   const handleMyAccount = (event) => {
     event.stopPropagation();
@@ -227,37 +218,11 @@ const FloatingMenu = () => {
     },
     {
       icon: <LockIcon />,
-      label: 'Change Password',
-      onClick: () => handleNavigation('/change-password')
+      label: 'Edit Account',
+      onClick: () => handleNavigation('/edit-account')
     }
   ];
 
-  const postingTypes = [
-    {
-      icon: <CloudDownloadIcon />,
-      name: 'Downloadable',
-      description: 'Digital content for download',
-      path: '/publish-searchables'
-    },
-    {
-      icon: <StorefrontIcon />,
-      name: 'Offline',
-      description: 'Physical items or services',
-      path: '/publish-offline-searchables'
-    },
-    {
-      icon: <FavoriteIcon />,
-      name: 'Donation',
-      description: 'Accept donations',
-      path: '/publish-direct-searchables'
-    },
-    {
-      icon: <AutoAwesomeMotionIcon />,
-      name: 'AI Content',
-      description: 'AI-generated content',
-      path: '/publish/ai-content'
-    }
-  ];
 
   return (
     <>
@@ -300,41 +265,6 @@ const FloatingMenu = () => {
         ))}
       </Menu>
 
-      {/* Submenu for posting types */}
-      <Menu
-        anchorEl={submenuAnchorEl}
-        open={Boolean(submenuAnchorEl)}
-        onClose={handleSubmenuClose}
-        className={classes.submenu}
-        anchorOrigin={{
-          vertical: 'center',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'center',
-          horizontal: 'left',
-        }}
-        getContentAnchorEl={null}
-      >
-        {postingTypes.map((type) => (
-          <MenuItem 
-            key={type.name}
-            onClick={() => {
-              handleNavigation(type.path);
-              handleSubmenuClose();
-            }}
-            className={classes.submenuItem}
-          >
-            <ListItemIcon>
-              {type.icon}
-            </ListItemIcon>
-            <ListItemText 
-              primary={type.name} 
-              secondary={type.description}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
 
       {/* My Account submenu */}
       <Menu

@@ -11,7 +11,18 @@ export const mockAccount = {
     username: 'test_user',
     email: 'test@example.com',
     address: '123 Mock Street, Test City',
-    tel: '+1234567890'
+    tel: '+1234567890',
+    profile: {
+      id: 1,
+      user_id: 1,
+      username: 'test_user',
+      profile_image_url: null,
+      introduction: null,
+      metadata: {},
+      is_guest: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
   }
 };
 

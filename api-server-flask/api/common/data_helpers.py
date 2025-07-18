@@ -1039,7 +1039,7 @@ def get_user_profile(user_id):
     try:
         result = db.fetch_one("""
             SELECT id, user_id, username, profile_image_url, introduction, 
-                   metadata, created_at, updated_at
+                   metadata, is_guest, created_at, updated_at
             FROM user_profile
             WHERE user_id = %s
         """, (user_id,))
@@ -1054,8 +1054,9 @@ def get_user_profile(user_id):
             'profile_image_url': result[3],
             'introduction': result[4],
             'metadata': result[5],
-            'created_at': result[6].isoformat() if result[6] else None,
-            'updated_at': result[7].isoformat() if result[7] else None
+            'is_guest': result[6],
+            'created_at': result[7].isoformat() if result[7] else None,
+            'updated_at': result[8].isoformat() if result[8] else None
         }
     except Exception as e:
         logger.error(f"Error retrieving user profile for user_id {user_id}: {str(e)}")

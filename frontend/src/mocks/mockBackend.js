@@ -1,4 +1,5 @@
 import { mockImage1, mockImage2, mockRewards, mockUserSearchables } from './mockData';
+import { getMockUser } from './mockAuth';
 
 // Export isMockMode for other files to use
 export const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true';
@@ -65,7 +66,23 @@ const generateSearchableTitle = (index, type) => {
   
   if (type === 'downloadable') return downloadableTitles[index % 10];
   if (type === 'direct') return directTitles[index % 10];
-  return offlineTitles[index % 10];
+  if (type === 'offline') return offlineTitles[index % 10];
+  
+  // Titles for allinone type
+  const allinoneTitles = [
+    'Complete Creative Bundle - Files, Merch & Support',
+    'Ultimate Learning Package + Community Access',
+    'Full Stack Resource Kit & Donation Option',
+    'Premium Content Collection with Physical Rewards',
+    'Digital & Physical Art Bundle + Tips',
+    'All-Inclusive Creator Package',
+    'Mixed Media Bundle - Downloads & Merchandise',
+    'Comprehensive Course Material + Support Options',
+    'Multi-Format Content Bundle',
+    'Everything Pack - Digital, Physical & Donations'
+  ];
+  
+  return allinoneTitles[index % 10];
 };
 
 // Helper function to generate user descriptions/introductions
@@ -174,7 +191,7 @@ const generateMockUsers = () => {
 // Generate mock searchables programmatically
 const generateMockSearchables = () => {
   const searchables = [];
-  const types = ['downloadable', 'direct', 'offline'];
+  const types = ['downloadable', 'direct', 'offline', 'allinone'];
   const tagCombinations = [
     [21, 23],      // books, art
     [22, 25],      // music, videos
@@ -189,7 +206,7 @@ const generateMockSearchables = () => {
   ];
   
   for (let i = 0; i < 100; i++) {
-    const type = types[i % 3];
+    const type = types[i % 4];
     const hasImages = Math.random() > 0.15; // 85% have images
     const imageCount = hasImages ? Math.floor(Math.random() * 4) + 1 : 0; // 1-4 images
     const tagIds = tagCombinations[i % tagCombinations.length];
@@ -334,6 +351,81 @@ const generateMockSearchables = () => {
           description: `Fresh, high-quality ${offlineProductNames[itemIndex].toLowerCase()}`
         };
       });
+    } else if (type === 'allinone') {
+      // Generate components for allinone searchable
+      const components = {
+        downloadable: {
+          enabled: Math.random() > 0.3, // 70% chance
+          files: []
+        },
+        offline: {
+          enabled: Math.random() > 0.5, // 50% chance
+          items: []
+        },
+        donation: {
+          enabled: Math.random() > 0.4, // 60% chance
+          pricingMode: 'flexible',
+          fixedAmount: 10.00,
+          presetAmounts: [5, 10, 20]
+        }
+      };
+      
+      // Ensure at least one component is enabled
+      if (!components.downloadable.enabled && !components.offline.enabled && !components.donation.enabled) {
+        components.downloadable.enabled = true;
+      }
+      
+      // Add downloadable files if enabled
+      if (components.downloadable.enabled) {
+        const fileCount = Math.floor(Math.random() * 3) + 1; // 1-3 files
+        const fileNames = [
+          'Premium_Bundle.zip', 'Source_Files.zip', 'Templates_Pack.zip',
+          'Graphics_Collection.zip', 'Audio_Samples.mp3', 'Video_Tutorial.mp4'
+        ];
+        
+        components.downloadable.files = Array(fileCount).fill(null).map((_, idx) => {
+          return {
+            fileId: `allinone-file-${i}-${idx}`,
+            id: `allinone-file-${i}-${idx}`,
+            name: fileNames[(i * 3 + idx) % fileNames.length],
+            price: Math.floor(Math.random() * 30) + 9.99,
+            size: Math.floor(Math.random() * 100000000) + 1000000 // 1MB to 100MB
+          };
+        });
+      }
+      
+      // Add offline items if enabled
+      if (components.offline.enabled) {
+        const itemCount = Math.floor(Math.random() * 3) + 1; // 1-3 items
+        const itemNames = ['T-Shirt', 'Mug', 'Sticker Pack', 'Poster', 'Hat', 'Keychain'];
+        
+        components.offline.items = Array(itemCount).fill(null).map((_, idx) => {
+          return {
+            itemId: `allinone-item-${i}-${idx}`,
+            id: `allinone-item-${i}-${idx}`,
+            name: itemNames[(i * 3 + idx) % itemNames.length],
+            price: Math.floor(Math.random() * 20) + 4.99
+          };
+        });
+      }
+      
+      // Configure donation component if enabled
+      if (components.donation.enabled) {
+        const pricingModes = ['fixed', 'preset', 'flexible'];
+        components.donation.pricingMode = pricingModes[i % 3];
+        
+        if (components.donation.pricingMode === 'fixed') {
+          components.donation.fixedAmount = Math.floor(Math.random() * 20) + 5;
+        } else if (components.donation.pricingMode === 'preset') {
+          components.donation.presetAmounts = [
+            Math.floor(Math.random() * 5) + 1,
+            Math.floor(Math.random() * 10) + 10,
+            Math.floor(Math.random() * 20) + 20
+          ].sort((a, b) => a - b);
+        }
+      }
+      
+      searchable.payloads.public.components = components;
     }
     
     // Add some searchables with extreme/edge case prices
@@ -368,13 +460,29 @@ const mockHandlers = {
   'users/login': (url, config) => {
     const data = JSON.parse(config.data);
     console.log('[MOCK] Login attempt with:', data);
+    
+    // Check if it's a guest login
+    const isGuest = data.email && data.email.startsWith('guest_') && data.email.endsWith('@ec.com');
+    const userId = isGuest ? data.email.match(/guest_(\d+)@/)?.[1] || '999' : '1';
+    
     return createMockResponse({
       success: true,
       token: 'mock-jwt-token-12345',
       user: {
-        _id: 'mock-user-1',
-        username: 'test_user',
-        email: data.email
+        _id: userId,
+        username: isGuest ? `guest_${userId}` : 'test_user',
+        email: data.email,
+        profile: {
+          id: parseInt(userId),
+          user_id: parseInt(userId),
+          username: isGuest ? `guest_${userId}` : 'test_user',
+          profile_image_url: null,
+          introduction: null,
+          metadata: {},
+          is_guest: isGuest,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
       }
     });
   },
@@ -382,6 +490,10 @@ const mockHandlers = {
   'users/register': (url, config) => {
     const data = JSON.parse(config.data);
     console.log('[MOCK] Register attempt with:', data);
+    
+    // Check if it's a guest registration request
+    const isGuestRequest = data.email === 'GUEST_REGISTRATION_REQUEST';
+    const userId = isGuestRequest ? Math.floor(Math.random() * 1000) + 100 : 2;
     
     let msg = 'User registered successfully';
     if (data.invite_code) {
@@ -391,8 +503,27 @@ const mockHandlers = {
       }
     }
     
+    const user = {
+      _id: userId.toString(),
+      username: isGuestRequest ? `guest_${userId}` : data.username,
+      email: isGuestRequest ? `guest_${userId}@ec.com` : data.email,
+      profile: {
+        id: userId,
+        user_id: userId,
+        username: isGuestRequest ? `guest_${userId}` : data.username,
+        profile_image_url: null,
+        introduction: null,
+        metadata: {},
+        is_guest: isGuestRequest,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    };
+    
     return createMockResponse({
       success: true,
+      userID: userId,
+      user: user,
       msg: msg
     });
   },
@@ -400,6 +531,31 @@ const mockHandlers = {
   'users/logout': () => {
     console.log('[MOCK] Logout');
     return createMockResponse({ success: true });
+  },
+  
+  'users/edit-account': (url, config) => {
+    console.log('[MOCK] Edit account');
+    const data = JSON.parse(config.data || '{}');
+    const user = getMockUser();
+    
+    // Simulate validation of current password
+    if (!data.current_password) {
+      return createMockResponse({
+        success: false,
+        msg: 'Current password is required'
+      });
+    }
+    
+    // In mock mode, we'll accept any username/email changes
+    // Update user data
+    if (data.username) user.username = data.username;
+    if (data.email) user.email = data.email;
+    
+    return createMockResponse({
+      success: true,
+      msg: 'Account updated successfully',
+      user: user
+    });
   },
   
   'users/change-password': (url, config) => {

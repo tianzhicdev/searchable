@@ -161,15 +161,8 @@ const SearchableList = ({ criteria, onPageChange }) => {
 
   // Handle clicking on an item
   const handleItemClick = (item) => {
-    // Use the type field from the backend if available, fallback to payload type
-    const itemType = item.type || item.payloads?.public?.type || 'downloadable';
-    if (itemType === 'offline') {
-      navigateWithStack(history, `/offline-item/${item.searchable_id}`);
-    } else if (itemType === 'direct') {
-      navigateWithStack(history, `/direct-item/${item.searchable_id}`);
-    } else {
-      navigateWithStack(history, `/searchable-item/${item.searchable_id}`);
-    }
+    // Always use allinone-item route for backward compatibility
+    navigateWithStack(history, `/allinone-item/${item.searchable_id}`);
   };
 
   return (
@@ -199,7 +192,6 @@ const SearchableList = ({ criteria, onPageChange }) => {
                 key={`${item.searchable_id}-${pagination.page}`}
                 type="searchable"
                 data={item}
-                onClick={() => handleItemClick(item)}
                 data-testid={testIds.list.item('searchable', index)}
               />
             ))}

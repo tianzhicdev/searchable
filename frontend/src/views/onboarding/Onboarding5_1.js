@@ -87,18 +87,28 @@ const Onboarding5_1 = () => {
       // Small delay to ensure Redux state is propagated
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Create the direct payment searchable
+      // Create the allinone searchable with donation component enabled
       const searchablePayload = {
         payloads: {
           public: {
             title: donationData.title,
             description: `Donation page by ${userData.username}`,
-            currency: 'usd',
-            type: 'direct',
-            defaultAmount: parseFloat(donationData.defaultAmount),
-            visibility: {
-              udf: "always_true",
-              data: {}
+            type: 'allinone',
+            components: {
+              downloadable: {
+                enabled: false,
+                files: []
+              },
+              offline: {
+                enabled: false,
+                items: []
+              },
+              donation: {
+                enabled: true,
+                pricingMode: 'flexible',
+                fixedAmount: parseFloat(donationData.defaultAmount),
+                presetAmounts: [4.99, 9.99, 19.99]
+              }
             }
           }
         }
@@ -117,7 +127,7 @@ const Onboarding5_1 = () => {
       sessionStorage.setItem('onboarding_success', JSON.stringify({
         type: 'direct',
         storeName: donationData.title,
-        redirectPath: `/direct-item/${searchableResponse.data.searchable_id}`
+        redirectPath: `/allinone-item/${searchableResponse.data.searchable_id}`
       }));
       
       // Redirect to congratulations page

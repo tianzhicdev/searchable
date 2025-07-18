@@ -143,6 +143,7 @@ failed_test_names=()
 test_files=(
     "test_integration.py"                    # Core functionality (existing)
     "test_user_profile_creation.py"          # User profile creation on registration
+    "test_guest_account_upgrade.py"          # Guest account creation and upgrade
     "test_tags_basic.py"                     # Basic tag system functionality
     "test_tags_comprehensive.py"            # Comprehensive tag system tests
     "test_search_comprehensive.py"          # Search by users and searchables functionality

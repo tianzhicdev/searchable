@@ -73,8 +73,8 @@ const PublishDirectSearchable = () => {
     }
   };
 
-  // Custom redirect path for direct searchables
-  const customRedirectPath = (response) => `/direct-item/${response.data.searchable_id}`;
+  // Custom redirect path - always use allinone for backward compatibility
+  const customRedirectPath = (response) => `/allinone-item/${response.data.searchable_id}`;
 
   // Form validation
   const isFormValid = () => {

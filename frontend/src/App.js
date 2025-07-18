@@ -14,6 +14,7 @@ import StateDebugger from './components/StateDebugger';
 import Footer from './components/Footer';
 import MockModeIndicator from './components/MockModeIndicator';
 import FloatingBottomBar from './components/FloatingMenu/FloatingBottomBar';
+import GuestUserBanner from './components/GuestUserBanner';
 import './mocks/mockAuth'; // Setup mock auth if in mock mode
 //-----------------------|| APP ||-----------------------//
 
@@ -29,6 +30,7 @@ const App = () => {
                 <CssBaseline />
                 {config.SHOW_DEBUG_INFO && <StateDebugger />}
                 <MockModeIndicator />
+                <GuestUserBanner />
                 {/* <Box display="flex" justifyContent="center" width="100%"> */}
                     <Container id="outer-container" maxWidth="xl" style={{ 
                         margin: '0 auto', 
