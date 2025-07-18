@@ -747,7 +747,7 @@ const PublishAllInOneSearchable = () => {
                     </Box>
                   </Box>
                 ))}
-              </>
+              </Box>
             )}
           </Box>
         )}
@@ -878,7 +878,7 @@ const PublishAllInOneSearchable = () => {
                     </Box>
                   </Box>
                 ))}
-              </>
+              </Box>
             )}
           </Box>
         )}
