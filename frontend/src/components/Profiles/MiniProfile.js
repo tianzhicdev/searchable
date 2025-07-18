@@ -92,17 +92,10 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.text.secondary
   },
   typeIconContainer: {
-    position: 'absolute',
-    top: theme.spacing(1),
-    right: theme.spacing(1),
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: '50%',
-    padding: theme.spacing(0.5),
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-    boxShadow: theme.shadows[2],
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
     '& .MuiSvgIcon-root': {
       fontSize: '1.2rem',
       color: theme.palette.secondary.main
@@ -128,18 +121,41 @@ const MiniProfile = ({
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
   
-  // Helper function to get searchable type icon
-  const getSearchableTypeIcon = (searchableType) => {
-    switch(searchableType) {
-      case 'offline':
-        return <StorefrontIcon />;
-      case 'direct':
-        return <PaymentIcon />;
-      case 'downloadable':
-        return <GetAppIcon />;
-      default:
-        return null;
+  // Helper function to get searchable type icons
+  const getSearchableTypeIcons = (data) => {
+    const publicData = data.payloads?.public || {};
+    const searchableType = publicData.type || data.type;
+    const icons = [];
+    
+    if (searchableType === 'allinone') {
+      // For allinone, check which components are enabled
+      const components = publicData.components || {};
+      
+      if (components.downloadable?.enabled && components.downloadable?.files?.length > 0) {
+        icons.push(<GetAppIcon key="downloadable" />);
+      }
+      if (components.offline?.enabled && components.offline?.items?.length > 0) {
+        icons.push(<StorefrontIcon key="offline" />);
+      }
+      if (components.donation?.enabled) {
+        icons.push(<PaymentIcon key="donation" />);
+      }
+    } else {
+      // For legacy types, show single icon
+      switch(searchableType) {
+        case 'offline':
+          icons.push(<StorefrontIcon key="offline" />);
+          break;
+        case 'direct':
+          icons.push(<PaymentIcon key="direct" />);
+          break;
+        case 'downloadable':
+          icons.push(<GetAppIcon key="downloadable" />);
+          break;
+      }
     }
+    
+    return icons;
   };
   
   // Extract common data based on type
@@ -161,15 +177,8 @@ const MiniProfile = ({
       totalRatings: data.total_ratings
     };
     
-    // Determine click path based on searchable type
-    const searchableType = publicData.type || data.type;
-    if (searchableType === 'downloadable') {
-      clickPath = `/searchable-item/${data.searchable_id}`;
-    } else if (searchableType === 'offline') {
-      clickPath = `/offline-item/${data.searchable_id}`;
-    } else if (searchableType === 'direct') {
-      clickPath = `/direct-item/${data.searchable_id}`;
-    }
+    // Always use allinone-item route for backward compatibility
+    clickPath = `/allinone-item/${data.searchable_id}`;
   } else if (type === 'user') {
     title = data.displayName || data.username;
     description = data.introduction;
@@ -197,13 +206,6 @@ const MiniProfile = ({
   
   return (
     <Paper className={classes.profileCard} onClick={handleClick}>
-      {/* Type icon at the very top */}
-      {type === 'searchable' && metaInfo.searchableType && (
-        <Box className={classes.typeIconContainer}>
-          {getSearchableTypeIcon(metaInfo.searchableType)}
-        </Box>
-      )}
-      
       {/* Image at the top taking full width - only show if image exists */}
       {imageUrl && (
         <Box className={classes.imageContainer}>
@@ -220,6 +222,16 @@ const MiniProfile = ({
         <Typography variant="h3" className={classes.title}>
           {truncateText(title, 50)}
         </Typography>
+
+        {/* Type icons below title */}
+        {type === 'searchable' && (() => {
+          const icons = getSearchableTypeIcons(data);
+          return icons.length > 0 ? (
+            <Box className={classes.typeIconContainer}>
+              {icons}
+            </Box>
+          ) : null;
+        })()}
 
         <Divider />
         

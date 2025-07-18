@@ -387,6 +387,78 @@ class SearchSearchables(Resource):
             }
         }
 
+@rest_api.route('/api/v1/searchable/<int:searchable_id>', methods=['PUT'])
+class UpdateSearchableItem(Resource):
+    """
+    Updates a searchable item by creating a new version and removing the old one
+    """
+    @token_required
+    @track_metrics('update_searchable_item')
+    def put(self, current_user, searchable_id, request_origin='unknown'):
+        try:
+            data = request.get_json()
+            if not data:
+                return {"error": "Invalid input"}, 400
+            
+            # First, check if the searchable exists and belongs to the current user
+            result = db.fetch_one("""
+                SELECT user_id, type, searchable_data FROM searchables 
+                WHERE searchable_id = %s 
+                AND removed = FALSE
+            """, (searchable_id,))
+            
+            if not result:
+                return {"error": "Searchable item not found"}, 404
+            
+            # Verify ownership
+            if result[0] != current_user.id:
+                return {"error": "Access denied"}, 403
+            
+            # Get existing tags before update
+            existing_tags = get_searchable_tags(searchable_id)
+            tag_ids = [tag['id'] for tag in existing_tags]
+            
+            # Use transaction to ensure atomicity
+            with database_transaction() as (cur, conn):
+                # Add user info to the new searchable data
+                data['user_id'] = str(current_user.id)
+                
+                # Extract type from payload, default to existing type
+                searchable_type = data.get('payloads', {}).get('public', {}).get('type', result[1])
+                
+                # Insert new searchable
+                sql = "INSERT INTO searchables (user_id, type, searchable_data) VALUES (%s, %s, %s) RETURNING searchable_id;"
+                execute_sql(cur, sql, (current_user.id, searchable_type, Json(data)))
+                
+                new_row = cur.fetchone()
+                if not new_row:
+                    raise Exception("Failed to create new searchable")
+                
+                new_searchable_id = new_row[0]
+                
+                # Copy tags to new searchable
+                if tag_ids:
+                    for tag_id in tag_ids:
+                        execute_sql(cur, 
+                            "INSERT INTO searchable_tags (searchable_id, tag_id) VALUES (%s, %s)",
+                            (new_searchable_id, tag_id)
+                        )
+                
+                # Mark old searchable as removed
+                execute_sql(cur, """
+                    UPDATE searchables 
+                    SET removed = TRUE, updated_at = CURRENT_TIMESTAMP
+                    WHERE searchable_id = %s
+                """, (searchable_id,))
+                
+            logger.info(f"Updated searchable {searchable_id} -> {new_searchable_id}")
+            
+            return {"searchable_id": new_searchable_id, "success": True}, 200
+            
+        except Exception as e:
+            logger.error(f"Error updating searchable {searchable_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
 @rest_api.route('/api/v1/searchable/remove/<int:searchable_id>', methods=['PUT'])
 class RemoveSearchableItem(Resource):
     """

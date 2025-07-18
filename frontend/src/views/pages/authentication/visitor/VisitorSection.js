@@ -45,26 +45,25 @@ const VisitorSection = () => {
         console.log('VisitorSection: Creating guest account');
         
         try {
-            const guestCredentials = generateGuestCredentials();
-            
-            // First try to register the guest user
+            // Request a guest user creation with special email
             const registerResponse = await axios.post(configData.API_SERVER + 'users/register', {
-                username: guestCredentials.username,
-                email: guestCredentials.email,
-                password: guestCredentials.password
+                username: 'temp_guest',
+                email: 'GUEST_REGISTRATION_REQUEST',
+                password: 'temp_password'
             });
             
-            if (registerResponse.data.success) {
-                // Now login the guest user
+            if (registerResponse.data.success && registerResponse.data.userID) {
+                // Now login the guest user with the generated credentials
+                const guestId = registerResponse.data.userID;
                 const loginResponse = await axios.post(configData.API_SERVER + 'users/login', {
-                    email: guestCredentials.email,
-                    password: guestCredentials.password
+                    email: `guest_${guestId}@ec.com`,
+                    password: `guest_${guestId}`
                 });
                 
                 if (loginResponse.data.success) {
                     console.log('VisitorSection: Guest account created and logged in successfully', {
-                        username: guestCredentials.username,
-                        email: guestCredentials.email,
+                        guestId: guestId,
+                        email: `guest_${guestId}@ec.com`,
                         redirectTo: intendedDestination
                     });
                     

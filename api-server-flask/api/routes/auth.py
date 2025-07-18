@@ -45,6 +45,12 @@ change_password_model = rest_api.model('ChangePasswordModel', {"current_password
                                                               "new_password": fields.String(required=True, min_length=4, max_length=16)
                                                               })
 
+edit_account_model = rest_api.model('EditAccountModel', {"username": fields.String(required=True, min_length=2, max_length=32),
+                                                         "email": fields.String(required=True, min_length=4, max_length=64),
+                                                         "current_password": fields.String(required=True, min_length=4, max_length=16),
+                                                         "new_password": fields.String(required=False, min_length=8, max_length=16)
+                                                         })
+
 
 """
    Helper function for JWT token required
@@ -154,21 +160,42 @@ class Register(Resource):
             return {"success": False,
                     "msg": "Email already taken"}, 400
 
-        new_user = Users(username=_username, email=_email)
-
-        new_user.set_password(_password)
-        new_user.save()
+        # Check if this is a guest registration request
+        is_guest_request = _email == 'GUEST_REGISTRATION_REQUEST'
+        
+        if is_guest_request:
+            # Create a temporary user to get an ID
+            temp_user = Users(username='temp_guest', email='temp@guest.com')
+            temp_user.set_password('temp_password')
+            temp_user.save()
+            
+            # Now update with the actual guest credentials
+            guest_id = temp_user.id
+            temp_user.username = f'guest_{guest_id}'
+            temp_user.email = f'guest_{guest_id}@ec.com'
+            temp_user.set_password(f'guest_{guest_id}')
+            temp_user.save()
+            
+            new_user = temp_user
+            is_guest = True
+            logger.info(f"Created guest user {guest_id} with email {new_user.email}")
+        else:
+            new_user = Users(username=_username, email=_email)
+            new_user.set_password(_password)
+            new_user.save()
+            is_guest = False
         
         # Create user_profile record
         try:
             success = db_ops.execute_update(
-                """INSERT INTO user_profile (user_id, username, metadata) 
-                   VALUES (%s, %s, %s)""",
+                """INSERT INTO user_profile (user_id, username, is_guest, metadata) 
+                   VALUES (%s, %s, %s, %s)""",
                 (
                     new_user.id,
-                    _username,
+                    new_user.username,
+                    is_guest,
                     Json({
-                        "created_via": "registration",
+                        "created_via": "guest_registration" if is_guest else "registration",
                         "registration_date": datetime.utcnow().isoformat()
                     })
                 )
@@ -236,8 +263,18 @@ class Register(Resource):
                 logger.error(f"Error processing invite code: {e}")
                 # Don't fail registration if invite code processing fails
 
+        # Get the newly created user profile
+        from ..common.data_helpers import get_user_profile
+        profile = get_user_profile(new_user.id)
+        
+        # Prepare user data with profile
+        user_data = new_user.toJSON()
+        if profile:
+            user_data['profile'] = profile
+            
         return {"success": True,
                 "userID": new_user.id,
+                "user": user_data,
                 "msg": "The user was successfully registered" + (" with invite code reward!" if invite_code_used else "")}, 200
 
 
@@ -282,9 +319,18 @@ class Login(Resource):
         except Exception as e:
             logger.warning(f"Failed to track login metric: {e}")
 
+        # Get user profile data
+        from ..common.data_helpers import get_user_profile
+        profile = get_user_profile(user_exists.id)
+        
+        # Enhance user object with profile data
+        user_data = user_exists.toJSON()
+        if profile:
+            user_data['profile'] = profile
+
         return {"success": True,
                 "token": token,
-                "user": user_exists.toJSON()}, 200
+                "user": user_data}, 200
 
 
 @rest_api.route('/api/users/edit')
@@ -340,6 +386,95 @@ class ChangePassword(Resource):
 
         return {"success": True,
                 "msg": "Password changed successfully"}, 200
+
+
+@rest_api.route('/api/users/edit-account')
+class EditAccount(Resource):
+    """
+       Edit user account (username, email, and optionally password)
+    """
+
+    @rest_api.expect(edit_account_model, validate=True)
+    @token_required
+    def post(self, current_user):
+        req_data = request.get_json()
+
+        _new_username = req_data.get("username")
+        _new_email = req_data.get("email")
+        _current_password = req_data.get("current_password")
+        _new_password = req_data.get("new_password")
+
+        # Verify current password
+        if not current_user.check_password(_current_password):
+            return {"success": False,
+                    "msg": "Current password is incorrect"}, 400
+
+        # Check if new username is already taken (if different from current)
+        if _new_username != current_user.username:
+            existing_user = Users.get_by_username(_new_username)
+            if existing_user:
+                return {"success": False,
+                        "msg": "Username already taken"}, 400
+
+        # Check if new email is already taken (if different from current)
+        if _new_email != current_user.email:
+            existing_user = Users.get_by_email(_new_email)
+            if existing_user:
+                return {"success": False,
+                        "msg": "Email already in use"}, 400
+
+        # Check if this is a guest user upgrading their account
+        from ..common.data_helpers import get_user_profile
+        profile = get_user_profile(current_user.id)
+        was_guest = profile and profile.get('is_guest', False)
+        
+        # Update username and email
+        current_user.update_username(_new_username)
+        current_user.update_email(_new_email)
+
+        # Update password if provided
+        if _new_password:
+            current_user.set_password(_new_password)
+
+        current_user.save()
+        
+        # If this was a guest user upgrading, update their profile
+        if was_guest:
+            try:
+                success = db_ops.execute_update(
+                    """UPDATE user_profile 
+                       SET is_guest = FALSE, 
+                           username = %s,
+                           metadata = jsonb_set(
+                               COALESCE(metadata, '{}'::jsonb),
+                               '{upgraded_from_guest}',
+                               'true'::jsonb
+                           )
+                       WHERE user_id = %s""",
+                    (_new_username, current_user.id)
+                )
+                if success:
+                    logger.info(f"Guest user {current_user.id} successfully upgraded to regular account")
+            except Exception as e:
+                logger.error(f"Failed to update guest status for user {current_user.id}: {e}")
+        
+        # Generate new JWT token with updated user information
+        token = jwt.encode({'email': _new_email, 'exp': datetime.utcnow() + timedelta(days=30)}, BaseConfig.SECRET_KEY)
+        
+        # Get updated profile data
+        updated_profile = get_user_profile(current_user.id)
+        
+        # Prepare user data with updated profile
+        user_data = current_user.toJSON()
+        if updated_profile:
+            user_data['profile'] = updated_profile
+
+        logger.info(f"Account updated successfully for user {current_user.username}")
+
+        return {"success": True,
+                "msg": "Account updated successfully",
+                "token": token,
+                "user": user_data}, 200
 
 
 @rest_api.route('/api/users/logout')
