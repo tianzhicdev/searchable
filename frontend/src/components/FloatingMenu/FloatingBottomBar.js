@@ -28,12 +28,8 @@ import MoneyOffIcon from '@material-ui/icons/MoneyOff';
 import EditIcon from '@material-ui/icons/Edit';
 import LockIcon from '@material-ui/icons/Lock';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
-import StorefrontIcon from '@material-ui/icons/Storefront';
-import SendIcon from '@material-ui/icons/Send';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import CategoryIcon from '@material-ui/icons/Category';
-import AllInclusiveIcon from '@material-ui/icons/AllInclusive';
 
 const useStyles = makeStyles((theme) => ({
   floatingBar: {
@@ -116,7 +112,6 @@ const FloatingBottomBar = () => {
   const account = useSelector((state) => state.account);
   const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
   const [discoverMenuAnchor, setDiscoverMenuAnchor] = useState(null);
-  const [createMenuAnchor, setCreateMenuAnchor] = useState(null);
 
   // Hide on landing and onboarding pages
   const shouldHide = location.pathname === '/landing' || 
@@ -129,25 +124,21 @@ const FloatingBottomBar = () => {
   const handleAccountClick = (event) => {
     setAccountMenuAnchor(event.currentTarget);
     setDiscoverMenuAnchor(null);
-    setCreateMenuAnchor(null);
   };
 
   const handleDiscoverClick = (event) => {
     setDiscoverMenuAnchor(event.currentTarget);
     setAccountMenuAnchor(null);
-    setCreateMenuAnchor(null);
   };
 
   const handleCreateClick = (event) => {
-    setCreateMenuAnchor(event.currentTarget);
-    setAccountMenuAnchor(null);
-    setDiscoverMenuAnchor(null);
+    // Directly navigate to publish all-in-one
+    handleNavigation('/publish-allinone');
   };
 
   const handleCloseAll = () => {
     setAccountMenuAnchor(null);
     setDiscoverMenuAnchor(null);
-    setCreateMenuAnchor(null);
   };
 
   const handleNavigation = (path) => {
@@ -224,32 +215,6 @@ const FloatingBottomBar = () => {
     }
   ];
 
-  const createMenuItems = [
-    {
-      icon: <AllInclusiveIcon />,
-      label: 'All-In-One',
-      description: 'Combine all options',
-      onClick: () => handleNavigation('/publish-allinone')
-    },
-    {
-      icon: <CloudDownloadIcon />,
-      label: 'Digital Content',
-      description: 'Sell downloadable content',
-      onClick: () => handleNavigation('/publish-searchables')
-    },
-    {
-      icon: <StorefrontIcon />,
-      label: 'Physical Items',
-      description: 'List offline products',
-      onClick: () => handleNavigation('/publish-offline-searchables')
-    },
-    {
-      icon: <SendIcon />,
-      label: 'Donation',
-      description: 'Accept donations',
-      onClick: () => handleNavigation('/publish-direct-searchables')
-    }
-  ];
 
   return (
     <>
@@ -274,7 +239,7 @@ const FloatingBottomBar = () => {
           </IconButton>
           
           <IconButton
-            className={`${classes.iconButton} ${createMenuAnchor ? classes.activeIcon : ''}`}
+            className={classes.iconButton}
             onClick={handleCreateClick}
             aria-label="Create"
             {...testIdProps('button', 'floating-bottom-bar', 'create')}
@@ -348,38 +313,6 @@ const FloatingBottomBar = () => {
         ))}
       </Menu>
 
-      {/* Create Menu */}
-      <Menu
-        anchorEl={createMenuAnchor}
-        open={Boolean(createMenuAnchor)}
-        onClose={handleCloseAll}
-        className={classes.menu}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'center',
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center',
-        }}
-        {...testIdProps('menu', 'floating-bottom-bar', 'create')}
-      >
-        <div className={classes.menuHeader} {...testIdProps('div', 'floating-bottom-bar', 'create-header')}>Create New Posting</div>
-        {createMenuItems.map((item) => (
-          <MenuItem
-            key={item.label}
-            onClick={item.onClick}
-            className={classes.menuItem}
-            {...testIdProps('menuitem', 'floating-bottom-bar', `create-${item.label.toLowerCase().replace(/\s+/g, '-')}`)}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText 
-              primary={item.label} 
-              secondary={item.description}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
     </>
   );
 };
