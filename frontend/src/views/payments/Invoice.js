@@ -314,7 +314,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                                             Donation
                                                         </Typography>
                                                         <Typography variant="body2" className={classes.userText}>
-                                                            {formatCurrency(selection.amount || 0, invoice.currency)}
+                                                            {formatCurrency(selection.price || 0, invoice.currency)}
                                                         </Typography>
                                                     </Box>
                                                 );
