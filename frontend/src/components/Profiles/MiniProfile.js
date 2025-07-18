@@ -92,17 +92,10 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.text.secondary
   },
   typeIconContainer: {
-    position: 'absolute',
-    top: theme.spacing(1),
-    right: theme.spacing(1),
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: '50%',
-    padding: theme.spacing(0.5),
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1,
-    boxShadow: theme.shadows[2],
+    gap: theme.spacing(1),
+    marginTop: theme.spacing(1),
+    marginBottom: theme.spacing(1),
     '& .MuiSvgIcon-root': {
       fontSize: '1.2rem',
       color: theme.palette.secondary.main
@@ -213,20 +206,6 @@ const MiniProfile = ({
   
   return (
     <Paper className={classes.profileCard} onClick={handleClick}>
-      {/* Type icons at the very top */}
-      {type === 'searchable' && (() => {
-        const icons = getSearchableTypeIcons(data);
-        return icons.length > 0 ? (
-          <Box className={classes.typeIconContainer} style={{ 
-            display: 'flex', 
-            gap: theme.spacing(0.5),
-            padding: theme.spacing(0.5, 1)
-          }}>
-            {icons}
-          </Box>
-        ) : null;
-      })()}
-      
       {/* Image at the top taking full width - only show if image exists */}
       {imageUrl && (
         <Box className={classes.imageContainer}>
@@ -243,6 +222,16 @@ const MiniProfile = ({
         <Typography variant="h3" className={classes.title}>
           {truncateText(title, 50)}
         </Typography>
+
+        {/* Type icons below title */}
+        {type === 'searchable' && (() => {
+          const icons = getSearchableTypeIcons(data);
+          return icons.length > 0 ? (
+            <Box className={classes.typeIconContainer}>
+              {icons}
+            </Box>
+          ) : null;
+        })()}
 
         <Divider />
         
