@@ -51,8 +51,11 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
         case 'direct':
           route = 'direct-item';
           break;
+        case 'allinone':
+          route = 'allinone-item';
+          break;
         default:
-          route = 'searchable-item'; // Default fallback
+          route = 'allinone-item'; // Default fallback to allinone
       }
       const url = `${window.location.origin}/${route}/${searchableId}`;
       setShareUrl(url);
