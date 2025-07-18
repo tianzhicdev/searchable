@@ -17,6 +17,7 @@ import CreditCardRefill from '../views/payments/CreditCardRefill';
 import WithdrawalUSDT from '../views/profile/WithdrawalUSDT';
 import EditProfile from '../views/profile/EditProfile';
 import ChangePassword from '../views/profile/ChangePassword';
+import EditAccount from '../views/profile/EditAccount';
 import ThemeTestPage from '../views/theme-test-page';
 import CyberpunkDemo from '../views/cyberpunk-demo';
 import ThemeSelector from '../views/theme-selector';
@@ -36,7 +37,7 @@ const SearchableRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish-allinone/:id', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish-allinone/:id', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/edit-account', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -60,6 +61,7 @@ const SearchableRoutes = () => {
                     <Route exact path="/withdrawal-usdt" component={WithdrawalUSDT} />
                     <Route exact path="/edit-profile" component={EditProfile} />
                     <Route exact path="/change-password" component={ChangePassword} />
+                    <Route exact path="/edit-account" component={EditAccount} />
                     <Route exact path="/theme-test" component={ThemeTestPage} />
                     <Route exact path="/cyberpunk-demo" component={CyberpunkDemo} />
                     <Route exact path="/theme-selector" component={ThemeSelector} />

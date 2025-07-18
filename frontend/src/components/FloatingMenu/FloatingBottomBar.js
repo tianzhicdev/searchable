@@ -200,8 +200,8 @@ const FloatingBottomBar = () => {
     },
     {
       icon: <LockIcon />,
-      label: 'Change Password',
-      onClick: () => handleNavigation('/change-password')
+      label: 'Edit Account',
+      onClick: () => handleNavigation('/edit-account')
     },
     { divider: true },
     {

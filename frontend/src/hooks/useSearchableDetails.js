@@ -148,30 +148,14 @@ const useSearchableDetails = () => {
         }
       };
       
-      // Navigate to allinone edit page with converted data
-      console.log('Converting old searchable to allinone:', convertedSearchable);
-      navigateWithStack(history, '/publish-allinone', {
-        additionalState: {
-          editMode: true,
-          editData: convertedSearchable
-        }
-      });
+      // Navigate to allinone edit page with ID
+      history.push(`/publish-allinone/${SearchableItem.searchable_id}`);
     } else if (itemType === 'allinone') {
-      // For allinone type, just navigate to allinone editor
-      navigateWithStack(history, '/publish-allinone', {
-        additionalState: {
-          editMode: true,
-          editData: SearchableItem
-        }
-      });
+      // For allinone type, navigate to allinone editor with ID
+      history.push(`/publish-allinone/${SearchableItem.searchable_id}`);
     } else {
       // Fallback for any unknown types
-      navigateWithStack(history, '/publish-allinone', {
-        additionalState: {
-          editMode: true,
-          editData: SearchableItem
-        }
-      });
+      history.push(`/publish-allinone/${SearchableItem.searchable_id}`);
     }
   };
 

@@ -16,22 +16,32 @@ export const generateRandomString = (length = 7) => {
 
 /**
  * Generates guest account credentials
+ * @param {number} userId - Optional user ID to use for password generation
  * @returns {Object} Object containing email, password, and username for guest account
  */
-export const generateGuestCredentials = () => {
+export const generateGuestCredentials = (userId) => {
     const randomString = generateRandomString(7);
     return {
         email: `guest${randomString}@guest.com`,
-        password: '12345',
+        password: userId ? `guest_${userId}` : '12345',
         username: `guest${randomString}`
     };
 };
 
 /**
- * Checks if a user is a guest user based on email pattern
- * @param {string} email - User email
+ * Checks if a user is a guest user based on profile data or email pattern
+ * @param {Object} user - User object containing email and potentially profile data
  * @returns {boolean} True if user is a guest
  */
-export const isGuestUser = (email) => {
-    return email && email.includes('@guest.com') && email.startsWith('guest');
+export const isGuestUser = (user) => {
+    if (!user) return false;
+    
+    // First check the profile is_guest flag if available
+    if (user.profile && typeof user.profile.is_guest === 'boolean') {
+        return user.profile.is_guest;
+    }
+    
+    // Fallback to email pattern for backward compatibility
+    const email = typeof user === 'string' ? user : user.email;
+    return email && (email.includes('@ec.com') && email.startsWith('guest_'));
 };

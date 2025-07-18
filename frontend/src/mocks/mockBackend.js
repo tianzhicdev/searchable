@@ -1,4 +1,5 @@
 import { mockImage1, mockImage2, mockRewards, mockUserSearchables } from './mockData';
+import { getMockUser } from './mockAuth';
 
 // Export isMockMode for other files to use
 export const isMockMode = process.env.REACT_APP_MOCK_MODE === 'true';
@@ -459,13 +460,29 @@ const mockHandlers = {
   'users/login': (url, config) => {
     const data = JSON.parse(config.data);
     console.log('[MOCK] Login attempt with:', data);
+    
+    // Check if it's a guest login
+    const isGuest = data.email && data.email.startsWith('guest_') && data.email.endsWith('@ec.com');
+    const userId = isGuest ? data.email.match(/guest_(\d+)@/)?.[1] || '999' : '1';
+    
     return createMockResponse({
       success: true,
       token: 'mock-jwt-token-12345',
       user: {
-        _id: 'mock-user-1',
-        username: 'test_user',
-        email: data.email
+        _id: userId,
+        username: isGuest ? `guest_${userId}` : 'test_user',
+        email: data.email,
+        profile: {
+          id: parseInt(userId),
+          user_id: parseInt(userId),
+          username: isGuest ? `guest_${userId}` : 'test_user',
+          profile_image_url: null,
+          introduction: null,
+          metadata: {},
+          is_guest: isGuest,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
       }
     });
   },
@@ -473,6 +490,10 @@ const mockHandlers = {
   'users/register': (url, config) => {
     const data = JSON.parse(config.data);
     console.log('[MOCK] Register attempt with:', data);
+    
+    // Check if it's a guest registration request
+    const isGuestRequest = data.email === 'GUEST_REGISTRATION_REQUEST';
+    const userId = isGuestRequest ? Math.floor(Math.random() * 1000) + 100 : 2;
     
     let msg = 'User registered successfully';
     if (data.invite_code) {
@@ -482,8 +503,27 @@ const mockHandlers = {
       }
     }
     
+    const user = {
+      _id: userId.toString(),
+      username: isGuestRequest ? `guest_${userId}` : data.username,
+      email: isGuestRequest ? `guest_${userId}@ec.com` : data.email,
+      profile: {
+        id: userId,
+        user_id: userId,
+        username: isGuestRequest ? `guest_${userId}` : data.username,
+        profile_image_url: null,
+        introduction: null,
+        metadata: {},
+        is_guest: isGuestRequest,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    };
+    
     return createMockResponse({
       success: true,
+      userID: userId,
+      user: user,
       msg: msg
     });
   },
@@ -491,6 +531,31 @@ const mockHandlers = {
   'users/logout': () => {
     console.log('[MOCK] Logout');
     return createMockResponse({ success: true });
+  },
+  
+  'users/edit-account': (url, config) => {
+    console.log('[MOCK] Edit account');
+    const data = JSON.parse(config.data || '{}');
+    const user = getMockUser();
+    
+    // Simulate validation of current password
+    if (!data.current_password) {
+      return createMockResponse({
+        success: false,
+        msg: 'Current password is required'
+      });
+    }
+    
+    // In mock mode, we'll accept any username/email changes
+    // Update user data
+    if (data.username) user.username = data.username;
+    if (data.email) user.email = data.email;
+    
+    return createMockResponse({
+      success: true,
+      msg: 'Account updated successfully',
+      user: user
+    });
   },
   
   'users/change-password': (url, config) => {
