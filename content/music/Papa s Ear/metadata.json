@@ -1,0 +1,22 @@
+{
+  "item_title": "Papa's Ear",
+  "item_description": "Album by Tenniscoats",
+  "user_name": "tenniscoats",
+  "user_description": "Group musician",
+  "email": "tenniscoats@ec.com",
+  "password": "tenniscoats123!",
+  "artist": "Tenniscoats",
+  "track_count": 10,
+  "files": [
+    "04. Tenniscoats - Papaya.mp3",
+    "08. Tenniscoats - Sabaku.mp3",
+    "05. Tenniscoats - Sappolondon.mp3",
+    "06. Tenniscoats - New Seasons Dead.mp3",
+    "02. Tenniscoats - Hikoki.mp3",
+    "03. Tenniscoats - Kuki No Soko.mp3",
+    "01. Tenniscoats - Higa Noboru.mp3",
+    "07. Tenniscoats - På Floden.mp3",
+    "10. Tenniscoats - Nigor.mp3",
+    "09. Tenniscoats - Tanjobi No Yokan.mp3"
+  ]
+}

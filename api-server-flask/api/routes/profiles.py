@@ -98,7 +98,10 @@ def get_seller_rating(user_id):
         tuple: (avg_rating, total_ratings)
     """
     try:
-        result = db.fetch_one("""
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        execute_sql(cur, """
             SELECT 
                 COALESCE(AVG(r.rating), 0) as avg_rating,
                 COALESCE(COUNT(*), 0) as total_ratings
@@ -106,6 +109,10 @@ def get_seller_rating(user_id):
             JOIN invoice i ON r.invoice_id = i.id
             WHERE i.seller_id = %s
         """, (user_id,))
+        
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
         
         avg_rating, total_ratings = result if result else (0, 0)
         
