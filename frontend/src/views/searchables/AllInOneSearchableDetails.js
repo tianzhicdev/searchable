@@ -21,6 +21,7 @@ import { formatUSD } from '../../utils/searchableUtils';
 import useComponentStyles from '../../themes/componentStyles';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
 import backend from '../utilities/Backend';
+import { generateTestId, testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   // Downloadable file styles (from DownloadableSearchableDetails)
@@ -119,7 +120,6 @@ const AllInOneSearchableDetails = () => {
   const [selectedDonation, setSelectedDonation] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [userPaidFiles, setUserPaidFiles] = useState(new Set());  // Files current user has paid for
-  const [showReceipts, setShowReceipts] = useState(false);
 
   // Redirect if not an allinone searchable
   useEffect(() => {
@@ -440,10 +440,14 @@ const AllInOneSearchableDetails = () => {
     // Non-allinone types are redirected in useEffect
     
     return (
-      <Grid item xs={12}>
+      <Grid item xs={12} {...testIdProps('page', 'allinone-details', 'content')}>
         {/* Downloadable section */}
         {components.downloadable?.enabled && (
-          <Paper elevation={1} style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}>
+          <Paper 
+            elevation={1} 
+            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+            {...testIdProps('section', 'allinone-downloadable', 'container')}
+          >
             <Box display="flex" alignItems="center" mb={2}>
               <CloudDownload style={{ marginRight: 8, color: theme.palette.primary.main }} />
               <Typography variant="h6" color="primary">
@@ -460,6 +464,7 @@ const AllInOneSearchableDetails = () => {
                       className={`${detailClasses.fileItem} ${selectedFiles[file.id] ? detailClasses.fileItemSelected : ''}`}
                       onClick={() => !isPaid && handleFileSelection(file.id, !selectedFiles[file.id])}
                       style={{ marginBottom: 8, cursor: isPaid ? 'default' : 'pointer' }}
+                      {...testIdProps('item', 'allinone-file', file.id)}
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
                         <Box flex={1}>
@@ -482,6 +487,7 @@ const AllInOneSearchableDetails = () => {
                               e.stopPropagation();
                               handleDownload(file.id, file.name);
                             }}
+                            {...testIdProps('button', 'download-file', file.id)}
                           >
                             Download
                           </Button>
@@ -496,7 +502,7 @@ const AllInOneSearchableDetails = () => {
                 })}
               </Box>
             ) : (
-              <Typography className={detailClasses.emptyState}>
+              <Typography className={detailClasses.emptyState} {...testIdProps('text', 'allinone-downloadable', 'empty')}>
                 No files available
               </Typography>
             )}
@@ -505,7 +511,11 @@ const AllInOneSearchableDetails = () => {
 
         {/* Offline section */}
         {components.offline?.enabled && (
-          <Paper elevation={1} style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}>
+          <Paper 
+            elevation={1} 
+            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+            {...testIdProps('section', 'allinone-offline', 'container')}
+          >
             <Box display="flex" alignItems="center" mb={2}>
               <Storefront style={{ marginRight: 8, color: theme.palette.primary.main }} />
               <Typography variant="h6" color="primary">
@@ -518,7 +528,11 @@ const AllInOneSearchableDetails = () => {
                   const currentCount = selectedOfflineItems[item.id] || 0;
                   
                   return (
-                    <Box key={item.id} className={detailClasses.itemDivider}>
+                    <Box 
+                      key={item.id} 
+                      className={detailClasses.itemDivider}
+                      {...testIdProps('item', 'allinone-offline', item.id)}
+                    >
                       <Typography variant="h6" style={{ fontWeight: 600, marginBottom: 4 }}>
                         {item.name}
                       </Typography>
@@ -537,6 +551,7 @@ const AllInOneSearchableDetails = () => {
                             size="small"
                             onClick={() => decrementCount(item.id)}
                             disabled={currentCount === 0}
+                            {...testIdProps('button', 'offline-decrement', item.id)}
                           >
                             <RemoveIcon fontSize="small" />
                           </IconButton>
@@ -548,10 +563,12 @@ const AllInOneSearchableDetails = () => {
                             variant="outlined"
                             size="small"
                             className={detailClasses.quantityInput}
+                            {...testIdProps('input', 'offline-quantity', item.id)}
                           />
                           <IconButton 
                             size="small"
                             onClick={() => incrementCount(item.id)}
+                            {...testIdProps('button', 'offline-increment', item.id)}
                           >
                             <AddIcon fontSize="small" />
                           </IconButton>
@@ -562,7 +579,7 @@ const AllInOneSearchableDetails = () => {
                 })}
               </Box>
             ) : (
-              <Typography className={detailClasses.emptyState}>
+              <Typography className={detailClasses.emptyState} {...testIdProps('text', 'allinone-offline', 'empty')}>
                 No items available
               </Typography>
             )}
@@ -571,7 +588,11 @@ const AllInOneSearchableDetails = () => {
 
         {/* Donation section */}
         {components.donation?.enabled && (
-          <Paper elevation={1} style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}>
+          <Paper 
+            elevation={1} 
+            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+            {...testIdProps('section', 'allinone-donation', 'container')}
+          >
             <Box display="flex" alignItems="center" mb={2}>
               <Favorite style={{ marginRight: 8, color: theme.palette.primary.main }} />
               <Typography variant="h6" color="primary">
@@ -592,6 +613,7 @@ const AllInOneSearchableDetails = () => {
                   color="primary"
                   onClick={() => setSelectedDonation(parseFloat(components.donation.fixedAmount))}
                   style={{ marginTop: 16 }}
+                  {...testIdProps('button', 'donation-fixed', 'select')}
                 >
                   Select Amount
                 </Button>
@@ -618,6 +640,7 @@ const AllInOneSearchableDetails = () => {
                           color="primary"
                           onClick={() => setDonationAmount(amount.toString())}
                           style={{ marginRight: 8, marginBottom: 8 }}
+                          {...testIdProps('button', 'donation-preset', amount)}
                         >
                           {formatUSD(amount)}
                         </Button>
@@ -641,6 +664,7 @@ const AllInOneSearchableDetails = () => {
                   }}
                   inputProps={{ min: 0.01, step: 0.01 }}
                   placeholder="Enter any amount"
+                  {...testIdProps('input', 'donation-custom', 'amount')}
                 />
                 
                 <Button
@@ -650,6 +674,7 @@ const AllInOneSearchableDetails = () => {
                   disabled={!donationAmount || parseFloat(donationAmount) <= 0}
                   style={{ marginTop: 16 }}
                   fullWidth
+                  {...testIdProps('button', 'donation-custom', 'select')}
                 >
                   Select Amount: {donationAmount ? formatUSD(parseFloat(donationAmount)) : '$0.00'}
                 </Button>
@@ -662,7 +687,7 @@ const AllInOneSearchableDetails = () => {
         {(Object.values(selectedFiles).some(selected => selected) || 
           Object.values(selectedOfflineItems).some(count => count > 0) || 
           selectedDonation) && (
-          <Box className={detailClasses.totalSection} mt={3}>
+          <Box className={detailClasses.totalSection} mt={3} {...testIdProps('section', 'allinone-cart', 'summary')}>
             <Typography variant="h6" gutterBottom>
               Selected Items
             </Typography>
@@ -689,26 +714,24 @@ const AllInOneSearchableDetails = () => {
           </Box>
         )}
 
-        {/* Receipts section */}
-        <Box mt={3}>
-          <Accordion expanded={showReceipts} onChange={(e, isExpanded) => setShowReceipts(isExpanded)}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Purchase History & Receipts</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <InvoiceList searchableId={id} />
-            </AccordionDetails>
-          </Accordion>
-        </Box>
       </Grid>
     );
   };
 
   const totalPrice = calculateTotal();
 
+  // Render receipts content separately
+  const renderReceiptsContent = ({ id }) => (
+    <InvoiceList 
+      searchableId={id} 
+      refreshUserPaidFiles={fetchUserPaidFiles}
+    />
+  );
+
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderTypeSpecificContent}
+      renderReceiptsContent={renderReceiptsContent}
       onPayment={handlePayment}
       onBalancePayment={handleBalancePayment}
       totalPrice={totalPrice}
