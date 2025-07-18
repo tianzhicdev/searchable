@@ -28,13 +28,48 @@ import {
   CloudDownload
 } from '@material-ui/icons';
 import { v4 as uuidv4 } from 'uuid';
+import { useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/styles';
 import PublishSearchableCommon from '../../components/PublishSearchableCommon';
 import PublishSearchableActions from '../../components/PublishSearchableActions';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 
+const useStyles = makeStyles((theme) => ({
+  addButton: {
+    borderRadius: 0,
+    transition: 'all 0.3s ease',
+    '&.ready': {
+      backgroundColor: theme.palette.primary.main,
+      color: 'white',
+      animation: '$pulse 1.5s infinite',
+      border: `2px solid ${theme.palette.primary.light}`,
+    },
+    '&:hover.ready': {
+      backgroundColor: theme.palette.primary.dark,
+      animation: 'none',
+    }
+  },
+  '@keyframes pulse': {
+    '0%': {
+      boxShadow: `0 0 0 0 ${theme.palette.primary.main}`,
+      borderColor: theme.palette.primary.main,
+    },
+    '50%': {
+      boxShadow: `0 0 0 8px rgba(25, 118, 210, 0)`,
+      borderColor: theme.palette.primary.light,
+    },
+    '100%': {
+      boxShadow: `0 0 0 0 rgba(25, 118, 210, 0)`,
+      borderColor: theme.palette.primary.main,
+    }
+  }
+}));
+
 const PublishAllInOneSearchable = () => {
-  const classes = useComponentStyles();
+  const componentClasses = useComponentStyles();
+  const classes = useStyles();
+  const theme = useTheme();
   const history = useHistory();
   const { id } = useParams();
   const account = useSelector((state) => state.account);
@@ -68,7 +103,7 @@ const PublishAllInOneSearchable = () => {
       enabled: false,
       pricingMode: 'flexible',
       fixedAmount: 10.00,
-      presetAmounts: [5, 10, 20],
+      presetAmounts: [4.99, 9.99, 19.99],
       allowCustomAmount: true
     }
   });
@@ -175,7 +210,7 @@ const PublishAllInOneSearchable = () => {
               enabled: false,
               pricingMode: 'flexible',
               fixedAmount: 10.00,
-              presetAmounts: [5, 10, 20],
+              presetAmounts: [4.99, 9.99, 19.99],
               allowCustomAmount: true
             }
           });
@@ -198,7 +233,7 @@ const PublishAllInOneSearchable = () => {
               enabled: false,
               pricingMode: 'flexible',
               fixedAmount: 10.00,
-              presetAmounts: [5, 10, 20],
+              presetAmounts: [4.99, 9.99, 19.99],
               allowCustomAmount: true
             }
           });
@@ -649,9 +684,9 @@ const PublishAllInOneSearchable = () => {
                 <IconButton
                   onClick={handleAddFile}
                   disabled={!newFile.file || !newFile.price || uploadingFiles}
-                  color="primary"
+                  className={`${classes.addButton} ${newFile.file && newFile.price ? 'ready' : ''}`}
                 >
-                  {uploadingFiles ? <CircularProgress size={20} /> : <Add />}
+                  {uploadingFiles ? <CircularProgress size={20} style={{ color: 'white' }} /> : <Add />}
                 </IconButton>
               </Box>
             </Paper>
@@ -774,7 +809,7 @@ const PublishAllInOneSearchable = () => {
                 <IconButton
                   onClick={handleAddOfflineItem}
                   disabled={!newOfflineItem.name || !newOfflineItem.price}
-                  color="primary"
+                  className={`${classes.addButton} ${newOfflineItem.name && newOfflineItem.price ? 'ready' : ''}`}
                 >
                   <Add />
                 </IconButton>

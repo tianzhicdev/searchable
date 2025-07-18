@@ -107,7 +107,7 @@ const Onboarding5_1 = () => {
                 enabled: true,
                 pricingMode: 'flexible',
                 fixedAmount: parseFloat(donationData.defaultAmount),
-                presetAmounts: [5, 10, 20]
+                presetAmounts: [4.99, 9.99, 19.99]
               }
             }
           }

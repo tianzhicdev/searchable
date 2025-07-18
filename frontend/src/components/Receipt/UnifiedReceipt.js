@@ -35,7 +35,8 @@ const UnifiedReceipt = ({
 
   const handleSearchableClick = () => {
     if (data.searchable_id) {
-      navigateWithStack(history, `/searchable-item/${data.searchable_id}`);
+      // Always use allinone-item route for backward compatibility
+      navigateWithStack(history, `/allinone-item/${data.searchable_id}`);
     }
   };
 
