@@ -34,6 +34,7 @@ show_usage() {
     echo "  ./exec.sh beta test --ls                    - List all available individual tests"
     echo "  ./exec.sh beta test --t <test_name>         - Run specific test file against beta"
     echo "  ./exec.sh beta test --t <test_name> -n <num> - Run specific test with parameter against beta"
+    echo "  ./exec.sh beta content-upload               - Upload music content to beta environment"
     echo ""
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
@@ -48,6 +49,7 @@ show_usage() {
     echo "  ./exec.sh local test --ls                   - List all available individual tests"
     echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
+    echo "  ./exec.sh local content-upload              - Upload music content to local environment"
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local unittests                   - Run unit tests for critical functions"
     echo "  ./exec.sh local mock                        - Start React in mock mode (default theme)"
@@ -578,6 +580,37 @@ local_react() {
 # Local integration tests  
 local_test() {
     run_tests "local"
+}
+
+# Content upload function
+content_upload() {
+    local env=$1
+    
+    echo -e "${BLUE}🎵 Uploading music content to $env environment...${NC}"
+    
+    # Check if content directory exists
+    if [ ! -d "content/music" ]; then
+        echo -e "${RED}Error: content/music directory not found${NC}"
+        exit 1
+    fi
+    
+    # Check if metadata exists
+    metadata_count=$(find content/music -name "metadata.json" -type f | wc -l)
+    if [ "$metadata_count" -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  No metadata.json files found. Generating metadata...${NC}"
+        python3 content/generate_metadata.py
+    fi
+    
+    # Run the upload script
+    if [ "$env" = "local" ]; then
+        echo -e "${YELLOW}Uploading to local environment (http://localhost:5005)...${NC}"
+    else
+        echo -e "${YELLOW}Uploading to beta environment (https://beta.searchable.ai)...${NC}"
+    fi
+    
+    python3 content/upload_content.py "$env"
+    
+    echo -e "${GREEN}✅ Content upload completed!${NC}"
 }
 
 # List available themes
@@ -1127,6 +1160,9 @@ case "$ENVIRONMENT" in
                     run_tests "beta"
                 fi
                 ;;
+            "content-upload")
+                content_upload "beta"
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
                 show_usage
@@ -1238,6 +1274,9 @@ case "$ENVIRONMENT" in
                 else
                     local_cicd "--parallel"
                 fi
+                ;;
+            "content-upload")
+                content_upload "local"
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"

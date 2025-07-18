@@ -34,6 +34,7 @@ import PublishSearchableCommon from '../../components/PublishSearchableCommon';
 import PublishSearchableActions from '../../components/PublishSearchableActions';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
+import { generateTestId, testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   addButton: {
@@ -576,9 +577,9 @@ const PublishAllInOneSearchable = () => {
   }
 
   return (
-    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }} {...testIdProps('page', 'publish-allinone', 'container')}>
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid item xs={12} {...testIdProps('section', 'publish-allinone', 'header')}>
           <Typography variant="h4" gutterBottom>
             {existingSearchable ? 'Edit' : 'Create'} All-In-One Offering
           </Typography>
@@ -588,7 +589,7 @@ const PublishAllInOneSearchable = () => {
         </Grid>
 
       {/* Common fields */}
-      <Grid item xs={12}>
+      <Grid item xs={12} {...testIdProps('section', 'publish-allinone', 'common-fields')}>
         <PublishSearchableCommon
           formData={formData}
           onInputChange={handleInputChange}
@@ -601,13 +602,14 @@ const PublishAllInOneSearchable = () => {
       </Grid>
 
       {/* Downloadable component section */}
-      <Grid item xs={12}>
+      <Grid item xs={12} {...testIdProps('section', 'publish-allinone-downloadable', 'wrapper')}>
         <FormControlLabel
           control={
             <Switch
               checked={components.downloadable.enabled}
               onChange={() => handleComponentToggle('downloadable')}
               color="primary"
+              {...testIdProps('switch', 'publish-allinone-downloadable', 'toggle')}
             />
           }
           label={
@@ -625,12 +627,13 @@ const PublishAllInOneSearchable = () => {
             </Typography>
             
             {/* Add new file section */}
-            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }}>
+            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }} {...testIdProps('section', 'publish-allinone-downloadable', 'add-file')}>
               <Button
                 variant="contained"
                 component="label"
                 startIcon={<AttachFile />}
                 style={{ marginBottom: 12 }}
+                {...testIdProps('button', 'publish-allinone-downloadable', 'upload')}
               >
                 Choose File
                 <input
@@ -654,6 +657,7 @@ const PublishAllInOneSearchable = () => {
                 variant="outlined"
                 size="small"
                 style={{ marginBottom: 8 }}
+                {...testIdProps('input', 'publish-allinone-file', 'name')}
               />
               
               <TextField
@@ -666,6 +670,7 @@ const PublishAllInOneSearchable = () => {
                 multiline
                 rows={2}
                 style={{ marginBottom: 8 }}
+                {...testIdProps('input', 'publish-allinone-file', 'description')}
               />
               
               <Box display="flex" alignItems="center">
@@ -680,11 +685,13 @@ const PublishAllInOneSearchable = () => {
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                   style={{ flex: 1, marginRight: 8 }}
+                  {...testIdProps('input', 'publish-allinone-file', 'price')}
                 />
                 <IconButton
                   onClick={handleAddFile}
                   disabled={!newFile.file || !newFile.price || uploadingFiles}
                   className={`${classes.addButton} ${newFile.file && newFile.price ? 'ready' : ''}`}
+                  {...testIdProps('button', 'publish-allinone-file', 'add')}
                 >
                   {uploadingFiles ? <CircularProgress size={20} style={{ color: 'white' }} /> : <Add />}
                 </IconButton>
@@ -693,12 +700,12 @@ const PublishAllInOneSearchable = () => {
             
             {/* File list */}
             {components.downloadable.files.length > 0 && (
-              <>
+              <Box {...testIdProps('list', 'publish-allinone-files', 'container')}>
                 <Typography variant="subtitle2" gutterBottom>
                   Added Files ({components.downloadable.files.length})
                 </Typography>
                 {components.downloadable.files.map((file) => (
-                  <Box key={file.id} style={{ marginBottom: 16 }}>
+                  <Box key={file.id} style={{ marginBottom: 16 }} {...testIdProps('item', 'publish-allinone-file', file.id)}>
                     <TextField
                       value={file.name}
                       onChange={(e) => handleUpdateFile(file.id, 'name', e.target.value)}
@@ -733,26 +740,28 @@ const PublishAllInOneSearchable = () => {
                       <IconButton
                         onClick={() => handleRemoveFile(file.id)}
                         size="small"
+                        {...testIdProps('button', 'publish-allinone-file', `delete-${file.id}`)}
                       >
                         <Delete />
                       </IconButton>
                     </Box>
                   </Box>
                 ))}
-              </>
+              </Box>
             )}
           </Box>
         )}
       </Grid>
 
       {/* Offline component section */}
-      <Grid item xs={12}>
+      <Grid item xs={12} {...testIdProps('section', 'publish-allinone-offline', 'wrapper')}>
         <FormControlLabel
           control={
             <Switch
               checked={components.offline.enabled}
               onChange={() => handleComponentToggle('offline')}
               color="primary"
+              {...testIdProps('switch', 'publish-allinone-offline', 'toggle')}
             />
           }
           label={
@@ -770,7 +779,7 @@ const PublishAllInOneSearchable = () => {
             </Typography>
             
             {/* Add new item section */}
-            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }}>
+            <Paper elevation={1} style={{ padding: 16, marginBottom: 16 }} {...testIdProps('section', 'publish-allinone-offline', 'add-item')}>
               <TextField
                 value={newOfflineItem.name}
                 onChange={(e) => setNewOfflineItem(prev => ({ ...prev, name: e.target.value }))}
@@ -779,6 +788,7 @@ const PublishAllInOneSearchable = () => {
                 variant="outlined"
                 size="small"
                 style={{ marginBottom: 8 }}
+                {...testIdProps('input', 'publish-allinone-offline', 'name')}
               />
               
               <TextField
@@ -791,6 +801,7 @@ const PublishAllInOneSearchable = () => {
                 multiline
                 rows={2}
                 style={{ marginBottom: 8 }}
+                {...testIdProps('input', 'publish-allinone-offline', 'description')}
               />
               
               <Box display="flex" alignItems="center">
@@ -805,11 +816,13 @@ const PublishAllInOneSearchable = () => {
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
                   style={{ flex: 1, marginRight: 8 }}
+                  {...testIdProps('input', 'publish-allinone-offline', 'price')}
                 />
                 <IconButton
                   onClick={handleAddOfflineItem}
                   disabled={!newOfflineItem.name || !newOfflineItem.price}
                   className={`${classes.addButton} ${newOfflineItem.name && newOfflineItem.price ? 'ready' : ''}`}
+                  {...testIdProps('button', 'publish-allinone-offline', 'add')}
                 >
                   <Add />
                 </IconButton>
@@ -818,12 +831,12 @@ const PublishAllInOneSearchable = () => {
             
             {/* Item list */}
             {components.offline.items.length > 0 && (
-              <>
+              <Box {...testIdProps('list', 'publish-allinone-offline-items', 'container')}>
                 <Typography variant="subtitle2" gutterBottom>
                   Added Items ({components.offline.items.length})
                 </Typography>
                 {components.offline.items.map((item) => (
-                  <Box key={item.id} style={{ marginBottom: 16 }}>
+                  <Box key={item.id} style={{ marginBottom: 16 }} {...testIdProps('item', 'publish-allinone-offline', item.id)}>
                     <TextField
                       value={item.name}
                       onChange={(e) => handleUpdateOfflineItem(item.id, 'name', e.target.value)}
@@ -858,26 +871,28 @@ const PublishAllInOneSearchable = () => {
                       <IconButton
                         onClick={() => handleRemoveOfflineItem(item.id)}
                         size="small"
+                        {...testIdProps('button', 'publish-allinone-offline', `delete-${item.id}`)}
                       >
                         <Delete />
                       </IconButton>
                     </Box>
                   </Box>
                 ))}
-              </>
+              </Box>
             )}
           </Box>
         )}
       </Grid>
 
       {/* Donation component section */}
-      <Grid item xs={12}>
+      <Grid item xs={12} {...testIdProps('section', 'publish-allinone-donation', 'wrapper')}>
         <FormControlLabel
           control={
             <Switch
               checked={components.donation.enabled}
               onChange={() => handleComponentToggle('donation')}
               color="primary"
+              {...testIdProps('switch', 'publish-allinone-donation', 'toggle')}
             />
           }
           label={
@@ -894,12 +909,13 @@ const PublishAllInOneSearchable = () => {
               Accept donations from supporters
             </Typography>
             
-            <Paper elevation={1} style={{ padding: 16 }}>
+            <Paper elevation={1} style={{ padding: 16 }} {...testIdProps('section', 'publish-allinone-donation', 'config')}>
               <FormControl component="fieldset" fullWidth>
                 <FormLabel component="legend">Donation Type</FormLabel>
                 <RadioGroup
                   value={components.donation.pricingMode}
                   onChange={handleDonationModeChange}
+                  {...testIdProps('radiogroup', 'publish-allinone-donation', 'mode')}
                 >
                   <FormControlLabel
                     value="fixed"
@@ -932,6 +948,7 @@ const PublishAllInOneSearchable = () => {
                     InputProps={{
                       startAdornment: <InputAdornment position="start">$</InputAdornment>,
                     }}
+                    {...testIdProps('input', 'publish-allinone-donation', 'fixed-amount')}
                   />
                 </Box>
               )}
@@ -957,11 +974,13 @@ const PublishAllInOneSearchable = () => {
                           startAdornment: <InputAdornment position="start">$</InputAdornment>,
                         }}
                         style={{ flex: 1, marginRight: 8 }}
+                        {...testIdProps('input', 'publish-allinone-donation', `preset-${index}`)}
                       />
                       {components.donation.presetAmounts.length > 1 && (
                         <IconButton
                           onClick={() => handleRemovePresetAmount(index)}
                           size="small"
+                          {...testIdProps('button', 'publish-allinone-donation', `delete-preset-${index}`)}
                         >
                           <Delete />
                         </IconButton>
@@ -975,6 +994,7 @@ const PublishAllInOneSearchable = () => {
                       size="small"
                       startIcon={<Add />}
                       style={{ marginTop: 8 }}
+                      {...testIdProps('button', 'publish-allinone-donation', 'add-preset')}
                     >
                       Add Quick Option
                     </Button>
