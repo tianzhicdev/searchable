@@ -17,6 +17,44 @@ export const formatUSD = (amount) => {
 };
 
 /**
+ * Format currency amount for any currency type
+ * @param {number} amount - The amount to format
+ * @param {string} currency - Currency code (e.g., 'USD', 'EUR', 'BTC')
+ * @returns {string} Formatted currency string
+ */
+export const formatCurrency = (amount, currency = 'USD') => {
+  // Handle null/undefined amounts
+  if (amount == null || isNaN(amount)) {
+    return formatUSD(0);
+  }
+
+  // Normalize currency code
+  const currencyUpper = (currency || 'USD').toUpperCase();
+  
+  // Special handling for crypto currencies
+  if (currencyUpper === 'BTC') {
+    return `${parseFloat(amount).toFixed(8)} BTC`;
+  }
+  
+  if (currencyUpper === 'USDT') {
+    return `${parseFloat(amount).toFixed(2)} USDT`;
+  }
+  
+  // For fiat currencies, use Intl.NumberFormat
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyUpper,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  } catch (error) {
+    // Fallback to USD if currency is not supported
+    return formatUSD(amount);
+  }
+};
+
+/**
  * Format file size in human readable format
  * @param {number} bytes - File size in bytes
  * @returns {string} Formatted file size

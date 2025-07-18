@@ -8,6 +8,117 @@ import uuid
 # Set up the logger
 logger = setup_logger(__name__, 'payment_helpers.log')
 
+def enrich_selections_for_receipt(searchable_data, selections):
+    """Enrich selections with item names and prices for receipt display"""
+    try:
+        enriched_selections = []
+        public_data = searchable_data.get('payloads', {}).get('public', {})
+        searchable_type = public_data.get('type', 'downloadable')
+        
+        if searchable_type == 'allinone':
+            # Handle allinone type with components
+            components = public_data.get('components', {})
+            
+            for sel in selections:
+                component = sel.get('component')
+                
+                if component == 'downloadable':
+                    files = components.get('downloadable', {}).get('files', [])
+                    file_data = next((f for f in files if str(f.get('id')) == str(sel.get('id'))), None)
+                    if file_data:
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': file_data.get('name', 'Digital File'),
+                            'price': float(file_data.get('price', 0)),
+                            'count': sel.get('count', 1),
+                            'type': 'downloadable'
+                        })
+                
+                elif component == 'offline':
+                    items = components.get('offline', {}).get('items', [])
+                    item_data = next((i for i in items if str(i.get('id')) == str(sel.get('id'))), None)
+                    if item_data:
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': item_data.get('name', 'Physical Item'),
+                            'price': float(item_data.get('price', 0)),
+                            'count': sel.get('count', 1),
+                            'type': 'offline'
+                        })
+                
+                elif component == 'donation':
+                    enriched_selections.append({
+                        'id': 'donation',
+                        'name': 'Support Creator',
+                        'price': float(sel.get('amount', 0)),
+                        'count': 1,
+                        'type': 'donation'
+                    })
+        
+        else:
+            # Handle legacy searchable types
+            if searchable_type == 'downloadable':
+                files = public_data.get('downloadableFiles', [])
+                for sel in selections:
+                    file_data = next((f for f in files if str(f.get('fileId')) == str(sel.get('id'))), None)
+                    if file_data:
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': file_data.get('name', 'File'),
+                            'price': float(file_data.get('price', 0)),
+                            'count': sel.get('count', 1),
+                            'type': 'downloadable'
+                        })
+                    else:
+                        # Fallback if file not found
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': f'File {sel.get("id")}',
+                            'price': 0,
+                            'count': sel.get('count', 1),
+                            'type': 'downloadable'
+                        })
+            
+            elif searchable_type == 'offline':
+                items = public_data.get('offlineItems', [])
+                for sel in selections:
+                    item_data = next((i for i in items if str(i.get('itemId')) == str(sel.get('id'))), None)
+                    if item_data:
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': item_data.get('name', 'Item'),
+                            'price': float(item_data.get('price', 0)),
+                            'count': sel.get('count', 1),
+                            'type': 'offline'
+                        })
+                    else:
+                        # Fallback if item not found
+                        enriched_selections.append({
+                            'id': sel.get('id'),
+                            'name': f'Item {sel.get("id")}',
+                            'price': 0,
+                            'count': sel.get('count', 1),
+                            'type': 'offline'
+                        })
+            
+            elif searchable_type == 'direct':
+                # Direct payment selections (donations)
+                for sel in selections:
+                    enriched_selections.append({
+                        'id': sel.get('id', 'donation'),
+                        'name': 'Donation',
+                        'price': float(sel.get('amount', 0)),
+                        'count': sel.get('count', 1),
+                        'type': 'donation'
+                    })
+        
+        return enriched_selections
+        
+    except Exception as e:
+        logger.error(f"Error enriching selections: {str(e)}")
+        # Return original selections as fallback
+        return selections
+
 def calc_invoice(searchable_data, selections):
     """
     Calculate invoice details for USD-based payments

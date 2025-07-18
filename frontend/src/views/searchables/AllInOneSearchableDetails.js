@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Grid, Typography, Paper, Box, Button,
-  List, ListItem, ListItemText, Chip, TextField,
-  InputAdornment, RadioGroup, FormControlLabel, Radio,
-  Checkbox, FormGroup, Divider, IconButton, Accordion,
-  AccordionSummary, AccordionDetails
-} from '@material-ui/core';
+import { Grid, Box } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/styles';
-import {
-  CloudDownload, Storefront, Favorite,
-  ShoppingCart, AttachMoney, Check as CheckIcon,
-  Add as AddIcon, Remove as RemoveIcon, GetApp as GetAppIcon,
-  ExpandMore as ExpandMoreIcon
-} from '@material-ui/icons';
 import { useHistory, useParams } from 'react-router-dom';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
 import InvoiceList from '../payments/InvoiceList';
-import { formatUSD } from '../../utils/searchableUtils';
+import { calculateAllInOneTotal } from '../../utils/paymentCalculations';
+import { usePaymentHandlers } from '../../hooks/usePaymentHandlers';
+import { handleApiError, withErrorHandling } from '../../utils/errorHandling';
 import useComponentStyles from '../../themes/componentStyles';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
 import backend from '../utilities/Backend';
-import { generateTestId, testIdProps } from '../../utils/testIds';
+import { testIdProps } from '../../utils/testIds';
+import DownloadableSection from '../../components/AllInOne/DownloadableSection';
+import OfflineSection from '../../components/AllInOne/OfflineSection';
+import DonationSection from '../../components/AllInOne/DonationSection';
+import CartSummary from '../../components/AllInOne/CartSummary';
 
 const useStyles = makeStyles((theme) => ({
   // Downloadable file styles (from DownloadableSearchableDetails)
@@ -106,12 +100,17 @@ const AllInOneSearchableDetails = () => {
   
   const {
     SearchableItem,
-    createInvoice,
-    createBalancePayment,
-    formatCurrency,
     loading,
     error
   } = useSearchableDetails();
+  
+  // Use payment handlers hook
+  const {
+    handleAllInOnePayment,
+    handleAllInOneBalancePayment,
+    processing: paymentProcessing,
+    error: paymentError
+  } = usePaymentHandlers(SearchableItem);
   
   // Component state
   const [selectedFiles, setSelectedFiles] = useState({});  // For downloadable files
@@ -159,12 +158,22 @@ const AllInOneSearchableDetails = () => {
   }, [SearchableItem]);
 
   const fetchUserPaidFiles = async () => {
-    try {
-      const response = await backend.get(`v1/user-paid-files/${id}`);
-      const userPaidFileIds = new Set(response.data.paid_file_ids);
-      setUserPaidFiles(userPaidFileIds);
-    } catch (err) {
-      console.error("Error fetching user paid files:", err);
+    const result = await withErrorHandling(
+      async () => {
+        const response = await backend.get(`v1/user-paid-files/${id}`);
+        const userPaidFileIds = new Set(response.data.paid_file_ids);
+        setUserPaidFiles(userPaidFileIds);
+        return response.data;
+      },
+      {
+        context: 'Fetch User Paid Files',
+        defaultMessage: 'Failed to load purchase history'
+      }
+    );
+    
+    // If failed, set empty set so component still works
+    if (!result) {
+      setUserPaidFiles(new Set());
     }
   };
 
@@ -205,226 +214,73 @@ const AllInOneSearchableDetails = () => {
   };
 
   const handleDownload = async (fileId, fileName) => {
-    try {
-      const response = await backend.get(
-        `v1/download-file/${SearchableItem.searchable_id}/${fileId}`,
-        { responseType: 'blob' }
-      );
-      
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
+    await withErrorHandling(
+      async () => {
+        const response = await backend.get(
+          `v1/download-file/${SearchableItem.searchable_id}/${fileId}`,
+          { responseType: 'blob' }
+        );
+        
+        // Create a download link
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        
+        // Clean up
+        window.URL.revokeObjectURL(url);
+      },
+      {
+        context: 'File Download',
+        defaultMessage: 'Failed to download file. Please try again.',
+      }
+    );
   };
 
   const calculateTotal = () => {
-    if (!SearchableItem) return 0;
-    
-    const publicData = SearchableItem.payloads?.public || {};
-    const components = publicData.components;
-    
-    // This component only handles allinone searchables
-    if (!components) return 0;
-    
-    let total = 0;
-    
-    // Add downloadable files
-    if (components.downloadable?.enabled) {
-      const files = components.downloadable.files || [];
-      Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
-        if (isSelected) {
-          const file = files.find(f => String(f.id) === String(fileId));
-          if (file) {
-            total += parseFloat(file.price) || 0;
-          }
-        }
-      });
-    }
-    
-    // Add offline items with quantities
-    if (components.offline?.enabled) {
-      const items = components.offline.items || [];
-      Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
-        if (count > 0) {
-          const item = items.find(i => String(i.id) === String(itemId));
-          if (item) {
-            total += (parseFloat(item.price) || 0) * count;
-          }
-        }
-      });
-    }
-    
-    // Add donation
-    if (components.donation?.enabled && selectedDonation) {
-      total += parseFloat(selectedDonation) || 0;
-    }
-    
-    return total;
+    return calculateAllInOneTotal(SearchableItem, selectedFiles, selectedOfflineItems, selectedDonation);
   };
 
   const handlePayment = async () => {
-    if (!SearchableItem) return;
-    
     setProcessing(true);
     try {
-      const publicData = SearchableItem.payloads?.public || {};
-      const components = publicData.components;
-      
-      // This component only handles allinone searchables
-      if (!components) {
-        console.error('Invalid searchable type for AllInOneSearchableDetails');
-        return;
-      }
-      
-      // Build selections array in the format expected by backend
-      const selections = [];
-      
-      // Add downloadable files
-      if (components.downloadable?.enabled) {
-        Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
-          if (isSelected) {
-            const file = components.downloadable.files.find(f => 
-              String(f.id) === String(fileId)
-            );
-            if (file) {
-              selections.push({
-                id: file.id,
-                component: 'downloadable',
-                count: 1
-              });
-            }
-          }
-        });
-      }
-      
-      // Add offline items
-      if (components.offline?.enabled) {
-        Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
-          if (count > 0) {
-            const item = components.offline.items.find(i => 
-              String(i.id) === String(itemId)
-            );
-            if (item) {
-              selections.push({
-                id: item.id,
-                component: 'offline',
-                count: count
-              });
-            }
-          }
-        });
-      }
-      
-      // Add donation
-      if (components.donation?.enabled && selectedDonation) {
-        selections.push({
-          component: 'donation',
-          amount: selectedDonation
-        });
-      }
-      
-      const invoiceData = {
-        searchable_id: SearchableItem.searchable_id,
-        invoice_type: 'stripe',
-        selections: selections
-      };
-      
-      await createInvoice(invoiceData);
+      await handleAllInOnePayment(
+        selectedFiles,
+        selectedOfflineItems,
+        selectedDonation,
+        calculateTotal()
+      );
       // Refresh paid files after successful payment
       setTimeout(() => {
         fetchUserPaidFiles();
-        window.location.reload(); // Refresh to update receipt list
+        window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error('Payment failed:', error);
+      // Error is handled by the hook
     } finally {
       setProcessing(false);
     }
   };
 
   const handleBalancePayment = async () => {
-    if (!SearchableItem) return;
-    
     setProcessing(true);
     try {
-      const publicData = SearchableItem.payloads?.public || {};
-      const components = publicData.components;
-      
-      // This component only handles allinone searchables
-      if (!components) {
-        console.error('Invalid searchable type for AllInOneSearchableDetails');
-        return;
-      }
-      
-      // Build selections array in the same format as handlePayment for consistency
-      const selections = [];
-      
-      // Add downloadable files
-      if (components.downloadable?.enabled) {
-        Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
-          if (isSelected) {
-            const file = components.downloadable.files.find(f => 
-              String(f.id) === String(fileId)
-            );
-            if (file) {
-              selections.push({
-                id: file.id,
-                component: 'downloadable',
-                count: 1
-              });
-            }
-          }
-        });
-      }
-      
-      // Add offline items
-      if (components.offline?.enabled) {
-        Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
-          if (count > 0) {
-            const item = components.offline.items.find(i => 
-              String(i.id) === String(itemId)
-            );
-            if (item) {
-              selections.push({
-                id: item.id,
-                component: 'offline',
-                count: count
-              });
-            }
-          }
-        });
-      }
-      
-      // Add donation
-      if (components.donation?.enabled && selectedDonation) {
-        selections.push({
-          component: 'donation',
-          amount: selectedDonation
-        });
-      }
-      
-      // Send in the same format as stripe payment
-      const invoiceData = {
-        searchable_id: SearchableItem.searchable_id,
-        invoice_type: 'balance',
-        selections: selections
-      };
-      
-      await createBalancePayment(invoiceData);
+      await handleAllInOneBalancePayment(
+        selectedFiles,
+        selectedOfflineItems,
+        selectedDonation,
+        calculateTotal()
+      );
       // Refresh paid files after successful payment
       setTimeout(() => {
         fetchUserPaidFiles();
-        window.location.reload(); // Refresh to update receipt list
+        window.location.reload();
       }, 2000);
     } catch (error) {
-      console.error('Balance payment failed:', error);
+      // Error is handled by the hook
     } finally {
       setProcessing(false);
     }
@@ -441,279 +297,43 @@ const AllInOneSearchableDetails = () => {
     
     return (
       <Grid item xs={12} {...testIdProps('page', 'allinone-details', 'content')}>
-        {/* Downloadable section */}
-        {components.downloadable?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
-            {...testIdProps('section', 'allinone-downloadable', 'container')}
-          >
-            <Box display="flex" alignItems="center" mb={2}>
-              <CloudDownload style={{ marginRight: 8, color: theme.palette.primary.main }} />
-              <Typography variant="h6" color="primary">
-                Digital Downloads
-              </Typography>
-            </Box>
-            {components.downloadable.files?.length > 0 ? (
-              <Box>
-                {components.downloadable.files.map((file) => {
-                  const isPaid = userPaidFiles.has(file.id.toString());
-                  return (
-                    <Paper 
-                      key={file.id}
-                      className={`${detailClasses.fileItem} ${selectedFiles[file.id] ? detailClasses.fileItemSelected : ''}`}
-                      onClick={() => !isPaid && handleFileSelection(file.id, !selectedFiles[file.id])}
-                      style={{ marginBottom: 8, cursor: isPaid ? 'default' : 'pointer' }}
-                      {...testIdProps('item', 'allinone-file', file.id)}
-                    >
-                      <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
-                        <Box flex={1}>
-                          <Typography variant="body1" style={{ fontWeight: 500 }}>{file.name}</Typography>
-                          {file.description && (
-                            <Typography variant="body2" style={{ marginTop: 4 }}>
-                              {file.description}
-                            </Typography>
-                          )}
-                          <Typography variant="body2" style={{ marginTop: 4, fontWeight: 500 }}>
-                            {formatUSD(file.price)}
-                          </Typography>
-                        </Box>
-                        {isPaid ? (
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<GetAppIcon />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownload(file.id, file.name);
-                            }}
-                            {...testIdProps('button', 'download-file', file.id)}
-                          >
-                            Download
-                          </Button>
-                        ) : (
-                          selectedFiles[file.id] && (
-                            <CheckIcon style={{ color: '#1976d2', fontSize: 28 }} />
-                          )
-                        )}
-                      </Box>
-                    </Paper>
-                  );
-                })}
-              </Box>
-            ) : (
-              <Typography className={detailClasses.emptyState} {...testIdProps('text', 'allinone-downloadable', 'empty')}>
-                No files available
-              </Typography>
-            )}
-          </Paper>
-        )}
-
-        {/* Offline section */}
-        {components.offline?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
-            {...testIdProps('section', 'allinone-offline', 'container')}
-          >
-            <Box display="flex" alignItems="center" mb={2}>
-              <Storefront style={{ marginRight: 8, color: theme.palette.primary.main }} />
-              <Typography variant="h6" color="primary">
-                Physical Items
-              </Typography>
-            </Box>
-            {components.offline.items?.length > 0 ? (
-              <Box>
-                {components.offline.items.map((item, index) => {
-                  const currentCount = selectedOfflineItems[item.id] || 0;
-                  
-                  return (
-                    <Box 
-                      key={item.id} 
-                      className={detailClasses.itemDivider}
-                      {...testIdProps('item', 'allinone-offline', item.id)}
-                    >
-                      <Typography variant="h6" style={{ fontWeight: 600, marginBottom: 4 }}>
-                        {item.name}
-                      </Typography>
-                      {item.description && (
-                        <Typography variant="body2" style={{ marginBottom: 8 }}>
-                          {item.description}
-                        </Typography>
-                      )}
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-                        <Typography variant="body1" style={{ fontWeight: 500, fontSize: '1.1rem', color: theme.palette.primary.main }}>
-                          {formatUSD(item.price)}
-                        </Typography>
-                        
-                        <Box className={detailClasses.quantityControls}>
-                          <IconButton 
-                            size="small"
-                            onClick={() => decrementCount(item.id)}
-                            disabled={currentCount === 0}
-                            {...testIdProps('button', 'offline-decrement', item.id)}
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </IconButton>
-                          <TextField
-                            type="number"
-                            value={currentCount}
-                            onChange={(e) => handleItemSelection(item.id, parseInt(e.target.value) || 0)}
-                            inputProps={{ min: 0 }}
-                            variant="outlined"
-                            size="small"
-                            className={detailClasses.quantityInput}
-                            {...testIdProps('input', 'offline-quantity', item.id)}
-                          />
-                          <IconButton 
-                            size="small"
-                            onClick={() => incrementCount(item.id)}
-                            {...testIdProps('button', 'offline-increment', item.id)}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
-            ) : (
-              <Typography className={detailClasses.emptyState} {...testIdProps('text', 'allinone-offline', 'empty')}>
-                No items available
-              </Typography>
-            )}
-          </Paper>
-        )}
-
-        {/* Donation section */}
-        {components.donation?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
-            {...testIdProps('section', 'allinone-donation', 'container')}
-          >
-            <Box display="flex" alignItems="center" mb={2}>
-              <Favorite style={{ marginRight: 8, color: theme.palette.primary.main }} />
-              <Typography variant="h6" color="primary">
-                Support the Creator
-              </Typography>
-            </Box>
-            
-            {components.donation.pricingMode === 'fixed' && (
-              <Box>
-                <Typography variant="body1" paragraph>
-                  Fixed donation amount:
-                </Typography>
-                <Typography variant="h4" className={detailClasses.priceTag}>
-                  {formatUSD(components.donation.fixedAmount)}
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => setSelectedDonation(parseFloat(components.donation.fixedAmount))}
-                  style={{ marginTop: 16 }}
-                  {...testIdProps('button', 'donation-fixed', 'select')}
-                >
-                  Select Amount
-                </Button>
-              </Box>
-            )}
-
-            {(components.donation.pricingMode === 'flexible' || components.donation.pricingMode === 'preset') && (
-              <Box>
-                <Typography variant="body1" paragraph>
-                  Choose or enter a donation amount:
-                </Typography>
-                
-                {/* Quick amount buttons */}
-                {components.donation.presetAmounts?.length > 0 && (
-                  <Box mb={3}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Quick Selection:
-                    </Typography>
-                    <Box display="flex" gap={1} flexWrap="wrap">
-                      {components.donation.presetAmounts.map((amount, index) => (
-                        <Button
-                          key={index}
-                          variant={donationAmount === amount.toString() ? "contained" : "outlined"}
-                          color="primary"
-                          onClick={() => setDonationAmount(amount.toString())}
-                          style={{ marginRight: 8, marginBottom: 8 }}
-                          {...testIdProps('button', 'donation-preset', amount)}
-                        >
-                          {formatUSD(amount)}
-                        </Button>
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-                
-                {/* Custom amount input */}
-                <Typography variant="subtitle2" gutterBottom>
-                  Or enter custom amount:
-                </Typography>
-                <TextField
-                  type="number"
-                  value={donationAmount}
-                  onChange={(e) => setDonationAmount(e.target.value)}
-                  variant="outlined"
-                  fullWidth
-                  InputProps={{
-                    startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                  }}
-                  inputProps={{ min: 0.01, step: 0.01 }}
-                  placeholder="Enter any amount"
-                  {...testIdProps('input', 'donation-custom', 'amount')}
-                />
-                
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleDonationSelect}
-                  disabled={!donationAmount || parseFloat(donationAmount) <= 0}
-                  style={{ marginTop: 16 }}
-                  fullWidth
-                  {...testIdProps('button', 'donation-custom', 'select')}
-                >
-                  Select Amount: {donationAmount ? formatUSD(parseFloat(donationAmount)) : '$0.00'}
-                </Button>
-              </Box>
-            )}
-          </Paper>
-        )}
-
-        {/* Cart summary */}
-        {(Object.values(selectedFiles).some(selected => selected) || 
-          Object.values(selectedOfflineItems).some(count => count > 0) || 
-          selectedDonation) && (
-          <Box className={detailClasses.totalSection} mt={3} {...testIdProps('section', 'allinone-cart', 'summary')}>
-            <Typography variant="h6" gutterBottom>
-              Selected Items
-            </Typography>
-            
-            {Object.values(selectedFiles).filter(selected => selected).length > 0 && (
-              <Typography variant="body2">
-                {Object.values(selectedFiles).filter(selected => selected).length} file(s) selected
-              </Typography>
-            )}
-            
-            {Object.entries(selectedOfflineItems).filter(([id, count]) => count > 0).length > 0 && (
-              <Typography variant="body2">
-                {Object.entries(selectedOfflineItems)
-                  .filter(([id, count]) => count > 0)
-                  .reduce((total, [id, count]) => total + count, 0)} item(s) selected
-              </Typography>
-            )}
-            
-            {selectedDonation && (
-              <Typography variant="body2">
-                Donation: {formatUSD(selectedDonation)}
-              </Typography>
-            )}
-          </Box>
-        )}
-
+        <DownloadableSection
+          components={components}
+          selectedFiles={selectedFiles}
+          userPaidFiles={userPaidFiles}
+          handleFileSelection={handleFileSelection}
+          handleDownload={handleDownload}
+          theme={theme}
+          classes={detailClasses}
+        />
+        
+        <OfflineSection
+          components={components}
+          selectedOfflineItems={selectedOfflineItems}
+          handleItemSelection={handleItemSelection}
+          incrementCount={incrementCount}
+          decrementCount={decrementCount}
+          theme={theme}
+          classes={detailClasses}
+        />
+        
+        <DonationSection
+          components={components}
+          donationAmount={donationAmount}
+          setDonationAmount={setDonationAmount}
+          selectedDonation={selectedDonation}
+          setSelectedDonation={setSelectedDonation}
+          handleDonationSelect={handleDonationSelect}
+          theme={theme}
+          classes={detailClasses}
+        />
+        
+        <CartSummary
+          selectedFiles={selectedFiles}
+          selectedOfflineItems={selectedOfflineItems}
+          selectedDonation={selectedDonation}
+          classes={detailClasses}
+        />
       </Grid>
     );
   };
@@ -739,14 +359,6 @@ const AllInOneSearchableDetails = () => {
       disabled={totalPrice === 0 || processing}
     />
   );
-};
-
-// Helper function
-const formatFileSize = (bytes) => {
-  if (!bytes) return 'Unknown';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
 export default AllInOneSearchableDetails;

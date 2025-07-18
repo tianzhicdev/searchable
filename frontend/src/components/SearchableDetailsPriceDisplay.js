@@ -25,11 +25,6 @@ const SearchableDetailsPriceDisplay = ({
 }) => {
   const classes = useComponentStyles();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  
-  // Debug logging
-  console.log("SearchableDetailsPriceDisplay - onBalancePayment:", onBalancePayment);
-  console.log("SearchableDetailsPriceDisplay - typeof onBalancePayment:", typeof onBalancePayment);
-  console.log("SearchableDetailsPriceDisplay - userBalance:", userBalance);
 
   return (
     <Box>

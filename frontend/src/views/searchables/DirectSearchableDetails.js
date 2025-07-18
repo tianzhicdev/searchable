@@ -8,7 +8,8 @@ import { AttachMoney } from '@material-ui/icons';
 import Alert from '@material-ui/lab/Alert';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
-import { formatUSD } from '../../utils/searchableUtils';
+import { formatCurrency } from '../../utils/searchableUtils';
+import { validatePaymentAmount } from '../../utils/paymentCalculations';
 import InvoiceList from '../payments/InvoiceList';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
 
@@ -50,17 +51,15 @@ const DirectSearchableDetails = () => {
     SearchableItem, 
     createInvoice,
     createBalancePayment,
-    formatCurrency,
     publicData,
     fetchRatings 
   } = useSearchableDetails();
   
-  console.log("DirectSearchableDetails - createBalancePayment:", createBalancePayment);
-  console.log("DirectSearchableDetails - typeof createBalancePayment:", typeof createBalancePayment);
   
   // Direct payment specific states
   const [paymentAmount, setPaymentAmount] = useState(9.99);
   const [paymentError, setPaymentError] = useState(null);
+  const [validationError, setValidationError] = useState(null);
   const [isAmountFixed, setIsAmountFixed] = useState(false); // Whether amount is fixed from URL or pricing mode
   const [availableAmounts, setAvailableAmounts] = useState([4.99, 9.99, 14.99]); // Available amounts based on pricing mode
   const [allowCustomAmount, setAllowCustomAmount] = useState(true); // Whether custom amount input is allowed
@@ -113,10 +112,21 @@ const DirectSearchableDetails = () => {
       setAllowCustomAmount(true);
     }
   }, [location.search, SearchableItem, publicData]);
+  
+  // Validate payment amount on change
+  useEffect(() => {
+    if (paymentAmount) {
+      const validation = validatePaymentAmount(paymentAmount, 'donation');
+      setValidationError(!validation.isValid ? validation.error : null);
+    } else {
+      setValidationError(null);
+    }
+  }, [paymentAmount]);
 
   const handlePayment = async () => {
-    if (!paymentAmount || paymentAmount <= 0) {
-      setPaymentError('Please enter a valid amount');
+    const validation = validatePaymentAmount(paymentAmount, 'donation');
+    if (!validation.isValid) {
+      setPaymentError(validation.error);
       return;
     }
 
@@ -140,26 +150,25 @@ const DirectSearchableDetails = () => {
   };
 
   const handleDepositPayment = async (depositData) => {
-    if (!paymentAmount || paymentAmount <= 0) {
-      setPaymentError('Please enter a valid amount');
+    const validation = validatePaymentAmount(paymentAmount, 'donation');
+    if (!validation.isValid) {
+      setPaymentError(validation.error);
       return;
     }
 
     setPaymentError(null);
     
     // For deposit payments, we show a success message and let the user know to deposit
-    console.log('Deposit created for direct payment:', {
-      depositData,
-      paymentAmount
-    });
+    // Deposit created for direct payment with depositData and paymentAmount
     
     // You could implement deposit-based payment logic here if needed
     // For now, we just acknowledge the deposit address was created
   };
 
   const handleBalancePayment = async () => {
-    if (!paymentAmount || paymentAmount <= 0) {
-      setPaymentError('Please enter a valid amount');
+    const validation = validatePaymentAmount(paymentAmount, 'donation');
+    if (!validation.isValid) {
+      setPaymentError(validation.error);
       return;
     }
 
@@ -192,7 +201,7 @@ const DirectSearchableDetails = () => {
               Donation Amount
             </Typography>
             <Typography className={classes.fixedAmountValue}>
-              ${paymentAmount.toFixed(2)}
+              {formatCurrency(paymentAmount)}
             </Typography>
           </Box>
         ) : (
@@ -212,7 +221,7 @@ const DirectSearchableDetails = () => {
                     onClick={() => setPaymentAmount(amount)}
                     startIcon={<AttachMoney />}
                   >
-                    ${amount.toFixed(2)}
+                    {formatCurrency(amount)}
                   </Button>
                 ))}
               </ButtonGroup>
@@ -226,11 +235,12 @@ const DirectSearchableDetails = () => {
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
                   fullWidth
+                  error={!!validationError}
+                  helperText={validationError || "Enter any amount you'd like to donate"}
                   inputProps={{ min: 0.01, step: 0.01 }}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">$</InputAdornment>,
                   }}
-                  helperText="Enter any amount you'd like to donate"
                 />
               </Box>
             )}
@@ -265,7 +275,7 @@ const DirectSearchableDetails = () => {
       onBalancePayment={handleBalancePayment}
       totalPrice={paymentAmount}
       payButtonText="Pay"
-      disabled={!paymentAmount || paymentAmount <= 0}
+      disabled={!paymentAmount || paymentAmount <= 0 || !!validationError}
     />
   );
 };
