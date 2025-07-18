@@ -153,14 +153,14 @@ def enrich_selections_for_receipt(searchable_data, selections):
                         })
             
             elif searchable_type == 'direct':
-                # Direct payment selections
+                # Direct payment selections (donations)
                 for sel in selections:
                     enriched_selections.append({
-                        'id': sel.get('id', 'direct'),
-                        'name': 'Direct Payment',
+                        'id': sel.get('id', 'donation'),
+                        'name': 'Donation',
                         'price': float(sel.get('amount', 0)),
                         'count': sel.get('count', 1),
-                        'type': 'direct'
+                        'type': 'donation'
                     })
         
         return enriched_selections
