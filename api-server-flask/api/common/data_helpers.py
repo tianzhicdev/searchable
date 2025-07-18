@@ -561,7 +561,8 @@ def get_user_paid_files(user_id, searchable_id):
             if invoice_metadata and 'selections' in invoice_metadata:
                 selections = invoice_metadata['selections']
                 for selection in selections:
-                    if selection.get('type') == 'downloadable':
+                    # Handle both old format (type) and new format (component)
+                    if selection.get('type') == 'downloadable' or selection.get('component') == 'downloadable':
                         paid_file_ids.add(str(selection.get('id')))
         
         return paid_file_ids
@@ -1039,7 +1040,7 @@ def get_user_profile(user_id):
     try:
         result = db.fetch_one("""
             SELECT id, user_id, username, profile_image_url, introduction, 
-                   metadata, is_guest, created_at, updated_at
+                   metadata, created_at, updated_at
             FROM user_profile
             WHERE user_id = %s
         """, (user_id,))
@@ -1054,9 +1055,9 @@ def get_user_profile(user_id):
             'profile_image_url': result[3],
             'introduction': result[4],
             'metadata': result[5],
-            'is_guest': result[6],
-            'created_at': result[7].isoformat() if result[7] else None,
-            'updated_at': result[8].isoformat() if result[8] else None
+            'is_guest': result[5].get('is_guest', False) if result[5] else False,
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
         }
     except Exception as e:
         logger.error(f"Error retrieving user profile for user_id {user_id}: {str(e)}")
@@ -1096,6 +1097,7 @@ def create_user_profile(user_id, username, profile_image_url=None, introduction=
                 'profile_image_url': result[3],
                 'introduction': result[4],
                 'metadata': result[5],
+                'is_guest': result[5].get('is_guest', False) if result[5] else False,
                 'created_at': result[6].isoformat() if result[6] else None,
                 'updated_at': result[7].isoformat() if result[7] else None
             }
@@ -1171,6 +1173,7 @@ def update_user_profile(user_id, username=None, profile_image_url=None, introduc
                 'profile_image_url': result[3],
                 'introduction': result[4],
                 'metadata': result[5],
+                'is_guest': result[5].get('is_guest', False) if result[5] else False,
                 'created_at': result[6].isoformat() if result[6] else None,
                 'updated_at': result[7].isoformat() if result[7] else None
             }

@@ -37,14 +37,10 @@ def test_user_registration_creates_profile():
     
     response = requests.post(f"{BASE_URL}/api/users/register", json=register_data)
     
-    if response.status_code != 200:
-        print(f"✗ Registration failed: {response.status_code} - {response.text}")
-        return False
+    assert response.status_code == 200, f"Registration failed: {response.status_code} - {response.text}"
     
     data = response.json()
-    if not data.get('success'):
-        print(f"✗ Registration failed: {data.get('msg', 'Unknown error')}")
-        return False
+    assert data.get('success'), f"Registration failed: {data.get('msg', 'Unknown error')}"
     
     user_id = data.get('userID')
     print(f"✓ User registered successfully with ID: {user_id}")
@@ -57,16 +53,12 @@ def test_user_registration_creates_profile():
     
     response = requests.post(f"{BASE_URL}/api/users/login", json=login_data)
     
-    if response.status_code != 200:
-        print(f"✗ Login failed: {response.status_code}")
-        return False
+    assert response.status_code == 200, f"Login failed: {response.status_code}"
     
     login_result = response.json()
     token = login_result.get('token')
     
-    if not token:
-        print("✗ No token received after login")
-        return False
+    assert token, "No token received after login"
     
     print("✓ Login successful")
     
@@ -83,18 +75,12 @@ def test_user_registration_creates_profile():
         # Check if we have profile-specific fields
         if 'username' in profile_data:
             print(f"  - Username in profile: {profile_data.get('username')}")
-        
-        return True
     else:
         # Try alternate profile endpoint
         response = requests.get(f"{BASE_URL}/api/v1/profile/{user_id}", headers=headers)
         
-        if response.status_code == 200:
-            print("✓ User profile exists (alternate endpoint)")
-            return True
-        else:
-            print(f"✗ Could not verify user_profile exists: {response.status_code}")
-            return False
+        assert response.status_code == 200, f"Could not verify user_profile exists: {response.status_code}"
+        print("✓ User profile exists (alternate endpoint)")
 
 def test_existing_user_without_profile():
     """Test that we can handle users without profiles gracefully"""
@@ -105,7 +91,8 @@ def test_existing_user_without_profile():
     print("  - This requires manual database manipulation")
     print("  - Run create_missing_user_profiles.py to fix any such users")
     
-    return True
+    # This test always passes as it's just informational
+    assert True
 
 def main():
     """Run all user profile tests"""

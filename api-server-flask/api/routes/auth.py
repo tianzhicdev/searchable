@@ -188,15 +188,15 @@ class Register(Resource):
         # Create user_profile record
         try:
             success = db_ops.execute_update(
-                """INSERT INTO user_profile (user_id, username, is_guest, metadata) 
-                   VALUES (%s, %s, %s, %s)""",
+                """INSERT INTO user_profile (user_id, username, metadata) 
+                   VALUES (%s, %s, %s)""",
                 (
                     new_user.id,
                     new_user.username,
-                    is_guest,
                     Json({
                         "created_via": "guest_registration" if is_guest else "registration",
-                        "registration_date": datetime.utcnow().isoformat()
+                        "registration_date": datetime.utcnow().isoformat(),
+                        "is_guest": is_guest
                     })
                 )
             )
@@ -443,12 +443,15 @@ class EditAccount(Resource):
             try:
                 success = db_ops.execute_update(
                     """UPDATE user_profile 
-                       SET is_guest = FALSE, 
-                           username = %s,
+                       SET username = %s,
                            metadata = jsonb_set(
-                               COALESCE(metadata, '{}'::jsonb),
-                               '{upgraded_from_guest}',
-                               'true'::jsonb
+                               jsonb_set(
+                                   COALESCE(metadata, '{}'::jsonb),
+                                   '{upgraded_from_guest}',
+                                   'true'::jsonb
+                               ),
+                               '{is_guest}',
+                               'false'::jsonb
                            )
                        WHERE user_id = %s""",
                     (_new_username, current_user.id)
