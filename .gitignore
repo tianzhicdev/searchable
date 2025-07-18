@@ -1,3 +1,4 @@
+content/*
 cicd_reports/*
 .DS_Store
 integration-tests/logs/*
