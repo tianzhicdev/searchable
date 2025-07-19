@@ -151,10 +151,23 @@ const AllInOneSearchableDetails = () => {
     }
   }, [SearchableItem, loading, id, history]);
 
-  // Fetch user's paid files
+  // Initialize file selections and fetch user's paid files
   useEffect(() => {
     if (SearchableItem && SearchableItem.searchable_id) {
       fetchUserPaidFiles();
+      
+      // Initialize selectedFiles for downloadable files that have fileId
+      const publicData = SearchableItem.payloads?.public || {};
+      const components = publicData.components;
+      if (components?.downloadable?.enabled && components.downloadable.files) {
+        const initialSelections = {};
+        components.downloadable.files.forEach(file => {
+          if (file.fileId) {
+            initialSelections[file.fileId] = false;
+          }
+        });
+        setSelectedFiles(initialSelections);
+      }
     }
   }, [SearchableItem]);
 
@@ -241,7 +254,7 @@ const AllInOneSearchableDetails = () => {
       Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
         if (isSelected) {
           const file = files.find(f => f.fileId && String(f.fileId) === String(fileId));
-          if (file) {
+          if (file && file.price) {
             total += parseFloat(file.price) || 0;
           }
         }
@@ -457,7 +470,13 @@ const AllInOneSearchableDetails = () => {
             {components.downloadable.files?.length > 0 ? (
               <Box>
                 {components.downloadable.files.map((file) => {
-                  const isPaid = userPaidFiles.has(file.fileId.toString());
+                  // Skip files without fileId
+                  if (!file.fileId) {
+                    console.warn('File missing fileId:', file);
+                    return null;
+                  }
+                  const fileIdStr = file.fileId.toString();
+                  const isPaid = userPaidFiles.has(fileIdStr);
                   return (
                     <Paper 
                       key={file.fileId}

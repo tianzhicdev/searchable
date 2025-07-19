@@ -50,6 +50,30 @@ if (!isMockMode) {
     },
     (error) => Promise.reject(error)
   );
+  
+  // Response interceptor to handle token invalid errors
+  backend.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      // Check if the response indicates invalid token
+      if (error.response?.data?.success === false && 
+          error.response?.data?.msg === "Token is invalid") {
+        console.log('[AUTH] Token is invalid, redirecting to landing page');
+        
+        // Clear auth data from localStorage and Redux
+        localStorage.removeItem('token');
+        localStorage.removeItem('persist:ungovernable-account');
+        
+        // Dispatch logout action to clear Redux state
+        store.dispatch({ type: 'LOGOUT' });
+        
+        // Redirect to landing page
+        window.location.href = '/landing';
+      }
+      
+      return Promise.reject(error);
+    }
+  );
 }
 
 // Export a function to update headers with current account state
@@ -59,27 +83,5 @@ export const updateBackendAuth = (account) => {
     backend.defaults.headers.common['authorization'] = account.token;
   }
 };
-
-// // Response interceptor to handle errors or token expiration
-// api.interceptors.response.use(
-//   (response) => response,
-//   async (error) => {
-//     if (error.response?.status === 401) {
-//       // Handle token expiration or unauthorized access
-//       const refreshToken = localStorage.getItem('refreshToken');
-//       if (refreshToken) {
-//         try {
-//           const { data } = await axios.post('/auth/refresh', { refreshToken });
-//           localStorage.setItem('token', data.token);
-//           error.config.headers.Authorization = `Bearer ${data.token}`;
-//           return api.request(error.config); // Retry the original request
-//         } catch (refreshError) {
-//           console.error('Token refresh failed:', refreshError);
-//         }
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
 
 export default backend;
