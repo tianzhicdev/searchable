@@ -127,6 +127,9 @@ def is_valid_tx_hash(txhash):
     Returns:
         bool: True if valid, False otherwise
     """
+    if not isinstance(txhash, str):
+        return False
+
     # Remove '0x' prefix if present
     if txhash.startswith('0x'):
         txhash = txhash[2:]
