@@ -125,7 +125,7 @@ def calc_allinone_invoice(public_data, selections):
     if downloadable_comp.get('enabled'):
         files = downloadable_comp.get('files', [])
         # Build file id to price mapping
-        file_id_to_price = {f.get('id'): float(f.get('price', 0)) for f in files}
+        file_id_to_price = {f.get('fileId'): float(f.get('price', 0)) for f in files}
         
         # Process selected downloadable files
         downloadable_selections = selections if isinstance(selections, list) else []
@@ -136,7 +136,7 @@ def calc_allinone_invoice(public_data, selections):
                 total_amount_usd += price * count
                 total_item_count += count
                 # Find file name for description
-                file_name = next((f.get('name', 'File') for f in files if f.get('id') == sel.get('id')), 'File')
+                file_name = next((f.get('name', 'File') for f in files if f.get('fileId') == sel.get('id')), 'File')
                 if count > 1:
                     descriptions.append(f"{file_name} (x{count})")
                 else:
