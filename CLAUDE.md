@@ -27,6 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Check for existing components before creating new ones
   - Extend existing components rather than duplicating
   - Keep component styles co-located with components
+  - always add 'data-testid' and 'id' for UI components
 - **Shared Styles**: Use Material-UI theme and existing style patterns
   - Leverage existing makeStyles patterns
   - Use theme variables for consistency
