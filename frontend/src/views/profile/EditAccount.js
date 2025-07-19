@@ -289,7 +289,8 @@ const EditAccount = () => {
       }
     } catch (error) {
       console.error('Error updating account:', error);
-      const message = error.response?.data?.msg || 'Failed to update account. Please try again.';
+      console.error('Error response:', error.response?.data);
+      const message = error.response?.data?.msg || error.response?.data?.error || 'Failed to update account. Please try again.';
       setSubmitError(message);
     } finally {
       setIsSubmitting(false);
