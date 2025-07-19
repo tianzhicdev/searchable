@@ -477,10 +477,14 @@ const PublishAllInOneSearchable = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate at least one component is enabled
-    const hasEnabledComponent = Object.values(components).some(c => c.enabled);
-    if (!hasEnabledComponent) {
-      setError('Please enable at least one component');
+    // Validate at least one component is enabled with content
+    const hasValidComponent = 
+      (components.downloadable.enabled && components.downloadable.files.length > 0) ||
+      (components.offline.enabled && components.offline.items.length > 0) ||
+      components.donation.enabled;
+    
+    if (!hasValidComponent) {
+      setError('Please enable at least one component and add content (files, items, or enable donation)');
       return;
     }
     
@@ -1019,7 +1023,11 @@ const PublishAllInOneSearchable = () => {
           loading={loading}
           onSubmit={handleSubmit}
           submitText={existingSearchable ? 'Update' : 'Publish'}
-          disabled={!formData.title || !Object.values(components).some(c => c.enabled)}
+          disabled={!formData.title || !(
+            (components.downloadable.enabled && components.downloadable.files.length > 0) ||
+            (components.offline.enabled && components.offline.items.length > 0) ||
+            components.donation.enabled
+          )}
         />
       </Grid>
       </Grid>

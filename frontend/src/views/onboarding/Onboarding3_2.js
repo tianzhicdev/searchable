@@ -99,7 +99,8 @@ const Onboarding3_2 = () => {
               downloadable: {
                 enabled: true,
                 files: storeData.files.map(file => ({
-                  id: file.id,
+                  id: file.uuid,  // UUID for file server operations
+                  fileId: file.id,  // Numeric ID for frontend/backend communication
                   name: file.name,
                   size: file.size || 0,
                   price: parseFloat(file.price),
