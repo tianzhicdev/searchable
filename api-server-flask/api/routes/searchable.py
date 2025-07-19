@@ -6,6 +6,7 @@ import requests
 from flask import request
 from flask_restx import Resource
 
+import traceback
 # Import from our new structure
 from .. import rest_api
 from .auth import token_required
@@ -43,6 +44,7 @@ class GetSearchableItem(Resource):
     def get(self, current_user, searchable_id, request_origin='unknown'):
         try:
             # Include removed items so they can be viewed via direct URL
+            # @dev_instruction: we should just get tags and username using one query
             searchable_data = get_searchable(searchable_id, include_removed=True)
             
             if not searchable_data:
@@ -105,8 +107,7 @@ class CreateSearchable(Resource):
             # Add user info to the searchable data
             data['user_id'] = str(current_user.id)
             
-            # Extract type from payload, default to 'downloadable' for backward compatibility
-            searchable_type = data.get('payloads', {}).get('public', {}).get('type', 'downloadable')
+            searchable_type = data.get('payloads', {}).get('public', {}).get('type', 'allinone')
             
             # Insert into searchables table with type field
             logger.info("Executing database insert...")
@@ -124,7 +125,6 @@ class CreateSearchable(Resource):
             
         except Exception as e:
             # Enhanced error logging
-            import traceback
             error_traceback = traceback.format_exc()
             logger.error(f"Error creating searchable: {str(e)}")
             logger.error(f"Traceback: {error_traceback}")
@@ -255,6 +255,7 @@ class SearchSearchables(Resource):
                     params.extend([search_pattern, search_pattern])
                 
                 # Add user_id filtering if provided in filters
+                # @dev_instrctions: is filters used anywhere?
                 if filters.get('user_id'):
                     where_conditions.append("s.user_id = %s")
                     params.append(filters['user_id'])
@@ -275,6 +276,7 @@ class SearchSearchables(Resource):
                 where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
                 
                 # Order by created_at desc
+                # @dev_instructions: can we order by rating count then avg_rating?
                 order_clause = "ORDER BY s.created_at DESC"
                 
                 # Get total count first
@@ -1007,10 +1009,11 @@ class BalanceResource(Resource):
             logger.error(f"Error updating profile for user {current_user.id}: {str(e)}")
             return {"error": str(e)}, 500
 
-@rest_api.route('/api/v1/download-file/<int:searchable_id>/<int:file_id>', methods=['GET'])
+@rest_api.route('/api/v1/download-file/<int:searchable_id>/<file_id>', methods=['GET'])
 class DownloadSearchableFile(Resource):
     """
     Download a file from a searchable item after verifying payment
+    Supports both numeric file_id and UUID formats
     """
     @token_required
     def get(self, current_user, searchable_id, file_id, request_origin='unknown'):
@@ -1035,14 +1038,22 @@ class DownloadSearchableFile(Resource):
             has_paid_for_file = False
             target_file = None
             
+            # Convert file_id to string for comparison (handles both int and UUID)
+            file_id_str = str(file_id)
+            
             for payment_status, invoice_metadata in payments:
                 if invoice_metadata and 'selections' in invoice_metadata:
                     for selection in invoice_metadata['selections']:
-                        if selection.get('id') == file_id and selection.get('type') == 'downloadable':
+                        # Check both 'id' and 'fileId' fields for the numeric file ID
+                        selection_id = str(selection.get('id', ''))
+                        selection_file_id = str(selection.get('fileId', ''))
+                        
+                        # Match either id or fileId field against the requested file_id
+                        if (selection_id == file_id_str or selection_file_id == file_id_str) and selection.get('type') == 'downloadable':
                             has_paid_for_file = True
                             # Get file info from invoice metadata
                             target_file = {
-                                'fileId': selection.get('id'),
+                                'fileId': selection.get('fileId', selection.get('id')),  # fileId is the numeric ID
                                 'fileName': selection.get('name', 'download')
                             }
                             break
@@ -1059,7 +1070,7 @@ class DownloadSearchableFile(Resource):
                 if searchable_data:
                     downloadable_files = searchable_data.get('payloads', {}).get('public', {}).get('downloadableFiles', [])
                     for file_info in downloadable_files:
-                        if file_info.get('fileId') == file_id:
+                        if str(file_info.get('fileId', '')) == file_id_str:
                             target_file = target_file or {}
                             target_file['fileName'] = file_info.get('fileName', 'download')
                             break
@@ -1069,27 +1080,48 @@ class DownloadSearchableFile(Resource):
             if not file_server_url:
                 return {"error": "File server not configured"}, 500
             
-            # Get file metadata from database to get the UUID
-            file_query = """
-                SELECT uri, metadata
-                FROM files
-                WHERE file_id = %s
-            """
-            
-            file_result = db.fetch_one(file_query, (file_id,))
-            
-            if not file_result:
-                return {"error": "File metadata not found"}, 404
-                
-            file_uri, file_metadata = file_result
-            
-            # Extract UUID from URI
+            # Check if file_id is already a UUID (new format)
+            file_uuid = None
             try:
+                # Try to parse as integer (old format)
+                numeric_file_id = int(file_id)
+                # Get file metadata from database to get the UUID
+                file_query = """
+                    SELECT uri, metadata
+                    FROM files
+                    WHERE file_id = %s
+                """
+                file_result = db.fetch_one(file_query, (numeric_file_id,))
+                
+                if not file_result:
+                    return {"error": "File metadata not found"}, 404
+                    
+                file_uri, file_metadata = file_result
+                
+                # Extract UUID from URI
                 file_uuid = file_uri.split('file_id=')[1] if 'file_id=' in file_uri else None
                 if not file_uuid:
                     return {"error": "Invalid file URI"}, 500
                     
-                # Make request to file server
+            except ValueError:
+                # file_id is already a UUID (new format)
+                file_uuid = file_id
+                # Get metadata directly using the UUID in the URI
+                file_query = """
+                    SELECT uri, metadata
+                    FROM files
+                    WHERE uri LIKE %s
+                """
+                file_result = db.fetch_one(file_query, (f'%file_id={file_uuid}%',))
+                
+                if file_result:
+                    file_uri, file_metadata = file_result
+                else:
+                    # No metadata found, but we can still try to download with the UUID
+                    file_metadata = None
+            
+            # Make request to file server  
+            try:
                 download_response = requests.get(
                     f"{file_server_url}/api/file/download",
                     params={'file_id': file_uuid},

@@ -75,10 +75,11 @@ def enrich_selections_for_receipt(searchable_data, selections):
                 
                 if component == 'downloadable':
                     files = components.get('downloadable', {}).get('files', [])
-                    file_data = next((f for f in files if str(f.get('id')) == str(sel.get('id'))), None)
+                    file_data = next((f for f in files if str(f.get('fileId')) == str(sel.get('id'))), None)
                     if file_data:
                         enriched_selections.append({
                             'id': sel.get('id'),
+                            'fileId': file_data.get('fileId'),  # Include numeric fileId for download URL
                             'name': file_data.get('name', 'Digital File'),
                             'price': float(file_data.get('price', 0)),
                             'count': sel.get('count', 1),
@@ -115,6 +116,7 @@ def enrich_selections_for_receipt(searchable_data, selections):
                     if file_data:
                         enriched_selections.append({
                             'id': sel.get('id'),
+                            'fileId': file_data.get('fileId'),  # Include numeric fileId for consistency
                             'name': file_data.get('name', 'File'),
                             'price': float(file_data.get('price', 0)),
                             'count': sel.get('count', 1),
@@ -124,6 +126,7 @@ def enrich_selections_for_receipt(searchable_data, selections):
                         # Fallback if file not found
                         enriched_selections.append({
                             'id': sel.get('id'),
+                            'fileId': sel.get('id'),  # Use same id as fileId for consistency
                             'name': f'File {sel.get("id")}',
                             'price': 0,
                             'count': sel.get('count', 1),

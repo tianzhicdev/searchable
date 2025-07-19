@@ -240,7 +240,7 @@ const AllInOneSearchableDetails = () => {
       const files = components.downloadable.files || [];
       Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
         if (isSelected) {
-          const file = files.find(f => String(f.id) === String(fileId));
+          const file = files.find(f => f.fileId && String(f.fileId) === String(fileId));
           if (file) {
             total += parseFloat(file.price) || 0;
           }
@@ -291,11 +291,11 @@ const AllInOneSearchableDetails = () => {
         Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
           if (isSelected) {
             const file = components.downloadable.files.find(f => 
-              String(f.id) === String(fileId)
+              f.fileId && String(f.fileId) === String(fileId)
             );
             if (file) {
               selections.push({
-                id: file.id,
+                id: file.fileId,
                 component: 'downloadable',
                 count: 1
               });
@@ -371,11 +371,11 @@ const AllInOneSearchableDetails = () => {
         Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
           if (isSelected) {
             const file = components.downloadable.files.find(f => 
-              String(f.id) === String(fileId)
+              f.fileId && String(f.fileId) === String(fileId)
             );
             if (file) {
               selections.push({
-                id: file.id,
+                id: file.fileId,
                 component: 'downloadable',
                 count: 1
               });
@@ -457,14 +457,14 @@ const AllInOneSearchableDetails = () => {
             {components.downloadable.files?.length > 0 ? (
               <Box>
                 {components.downloadable.files.map((file) => {
-                  const isPaid = userPaidFiles.has(file.id.toString());
+                  const isPaid = userPaidFiles.has(file.fileId.toString());
                   return (
                     <Paper 
-                      key={file.id}
-                      className={`${detailClasses.fileItem} ${selectedFiles[file.id] ? detailClasses.fileItemSelected : ''}`}
-                      onClick={() => !isPaid && handleFileSelection(file.id, !selectedFiles[file.id])}
+                      key={file.fileId}
+                      className={`${detailClasses.fileItem} ${selectedFiles[file.fileId] ? detailClasses.fileItemSelected : ''}`}
+                      onClick={() => !isPaid && handleFileSelection(file.fileId, !selectedFiles[file.fileId])}
                       style={{ marginBottom: 8, cursor: isPaid ? 'default' : 'pointer' }}
-                      {...testIdProps('item', 'allinone-file', file.id)}
+                      {...testIdProps('item', 'allinone-file', file.fileId)}
                     >
                       <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
                         <Box flex={1}>
@@ -485,14 +485,15 @@ const AllInOneSearchableDetails = () => {
                             startIcon={<GetAppIcon />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownload(file.id, file.name);
+                              // console.log("Downloading paid file:", file);
+                              handleDownload(file.fileId, file.name);
                             }}
-                            {...testIdProps('button', 'download-file', file.id)}
+                            {...testIdProps('button', 'download-file', file.fileId)}
                           >
                             Download
                           </Button>
                         ) : (
-                          selectedFiles[file.id] && (
+                          selectedFiles[file.fileId] && (
                             <CheckIcon style={{ color: '#1976d2', fontSize: 28 }} />
                           )
                         )}

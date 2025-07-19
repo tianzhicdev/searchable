@@ -686,7 +686,7 @@ def search_searchables_by_tags(tag_names, page=1, limit=20):
         logger.error(f"Error searching searchables by tags: {str(e)}")
         return {'searchables': [], 'total': 0, 'page': page, 'limit': limit, 'pages': 0}
 
-def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20):
+def search_users_by_tag_ids(tag_ids=None, username_search='', page=1, limit=20): # @dev_intructions: this can use some refactoring, most of the query is the same
     """
     Search users by tag IDs and/or username (OR logic for tags, substring match for username)
     Only returns users who have at least one published (non-removed) searchable item
