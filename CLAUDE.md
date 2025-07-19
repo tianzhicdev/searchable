@@ -75,6 +75,11 @@ Searchable is a declarative framework for building information deposit and retri
 6. **Button styling** - Always use `variant="contained"` for all buttons
 7. **Mock mode for UI testing** - Always verify UI changes with mock data
 8. **Currency Standardization** - lowercase 'usd' in database, USDT for UI display
+9. **Downloadable File IDs** - Consistent ID usage for downloadable files:
+   - **fileId**: Numeric ID from files table - used for frontend/backend communication
+   - **id**: UUID for file server - used for backend/fileserver communication only
+   - In payment selections, always include both `id` and `fileId` fields for downloadables
+   - Download endpoint accepts numeric fileId in URL: `/api/v1/download-file/<searchable_id>/<fileId>`
 
 ## Architecture Overview
 

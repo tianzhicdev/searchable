@@ -13,7 +13,7 @@ logger = setup_logger(__name__, 'data_helpers.log')
 
 stripe.api_key = os.environ.get('STRIPE_API_KEY')
 
-def get_searchableIds_by_user(user_id):
+def get_searchableIds_by_user(user_id): # reviewed
     """
     Retrieves all searchable IDs for a specific user
     
@@ -34,7 +34,7 @@ def get_searchableIds_by_user(user_id):
         logger.error(f"Error retrieving searchable IDs for user {user_id}: {str(e)}")
         return []
 
-def get_searchable(searchable_id, include_removed=False):
+def get_searchable(searchable_id, include_removed=False):  # reviewed
     """
     Retrieves a searchable item by its ID
     
@@ -130,7 +130,7 @@ def get_invoices(buyer_id=None, seller_id=None, searchable_id=None, external_id=
         """
         
         # Add status filter if provided
-        if status:
+        if status: # @dev_q: why do we need this?
             if status == 'pending':
                 query += " AND p.status IS NULL"
             else:
@@ -563,7 +563,7 @@ def get_user_paid_files(user_id, searchable_id):
                 for selection in selections:
                     # Handle both old format (type) and new format (component)
                     if selection.get('type') == 'downloadable' or selection.get('component') == 'downloadable':
-                        paid_file_ids.add(str(selection.get('id')))
+                        paid_file_ids.add(str(selection.get('fileId')))
         
         return paid_file_ids
         
@@ -1280,23 +1280,31 @@ def get_downloadable_items_by_user_id(user_id):
             
             for selection in selections:
                 if selection.get('type') == 'downloadable':
+                    # Get the numeric fileId from the selection
+                    # First check if there's a fileId field (new format), otherwise use id
+                    file_id_for_download = selection.get('fileId') # or selection.get('id', '')
+                    
                     downloadable_files.append({
                         'id': selection.get('id'),
                         'name': selection.get('name'),
                         'price': selection.get('price'),
                         'file_uri': selection.get('file_uri', ''),  # This would be set during purchase
-                        'download_url': f"/v1/download-file/{searchable_id}/{selection.get('id')}"  # API endpoint for download
+                        'download_url': f"/v1/download-file/{searchable_id}/{file_id_for_download}"  # API endpoint for download
                     })
             
             # If no selections in metadata, fallback to public downloadableFiles
             if not downloadable_files and public_data.get('downloadableFiles'):
                 for file_data in public_data.get('downloadableFiles', []):
+                    # Get the numeric fileId from the file data
+                    # First check if there's a fileId field (new format), otherwise use id
+                    file_id_for_download = file_data.get('fileId') or file_data.get('id', '')
+                    
                     downloadable_files.append({
                         'id': file_data.get('id', ''),
                         'name': file_data.get('name', ''),
                         'price': file_data.get('price', 0),
                         'file_uri': '',  # Would need to be populated from actual purchase
-                        'download_url': f"/v1/download-file/{searchable_id}/{file_data.get('id', '')}"
+                        'download_url': f"/v1/download-file/{searchable_id}/{file_id_for_download}"
                     })
             
             item = {

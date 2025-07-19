@@ -106,15 +106,21 @@ const DownloadableSearchableDetails = () => {
   useEffect(() => {
     // Calculate total price based on selected files
     if (SearchableItem && SearchableItem.payloads.public.downloadableFiles) {
+      console.log('Calculating total price. Selected files:', selectedFiles);
       let total = 0;
       Object.entries(selectedFiles).forEach(([id, isSelected]) => {
+        console.log(`Checking file ${id}, selected: ${isSelected}`);
         const downloadable = SearchableItem.payloads.public.downloadableFiles.find(
           file => file.fileId && file.fileId.toString() === id
         );
+        console.log(`Found downloadable for ${id}:`, downloadable);
         if (downloadable && isSelected) {
-          total += downloadable.price;
+          const price = parseFloat(downloadable.price) || 0;
+          console.log(`Adding price ${price} for file ${id} (raw price: ${downloadable.price})`);
+          total += price;
         }
       });
+      console.log('Total price calculated:', total);
       setTotalPrice(total);
     }
   }, [selectedFiles, SearchableItem]);
@@ -122,12 +128,19 @@ const DownloadableSearchableDetails = () => {
   useEffect(() => {
     // Initialize selectedFiles when SearchableItem is loaded
     if (SearchableItem && SearchableItem.payloads.public.downloadableFiles) {
+      console.log('DownloadableSearchableDetails - Initializing files:', SearchableItem.payloads.public.downloadableFiles);
       const initialSelections = {};
       SearchableItem.payloads.public.downloadableFiles.forEach(file => {
+        console.log('Processing file:', file);
         if (file.fileId) {
           initialSelections[file.fileId] = false;
+          // Log file details to help debug
+          console.log(`File ${file.fileId} - name: ${file.name}, price: ${file.price}`);
+        } else {
+          console.warn('File missing fileId:', file);
         }
       });
+      console.log('Initial selections:', initialSelections);
       setSelectedFiles(initialSelections);
     }
   }, [SearchableItem]);
@@ -153,7 +166,12 @@ const DownloadableSearchableDetails = () => {
   }, [searchablePayments, SearchableItem]);
   
   const handleFileSelection = (id, checked) => {
-    setSelectedFiles(prev => ({ ...prev, [id]: checked }));
+    console.log(`handleFileSelection called - id: ${id}, checked: ${checked}`);
+    setSelectedFiles(prev => {
+      const newState = { ...prev, [id]: checked };
+      console.log('New selectedFiles state:', newState);
+      return newState;
+    });
   };
   
   // Handle payment creation with downloadable-specific logic
@@ -350,13 +368,12 @@ const DownloadableSearchableDetails = () => {
     return (
       <Box className={detailClasses.fileList}>
         {SearchableItem.payloads.public.downloadableFiles.map((file) => {
-          // Ensure fileId exists before using it
-          const fileIdStr = file.fileId ? file.fileId.toString() : '';
           if (!file.fileId) {
             console.error('File missing fileId:', file);
             return null;
           }
           
+          const fileIdStr = file.fileId.toString();
           const isPaidByCurrentUser = userPaidFiles.has(fileIdStr);
           const isPaidBySomeone = paidFiles.has(fileIdStr);
           const isDownloading = downloadingFiles[file.fileId];

@@ -297,7 +297,6 @@ const generateMockSearchables = () => {
         const fileIndex = (i * 5 + idx) % fileNames.length;
         return {
           fileId: `file-${i}-${idx}`,
-          id: `file-${i}-${idx}`, // Keep for backward compatibility
           name: fileNames[fileIndex],
           description: fileDescriptions[fileIndex % fileDescriptions.length],
           price: Math.floor(Math.random() * 100) + 0.99 // Random price from 0.99 to 100.99
@@ -819,8 +818,8 @@ const mockHandlers = {
             currency: 'usd',
             images: [mockImage1, mockImage2],
             downloadableFiles: [
-              { fileId: 'file-1', name: 'Test_File_1.zip', price: 9.99, id: 'file-1' },
-              { fileId: 'file-2', name: 'Test_File_2.pdf', price: 4.99, id: 'file-2' }
+              { fileId: 'file-1', name: 'Test_File_1.zip', price: 9.99 },
+              { fileId: 'file-2', name: 'Test_File_2.pdf', price: 4.99 }
             ]
           }
         },

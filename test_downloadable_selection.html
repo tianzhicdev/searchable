@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Downloadable Selection Logic</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .file-item { border: 1px solid #ccc; padding: 10px; margin: 10px 0; cursor: pointer; }
+        .file-item.selected { background-color: #e0f7fa; }
+        .pay-button { padding: 10px 20px; margin-top: 20px; font-size: 16px; }
+        .pay-button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .log { background-color: #f5f5f5; padding: 10px; margin-top: 20px; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Test Downloadable File Selection</h1>
+    
+    <div id="files"></div>
+    <button id="payButton" class="pay-button" disabled>Pay $0.00</button>
+    
+    <div class="log" id="log"></div>
+
+    <script>
+        // Mock searchable data similar to the React component
+        const SearchableItem = {
+            payloads: {
+                public: {
+                    downloadableFiles: [
+                        { fileId: 'file-1', name: 'Design Template Pack', price: 19.99 },
+                        { fileId: 'file-2', name: 'Stock Photos Collection', price: 14.99 },
+                        { name: 'File without fileId or id', price: 9.99 }, // Test edge case
+                        { id: 'file-4', name: 'File with only id', price: 24.99 }, // Test fallback
+                    ]
+                }
+            }
+        };
+
+        const selectedFiles = {};
+        let totalPrice = 0;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            logEl.innerHTML += message + '<br>';
+            console.log(message);
+        }
+
+        function initializeFiles() {
+            const files = SearchableItem.payloads.public.downloadableFiles;
+            log('Initializing files:');
+            
+            files.forEach(file => {
+                log(`Processing file: ${JSON.stringify(file)}`);
+                const fileIdentifier = file.fileId || file.id;
+                
+                if (fileIdentifier) {
+                    selectedFiles[fileIdentifier] = false;
+                    log(`✓ File ${fileIdentifier} - name: ${file.name}, price: ${file.price}`);
+                } else {
+                    log(`✗ File missing both fileId and id: ${file.name}`);
+                }
+            });
+            
+            log(`Initial selections: ${JSON.stringify(selectedFiles)}`);
+            renderFiles();
+        }
+
+        function renderFiles() {
+            const container = document.getElementById('files');
+            container.innerHTML = '';
+            
+            SearchableItem.payloads.public.downloadableFiles.forEach(file => {
+                const fileIdentifier = file.fileId || file.id;
+                if (!fileIdentifier) return;
+                
+                const div = document.createElement('div');
+                div.className = 'file-item' + (selectedFiles[fileIdentifier] ? ' selected' : '');
+                div.innerHTML = `
+                    <input type="checkbox" ${selectedFiles[fileIdentifier] ? 'checked' : ''} />
+                    ${file.name} - $${file.price}
+                `;
+                div.onclick = () => toggleFile(fileIdentifier);
+                container.appendChild(div);
+            });
+        }
+
+        function toggleFile(fileId) {
+            selectedFiles[fileId] = !selectedFiles[fileId];
+            log(`Toggled file ${fileId} to ${selectedFiles[fileId]}`);
+            calculateTotalPrice();
+            renderFiles();
+        }
+
+        function calculateTotalPrice() {
+            let total = 0;
+            log('\nCalculating total price:');
+            
+            Object.entries(selectedFiles).forEach(([id, isSelected]) => {
+                log(`Checking file ${id}, selected: ${isSelected}`);
+                
+                const downloadable = SearchableItem.payloads.public.downloadableFiles.find(file => {
+                    const fileIdentifier = file.fileId || file.id;
+                    return fileIdentifier && fileIdentifier.toString() === id;
+                });
+                
+                log(`Found downloadable for ${id}: ${downloadable ? JSON.stringify(downloadable) : 'null'}`);
+                
+                if (downloadable && isSelected) {
+                    const price = parseFloat(downloadable.price) || 0;
+                    log(`Adding price ${price} for file ${id} (raw price: ${downloadable.price})`);
+                    total += price;
+                }
+            });
+            
+            log(`Total price calculated: $${total.toFixed(2)}`);
+            totalPrice = total;
+            
+            const payButton = document.getElementById('payButton');
+            payButton.textContent = `Pay $${total.toFixed(2)}`;
+            payButton.disabled = total === 0;
+            log(`Pay button disabled: ${total === 0}\n`);
+        }
+
+        // Initialize on load
+        initializeFiles();
+        calculateTotalPrice();
+    </script>
+</body>
+</html>
