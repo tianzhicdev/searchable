@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { 
   Paper, 
   Typography, 
@@ -53,7 +53,18 @@ const useStyles = makeStyles((theme) => ({
 const GuestUserBanner = () => {
   const classes = useStyles();
   const history = useHistory();
+  const location = useLocation();
   const account = useSelector((state) => state.account);
+  
+  // Check if we're on landing or onboarding pages
+  const pathname = location.pathname.toLowerCase();
+  const isExcludedPage = pathname === '/landing' || 
+                        pathname.startsWith('/onboarding');
+  
+  // Don't show banner on excluded pages
+  if (isExcludedPage) {
+    return null;
+  }
   
   // Don't show banner if not logged in or not a guest user
   if (!account.isLoggedIn || !account.user || !isGuestUser(account.user)) {
