@@ -143,7 +143,7 @@ const RefillUSDT = () => {
           ) : (
             <>
               <Typography variant="h6" gutterBottom {...testIdProps('text', 'deposit', 'title')}>
-                Send USDT to this address:
+                Send USDT to this Ethereum address:
               </Typography>
               
               {/* QR Code */}
