@@ -195,6 +195,79 @@ export const mockUserProfile = {
   }
 };
 
+// Mock user profile for user ID 2 (for testing pagination)
+export const mockUserProfile2 = {
+  profile: {
+    username: "creativepro",
+    profile_image_url: "/api/v1/media/profile-mock-2",
+    introduction: "Professional digital artist and content creator with 10+ years of experience. I create premium assets for designers, developers, and content creators worldwide.",
+    tags: [
+      { id: 1, name: "artist", tag_type: "user" },
+      { id: 5, name: "designer", tag_type: "user" },
+      { id: 10, name: "verified", tag_type: "user" }
+    ],
+    metadata: {
+      additional_images: [
+        "/api/v1/media/gallery-mock-5",
+        "/api/v1/media/gallery-mock-6",
+        "/api/v1/media/gallery-mock-7",
+        "/api/v1/media/gallery-mock-8"
+      ],
+      socialMedia: {
+        instagram: "creativepro_official",
+        x: "creativepro",
+        youtube: "CreativeProTutorials"
+      }
+    },
+    created_at: new Date(Date.now() - 86400000 * 365).toISOString() // 1 year ago
+  }
+};
+
+// Generate multiple searchables for user 2 to test pagination
+export const mockUser2Searchables = Array.from({ length: 45 }, (_, index) => ({
+  _id: `mock-user2-item-${index + 1}`,
+  searchable_id: `mock-user2-item-${index + 1}`,
+  user_id: "2",
+  username: "creativepro",
+  removed: index % 15 === 0, // Make every 15th item removed for testing
+  tags: [
+    { id: 21 + (index % 10), name: ["design", "templates", "graphics", "fonts", "icons", "mockups", "ui", "web", "print", "branding"][index % 10], tag_type: "searchable" },
+    { id: 31 + (index % 5), name: ["premium", "bundle", "pack", "collection", "set"][index % 5], tag_type: "searchable" }
+  ],
+  payloads: {
+    public: {
+      title: `Premium ${["Design", "Graphics", "Template", "Font", "Icon", "Mockup", "UI Kit", "Web Asset", "Print Pack", "Branding Kit"][index % 10]} Collection ${index + 1}`,
+      description: `High-quality ${["design", "graphics", "template", "font", "icon", "mockup", "UI", "web", "print", "branding"][index % 10]} assets for professional use. This collection includes ${10 + (index % 20)} unique items with full commercial license. Perfect for ${["designers", "developers", "marketers", "agencies", "freelancers"][index % 5]} looking to enhance their projects.`,
+      images: [mockImage1, mockImage2],
+      imageUrls: [mockImage1, mockImage2],
+      downloadableFiles: [
+        {
+          fileId: `user2-file-${index + 1}-1`,
+          name: `Main Collection Pack ${index + 1}`,
+          fileName: `collection_pack_${index + 1}.zip`,
+          description: `Complete collection with all assets and documentation.`,
+          price: 19.99 + (index % 5) * 10
+        },
+        {
+          fileId: `user2-file-${index + 1}-2`,
+          name: `Bonus Materials ${index + 1}`,
+          fileName: `bonus_materials_${index + 1}.zip`,
+          description: `Extra resources and extended license files.`,
+          price: 9.99 + (index % 3) * 5
+        }
+      ],
+      currency: "usd",
+      require_address: false,
+      type: "downloadable"
+    }
+  },
+  created_at: new Date(Date.now() - (86400000 * (index + 1))).toISOString(),
+  updated_at: new Date(Date.now() - (43200000 * (index + 1))).toISOString(),
+  views: 100 + (index * 23),
+  sales: 5 + (index % 20),
+  rating: index % 2 === 0 ? { average: 4.5 + (index % 5) * 0.1, count: 10 + index } : null
+}));
+
 // Mock file download blob
 export const mockFileBlob = new Blob(['Mock file content'], { type: 'application/octet-stream' });
 

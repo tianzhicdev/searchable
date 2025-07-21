@@ -26,6 +26,7 @@ const Landing = () => {
     "Lowest fees on the planet - 1%",
     "Paid in USDT, NO-KYC",
     "We convert buyers' USD to USDT for you",
+    "Fastest Withdrawals - Instantly to your Ethereum wallet",
   ];
 
   const handleJoinNow = () => {

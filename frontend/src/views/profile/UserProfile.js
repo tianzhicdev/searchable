@@ -28,6 +28,7 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchCriteria, setSearchCriteria] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchUserProfile();
@@ -53,6 +54,7 @@ const UserProfile = () => {
           filters: {
             user_id: profile.user_id
           },
+          currentPage: currentPage,
           searchTrigger: Date.now() // Trigger initial search
         });
       }
@@ -72,6 +74,23 @@ const UserProfile = () => {
   const handleBackClick = () => {
     debugNavigationStack(location, 'UserProfile Back Click');
     navigateBack(history, '/search');
+  };
+
+  const handlePageChange = (newPage) => {
+    console.log('[USER PROFILE] Page change requested:', newPage);
+    setCurrentPage(newPage);
+    
+    // Update search criteria with new page
+    if (profileData && profileData.user_id) {
+      setSearchCriteria({
+        searchTerm: '',
+        filters: {
+          user_id: profileData.user_id
+        },
+        currentPage: newPage,
+        searchTrigger: Date.now() // Trigger new search
+      });
+    }
   };
 
   if (loading) {
@@ -272,7 +291,10 @@ const UserProfile = () => {
           </Typography>
           
           {searchCriteria ? (
-            <SearchableList criteria={searchCriteria} />
+            <SearchableList 
+              criteria={searchCriteria} 
+              onPageChange={handlePageChange}
+            />
           ) : (
             <Typography variant="body2" color="textSecondary">
               Loading published items...
