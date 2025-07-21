@@ -48,8 +48,8 @@ class WithdrawFundsUSD(Resource):
                     "withdrawal_amount": amount
                 }, 400
             
-            # Calculate withdrawal fee (0.1%)
-            withdrawal_fee = amount * 0.001  # 0.1%
+            # Calculate withdrawal fee (1%)
+            withdrawal_fee = amount * 0.01  # 0.1%
             
             # Generate a unique transaction ID for this withdrawal
             tx_id = f"usd-{current_user.id}-{int(time.time())}"

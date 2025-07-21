@@ -61,7 +61,8 @@ show_usage() {
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
-    echo "  ./exec.sh email test                        - Send test email via Mailgun"
+    echo "  ./exec.sh email test                        - Send test email via Mailgun (eccentricprotocol)"
+    echo "  ./exec.sh email test --abitchaotic          - Send test email via Mailgun (abitchaotic)"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
@@ -1118,7 +1119,13 @@ local_status() {
 
 # Email test function
 email_test() {
-    echo -e "${BLUE}📧 Sending test email via Mailgun...${NC}"
+    local brand=$1
+    
+    if [ "$brand" = "--abitchaotic" ]; then
+        echo -e "${BLUE}📧 Sending test email via Mailgun (abitchaotic)...${NC}"
+    else
+        echo -e "${BLUE}📧 Sending test email via Mailgun (eccentricprotocol)...${NC}"
+    fi
     
     # Check if .env.secrets exists
     if [ ! -f ".env.secrets" ]; then
@@ -1133,8 +1140,18 @@ email_test() {
         exit 1
     fi
     
-    # Run the python script
-    python3 send_test_email.py
+    # Source .env.secrets and export appropriate API_KEY
+    source .env.secrets
+    
+    if [ "$brand" = "--abitchaotic" ]; then
+        export API_KEY=$MAILGUN_API_ABITCHAOTIC
+        # Run the python script with abitchaotic parameter
+        python3 send_test_email.py abitchaotic
+    else
+        export API_KEY=$MAILGUN_API
+        # Run the python script without parameter (default)
+        python3 send_test_email.py
+    fi
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Email test completed successfully!${NC}"
@@ -1157,7 +1174,7 @@ if [ "$1" = "release" ]; then
     CONTAINER=""
 # Special case for email test command
 elif [ "$1" = "email" ] && [ "$2" = "test" ]; then
-    email_test
+    email_test "$3"
     exit 0
 elif [ $# -lt 2 ]; then
     show_usage
