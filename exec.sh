@@ -61,6 +61,7 @@ show_usage() {
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
+    echo "  ./exec.sh email test                        - Send test email via Mailgun"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
@@ -1115,6 +1116,34 @@ local_status() {
     docker images | grep searchable || true
 }
 
+# Email test function
+email_test() {
+    echo -e "${BLUE}📧 Sending test email via Mailgun...${NC}"
+    
+    # Check if .env.secrets exists
+    if [ ! -f ".env.secrets" ]; then
+        echo -e "${RED}Error: .env.secrets file not found${NC}"
+        echo "Please ensure .env.secrets exists and contains MAILGUN_API key"
+        exit 1
+    fi
+    
+    # Check if python script exists
+    if [ ! -f "send_test_email.py" ]; then
+        echo -e "${RED}Error: send_test_email.py not found${NC}"
+        exit 1
+    fi
+    
+    # Run the python script
+    python3 send_test_email.py
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Email test completed successfully!${NC}"
+    else
+        echo -e "${RED}❌ Email test failed${NC}"
+        exit 1
+    fi
+}
+
 # Main script logic
 if [ $# -lt 1 ]; then
     show_usage
@@ -1126,6 +1155,10 @@ if [ "$1" = "release" ]; then
     ENVIRONMENT="release"
     ACTION=""
     CONTAINER=""
+# Special case for email test command
+elif [ "$1" = "email" ] && [ "$2" = "test" ]; then
+    email_test
+    exit 0
 elif [ $# -lt 2 ]; then
     show_usage
     exit 1
