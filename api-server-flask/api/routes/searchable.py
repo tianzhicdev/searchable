@@ -28,7 +28,7 @@ from ..common.data_helpers import (
     get_user_all_invoices
 )
 from ..common.database_context import database_cursor, database_transaction, db
-from ..common.tag_helpers import get_searchable_tags
+from ..common.tag_helpers import get_searchable_tags, add_searchable_tags
 from ..common.logging_config import setup_logger
 
 # Set up the logger
@@ -120,6 +120,22 @@ class CreateSearchable(Resource):
                 
             searchable_id = row[0]
             logger.info(f"Added searchable {searchable_id}")
+            
+            # Handle tags if provided
+            tags = data.get('tags', [])
+            if tags:
+                # Extract tag IDs from tag objects or use as-is if already IDs
+                tag_ids = []
+                for tag in tags:
+                    if isinstance(tag, dict) and 'id' in tag:
+                        tag_ids.append(tag['id'])
+                    elif isinstance(tag, (int, str)):
+                        tag_ids.append(int(tag))
+                
+                if tag_ids:
+                    success = add_searchable_tags(searchable_id, tag_ids)
+                    if not success:
+                        logger.warning(f"Failed to add tags to searchable {searchable_id}")
             
             return {"searchable_id": searchable_id}, 201
             
@@ -416,10 +432,6 @@ class UpdateSearchableItem(Resource):
             if result[0] != current_user.id:
                 return {"error": "Access denied"}, 403
             
-            # Get existing tags before update
-            existing_tags = get_searchable_tags(searchable_id)
-            tag_ids = [tag['id'] for tag in existing_tags]
-            
             # Use transaction to ensure atomicity
             with database_transaction() as (cur, conn):
                 # Add user info to the new searchable data
@@ -438,13 +450,24 @@ class UpdateSearchableItem(Resource):
                 
                 new_searchable_id = new_row[0]
                 
-                # Copy tags to new searchable
-                if tag_ids:
-                    for tag_id in tag_ids:
-                        execute_sql(cur, 
-                            "INSERT INTO searchable_tags (searchable_id, tag_id) VALUES (%s, %s)",
-                            (new_searchable_id, tag_id)
-                        )
+                # Handle tags from the request data (not from old searchable)
+                tags = data.get('tags', [])
+                if tags:
+                    # Extract tag IDs from tag objects or use as-is if already IDs
+                    tag_ids = []
+                    for tag in tags:
+                        if isinstance(tag, dict) and 'id' in tag:
+                            tag_ids.append(tag['id'])
+                        elif isinstance(tag, (int, str)):
+                            tag_ids.append(int(tag))
+                    
+                    # Add new tags
+                    if tag_ids:
+                        for tag_id in tag_ids:
+                            execute_sql(cur, 
+                                "INSERT INTO searchable_tags (searchable_id, tag_id) VALUES (%s, %s)",
+                                (new_searchable_id, tag_id)
+                            )
                 
                 # Mark old searchable as removed
                 execute_sql(cur, """
