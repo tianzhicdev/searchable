@@ -146,7 +146,7 @@ const DepositComponent = ({
           ) : (
             <>
               <Typography variant="h6" gutterBottom className={classes.staticText}>
-                Send USDT to this address:
+                Send USDT to this Ethereum address:
               </Typography>
               
               {/* QR Code */}
