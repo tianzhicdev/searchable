@@ -23,6 +23,8 @@ const Landing = () => {
   const isLoggedIn = account?.user?.id;
   
   const bulletPoints = [
+    "Lowest fees on the planet - 1%",
+    "Paid in USDT, NO-KYC"
   ];
 
   const handleJoinNow = () => {
@@ -83,7 +85,7 @@ const Landing = () => {
               fontWeight: 'bold',
             }}
           >
-            Talent Mines Crypto
+            Web3 Digital Content Marketplace
           </Typography>
 
           {/* Bullet Points */}
@@ -91,14 +93,14 @@ const Landing = () => {
             sx={{ 
               mb: 6, 
               display: 'flex', 
-              flexWrap: 'wrap', 
+              flexDirection: 'column', 
               gap: 2, 
-              justifyContent: 'center',
+              alignItems: 'center',
               maxWidth: '900px'
             }}
           >
             {bulletPoints.map((point, index) => (
-              <Typography
+              <Typography  
                 key={index}
                 label={point}
                 sx={{
@@ -147,7 +149,7 @@ const Landing = () => {
               fontWeight: 'bold', 
               mb: 4, 
               fontSize: isMobile ? '1.5rem' : '2rem',
-              color: theme.palette.primary.main,
+              color: theme.palette.secondary.main,
             }}
           >
             {config.BRANDING_CONFIG.landingIntro}

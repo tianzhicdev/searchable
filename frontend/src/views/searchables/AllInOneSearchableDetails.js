@@ -17,6 +17,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
 import InvoiceList from '../payments/InvoiceList';
+import RatingDisplay from '../../components/Rating/RatingDisplay';
 import { formatUSD } from '../../utils/searchableUtils';
 import useComponentStyles from '../../themes/componentStyles';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
@@ -110,7 +111,10 @@ const AllInOneSearchableDetails = () => {
     createBalancePayment,
     formatCurrency,
     loading,
-    error
+    error,
+    searchableRating,
+    loadingRatings,
+    fetchRatings
   } = useSearchableDetails();
   
   // Component state
@@ -740,6 +744,38 @@ const AllInOneSearchableDetails = () => {
 
   const totalPrice = calculateTotal();
 
+  // Render reviews content separately (collapsible)
+  const renderReviewsContent = ({ searchableRating, loadingRatings }) => {
+    if (!searchableRating || !searchableRating.individual_ratings || searchableRating.individual_ratings.length === 0) {
+      return null;
+    }
+    
+    return (
+      <Accordion defaultExpanded={false} {...testIdProps('section', 'allinone-reviews', 'accordion')}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="reviews-content"
+          id="reviews-header"
+        >
+          <Typography variant="h6">
+            Reviews ({searchableRating.total_ratings || 0})
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box width="100%">
+            <RatingDisplay
+              averageRating={searchableRating.average_rating || 0}
+              totalRatings={searchableRating.total_ratings || 0}
+              individualRatings={searchableRating.individual_ratings || []}
+              showIndividualRatings={true}
+              maxIndividualRatings={10}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    );
+  };
+
   // Render receipts content separately
   const renderReceiptsContent = ({ id }) => (
     <InvoiceList 
@@ -751,6 +787,7 @@ const AllInOneSearchableDetails = () => {
   return (
     <BaseSearchableDetails
       renderTypeSpecificContent={renderTypeSpecificContent}
+      renderReviewsContent={renderReviewsContent}
       renderReceiptsContent={renderReceiptsContent}
       onPayment={handlePayment}
       onBalancePayment={handleBalancePayment}
