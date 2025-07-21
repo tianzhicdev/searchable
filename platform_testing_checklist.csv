@@ -1,0 +1,170 @@
+Category,Test Scenario,Test Steps,Expected Result,Priority,Status,Notes
+User Registration & Authentication,Join as visitor,"1. Go to landing page
+2. Click 'Join as Visitor' or similar option
+3. Complete visitor registration",Visitor account created successfully with limited access,High,,
+User Registration & Authentication,Upgrade from visitor to full user,"1. Login as visitor
+2. Navigate to upgrade option
+3. Enter username, email, password
+4. Submit upgrade form",Visitor account upgraded to full user with complete access,High,,
+User Registration & Authentication,Register new user with invite code,"1. Go to registration page
+2. Enter username, email, password
+3. Enter valid invite code
+4. Complete registration","User registered successfully, $5 reward added to balance",High,,
+User Registration & Authentication,Login with username/password,"1. Go to login page
+2. Enter valid credentials
+3. Submit login form",User logged in successfully with JWT token,High,,
+User Registration & Authentication,Logout,"1. Click logout button
+2. Confirm logout","User logged out, JWT token invalidated, redirected to landing",High,,
+User Registration & Authentication,Change password,"1. Go to account settings
+2. Enter current password
+3. Enter new password twice
+4. Submit change",Password changed successfully,High,,
+Profile Management,Edit profile,"1. Go to profile settings
+2. Update display name, bio
+3. Upload profile image
+4. Save changes",Profile updated successfully with new information,High,,
+Profile Management,View own profile,"1. Navigate to profile page
+2. Check all information displayed",All profile information displayed correctly,Medium,,
+Profile Management,View other user's profile,"1. Search for user
+2. Click on user profile
+3. View profile information",Public profile information displayed correctly,Medium,,
+Searchable Creation - Onboarding,Create downloadable via onboarding,"1. Click 'Get Started' or 'Start Selling'
+2. Choose 'Digital Downloads'
+3. Upload files
+4. Set title, description, price
+5. Add tags
+6. Complete onboarding",Downloadable searchable created successfully,High,,
+Searchable Creation - Onboarding,Create offline item via onboarding,"1. Click 'Get Started'
+2. Choose 'Physical Products'
+3. Add item details
+4. Set pricing
+5. Add tags
+6. Complete onboarding",Offline searchable created successfully,High,,
+Searchable Creation - Onboarding,Create donation/direct payment via onboarding,"1. Click 'Get Started'
+2. Choose 'Donations'
+3. Set donation options
+4. Add description
+5. Complete onboarding",Direct payment searchable created successfully,High,,
+Searchable Creation - Floating Bar,Create allinone searchable from floating menu,"1. Click '+' on floating bottom bar
+2. Select 'All-in-One'
+3. Enable desired components
+4. Add content for each component
+5. Set pricing
+6. Add tags
+7. Publish",All-in-one searchable created with multiple components,High,,
+Searchable Creation - Floating Bar,Create downloadable from floating menu,"1. Click '+' on floating bar
+2. Select 'Digital Download'
+3. Upload files
+4. Set details and pricing
+5. Add tags
+6. Publish",Downloadable created successfully,High,,
+Searchable Creation - Floating Bar,Create offline item from floating menu,"1. Click '+' on floating bar
+2. Select 'Physical Item'
+3. Add item details
+4. Set pricing
+5. Add tags
+6. Publish",Offline item created successfully,High,,
+Searchable Management,Edit existing searchable,"1. Go to 'My Listings'
+2. Find searchable to edit
+3. Click edit
+4. Update information
+5. Add/remove tags
+6. Save changes",Searchable updated successfully with new version created,High,,
+Searchable Management,Remove/deactivate searchable,"1. Go to 'My Listings'
+2. Find searchable
+3. Click remove/deactivate
+4. Confirm action",Searchable marked as removed and no longer visible in search,High,,
+Searchable Management,Share searchable,"1. View searchable details
+2. Click share button
+3. Copy link or share via social",Share link generated and functional,Medium,,
+Deposits,Deposit via Stripe (Credit Card),"1. Go to balance/wallet
+2. Click 'Add Funds'
+3. Select credit card
+4. Enter amount
+5. Complete Stripe checkout",Funds added to balance after successful payment,High,,
+Deposits,Deposit via USDT,"1. Go to balance/wallet
+2. Click 'Add USDT'
+3. Get deposit address
+4. Send USDT from external wallet
+5. Wait for confirmation",USDT converted to USD and added to balance,High,,
+Withdrawals,Withdraw USDT,"1. Go to balance/wallet
+2. Click 'Withdraw'
+3. Enter USDT address
+4. Enter amount
+5. Confirm withdrawal",Withdrawal processed and USDT sent to address,High,,
+Withdrawals,Check withdrawal status,"1. Go to withdrawal history
+2. View pending withdrawal
+3. Check status updates",Withdrawal status accurately reflects transaction state,High,,
+Purchases - Downloadable,Purchase digital download,"1. Find downloadable searchable
+2. Click purchase
+3. Select payment method
+4. Complete payment
+5. Download file",Purchase completed and file downloaded successfully,High,,
+Purchases - Offline,Purchase offline item,"1. Find offline searchable
+2. Click purchase
+3. Select items
+4. Complete payment
+5. View receipt",Purchase completed with receipt for offline redemption,High,,
+Purchases - Direct/Donation,Make donation payment,"1. Find donation searchable
+2. Select or enter amount
+3. Complete payment
+4. View confirmation",Donation processed successfully,High,,
+Purchase Features,Rate purchased item,"1. Go to purchase history
+2. Find completed purchase
+3. Click rate
+4. Select stars and write review
+5. Submit rating",Rating saved and visible on searchable,High,,
+Purchase Features,Add invoice note,"1. View purchase details
+2. Click add note
+3. Write message
+4. Submit note",Note added to invoice and visible to seller,Medium,,
+Purchase Features,View purchase history,"1. Go to 'My Purchases'
+2. View all purchases
+3. Filter by status",All purchases displayed with correct status,High,,
+Search & Discovery,Search by keyword,"1. Enter search term
+2. View results
+3. Check relevance",Relevant searchables displayed in results,High,,
+Search & Discovery,Filter by tags,"1. Go to search
+2. Select tags
+3. Apply filters
+4. View results",Only searchables with selected tags shown,High,,
+Search & Discovery,Search by user,"1. Enter username in search
+2. View user results
+3. Click on user",User's searchables and profile displayed,Medium,,
+File Management,Download purchased files,"1. Go to 'My Downloads'
+2. Find purchase
+3. Click download
+4. Verify file",File downloaded successfully,High,,
+File Management,Re-download files,"1. Go to 'My Downloads'
+2. Find previous purchase
+3. Download again",File can be re-downloaded without issues,Medium,,
+Tag System,Add tags to searchable,"1. Create/edit searchable
+2. Add multiple tags
+3. Save",Tags saved and searchable appears in tag searches,High,,
+Tag System,Search by tags,"1. Go to search
+2. Select tag filters
+3. View results",Correct filtered results shown,High,,
+Balance & Transactions,View balance,"1. Go to wallet/balance page
+2. Check USD balance
+3. View transaction history",Balance and history displayed accurately,High,,
+Balance & Transactions,Check transaction details,"1. Go to transaction history
+2. Click on transaction
+3. View details",All transaction details shown correctly,Medium,,
+Error Handling,Handle network errors,"1. Disconnect internet
+2. Try various actions
+3. Reconnect",Appropriate error messages shown,Medium,,
+Error Handling,Handle invalid inputs,"1. Try invalid email format
+2. Try short passwords
+3. Try invalid amounts",Validation errors displayed correctly,Medium,,
+Mobile Responsiveness,Test on mobile device,"1. Access site on mobile
+2. Test all major functions
+3. Check UI layout",All features work and display correctly on mobile,High,,
+Performance,Load test with many items,"1. Search with many results
+2. Load user with many searchables
+3. Check page performance",Pages load within acceptable time,Medium,,
+Security,Test authentication,"1. Try accessing protected routes without login
+2. Try invalid JWT tokens
+3. Test session expiry",Proper authentication enforcement,High,,
+Security,Test authorization,"1. Try editing other user's items
+2. Try accessing admin functions
+3. Test permission boundaries",Proper authorization enforcement,High,,
