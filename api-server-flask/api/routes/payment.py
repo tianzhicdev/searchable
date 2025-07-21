@@ -367,7 +367,7 @@ class CreateInvoiceV1(Resource):
                 
                 # Calculate fees
                 # Platform fee: 0.1% of the total amount
-                platform_fee = total_amount_usd * 0.001  # 0.1%
+                platform_fee = total_amount_usd * 0.01  # 1%
                 
                 # Stripe fee: 3.5% of total amount (which user pays on top)
                 stripe_fee = total_amount_usd * 0.035  # 3.5%
