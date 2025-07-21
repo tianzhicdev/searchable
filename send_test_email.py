@@ -53,7 +53,7 @@ def send_simple_message():
         data = {
             "from": "abitchaotic <info@abitchaotic.com>",
             "to": "tianzhi chen <tianzhic.dev@gmail.com>",
-            "subject": "You're invited to join abitchaotic - Monetize your content for USDT",
+            "subject": "Join abitchaotic.com - Monetize your content for USDT with the Lowest Fees on the Planet",
             "text": "You are invited to join abitchaotic! Here you can monetize your digital content freely for USDT. We offer the lowest fees on the planet — 1% with no-KYC. Visit abitchaotic.com for more information!",
             "html": html_content
         }
@@ -105,7 +105,7 @@ def send_simple_message():
         data = {
             "from": "Eccentric Protocol <info@eccentricprotocol.com>",
             "to": "tianzhi chen <burgesschen1990@gmail.com>",
-            "subject": "You're invited to join Eccentric Protocol - Monetize your content for USDT",
+            "subject": "Join Eccentric Protocol: Monetize your content for USDT with the Lowest Fees on the Planet",
             "text": "You are invited to join Eccentric Protocol! Here you can monetize your digital content freely for USDT. We offer the lowest fees on the planet — 1% with no-KYC. Visit eccentricprotocol.com for more information!",
             "html": html_content
         }
