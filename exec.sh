@@ -35,6 +35,7 @@ show_usage() {
     echo "  ./exec.sh beta test --t <test_name>         - Run specific test file against beta"
     echo "  ./exec.sh beta test --t <test_name> -n <num> - Run specific test with parameter against beta"
     echo "  ./exec.sh beta content-upload               - Upload music content to beta environment"
+    echo "  ./exec.sh beta create-reviews               - Create test reviews and ratings"
     echo ""
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
@@ -50,6 +51,7 @@ show_usage() {
     echo "  ./exec.sh local test --t <test_name>        - Run specific test file"
     echo "  ./exec.sh local test --t <test_name> -n <num> - Run specific test with parameter"
     echo "  ./exec.sh local content-upload              - Upload music content to local environment"
+    echo "  ./exec.sh local create-reviews              - Create test reviews and ratings"
     echo "  ./exec.sh local test --parallel             - Run tests in parallel (4x faster)"
     echo "  ./exec.sh local unittests                   - Run unit tests for critical functions"
     echo "  ./exec.sh local mock                        - Start React in mock mode (default theme)"
@@ -613,6 +615,24 @@ content_upload() {
     echo -e "${GREEN}✅ Content upload completed!${NC}"
 }
 
+# Create reviews for existing searchables
+create_reviews() {
+    local env=$1
+    
+    echo -e "${BLUE}📝 Creating reviews for $env environment...${NC}"
+    
+    # Check if Python script exists
+    if [ ! -f "content/review_generator.py" ]; then
+        echo -e "${RED}Error: review_generator.py not found${NC}"
+        echo "Creating review_generator.py..."
+        # We'll create this file next
+    fi
+    
+    python3 content/review_generator.py "$env"
+    
+    echo -e "${GREEN}✅ Review generation completed!${NC}"
+}
+
 # List available themes
 list_themes() {
     echo -e "${BLUE}Available Themes for Mock Mode:${NC}"
@@ -1163,6 +1183,9 @@ case "$ENVIRONMENT" in
             "content-upload")
                 content_upload "beta"
                 ;;
+            "create-reviews")
+                create_reviews "beta"
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
                 show_usage
@@ -1277,6 +1300,9 @@ case "$ENVIRONMENT" in
                 ;;
             "content-upload")
                 content_upload "local"
+                ;;
+            "create-reviews")
+                create_reviews "local"
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"
