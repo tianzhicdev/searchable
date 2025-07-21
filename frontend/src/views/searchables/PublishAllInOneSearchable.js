@@ -779,7 +779,7 @@ const PublishAllInOneSearchable = () => {
         {components.offline.enabled && (
           <Box mt={2} pl={2}>
             <Typography variant="body2" color="textSecondary" paragraph>
-              Add physical products or services
+              suitable for stores such as coffee shops, restaurants that sell physical products or services. Customers can purchase these items online and redeem them in person.
             </Typography>
             
             {/* Add new item section */}
