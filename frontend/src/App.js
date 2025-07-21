@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { CssBaseline, StyledEngineProvider, Container, Box } from '@material-ui/core';
@@ -23,6 +23,26 @@ const App = () => {
     
     // Default theme to prevent undefined theme errors
     const defaultTheme = theme(customization || {});
+
+    // Initialize Google Analytics based on branding
+    useEffect(() => {
+        const gaId = config.BRANDING_CONFIG.googleAnalyticsId;
+        
+        if (gaId) {
+            // Create gtag script
+            const gtagScript = document.createElement('script');
+            gtagScript.async = true;
+            gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+            document.head.appendChild(gtagScript);
+
+            // Initialize gtag
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('js', new Date());
+            gtag('config', gaId);
+        }
+    }, []);
 
     return (
         <StyledEngineProvider injectFirst>

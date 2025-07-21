@@ -26,32 +26,37 @@ console.log('Selected theme:', APP_THEME);
 let branding_config = {
   logo: 'camel_logo.jpg',
   domain: 'silkroadonlightning.com',
-  landingIntro: 'Silk Road on Lightning'
+  landingIntro: 'Silk Road on Lightning',
+  googleAnalyticsId: 'G-TQQ5J98HBG'
 }
 
 if (APP_BRANDING === 'eccentricprotocol') {
   branding_config = {
     logo: 'eccentricprotocol.gif',
     domain: 'eccentricprotocol.com',
-    landingIntro: 'Eccentric Protocol'
+    landingIntro: 'Eccentric Protocol',
+    googleAnalyticsId: 'G-KZM8C3QGLS'
   }
 } else if (APP_BRANDING === 'abitchaotic') {
   branding_config = {
     logo: 'abitchaotic.gif',
     domain: 'abitchaotic.com',
-    landingIntro: 'it is a bit chaotic'
+    landingIntro: 'it is a bit chaotic',
+    googleAnalyticsId: 'G-79034WVFQ5'
   }
 } else if (APP_BRANDING === 'silkroadonlightning') {
   branding_config = {
     logo: 'camel_logo.jpg',
     domain: 'silkroadonlightning.com',
-    landingIntro: 'Silk Road on Lightning'
+    landingIntro: 'Silk Road on Lightning',
+    googleAnalyticsId: 'G-TQQ5J98HBG'
   }
 } else if (APP_BRANDING === 'local') {
   branding_config = {
     logo: 'abitchaotic.gif',
     domain: 'localhost',
-    landingIntro: 'it is a bit chaotic'
+    landingIntro: 'it is a bit chaotic',
+    googleAnalyticsId: null // No GA tracking for local development
   }
 }
 
