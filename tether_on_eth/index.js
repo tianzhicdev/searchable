@@ -75,8 +75,7 @@ const usdtContract = new web3.eth.Contract(
   process.env.USDT_CONTRACT
 );
 
-// Simple nonce counter - initialize on startup
-let currentNonce = null;
+// Account for signing transactions
 const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
 
 // Initialize HD wallet for deposit address generation
@@ -111,38 +110,6 @@ const GAS_PRICE_CACHE_DURATION = 120000; // 2 minutes (was 30 seconds)
 // Fixed gas limit for USDT transfers (they're consistent)
 const USDT_TRANSFER_GAS_LIMIT = 65000; // Standard USDT transfer uses ~50k, adding buffer
 
-// Initialize nonce on startup
-async function initializeNonce() {
-  try {
-    console.log(`Initializing nonce counter... ${account.address}`);
-    currentNonce = await web3.eth.getTransactionCount(account.address, 'pending');
-    console.log(`[NONCE] Initialized with nonce: ${currentNonce}`);
-  } catch (error) {
-    console.error('Failed to initialize nonce:', error);
-    
-    // Check if this is an Infura quota/payment issue
-    if (error.statusCode === 402) {
-      console.error('❌ INFURA ERROR: Payment required (402) - Account may have exceeded quota or needs payment');
-      console.error('   Please check your Infura account at https://infura.io/dashboard');
-      console.error('   Using fallback nonce value of 0 for development');
-      
-      // Use fallback nonce for development/testing
-      currentNonce = 0;
-      console.warn(`[NONCE] Using fallback nonce: ${currentNonce}`);
-    } else {
-      console.error('   Non-payment related error, cannot continue');
-      process.exit(1);
-    }
-  }
-}
-
-// Get next nonce (thread-safe counter)
-function getNextNonce() {
-  if (currentNonce === null) {
-    throw new Error('Nonce not initialized');
-  }
-  return currentNonce++;
-}
 
 // Get cached gas price or fetch new one
 async function getGasPrice() {
@@ -181,8 +148,6 @@ async function getGasPrice() {
   }
 }
 
-// Initialize nonce on startup
-initializeNonce();
 
 
 // Get USDT balance
@@ -271,74 +236,96 @@ app.post('/send', async (req, res) => {
   let txHash = null;
   let signedTx = null;
   
-  try {
-    console.log(`[${request_id}] Starting USDT transfer - To: ${to}, Amount: ${amount}`);
-    
-    // Validate inputs
-    if (!web3.utils.isAddress(to)) {
-      console.error(`[${request_id}] Invalid recipient address: ${to}`);
-      throw new Error('Invalid recipient address');
-    }
-    
-    if (!amount || amount <= 0) {
-      console.error(`[${request_id}] Invalid amount: ${amount}`);
-      throw new Error('Invalid amount - must be greater than zero');
-    }
-    
-    const fromAddress = account.address;
-    console.log(`[${request_id}] From address: ${fromAddress}`);
-    
-    // Build transaction
-    const tx = usdtContract.methods.transfer(
-      to, 
-      amount.toString()
-    );
-    console.log(`[${request_id}] Transaction method built`);
+  // Function to execute the transfer with retry logic
+  async function executeTransfer(retryCount = 0) {
+    try {
+      console.log(`[${request_id}] Starting USDT transfer - To: ${to}, Amount: ${amount}${retryCount > 0 ? ` (retry ${retryCount})` : ''}`);
+      
+      // Validate inputs (only on first attempt)
+      if (retryCount === 0) {
+        if (!web3.utils.isAddress(to)) {
+          console.error(`[${request_id}] Invalid recipient address: ${to}`);
+          throw new Error('Invalid recipient address');
+        }
+        
+        if (!amount || amount <= 0) {
+          console.error(`[${request_id}] Invalid amount: ${amount}`);
+          throw new Error('Invalid amount - must be greater than zero');
+        }
+      }
+      
+      const fromAddress = account.address;
+      console.log(`[${request_id}] From address: ${fromAddress}`);
+      
+      // Build transaction
+      const tx = usdtContract.methods.transfer(
+        to, 
+        amount.toString()
+      );
+      console.log(`[${request_id}] Transaction method built`);
 
-    // Use cached gas price and fixed gas limit for better concurrency
-    // let gasPrice, gas, nonce;
+      // Get fresh nonce for each transaction attempt
+      await rateLimit();
+      const nonce = await web3.eth.getTransactionCount(fromAddress, 'pending');
+      console.log(`[${request_id}] Fetched fresh nonce: ${nonce}`);
 
-    gasPrice = await getGasPrice();
-    gas = await tx.estimateGas({ from: fromAddress });
-    nonce = getNextNonce();
-    console.log(`[${request_id}] Using cached gas price: ${gasPrice}, fixed gas: ${gas}, nonce: ${nonce} (counter)`);
+      const gasPrice = await getGasPrice();
+      const gas = await tx.estimateGas({ from: fromAddress });
+      console.log(`[${request_id}] Using gas price: ${gasPrice}, gas limit: ${gas}, nonce: ${nonce}`);
 
-    // Sign transaction
-    const txObject = {
-      to: process.env.USDT_CONTRACT,
-      data: tx.encodeABI(),
-      gas,
-      gasPrice,
-      nonce,
-      from: fromAddress
-    };
-    
-    signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
-    txHash = signedTx.transactionHash;
-    console.log(`[${request_id}] Transaction signed, hash: ${txHash}`);
+      // Sign transaction
+      const txObject = {
+        to: process.env.USDT_CONTRACT,
+        data: tx.encodeABI(),
+        gas,
+        gasPrice,
+        nonce,
+        from: fromAddress
+      };
+      
+      signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
+      txHash = signedTx.transactionHash;
+      console.log(`[${request_id}] Transaction signed, hash: ${txHash}`);
 
-    
-    await rateLimit();
-    console.log(`[${request_id}] Broadcasting signed transaction...`);
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log(`[${request_id}] Transaction broadcast complete to address ${to} - Receipt:`, receipt);
-    res.json({ 
-      status: 'complete',
-      txHash: receipt.transactionHash,
-      blockNumber: receipt.blockNumber,
-      gasUsed:receipt.gasUsed,
-      ReceiptStatus: receipt.status,
-    });
+      await rateLimit();
+      console.log(`[${request_id}] Broadcasting signed transaction...`);
+      const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log(`[${request_id}] Transaction broadcast complete to address ${to} - Receipt:`, receipt);
+      
+      return { 
+        status: 'complete',
+        txHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed,
+        ReceiptStatus: receipt.status,
+      };
+      
     } catch (error) {
-      console.error(`[${request_id}] USDT Transfer Error:`, error);
-      res.status(500).json({ 
-        error: error.message,
-        stack: error.stack,
-        request_id: request_id,
-        txHash: txHash
-      });
+      // Check if it's a nonce too low error
+      if (error.message && error.message.includes('nonce too low') && retryCount < 3) {
+        console.warn(`[${request_id}] Nonce too low error detected, retrying with fresh nonce...`);
+        await delay(1000); // Wait 1 second before retry
+        return executeTransfer(retryCount + 1);
+      }
+      
+      // For other errors or max retries reached, throw the error
+      throw error;
     }
-  });
+  }
+  
+  try {
+    const result = await executeTransfer();
+    res.json(result);
+  } catch (error) {
+    console.error(`[${request_id}] USDT Transfer Error:`, error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: error.stack,
+      request_id: request_id,
+      txHash: txHash
+    });
+  }
+});
   // if failure, exhash -> delayed, no txhash -> failure 
 
 
@@ -425,62 +412,78 @@ app.post('/fund-gas', async (req, res) => {
   const { to, amount } = req.body;
   const request_id = `gas_${Date.now()}`;
   
+  async function executeFunding(retryCount = 0) {
+    try {
+      console.log(`[${request_id}] Funding gas to ${to}, Amount: ${amount} wei${retryCount > 0 ? ` (retry ${retryCount})` : ''}`);
+      
+      if (retryCount === 0) {
+        if (!web3.utils.isAddress(to)) {
+          throw new Error('Invalid recipient address');
+        }
+        
+        if (!amount || amount <= 0) {
+          throw new Error('Invalid amount');
+        }
+      }
+      
+      await rateLimit();
+      
+      // Check master wallet ETH balance
+      const masterBalance = await web3.eth.getBalance(account.address);
+      if (BigInt(masterBalance) < BigInt(amount)) {
+        throw new Error(`Insufficient ETH in master wallet. Required: ${amount}, Available: ${masterBalance.toString()}`);
+      }
+      
+      // Get fresh nonce
+      const nonce = await web3.eth.getTransactionCount(account.address, 'pending');
+      console.log(`[${request_id}] Fetched fresh nonce: ${nonce}`);
+      
+      const gasPrice = await getGasPrice();
+      
+      // ETH transfer gas limit
+      const gas = 21000;
+      
+      // Sign and send transaction
+      const txObject = {
+        to: to,
+        value: amount,
+        gas: gas,
+        gasPrice: gasPrice,
+        nonce: nonce,
+        from: account.address
+      };
+      
+      const signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
+      console.log(`[${request_id}] Sending ${amount} wei to ${to}`);
+      
+      const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      
+      console.log(`[${request_id}] Gas funding complete - TxHash: ${receipt.transactionHash}`);
+      
+      return {
+        success: true,
+        txHash: receipt.transactionHash,
+        from: account.address,
+        to: to,
+        amount: amount,
+        gasUsed: receipt.gasUsed.toString()
+      };
+      
+    } catch (error) {
+      // Check if it's a nonce too low error
+      if (error.message && error.message.includes('nonce too low') && retryCount < 3) {
+        console.warn(`[${request_id}] Nonce too low error detected, retrying with fresh nonce...`);
+        await delay(1000); // Wait 1 second before retry
+        return executeFunding(retryCount + 1);
+      }
+      
+      throw error;
+    }
+  }
+  
   try {
-    console.log(`[${request_id}] Funding gas to ${to}, Amount: ${amount} wei`);
-    
-    if (!web3.utils.isAddress(to)) {
-      return res.status(400).json({ error: 'Invalid recipient address' });
-    }
-    
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount' });
-    }
-    
-    await rateLimit();
-    
-    // Check master wallet ETH balance
-    const masterBalance = await web3.eth.getBalance(account.address);
-    if (BigInt(masterBalance) < BigInt(amount)) {
-      return res.status(400).json({ 
-        error: 'Insufficient ETH in master wallet',
-        required: amount,
-        available: masterBalance.toString()
-      });
-    }
-    
-    // Get gas price and nonce
-    const gasPrice = await getGasPrice();
-    const nonce = getNextNonce();
-    
-    // ETH transfer gas limit
-    const gas = 21000;
-    
-    // Sign and send transaction
-    const txObject = {
-      to: to,
-      value: amount,
-      gas: gas,
-      gasPrice: gasPrice,
-      nonce: nonce,
-      from: account.address
-    };
-    
-    const signedTx = await web3.eth.accounts.signTransaction(txObject, process.env.PRIVATE_KEY);
-    console.log(`[${request_id}] Sending ${amount} wei to ${to}`);
-    
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    
-    console.log(`[${request_id}] Gas funding complete - TxHash: ${receipt.transactionHash}`);
-    
-    res.json({
-      success: true,
-      txHash: receipt.transactionHash,
-      from: account.address,
-      to: to,
-      amount: amount,
-      gasUsed: receipt.gasUsed.toString()
-    });
-    
+    const result = await executeFunding();
+    res.json(result);
   } catch (error) {
     console.error(`[${request_id}] Gas Funding Error:`, error);
     res.status(500).json({ error: error.message });
@@ -745,13 +748,13 @@ app.get('/transactions/:address', async (req, res) => {
 app.listen(process.env.PORT, () => {
   console.log(`🚀 USDT Service running on port ${process.env.PORT}`);
   console.log('⚡ Concurrency optimizations active:');
-  console.log('   - Simple nonce counter (no network calls)');
+  console.log('   - Fresh nonce fetching per transaction');
   console.log('   - Gas price caching (2min cache)');
   console.log('   - Fixed gas limit for USDT transfers');
   console.log('   - Async transaction broadcasting (no confirmation wait)');
   console.log('   - HTTP keep-alive connections');
   console.log('   - 30s request timeout protection');
   console.log('   - Rate limiting protection (500ms intervals)');
-  console.log('   - Retry logic for rate limit errors');
+  console.log('   - Retry logic for nonce errors');
   console.log('💰 Ready for concurrent USDT transfers');
 }); 
