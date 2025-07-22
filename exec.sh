@@ -40,6 +40,9 @@ show_usage() {
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
     echo "  ./exec.sh prod test --t <test_name>         - Run specific test file against prod"
+    echo "  ./exec.sh prod content-upload --server=<servername>  - Upload content to prod server"
+    echo "  ./exec.sh prod create-reviews --server=<servername>  - Create reviews on prod server"
+    echo "       (servername: eccentricprotocol.com or abitchaotic.com)"
     echo ""
     echo "  ./exec.sh local react                       - Start React development server locally"
     echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
@@ -88,6 +91,10 @@ show_usage() {
     echo "  ./exec.sh local test --t invite_codes"
     echo "  ./exec.sh beta test --t integration"
     echo "  ./exec.sh prod test --t invite_codes"
+    echo "  ./exec.sh prod content-upload --server=eccentricprotocol.com"
+    echo "  ./exec.sh prod content-upload --server=abitchaotic.com"
+    echo "  ./exec.sh prod create-reviews --server=eccentricprotocol.com"
+    echo "  ./exec.sh prod create-reviews --server=abitchaotic.com"
     echo "  ./exec.sh local test --t mass_withdrawals -n 10"
     echo "  ./exec.sh local test --parallel"
     echo "  ./exec.sh local unittests"
@@ -617,6 +624,33 @@ content_upload() {
     echo -e "${GREEN}✅ Content upload completed!${NC}"
 }
 
+# Production content upload function
+content_upload_prod() {
+    local server=$1
+    
+    echo -e "${BLUE}🎵 Uploading music content to production server: $server...${NC}"
+    
+    # Check if content directory exists
+    if [ ! -d "content/music" ]; then
+        echo -e "${RED}Error: content/music directory not found${NC}"
+        exit 1
+    fi
+    
+    # Check if metadata exists
+    metadata_count=$(find content/music -name "metadata.json" -type f | wc -l)
+    if [ "$metadata_count" -eq 0 ]; then
+        echo -e "${YELLOW}⚠️  No metadata.json files found. Generating metadata...${NC}"
+        python3 content/generate_metadata.py
+    fi
+    
+    echo -e "${YELLOW}Uploading to production environment (https://$server)...${NC}"
+    
+    # Pass server as environment variable or parameter to the upload script
+    PROD_SERVER="$server" python3 content/upload_content.py "prod"
+    
+    echo -e "${GREEN}✅ Content upload to $server completed!${NC}"
+}
+
 # Create reviews for existing searchables
 create_reviews() {
     local env=$1
@@ -633,6 +667,27 @@ create_reviews() {
     python3 content/review_generator.py "$env"
     
     echo -e "${GREEN}✅ Review generation completed!${NC}"
+}
+
+# Production create reviews function
+create_reviews_prod() {
+    local server=$1
+    
+    echo -e "${BLUE}📝 Creating reviews for production server: $server...${NC}"
+    
+    # Check if Python script exists
+    if [ ! -f "content/review_generator.py" ]; then
+        echo -e "${RED}Error: review_generator.py not found${NC}"
+        echo "Creating review_generator.py..."
+        # We'll create this file next
+    fi
+    
+    echo -e "${YELLOW}Creating reviews on production environment (https://$server)...${NC}"
+    
+    # Pass server as environment variable or parameter to the review generator script
+    PROD_SERVER="$server" python3 content/review_generator.py "prod"
+    
+    echo -e "${GREEN}✅ Review generation on $server completed!${NC}"
 }
 
 # List available themes
@@ -1266,9 +1321,43 @@ case "$ENVIRONMENT" in
                     run_tests "prod"
                 fi
                 ;;
+            "content-upload")
+                # Parse server parameter
+                server=""
+                if [[ "$CONTAINER" == --server=* ]]; then
+                    server="${CONTAINER#--server=}"
+                    if [ "$server" != "eccentricprotocol.com" ] && [ "$server" != "abitchaotic.com" ]; then
+                        echo -e "${RED}Error: Invalid server '$server'. Use eccentricprotocol.com or abitchaotic.com${NC}"
+                        exit 1
+                    fi
+                else
+                    echo -e "${RED}Error: --server parameter required for prod content-upload${NC}"
+                    echo "Usage: ./exec.sh prod content-upload --server=<servername>"
+                    echo "Where <servername> is eccentricprotocol.com or abitchaotic.com"
+                    exit 1
+                fi
+                content_upload_prod "$server"
+                ;;
+            "create-reviews")
+                # Parse server parameter
+                server=""
+                if [[ "$CONTAINER" == --server=* ]]; then
+                    server="${CONTAINER#--server=}"
+                    if [ "$server" != "eccentricprotocol.com" ] && [ "$server" != "abitchaotic.com" ]; then
+                        echo -e "${RED}Error: Invalid server '$server'. Use eccentricprotocol.com or abitchaotic.com${NC}"
+                        exit 1
+                    fi
+                else
+                    echo -e "${RED}Error: --server parameter required for prod create-reviews${NC}"
+                    echo "Usage: ./exec.sh prod create-reviews --server=<servername>"
+                    echo "Where <servername> is eccentricprotocol.com or abitchaotic.com"
+                    exit 1
+                fi
+                create_reviews_prod "$server"
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
-                echo "Only 'test' action is available for prod environment"
+                echo "Available actions: test, content-upload, create-reviews"
                 show_usage
                 exit 1
                 ;;
