@@ -98,4 +98,5 @@ class JWTTokenBlocklist(db.Model):
         db.session.commit()
 
 
+
  
