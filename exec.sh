@@ -66,6 +66,8 @@ show_usage() {
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo "  ./exec.sh email test                        - Send test email via Mailgun (eccentricprotocol)"
     echo "  ./exec.sh email test --abitchaotic          - Send test email via Mailgun (abitchaotic)"
+    echo "  ./exec.sh email campaign --file <csv>       - Send campaign emails (eccentricprotocol)"
+    echo "  ./exec.sh email campaign --abitchaotic --file <csv> - Send campaign emails (abitchaotic)"
     echo ""
     echo -e "${YELLOW}Available containers:${NC}"
     echo "  - frontend"
@@ -1195,15 +1197,14 @@ email_test() {
         exit 1
     fi
     
-    # Source .env.secrets and export appropriate API_KEY
+    # Source .env.secrets and export API_KEY
     source .env.secrets
+    export API_KEY=$MAILGUN_API
     
     if [ "$brand" = "--abitchaotic" ]; then
-        export API_KEY=$MAILGUN_API_ABITCHAOTIC
         # Run the python script with abitchaotic parameter
         python3 send_test_email.py abitchaotic
     else
-        export API_KEY=$MAILGUN_API
         # Run the python script without parameter (default)
         python3 send_test_email.py
     fi
@@ -1212,6 +1213,85 @@ email_test() {
         echo -e "${GREEN}✅ Email test completed successfully!${NC}"
     else
         echo -e "${RED}❌ Email test failed${NC}"
+        exit 1
+    fi
+}
+
+email_campaign() {
+    local brand=""
+    local csv_file=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --abitchaotic)
+                brand="--abitchaotic"
+                shift
+                ;;
+            --file)
+                csv_file="$2"
+                shift 2
+                ;;
+            *)
+                # If no --file flag, assume it's the csv file
+                if [ -z "$csv_file" ]; then
+                    csv_file="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    # Validate CSV file argument
+    if [ -z "$csv_file" ]; then
+        echo -e "${RED}Error: CSV file path required${NC}"
+        echo "Usage: ./exec.sh email campaign [--abitchaotic] --file <csvfile>"
+        exit 1
+    fi
+    
+    # Check if CSV file exists
+    if [ ! -f "$csv_file" ]; then
+        echo -e "${RED}Error: CSV file '$csv_file' not found${NC}"
+        exit 1
+    fi
+    
+    if [ "$brand" = "--abitchaotic" ]; then
+        echo -e "${BLUE}📧 Starting email campaign via Mailgun (abitchaotic)...${NC}"
+    else
+        echo -e "${BLUE}📧 Starting email campaign via Mailgun (eccentricprotocol)...${NC}"
+    fi
+    
+    echo -e "CSV file: ${YELLOW}$csv_file${NC}"
+    
+    # Check if .env.secrets exists
+    if [ ! -f ".env.secrets" ]; then
+        echo -e "${RED}Error: .env.secrets file not found${NC}"
+        echo "Please ensure .env.secrets exists and contains MAILGUN_API key"
+        exit 1
+    fi
+    
+    # Check if python script exists
+    if [ ! -f "send_campaign_email.py" ]; then
+        echo -e "${RED}Error: send_campaign_email.py not found${NC}"
+        exit 1
+    fi
+    
+    # Source .env.secrets and export API_KEY
+    source .env.secrets
+    export API_KEY=$MAILGUN_API
+    
+    if [ "$brand" = "--abitchaotic" ]; then
+        # Run the python script with abitchaotic parameter
+        python3 send_campaign_email.py abitchaotic "$csv_file"
+    else
+        # Run the python script without brand parameter (default)
+        python3 send_campaign_email.py "$csv_file"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Email campaign completed successfully!${NC}"
+    else
+        echo -e "${RED}❌ Email campaign failed${NC}"
         exit 1
     fi
 }
@@ -1230,6 +1310,11 @@ if [ "$1" = "release" ]; then
 # Special case for email test command
 elif [ "$1" = "email" ] && [ "$2" = "test" ]; then
     email_test "$3"
+    exit 0
+# Special case for email campaign command
+elif [ "$1" = "email" ] && [ "$2" = "campaign" ]; then
+    shift 2  # Remove 'email campaign' from arguments
+    email_campaign "$@"
     exit 0
 elif [ $# -lt 2 ]; then
     show_usage

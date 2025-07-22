@@ -1,0 +1,41 @@
+{
+  "campaign_info": {
+    "timestamp": "2025-07-22T16:07:10.119252",
+    "csv_file": "marketing/combined_email_leads_test.csv",
+    "brand": "eccentricprotocol",
+    "from_email": "Eccentric Protocol <info@eccentricprotocol.com>",
+    "domain": "mg.eccentricprotocol.com"
+  },
+  "results": [
+    {
+      "row": 2,
+      "email": "marcus.tz.chen@gmail.com",
+      "name": "test 1",
+      "title": "test 1",
+      "timestamp": "2025-07-22T16:07:14.384700",
+      "duration_seconds": 4.265118,
+      "success": true,
+      "message": "<20250722200714.f1d94b2f7f9cbf1d@eccentricprotocol.com>"
+    },
+    {
+      "row": 3,
+      "email": "burgess.chen.tz@gmail.com",
+      "name": "test 2",
+      "title": "test 2",
+      "timestamp": "2025-07-22T16:07:18.251494",
+      "duration_seconds": 3.360629,
+      "success": true,
+      "message": "<20250722200718.3bafc2b7ffff973a@eccentricprotocol.com>"
+    }
+  ],
+  "summary": {
+    "end_timestamp": "2025-07-22T16:07:18.253614",
+    "duration_seconds": 8.134362,
+    "total_rows_in_csv": 2,
+    "total_processed": 2,
+    "successful": 2,
+    "failed": 0,
+    "duplicates_skipped": 0,
+    "success_rate": "100.0%"
+  }
+}

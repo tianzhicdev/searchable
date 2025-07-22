@@ -1,0 +1,41 @@
+{
+  "campaign_info": {
+    "timestamp": "2025-07-22T16:07:22.536095",
+    "csv_file": "marketing/combined_email_leads_test.csv",
+    "brand": "abitchaotic",
+    "from_email": "abitchaotic <info@abitchaotic.com>",
+    "domain": "mg.abitchaotic.com"
+  },
+  "results": [
+    {
+      "row": 2,
+      "email": "marcus.tz.chen@gmail.com",
+      "name": "test 1",
+      "title": "test 1",
+      "timestamp": "2025-07-22T16:07:27.544594",
+      "duration_seconds": 5.008178,
+      "success": true,
+      "message": "<20250722200727.f3247c972e330e95@abitchaotic.com>"
+    },
+    {
+      "row": 3,
+      "email": "burgess.chen.tz@gmail.com",
+      "name": "test 2",
+      "title": "test 2",
+      "timestamp": "2025-07-22T16:07:32.021375",
+      "duration_seconds": 3.970579,
+      "success": true,
+      "message": "<20250722200731.ca9befe12d185271@abitchaotic.com>"
+    }
+  ],
+  "summary": {
+    "end_timestamp": "2025-07-22T16:07:32.022415",
+    "duration_seconds": 9.48632,
+    "total_rows_in_csv": 2,
+    "total_processed": 2,
+    "successful": 2,
+    "failed": 0,
+    "duplicates_skipped": 0,
+    "success_rate": "100.0%"
+  }
+}

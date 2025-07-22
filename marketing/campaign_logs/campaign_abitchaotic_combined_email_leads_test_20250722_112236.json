@@ -1,0 +1,41 @@
+{
+  "campaign_info": {
+    "timestamp": "2025-07-22T11:22:36.108556",
+    "csv_file": "marketing/combined_email_leads_test.csv",
+    "brand": "abitchaotic",
+    "from_email": "abitchaotic <info@abitchaotic.com>",
+    "domain": "mg.abitchaotic.com"
+  },
+  "results": [
+    {
+      "row": 2,
+      "email": "marcus.tz.chen@gmail.com",
+      "name": "test 1",
+      "title": "test 1",
+      "timestamp": "2025-07-22T11:22:39.133425",
+      "duration_seconds": 3.024609,
+      "success": false,
+      "message": "Error 403: {\"message\":\"Domain sandbox40099185e5954b6c884f2ae7bc6c5a72.mailgun.org is not allowed to send: Sandbox subdomains are for test purposes only. Please add your own domain or add the address to your authorized recipients.\"}\n"
+    },
+    {
+      "row": 3,
+      "email": "burgess.chen.tz@gmail.com",
+      "name": "test 2",
+      "title": "test 2",
+      "timestamp": "2025-07-22T11:22:42.571812",
+      "duration_seconds": 2.936424,
+      "success": false,
+      "message": "Error 403: {\"message\":\"Domain sandbox40099185e5954b6c884f2ae7bc6c5a72.mailgun.org is not allowed to send: Sandbox subdomains are for test purposes only. Please add your own domain or add the address to your authorized recipients.\"}\n"
+    }
+  ],
+  "summary": {
+    "end_timestamp": "2025-07-22T11:22:42.572598",
+    "duration_seconds": 6.464042,
+    "total_rows_in_csv": 2,
+    "total_processed": 2,
+    "successful": 0,
+    "failed": 2,
+    "duplicates_skipped": 0,
+    "success_rate": "0.0%"
+  }
+}
