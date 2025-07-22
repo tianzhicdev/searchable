@@ -1,4 +1,4 @@
-import { mockImage1, mockImage2, mockRewards, mockUserSearchables } from './mockData';
+import { mockImage1, mockImage2, mockRewards, mockUserSearchables, mockUserProfile2, mockUser2Searchables } from './mockData';
 import { getMockUser } from './mockAuth';
 
 // Export isMockMode for other files to use
@@ -448,6 +448,8 @@ let allMockSearchables = [];
 try {
   allMockUsers = generateMockUsers();
   allMockSearchables = generateMockSearchables();
+  // Add user 2's searchables for pagination testing
+  allMockSearchables.push(...mockUser2Searchables);
   console.log('[MOCK] Initialized mock data - Users:', allMockUsers.length, 'Searchables:', allMockSearchables.length);
 } catch (error) {
   console.error('[MOCK] Error initializing mock data:', error);
@@ -1124,6 +1126,12 @@ const mockHandlers = {
     const userId = parseInt(identifier);
     let user = null;
     
+    // Special handling for user 2 (pagination testing)
+    if (userId === 2 || identifier === 'creativepro') {
+      console.log('[MOCK] Returning special user 2 profile for pagination testing');
+      return createMockResponse(mockUserProfile2);
+    }
+    
     if (!isNaN(userId)) {
       // Find user by ID
       user = allMockUsers.find(u => u.id === userId);
@@ -1391,6 +1399,11 @@ const mockHandlers = {
     // Filter by type if provided in filters
     if (filters.type) {
       results = results.filter(item => item.payloads?.public?.type === filters.type);
+    }
+    
+    // Filter by user_id if provided in filters
+    if (filters.user_id) {
+      results = results.filter(item => item.user_id === filters.user_id.toString());
     }
     
     // Calculate pagination
