@@ -1,0 +1,38 @@
+Marketing Leads Processing Summary
+==================================
+Date: 2025-01-22
+
+Input Files Processed:
+- 7 Gumroad email scraper datasets
+- 1 Shopify shops email leads dataset
+- Total: 8 CSV files
+
+Processing Details:
+- Combined all CSV files from marketing/leads directory
+- Extracted title and email columns from various formats
+- Normalized email addresses to lowercase for deduplication
+- Handled both quoted and unquoted CSV formats
+- Kept the best title when duplicate emails were found
+
+Results:
+- Total unique email addresses: 1,517
+- Output file: combined_email_leads.csv
+- Format: CSV with consistent double-quote formatting
+- Columns: title, email
+
+Script Features:
+- Flexible CSV parsing (handles different quote styles)
+- Email validation and normalization
+- Title cleaning and formatting
+- Duplicate email handling (keeps entry with best title)
+- Error handling for malformed data
+
+Usage:
+To regenerate the combined file, run:
+  python3 combine_leads.py
+
+The script will automatically:
+1. Find all CSV files in the leads directory
+2. Process each file and extract email/title data
+3. Deduplicate by email address
+4. Output to combined_email_leads.csv

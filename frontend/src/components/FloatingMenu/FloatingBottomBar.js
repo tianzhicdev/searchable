@@ -14,6 +14,7 @@ import { makeStyles } from '@material-ui/styles';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useLogout } from '../LogoutHandler';
 import { testIdProps } from '../../utils/testIds';
+import FeedbackDialog from '../Feedback/FeedbackDialog';
 
 // Icons
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
@@ -30,6 +31,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import CategoryIcon from '@material-ui/icons/Category';
+import FeedbackIcon from '@material-ui/icons/Feedback';
 
 const useStyles = makeStyles((theme) => ({
   floatingBar: {
@@ -112,6 +114,7 @@ const FloatingBottomBar = () => {
   const account = useSelector((state) => state.account);
   const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
   const [discoverMenuAnchor, setDiscoverMenuAnchor] = useState(null);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
   // Hide on landing and onboarding pages
   const shouldHide = location.pathname === '/landing' || 
@@ -195,6 +198,15 @@ const FloatingBottomBar = () => {
       onClick: () => handleNavigation('/edit-account')
     },
     { divider: true },
+    {
+      icon: <FeedbackIcon />,
+      label: 'Feedback',
+      onClick: () => {
+        setFeedbackDialogOpen(true);
+        handleCloseAll();
+      },
+      testId: 'feedback-menu-item'
+    },
     {
       icon: <ExitToAppIcon />,
       label: 'Log Out',
@@ -313,6 +325,11 @@ const FloatingBottomBar = () => {
         ))}
       </Menu>
 
+      {/* Feedback Dialog */}
+      <FeedbackDialog 
+        open={feedbackDialogOpen} 
+        onClose={() => setFeedbackDialogOpen(false)} 
+      />
     </>
   );
 };

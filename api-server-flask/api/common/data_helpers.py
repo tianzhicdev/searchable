@@ -1340,6 +1340,41 @@ def get_receipts(user_id):
     return get_downloadable_items_by_user_id(user_id)
 
 
+def create_feedback(user_id, feedback_text, metadata=None):
+    """
+    Create a new feedback entry
+    
+    Args:
+        user_id: The ID of the user submitting feedback
+        feedback_text: The feedback text content
+        metadata: Optional metadata dict with context info
+        
+    Returns:
+        int: The ID of the created feedback or None if failed
+    """
+    try:
+        if metadata is None:
+            metadata = {}
+            
+        result = db.execute_insert("""
+            INSERT INTO feedback (user_id, feedback, metadata)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """, (user_id, feedback_text, Json(metadata)))
+        
+        if result:
+            feedback_id = result[0]
+            logger.info(f"Created feedback {feedback_id} for user {user_id}")
+            return feedback_id
+        else:
+            logger.error("Failed to create feedback - no ID returned")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error creating feedback: {str(e)}")
+        return None
+
+
 __all__ = [
     'get_searchableIds_by_user', 
     'get_searchable',
@@ -1366,5 +1401,6 @@ __all__ = [
     'create_user_profile',
     'update_user_profile',
     'get_rewards',
-    'get_downloadable_items_by_user_id'
+    'get_downloadable_items_by_user_id',
+    'create_feedback'
 ]

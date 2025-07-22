@@ -492,3 +492,15 @@ CREATE TRIGGER update_ai_content_updated_at
 -- Add comment explaining metadata fields
 COMMENT ON COLUMN ai_content.metadata IS 'Contains: files (array of file objects), processedAt, processedBy, notes, and other processing metadata';
 COMMENT ON TABLE ai_content IS 'Stores AI content submissions from users for processing by employees';
+
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    feedback TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB DEFAULT '{}'
+);
+
+CREATE INDEX idx_feedback_user_id ON feedback(user_id);
+CREATE INDEX idx_feedback_created_at ON feedback(created_at DESC);

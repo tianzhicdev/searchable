@@ -11,6 +11,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import { useHistory } from 'react-router-dom';
 import { useLogout } from '../LogoutHandler';
+import FeedbackDialog from '../Feedback/FeedbackDialog';
 
 // Icons
 import MenuIcon from '@material-ui/icons/Menu';
@@ -29,6 +30,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import LockIcon from '@material-ui/icons/Lock';
 import CreditCardIcon from '@material-ui/icons/CreditCard';
 import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
+import FeedbackIcon from '@material-ui/icons/Feedback';
 
 const useStyles = makeStyles((theme) => ({
   fab: {
@@ -111,6 +113,7 @@ const FloatingMenu = () => {
   const account = useSelector((state) => state.account);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [accountSubmenuAnchorEl, setAccountSubmenuAnchorEl] = useState(null);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const fabRef = useRef(null);
 
   const handleToggle = (event) => {
@@ -220,6 +223,15 @@ const FloatingMenu = () => {
       icon: <LockIcon />,
       label: 'Edit Account',
       onClick: () => handleNavigation('/edit-account')
+    },
+    {
+      icon: <FeedbackIcon />,
+      label: 'Feedback',
+      onClick: () => {
+        setFeedbackDialogOpen(true);
+        handleAccountSubmenuClose();
+        handleClose();
+      }
     }
   ];
 
@@ -298,6 +310,12 @@ const FloatingMenu = () => {
           </MenuItem>
         ))}
       </Menu>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog 
+        open={feedbackDialogOpen} 
+        onClose={() => setFeedbackDialogOpen(false)} 
+      />
     </>
   );
 };
