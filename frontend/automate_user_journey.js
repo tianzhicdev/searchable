@@ -23,7 +23,6 @@ async function landingPage(page) {
   await page.waitForSelector("button[class='MuiTypography-root MuiTypography-body2 MuiLink-root MuiLink-underlineAlways MuiLink-button css-hpy1oi-MuiTypography-root-MuiLink-root']", elem => elem.click());
   await page.click("button[class='MuiTypography-root MuiTypography-body2 MuiLink-root MuiLink-underlineAlways MuiLink-button css-hpy1oi-MuiTypography-root-MuiLink-root']", elem => elem.click());
   await delay(1000);
-    
 }
 
 async function login(page) {
@@ -56,7 +55,11 @@ async function selectProductByTitle(page, titleText) {
 
   for (const card of productCards) {
     const textContent = await card.evaluate(el => el.textContent);
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> eac50f5e (puppeteer)
     if (textContent.toLowerCase().includes(titleText.toLowerCase())) {
       await card.click();
       console.log(`✅ Clicked product: ${titleText}`);
