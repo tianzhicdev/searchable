@@ -62,6 +62,7 @@ show_usage() {
     echo "  ./exec.sh local mock --theme=<themename>    - Start React in mock mode with specific theme"
     echo "  ./exec.sh local cicd                        - Full CI/CD with parallel tests (default)"
     echo "  ./exec.sh local cicd --sequential           - Full CI/CD with sequential tests"
+    echo "  ./exec.sh local lookup --user_id <user_id>  - Lookup all information about a user"
     echo ""
     echo "  ./exec.sh release                           - Release new version (merge to main, bump version, deploy)"
     echo "  ./exec.sh email test                        - Send test email via Mailgun (eccentricprotocol)"
@@ -834,6 +835,28 @@ local_unittests() {
 }
 
 # Local CI/CD workflow - tear down everything, rebuild, and test
+local_lookup() {
+    local user_id=$1
+    
+    if [ -z "$user_id" ]; then
+        echo -e "${RED}Error: user_id parameter is required${NC}"
+        echo "Usage: ./exec.sh local lookup --user_id <user_id>"
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🔍 Looking up user information for user_id: $user_id${NC}"
+    
+    # Check if the script exists
+    if [ ! -f "$SCRIPT_DIR/scripts/lookup_user.py" ]; then
+        echo -e "${RED}Error: lookup_user.py script not found${NC}"
+        exit 1
+    fi
+    
+    # Run the lookup script
+    cd "$SCRIPT_DIR"
+    python3 scripts/lookup_user.py "$user_id"
+}
+
 local_cicd() {
     local parallel_flag=$1
     
@@ -1527,6 +1550,15 @@ case "$ENVIRONMENT" in
                 ;;
             "create-reviews")
                 create_reviews "local"
+                ;;
+            "lookup")
+                if [ "$CONTAINER" = "--user_id" ] && [ -n "$4" ]; then
+                    local_lookup "$4"
+                else
+                    echo -e "${RED}Error: Invalid lookup syntax${NC}"
+                    echo "Usage: ./exec.sh local lookup --user_id <user_id>"
+                    exit 1
+                fi
                 ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for local environment${NC}"
