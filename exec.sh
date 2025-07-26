@@ -30,6 +30,7 @@ show_usage() {
     echo "  ./exec.sh beta deploy-all                   - Deploy all containers to beta"
     echo "  ./exec.sh beta logs <container_name>        - Show logs for beta container"
     echo "  ./exec.sh beta status                       - Show status of beta containers"
+    echo "  ./exec.sh beta lookup --user_id <user_id>   - Lookup all information about a user"
     echo "  ./exec.sh beta test                         - Run tests against beta (silkroadonlightning.com)"
     echo "  ./exec.sh beta test --ls                    - List all available individual tests"
     echo "  ./exec.sh beta test --t <test_name>         - Run specific test file against beta"
@@ -40,9 +41,10 @@ show_usage() {
     echo "  ./exec.sh prod test                         - Run tests against prod (eccentricprotocol.com)"
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
     echo "  ./exec.sh prod test --t <test_name>         - Run specific test file against prod"
+    echo "  ./exec.sh prod lookup --user_id <id> --server <domain> - Lookup user info on prod server"
     echo "  ./exec.sh prod content-upload --server=<servername>  - Upload content to prod server"
     echo "  ./exec.sh prod create-reviews --server=<servername>  - Create reviews on prod server"
-    echo "       (servername: eccentricprotocol.com or abitchaotic.com)"
+    echo "       (servername/domain: eccentricprotocol.com or abitchaotic.com)"
     echo ""
     echo "  ./exec.sh local react                       - Start React development server locally"
     echo "  ./exec.sh local deploy <container_name>     - Deploy specific container locally"
@@ -834,6 +836,66 @@ local_unittests() {
     ./run_unit_tests.sh
 }
 
+# User lookup function for beta environment
+beta_lookup() {
+    local user_id=$1
+    
+    if [ -z "$user_id" ]; then
+        echo -e "${RED}Error: user_id parameter is required${NC}"
+        echo "Usage: ./exec.sh beta lookup --user_id <user_id>"
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🔍 Looking up user information for user_id: $user_id (on beta)${NC}"
+    
+    # Run the lookup script on remote server
+    ssh ${REMOTE_USER}@${REMOTE_HOST} "cd ${REMOTE_PATH} && docker exec flask_api python /app/scripts/lookup_user.py $user_id"
+}
+
+# User lookup function for production environment
+prod_lookup() {
+    local user_id=$1
+    local server=$2
+    
+    if [ -z "$user_id" ] || [ -z "$server" ]; then
+        echo -e "${RED}Error: Both user_id and server parameters are required${NC}"
+        echo "Usage: ./exec.sh prod lookup --user_id <user_id> --server <domain>"
+        echo "Server options: eccentricprotocol or abitchaotic"
+        exit 1
+    fi
+    
+    # Determine the server IP based on domain
+    local server_ip
+    local server_name
+    
+    case "$server" in
+        "eccentricprotocol" | "eccentricprotocol.com")
+            server_ip="64.91.240.98"
+            server_name="eccentricprotocol.com"
+            ;;
+        "abitchaotic" | "abitchaotic.com")
+            server_ip="64.91.242.2"
+            server_name="abitchaotic.com"
+            ;;
+        *)
+            echo -e "${RED}Error: Invalid server domain${NC}"
+            echo "Valid options: eccentricprotocol or abitchaotic"
+            exit 1
+            ;;
+    esac
+    
+    echo -e "${BLUE}🔍 Looking up user information for user_id: $user_id on $server_name${NC}"
+    
+    # First, we need to copy the lookup script to the remote server if it doesn't exist
+    echo -e "${GREEN}Ensuring lookup script exists on remote server...${NC}"
+    ssh searchable@${server_ip} "mkdir -p /home/searchable/searchable/api-server-flask/scripts"
+    scp "$SCRIPT_DIR/api-server-flask/scripts/lookup_user.py" searchable@${server_ip}:/home/searchable/searchable/api-server-flask/scripts/
+    
+    # Find the Flask container and run the lookup script
+    echo -e "${GREEN}Running lookup on $server_name...${NC}"
+    ssh searchable@${server_ip} 'cd /home/searchable/searchable && FLASK_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "(flask_api|flask-api)" | head -1) && docker exec $FLASK_CONTAINER python /app/scripts/lookup_user.py '"$user_id"
+}
+
 # Local CI/CD workflow - tear down everything, rebuild, and test
 local_lookup() {
     local user_id=$1
@@ -847,14 +909,25 @@ local_lookup() {
     echo -e "${BLUE}🔍 Looking up user information for user_id: $user_id${NC}"
     
     # Check if the script exists
-    if [ ! -f "$SCRIPT_DIR/scripts/lookup_user.py" ]; then
+    if [ ! -f "$SCRIPT_DIR/api-server-flask/scripts/lookup_user.py" ]; then
         echo -e "${RED}Error: lookup_user.py script not found${NC}"
         exit 1
     fi
     
-    # Run the lookup script
-    cd "$SCRIPT_DIR"
-    python3 scripts/lookup_user.py "$user_id"
+    # Find the Flask container name (could be flask_api or searchable-flask_api-1 or searchable_flask_api_1)
+    FLASK_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "(flask_api|flask-api)" | head -1)
+    
+    if [ -z "$FLASK_CONTAINER" ]; then
+        echo -e "${RED}Error: Flask API container not found. Is it running?${NC}"
+        echo "Available containers:"
+        docker ps --format "table {{.Names}}\t{{.Status}}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}Using container: $FLASK_CONTAINER${NC}"
+    
+    # Run the lookup script inside the Flask container
+    docker exec $FLASK_CONTAINER python /app/scripts/lookup_user.py "$user_id"
 }
 
 local_cicd() {
@@ -1399,6 +1472,15 @@ case "$ENVIRONMENT" in
             "create-reviews")
                 create_reviews "beta"
                 ;;
+            "lookup")
+                if [ "$CONTAINER" = "--user_id" ] && [ -n "$4" ]; then
+                    beta_lookup "$4"
+                else
+                    echo -e "${RED}Error: Invalid lookup syntax${NC}"
+                    echo "Usage: ./exec.sh beta lookup --user_id <user_id>"
+                    exit 1
+                fi
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for beta environment${NC}"
                 show_usage
@@ -1463,9 +1545,20 @@ case "$ENVIRONMENT" in
                 fi
                 create_reviews_prod "$server"
                 ;;
+            "lookup")
+                # Parse parameters for lookup
+                if [ "$CONTAINER" = "--user_id" ] && [ -n "$4" ] && [ "$5" = "--server" ] && [ -n "$6" ]; then
+                    prod_lookup "$4" "$6"
+                else
+                    echo -e "${RED}Error: Invalid lookup syntax${NC}"
+                    echo "Usage: ./exec.sh prod lookup --user_id <user_id> --server <domain>"
+                    echo "Server options: eccentricprotocol or abitchaotic"
+                    exit 1
+                fi
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
-                echo "Available actions: test, content-upload, create-reviews"
+                echo "Available actions: test, lookup, content-upload, create-reviews"
                 show_usage
                 exit 1
                 ;;
