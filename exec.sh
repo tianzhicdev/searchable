@@ -790,13 +790,13 @@ local_mock() {
     fi
     
     echo -e "${YELLOW}Starting React app in mock mode...${NC}"
-    echo "Access the app at: http://localhost:3001"
+    echo "Access the app at: http://localhost:3000"
     echo ""
     
-    # Start React development server with mock mode enabled on port 3001
+    # Start React development server with mock mode enabled on port 3000
     # Add REACT_APP_THEME if provided
     if [ -n "$theme" ]; then
-        PORT=3001 \
+        PORT=3000 \
         REACT_APP_MOCK_MODE=true \
         REACT_APP_ENV=local \
         REACT_APP_BRANDING=silkroadonlightning \
@@ -806,7 +806,7 @@ local_mock() {
         NODE_OPTIONS=--openssl-legacy-provider \
         npm start
     else
-        PORT=3001 \
+        PORT=3000 \
         REACT_APP_MOCK_MODE=true \
         REACT_APP_ENV=local \
         REACT_APP_BRANDING=silkroadonlightning \
