@@ -4,6 +4,37 @@ puppeteer.use(StealthPlugin());
 
 const product_url = "https://silkroadonlightning.com/landing";
 
+// Email generation functions
+function generateRandomString(length = 8) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+function generateRandomEmail(domain = 'testingautomation.com') {
+    const timestamp = Date.now();
+    const randomString = generateRandomString(6);
+    return `test_${randomString}_${timestamp}@${domain}`;
+}
+
+function generateRandomUsername() {
+    const timestamp = Date.now();
+    const randomString = generateRandomString(4);
+    return `user_${randomString}_${timestamp}`;
+}
+
+// Generate dynamic credentials at runtime
+function generateSignupCredentials() {
+    return {
+        email: generateRandomEmail(),
+        username: generateRandomUsername(),
+        password: 'password@1'
+    };
+}
+
 async function givePage() {
     const browser = await puppeteer.launch({ headless: false, defaultViewport: null });
     const page = await browser.newPage();
@@ -11,6 +42,10 @@ async function givePage() {
 }
 
 async function run() {
+    // Generate fresh credentials each time the script runs
+    const signupCredentials = generateSignupCredentials();
+    console.log('🎯 Generated new credentials:', signupCredentials);
+    
     const { browser, page } = await givePage();
     try {
         await createAccount(page);
@@ -18,17 +53,27 @@ async function run() {
         await loginAfterSignup(page, signupCredentials);
         await selectProductFromTitle(page, 'download test 1');
         await selectItemsInProduct(page);
-        await payWithStripe(page);
+        await payWithStripe(page, signupCredentials.email); // Pass email to payment
+        console.log('✅ Script completed successfully!');
     } catch (error) {
-        console.error('An error occurred:', error);
+        console.error('❌ An error occurred:', error);
+        
+        // Take screenshot for debugging
+        try {
+            await page.screenshot({ path: 'error_screenshot.png', fullPage: true });
+            console.log('📸 Error screenshot saved as error_screenshot.png');
+        } catch (screenshotError) {
+            console.log('Could not take screenshot');
+        }
     } finally {
+        await delay(3000); // Wait to see results
         await browser.close(); // Ensure the browser closes
     }
 }
 
 async function createAccount(page) {
     await page.goto(product_url);
-    await new Promise(r => setTimeout(r, 1500));
+    await delay(1500);
     console.log('✅ Landing Page loaded');
   
     //I'm back
@@ -39,13 +84,9 @@ async function createAccount(page) {
     console.log('✅ Account Creation Page loaded');
 }
 
-const signupCredentials = {
-    email: 'reg9@testingautomation.com',
-    username: 'sajantest123',
-    password: 'password@1'
-};
-
 async function signUpForm(page, credentials) {
+    console.log('📝 Filling signup form with:', credentials);
+    
     const fields = [
         { selector: "input[id='input-rest-register-email-field']", value: credentials.email },
         { selector: "input[id='input-rest-register-username-field']", value: credentials.username },
@@ -65,10 +106,12 @@ async function signUpForm(page, credentials) {
         const target = buttons.find(btn => btn.textContent.trim().toUpperCase() === 'SIGN UP');
         if (target) target.click();
     });
-    console.log('✅ Account Created');
+    console.log('✅ Account Created with email:', credentials.email);
 }
 
 async function loginAfterSignup(page, credentials) {
+    console.log('🔐 Logging in with:', credentials.email);
+    
     const loginFields = [
         { selector: "input[id='input-rest-login-email-field']", value: credentials.email },
         { selector: "input[id='input-rest-login-password-field']", value: credentials.password }
@@ -80,7 +123,6 @@ async function loginAfterSignup(page, credentials) {
     }
 
     await smart_click_with_pause(page, "button[id='button-rest-login-submit']", 2000);
-
     console.log('✅ Logged in after Signup');
 }
 
@@ -95,14 +137,14 @@ async function selectProductFromTitle(page, titleText) {
     const productCards = await page.$$('div.MuiPaper-root.MuiPaper-elevation1');
   
     for (const card of productCards) {
-      const textContent = await card.evaluate(el => el.textContent);
-      
-      if (textContent.toLowerCase().includes(titleText.toLowerCase())) {
-        await card.click();
-        console.log(`✅ Clicked sub-product: ${titleText}`);
-        await delay(1500);
-        return;
-      }
+        const textContent = await card.evaluate(el => el.textContent);
+        
+        if (textContent.toLowerCase().includes(titleText.toLowerCase())) {
+            await card.click();
+            console.log(`✅ Clicked sub-product: ${titleText}`);
+            await delay(1500);
+            return;
+        }
     }
   
     console.error(`❌ Sub-Product with title "${titleText}" not found`);
@@ -116,42 +158,62 @@ async function selectItemsInProduct(page) {
     // Click the payment button
     await smart_click_with_pause(page, "button[data-testid='button-pay-stripe']", 4000);
     console.log('✅ Pay With Stripe clicked.');
-  }
+}
 
-async function payWithStripe(page) {
-    // Fill email field
-    await smart_type_with_pause(page, "input[id='email']", 'test@gmail.com', 1000);
+async function payWithStripe(page, userEmail) {
+    console.log('💳 Processing payment with email:', userEmail);
     
-    // Click accordion to expand payment details
-    await smart_click_with_pause(page, "button[data-testid='card-accordion-item-button']", 1000);
-    
-    // Fill card details
-    await smart_type_with_pause(page, "input[id='cardNumber']", '4242424242424242', 1000);
-    await smart_type_with_pause(page, "input[id='cardExpiry']", '0329', 1000);
-    await smart_type_with_pause(page, "input[id='cardCvc']", '321', 1000);
-    
-    // Fill billing information
-    await smart_type_with_pause(page, "input[id='billingName']", 'Sajan Singh Shergill', 1000);
-    await smart_type_with_pause(page, "input[id='billingPostalCode']", '07306', 1000);
-    
-    // Enable Stripe Pass
-    await smart_click_with_pause(page, "input[id='enableStripePass']", 2000);
-    
-    // Submit payment
-    await smart_click_with_pause(page, "button[class='SubmitButton SubmitButton--complete']", 1000);
-    console.log('✅ Payment With Stripe done.');
+    try {
+        // Fill email field - use the same email from signup for consistency
+        await smart_type_with_pause(page, "input[id='email']", userEmail, 1000);
+        
+        // Click accordion to expand payment details
+        await smart_click_with_pause(page, "button[data-testid='card-accordion-item-button']", 1000);
+        
+        // Fill card details
+        await smart_type_with_pause(page, "input[id='cardNumber']", '4242424242424242', 1000);
+        await smart_type_with_pause(page, "input[id='cardExpiry']", '0329', 1000);
+        await smart_type_with_pause(page, "input[id='cardCvc']", '321', 1000);
+        
+        // Fill billing information
+        await smart_type_with_pause(page, "input[id='billingName']", 'Sajan Singh Shergill', 1000);
+        await smart_type_with_pause(page, "input[id='billingPostalCode']", '07306', 1000);
+        
+        // Enable Stripe Pass (optional)
+        try {
+            await smart_click_with_pause(page, "input[id='enableStripePass']", 2000);
+        } catch (error) {
+            console.log('⚠️ Stripe Pass checkbox not found, continuing...');
+        }
+        
+        // Submit payment
+        await smart_click_with_pause(page, "button[class='SubmitButton SubmitButton--complete']", 1000);
+        console.log('✅ Payment With Stripe completed.');
+        
+    } catch (error) {
+        console.error('❌ Payment failed:', error.message);
+        throw error;
+    }
 }
 
 //Helper Functions
 async function smart_click_with_pause(page, selector, pause) {
-    await page.waitForSelector(selector);
+    await page.waitForSelector(selector, { timeout: 10000 });
     await page.evaluate((s) => document.querySelector(s).click(), selector);
-    await new Promise(r => setTimeout(r, pause));
+    await delay(pause);
 }
 
 async function smart_type_with_pause(page, selector, text, pause) {
-    await page.waitForSelector(selector);
+    await page.waitForSelector(selector, { timeout: 10000 });
     await page.click(selector);
+    
+    // Clear field first (in case there's existing text)
+    await page.evaluate((s) => {
+        const element = document.querySelector(s);
+        element.value = '';
+        element.focus();
+    }, selector);
+    
     await page.type(selector, text);
     await delay(pause);
 }
