@@ -6,7 +6,6 @@ import TermsAndConditions from '../views/static/TermsAndConditions';
 import ContactInfo from '../views/static/ContactInfo';
 import GettingStarted from '../views/static/GettingStarted';
 import Invite from '../views/Invite';
-import Landing from '../views/landing/Landing';
 import LandingV2 from '../views/landing/LandingV2';
 import Landing3D from '../views/landing/Landing3D';
 import Landing3D1 from '../views/landing/Landing3D1';
@@ -45,7 +44,7 @@ const VisitorRoutes = () => {
                 <Route exact path="/getting-started" component={GettingStarted} />
                 <Route exact path="/visitor" component={VisitorSection} />
                 <Route exact path="/invite" component={Invite} />
-                <Route exact path="/landing" component={Landing} />
+                <Route exact path="/landing" component={LandingV2} />
                 <Route exact path="/landing-v2" component={LandingV2} />
                 <Route exact path="/3d-landing" component={Landing3D} />
                 <Route exact path="/3d-landing-1" component={Landing3D1} />
