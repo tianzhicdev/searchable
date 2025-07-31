@@ -42,6 +42,7 @@ show_usage() {
     echo "  ./exec.sh prod test --ls                    - List all available individual tests"
     echo "  ./exec.sh prod test --t <test_name>         - Run specific test file against prod"
     echo "  ./exec.sh prod lookup --user_id <id> --server <domain> - Lookup user info on prod server"
+    echo "  ./exec.sh prod feedback --server <domain>         - Display all feedback from prod server"
     echo "  ./exec.sh prod content-upload --server=<servername>  - Upload content to prod server"
     echo "  ./exec.sh prod create-reviews --server=<servername>  - Create reviews on prod server"
     echo "       (servername/domain: eccentricprotocol.com or abitchaotic.com)"
@@ -789,13 +790,13 @@ local_mock() {
     fi
     
     echo -e "${YELLOW}Starting React app in mock mode...${NC}"
-    echo "Access the app at: http://localhost:3001"
+    echo "Access the app at: http://localhost:3000"
     echo ""
     
-    # Start React development server with mock mode enabled on port 3001
+    # Start React development server with mock mode enabled on port 3000
     # Add REACT_APP_THEME if provided
     if [ -n "$theme" ]; then
-        PORT=3001 \
+        PORT=3000 \
         REACT_APP_MOCK_MODE=true \
         REACT_APP_ENV=local \
         REACT_APP_BRANDING=silkroadonlightning \
@@ -805,7 +806,7 @@ local_mock() {
         NODE_OPTIONS=--openssl-legacy-provider \
         npm start
     else
-        PORT=3001 \
+        PORT=3000 \
         REACT_APP_MOCK_MODE=true \
         REACT_APP_ENV=local \
         REACT_APP_BRANDING=silkroadonlightning \
@@ -852,6 +853,54 @@ beta_lookup() {
     ssh ${REMOTE_USER}@${REMOTE_HOST} "cd ${REMOTE_PATH} && docker exec flask_api python /app/scripts/lookup_user.py $user_id"
 }
 
+# Feedback lookup function for production environment
+prod_feedback() {
+    local server=$1
+    
+    if [ -z "$server" ]; then
+        echo -e "${RED}Error: Server parameter is required${NC}"
+        echo "Usage: ./exec.sh prod feedback --server <domain>"
+        echo "Server options: eccentricprotocol or abitchaotic"
+        exit 1
+    fi
+    
+    # Determine the server IP based on domain
+    local server_ip
+    local server_name
+    
+    case "$server" in
+        "eccentricprotocol" | "eccentricprotocol.com")
+            server_ip="64.91.240.98"
+            server_name="eccentricprotocol.com"
+            ;;
+        "abitchaotic" | "abitchaotic.com")
+            server_ip="64.91.242.2"
+            server_name="abitchaotic.com"
+            ;;
+        *)
+            echo -e "${RED}Error: Invalid server domain${NC}"
+            echo "Valid options: eccentricprotocol or abitchaotic"
+            exit 1
+            ;;
+    esac
+    
+    echo -e "${BLUE}📋 Retrieving feedback from $server_name${NC}"
+    
+    # First, copy the feedback script to the remote server
+    echo -e "${GREEN}Copying feedback script to remote server...${NC}"
+    ssh searchable@${server_ip} "mkdir -p /home/searchable/searchable/api-server-flask/scripts"
+    scp "$SCRIPT_DIR/api-server-flask/scripts/lookup_feedback.py" searchable@${server_ip}:/home/searchable/searchable/api-server-flask/scripts/
+    
+    # Find the Flask container and run the feedback script
+    echo -e "${GREEN}Running feedback lookup on $server_name...${NC}"
+    ssh searchable@${server_ip} 'cd /home/searchable/searchable && \
+        FLASK_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "(flask_api|flask-api)" | head -1) && \
+        echo "Using container: $FLASK_CONTAINER" && \
+        docker exec $FLASK_CONTAINER mkdir -p /app/scripts && \
+        docker cp api-server-flask/scripts/lookup_feedback.py $FLASK_CONTAINER:/app/scripts/ && \
+        docker exec $FLASK_CONTAINER python /app/scripts/lookup_feedback.py'
+}
+
 # User lookup function for production environment
 prod_lookup() {
     local user_id=$1
@@ -886,14 +935,19 @@ prod_lookup() {
     
     echo -e "${BLUE}🔍 Looking up user information for user_id: $user_id on $server_name${NC}"
     
-    # First, we need to copy the lookup script to the remote server if it doesn't exist
-    echo -e "${GREEN}Ensuring lookup script exists on remote server...${NC}"
+    # First, we need to copy the lookup script to the remote server
+    echo -e "${GREEN}Copying lookup script to remote server...${NC}"
     ssh searchable@${server_ip} "mkdir -p /home/searchable/searchable/api-server-flask/scripts"
     scp "$SCRIPT_DIR/api-server-flask/scripts/lookup_user.py" searchable@${server_ip}:/home/searchable/searchable/api-server-flask/scripts/
     
-    # Find the Flask container and run the lookup script
+    # Find the Flask container and copy the script into it, then run it
     echo -e "${GREEN}Running lookup on $server_name...${NC}"
-    ssh searchable@${server_ip} 'cd /home/searchable/searchable && FLASK_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "(flask_api|flask-api)" | head -1) && docker exec $FLASK_CONTAINER python /app/scripts/lookup_user.py '"$user_id"
+    ssh searchable@${server_ip} 'cd /home/searchable/searchable && \
+        FLASK_CONTAINER=$(docker ps --format "{{.Names}}" | grep -E "(flask_api|flask-api)" | head -1) && \
+        echo "Using container: $FLASK_CONTAINER" && \
+        docker exec $FLASK_CONTAINER mkdir -p /app/scripts && \
+        docker cp api-server-flask/scripts/lookup_user.py $FLASK_CONTAINER:/app/scripts/ && \
+        docker exec $FLASK_CONTAINER python /app/scripts/lookup_user.py '"$user_id"
 }
 
 # Local CI/CD workflow - tear down everything, rebuild, and test
@@ -925,6 +979,10 @@ local_lookup() {
     fi
     
     echo -e "${GREEN}Using container: $FLASK_CONTAINER${NC}"
+    
+    # Ensure scripts directory exists in container and copy the script
+    docker exec $FLASK_CONTAINER mkdir -p /app/scripts
+    docker cp "$SCRIPT_DIR/api-server-flask/scripts/lookup_user.py" $FLASK_CONTAINER:/app/scripts/
     
     # Run the lookup script inside the Flask container
     docker exec $FLASK_CONTAINER python /app/scripts/lookup_user.py "$user_id"
@@ -1556,9 +1614,20 @@ case "$ENVIRONMENT" in
                     exit 1
                 fi
                 ;;
+            "feedback")
+                # Parse parameters for feedback
+                if [ "$CONTAINER" = "--server" ] && [ -n "$4" ]; then
+                    prod_feedback "$4"
+                else
+                    echo -e "${RED}Error: Invalid feedback syntax${NC}"
+                    echo "Usage: ./exec.sh prod feedback --server <domain>"
+                    echo "Server options: eccentricprotocol or abitchaotic"
+                    exit 1
+                fi
+                ;;
             *)
                 echo -e "${RED}Error: Invalid action '$ACTION' for prod environment${NC}"
-                echo "Available actions: test, lookup, content-upload, create-reviews"
+                echo "Available actions: test, lookup, feedback, content-upload, create-reviews"
                 show_usage
                 exit 1
                 ;;

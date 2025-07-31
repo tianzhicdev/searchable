@@ -6,7 +6,7 @@ import TermsAndConditions from '../views/static/TermsAndConditions';
 import ContactInfo from '../views/static/ContactInfo';
 import GettingStarted from '../views/static/GettingStarted';
 import Invite from '../views/Invite';
-import Landing from '../views/landing/Landing';
+import LandingV2 from '../views/landing/LandingV2';
 import Landing3D from '../views/landing/Landing3D';
 import Landing3D1 from '../views/landing/Landing3D1';
 import Landing3D2 from '../views/landing/Landing3D2';
@@ -34,7 +34,7 @@ const VisitorRoutes = () => {
     const location = useLocation();
 
     return (
-        <Route path={['/landing', '/3d-landing', '/3d-landing-1', '/3d-landing-2', '/3d-landing-3', '/3d-landing-4', '/3d-landing-demo', '/3d-landing-moving-1', '/3d-landing-moving-2', '/3d-landing-moving-3', '/3d-landing-moving-4', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats']}>
+        <Route path={['/landing', '/landing-v2', '/3d-landing', '/3d-landing-1', '/3d-landing-2', '/3d-landing-3', '/3d-landing-4', '/3d-landing-demo', '/3d-landing-moving-1', '/3d-landing-moving-2', '/3d-landing-moving-3', '/3d-landing-moving-4', '/declaration', '/faq', '/terms-and-conditions', '/contact-info', '/getting-started', '/visitor', '/invite', '/onboarding-1', '/onboarding-2', '/onboarding-3', '/onboarding-3-1', '/onboarding-3-2', '/onboarding-4', '/onboarding-4-1', '/onboarding-5', '/onboarding-5-1', '/onboarding-congrats']}>
             <Switch location={location} key={location.pathname}>
                 {/* Public routes accessible to unregistered visitors */}
                 <Route exact path="/declaration" component={Declaration} />
@@ -44,7 +44,8 @@ const VisitorRoutes = () => {
                 <Route exact path="/getting-started" component={GettingStarted} />
                 <Route exact path="/visitor" component={VisitorSection} />
                 <Route exact path="/invite" component={Invite} />
-                <Route exact path="/landing" component={Landing} />
+                <Route exact path="/landing" component={LandingV2} />
+                <Route exact path="/landing-v2" component={LandingV2} />
                 <Route exact path="/3d-landing" component={Landing3D} />
                 <Route exact path="/3d-landing-1" component={Landing3D1} />
                 <Route exact path="/3d-landing-2" component={Landing3D2} />
