@@ -1,83 +1,200 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Main pages -->
   <url>
-    <loc>https://silkroadonlightning.com/</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://silkroadonlightning.com/landing</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/landing</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  
-  <!-- Authentication pages -->
   <url>
-    <loc>https://silkroadonlightning.com/login</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/landing-v2</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-1</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-2</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-3</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-4</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-demo</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-moving-1</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-moving-2</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-moving-3</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/3d-landing-moving-4</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/login</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://silkroadonlightning.com/register</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/register</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
-  <!-- Core functionality -->
   <url>
-    <loc>https://silkroadonlightning.com/search</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/search</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-  
-  <!-- Information pages -->
   <url>
-    <loc>https://silkroadonlightning.com/declaration</loc>
-    <lastmod>2025-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://eccentricprotocol.com/onboarding-1</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://silkroadonlightning.com/faq</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/onboarding-2</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-3</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-3-1</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://silkroadonlightning.com/terms-and-conditions</loc>
-    <lastmod>2025-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://silkroadonlightning.com/contact-info</loc>
-    <lastmod>2025-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://silkroadonlightning.com/getting-started</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/onboarding-3-2</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
-  
-  <!-- Visitor pages -->
   <url>
-    <loc>https://silkroadonlightning.com/visitor</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/onboarding-4</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-4-1</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-5</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-5-1</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/onboarding-congrats</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/declaration</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/faq</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/terms-and-conditions</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/contact-info</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/getting-started</loc>
+    <lastmod>2025-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://eccentricprotocol.com/visitor</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://silkroadonlightning.com/invite</loc>
-    <lastmod>2025-01-25</lastmod>
+    <loc>https://eccentricprotocol.com/invite</loc>
+    <lastmod>2025-07-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
