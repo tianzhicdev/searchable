@@ -198,7 +198,7 @@ const Onboarding3 = () => {
               Upload files here
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              Supported formats: PDF, ZIP, MP4, MP3, PNG, JPG, and more
+              All file types are supported
             </Typography>
             <Button
               variant="contained"
@@ -216,7 +216,6 @@ const Onboarding3 = () => {
             multiple
             onChange={handleFileSelect}
             className={classes.fileInput}
-            accept=".pdf,.zip,.mp4,.mp3,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
           />
 
           {uploadedFiles.length > 0 && (
