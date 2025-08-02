@@ -3,8 +3,14 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const path = require('path');
 puppeteer.use(StealthPlugin());
 
-const globals = require('/Users/sajanshergill/Desktop/searchable/sharedGlobals.js');
-const { filePath, username, email, password, storeName, productPrice } = globals;
+const fs = require('fs');
+const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);
+const filePath = '/Users/sajanshergill/Downloads/came.mp4';  
+const username = `testUser${RANDOM_SUFFIX}`;                 
+const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;          
+const password = `testUser${RANDOM_SUFFIX}`;                               
+const storeName = 'Store 1';                                 
+const productPrice = '4.99';
 
 const product_url = "https://silkroadonlightning.com/landing";
 
@@ -80,11 +86,29 @@ async function onboarding(page) {
 
     //Create Account
     await smart_type_with_pause(page, "input[id='input-onboarding-auth-username-field']", username, 1000);
-    await smart_type_with_pause(page, "input[id='input-onboarding-auth-email-field']", email, 1000);
+    await smart_type_with_pause(page, "input[id='input-onboarding-auth-email-field']", seller_email, 1000);
     await smart_type_with_pause(page, "input[id='input-onboarding-auth-password-field']", password, 1000);
     await smart_click_by_text(page, "OPEN MY STORE", 5000);
 
     await smart_click_with_pause(page, "span[class='MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root']", 1000);
+
+    const userInfo = {
+        username: username,
+        email: seller_email,
+        storeName: storeName,
+        productPrice: productPrice,
+        password: password
+    };
+    
+    const outputPath = path.join(__dirname, 'store_user_info.json');
+    
+    try {
+        fs.writeFileSync(outputPath, JSON.stringify(userInfo, null, 2));  // overwrite
+        console.log(`📝 Saved user info to ${outputPath}`);
+    } catch (err) {
+        console.error('❌ Failed to save user info JSON:', err.message);
+    }    
+    console.log('✅ username, email, and storeName stored into a JSON file');    
 }
 
 async function uploadFile(page, filePath) {

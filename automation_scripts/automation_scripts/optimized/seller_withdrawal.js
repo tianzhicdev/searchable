@@ -111,11 +111,11 @@ async function verifyWithdrawalStatus(page) {
     await delay(180000);
 
 
-    if (statusText?.toLowerCase() === "complete") {
-        console.log("✅ Withdrawal status: COMPLETE");
-    } else {
-        console.warn(`⚠️ Withdrawal status not complete: ${statusText}`);
-    }
+    // if (statusText?.toLowerCase() === "complete") {
+    //     console.log("✅ Withdrawal status: COMPLETE");
+    // } else {
+    //     console.warn(`⚠️ Withdrawal status not complete: ${statusText}`);
+    // }
 }
 
 // Reuse helper functions
