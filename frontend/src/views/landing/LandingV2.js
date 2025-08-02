@@ -51,22 +51,9 @@ const LandingV2 = () => {
           p: 4,
           maxWidth: isMobile ? '90%' : '600px'
         }}>
+
           <Typography 
-            variant={isMobile ? "h3" : "h1"} 
-            sx={{ 
-              color: theme.palette.primary.main,
-              fontWeight: 'bold',
-              mb: 2,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              borderRadius: '8px',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-            }}
-          >
-            {config.BRANDING_CONFIG.landingIntro}
-          </Typography>
-          
-          <Typography 
-            variant={isMobile ? "h8" : "h7"} 
+            variant={isMobile ? "h2" : "h3"} 
             sx={{ 
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: '8px',
@@ -86,7 +73,7 @@ const LandingV2 = () => {
               mb: 4,
               px: 4,
               py: 2,
-              fontSize: isMobile ? '1rem' : '1.2rem',
+              fontSize: isMobile ? '1.5rem' : '2rem',
               fontWeight: 'bold',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               '&:hover': {
@@ -96,6 +83,19 @@ const LandingV2 = () => {
           >
             Warp to the future
           </Button>
+          <Typography 
+            variant={isMobile ? "h2" : "h3"} 
+            sx={{ 
+              color: theme.palette.primary.main,
+              fontWeight: 'bold',
+              mb: 2,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: '8px',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+            }}
+          >
+            {config.BRANDING_CONFIG.landingIntro}
+          </Typography>
           
           <Link
             component="button"
