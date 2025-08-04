@@ -3,7 +3,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
 //const product_url = "https://silkroadonlightning.com/landing";
-const product_url = "http://localhost/landing"; // For local testing
+const product_url = "https://localhost:3000/landing"; // Use localhost for local testing
 
 // Email generation functions
 function generateRandomString(length = 8) {
@@ -216,10 +216,7 @@ async function run() {
         await createAccount(page);
         await signUpForm(page, signupCredentials);
         await loginAfterSignup(page, signupCredentials);
-        // for beta testing:-
         await selectProductFromTitle(page, 'download test 1');
-        //for local testing:-
-        await selectProductFromTitle(page, 'store 1');
         await selectItemsInProduct(page);
         await payWithStripe(page, signupCredentials.email); // Pass email to payment
         console.log('✅ Script completed successfully!');

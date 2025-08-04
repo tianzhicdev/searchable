@@ -56,7 +56,17 @@ async function loginAsSeller(page) {
 
 async function verifyBalance(page) {
     console.log('💰 Navigating to account section...');
-    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);    await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-edit-profile']", 2000);
+    
+    const randomText = `This is a random bio generated at ${new Date().toLocaleString()}.
+    It has multiple lines to test text area input.
+    Hope you like it!`;
+
+    await smart_type_with_pause(page, "textarea[name='introduction']", randomText, 2000);
+    await smart_click_with_pause(page, "button[id='button-edit-profile-save']", 2000);
+    console.log('✅ Profile bio updated with random text.');
+    await smart_click_with_pause(page, "button[data-testid='button-nav-back']", 2500);
+
 
     const balanceAmount = await page.evaluate(() => {
         const h4s = Array.from(document.querySelectorAll("h4"));
