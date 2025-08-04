@@ -3,7 +3,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
 //const product_url = "https://silkroadonlightning.com/landing";
-const product_url = "https://localhost:3000/landing"; // Use localhost for local testing
+const product_url = "http://localhost/landing"; // For local testing
 
 // Email generation functions
 function generateRandomString(length = 8) {
