@@ -24,7 +24,8 @@ try {
 }
 
 
-const product_url = "https://silkroadonlightning.com/landing";
+//const product_url = "https://silkroadonlightning.com/landing";
+const product_url = "http://localhost/landing"; // For local testing
 
 async function givePage() {
     const browser = await puppeteer.launch({
