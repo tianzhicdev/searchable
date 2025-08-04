@@ -7,7 +7,7 @@ const path = require('path');
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);                 
 const buyer_email = `testuser${RANDOM_SUFFIX}@gmail.com`;          
 const password = `testuser${RANDOM_SUFFIX}`;                          
-const addBalanceAmount = '20';  
+const addBalanceAmount = "20";  
 const userInfoPath = path.join(__dirname, 'store_user_info.json');
 let username = '';
 let storeName = '';
@@ -23,8 +23,8 @@ try {
     process.exit(1); // Exit early if seller data isn't available
 }
 
-
-const product_url = "https://silkroadonlightning.com/landing";
+//const product_url = "https://silkroadonlightning.com/landing";
+const product_url = "http://localhost/landing"; // For local testing
 
 async function givePage() {
     const browser = await puppeteer.launch({
@@ -104,6 +104,8 @@ async function addBalance(page) {
     await page.click("div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", { clickCount: 3 });
     await page.keyboard.press('Backspace');
     await smart_type_with_pause(page, "div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", addBalanceAmount, 1000);
+   //await smart_type_with_pause(page, "div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", "25", 1000);
+
     console.log('✅ Price set successfully');
 
     await smart_click_with_pause(page, "button[class='MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge MuiButton-containedSizeLarge MuiButton-fullWidth MuiButtonBase-root css-23erxl-MuiButtonBase-root-MuiButton-root']", 3000);

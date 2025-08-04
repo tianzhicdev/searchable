@@ -5,7 +5,7 @@ puppeteer.use(StealthPlugin());
 
 const fs = require('fs');
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);
-const filePath = '/Users/sajanshergill/Downloads/came.mp4';  
+const filePath = 'automation_scripts/automation_scripts/optimized/file3.txt';
 const username = `testUser${RANDOM_SUFFIX}`;                 
 const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;          
 const password = `testUser${RANDOM_SUFFIX}`;                               
@@ -92,7 +92,7 @@ async function onboarding(page) {
     await smart_type_with_pause(page, "input[id='input-onboarding-auth-password-field']", password, 1000);
     await smart_click_by_text(page, "OPEN MY STORE", 5000);
 
-    await smart_click_with_pause(page, "span[class='MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root']", 1000);
+    await smart_click_by_text(page, "ENTER", 1000);
 
     const userInfo = {
         username: username,

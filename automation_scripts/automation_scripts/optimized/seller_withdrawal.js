@@ -5,7 +5,9 @@ const path = require('path');
 
 puppeteer.use(StealthPlugin());
 
-const product_url = "https://silkroadonlightning.com/landing";
+//const product_url = "https://silkroadonlightning.com/landing";
+const product_url = "http://localhost/landing"; // For local testing
+
 const withdrawalWalletAddress = "0x2a9f6e28Ee3501C32c65937170B44a72A71baB62";
 
 const userInfoPath = path.join(__dirname, 'store_user_info.json');
