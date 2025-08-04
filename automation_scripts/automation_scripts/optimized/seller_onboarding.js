@@ -12,7 +12,9 @@ const password = `testUser${RANDOM_SUFFIX}`;
 const storeName = 'Store 1';                                 
 const productPrice = '4.99';
 
-const product_url = "https://silkroadonlightning.com/landing";
+//const product_url = "https://silkroadonlightning.com/landing";
+const product_url = "http://localhost/landing"; // For local testing
+
 
 async function givePage() {
     const browser = await puppeteer.launch({
