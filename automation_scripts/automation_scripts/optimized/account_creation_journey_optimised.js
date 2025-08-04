@@ -216,7 +216,10 @@ async function run() {
         await createAccount(page);
         await signUpForm(page, signupCredentials);
         await loginAfterSignup(page, signupCredentials);
+        // for beta testing:-
         await selectProductFromTitle(page, 'download test 1');
+        //for local testing:-
+        await selectProductFromTitle(page, 'store 1');
         await selectItemsInProduct(page);
         await payWithStripe(page, signupCredentials.email); // Pass email to payment
         console.log('✅ Script completed successfully!');
