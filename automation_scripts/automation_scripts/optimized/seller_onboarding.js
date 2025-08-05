@@ -6,9 +6,9 @@ puppeteer.use(StealthPlugin());
 const fs = require('fs');
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);
 const filePath = 'automation_scripts/automation_scripts/optimized/file3.txt';
-const username = `testUser${RANDOM_SUFFIX}`;                 
-const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;          
-const password = `testUser${RANDOM_SUFFIX}`;                               
+const username = `testUser${RANDOM_SUFFIX}`;
+const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;
+const password = `testUser${RANDOM_SUFFIX}`;                             
 const storeName = 'Store 1';                                 
 const productPrice = '4.99';
 
@@ -110,7 +110,10 @@ async function onboarding(page) {
     } catch (err) {
         console.error('❌ Failed to save user info JSON:', err.message);
     }    
-    console.log('✅ username, email, and storeName stored into a JSON file');    
+    console.log('✅ username, email, and storeName stored into a JSON file'); 
+    
+    console.log('Logging out the seller...');
+    await logoutSeller(page);
 }
 
 async function uploadFile(page, filePath) {
@@ -143,6 +146,14 @@ async function uploadFile(page, filePath) {
     }
 }
 
+async function logoutSeller(page) {
+    console.log("🔒 Logging out seller...");
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);
+    await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-logout']", 2000);
+    await delay(2000);
+    console.log("✅ Seller logged out");
+ }
+
 async function smart_click_with_pause(page, selector, pause) {
     try {
         await page.waitForSelector(selector, { timeout: 10000 });
@@ -174,7 +185,7 @@ async function smart_click_with_pause(page, selector, pause) {
         }
         
     } catch (error) {
-        console.error(`❌ Click failed for ${selector}:`, error.message);
+        console.error("❌ Click failed for ${selector}:", error.message);
         return false;
     }
 }
@@ -193,7 +204,7 @@ async function smart_type_with_pause(page, selector, text, pause) {
         await delay(pause);
         return true;
     } catch (error) {
-        console.error(`❌ Type failed for ${selector}:`, error.message);
+        console.error("❌ Type failed for ${selector}:", error.message);
         return false;
     }
 }
@@ -219,24 +230,30 @@ async function smart_click_by_text(page, text, pause = 2000) {
         return false;
         
     } catch (error) {
-        console.error(`❌ Click by text failed for "${text}":`, error.message);
+        console.error("❌ Click by text failed for ${text}:", error.message);
         return false;
     }
  }
 
-async function automate() {
-    const { browser, page } = await givePage();
-    
-    try {
-        await onboarding(page);
-        console.log('🎉 Onboarding completed!');
-    } catch (error) {
-        console.error('❌ Onboarding failed:', error.message);
-        await page.screenshot({ path: 'onboarding_error.png', fullPage: true });
-        console.log('📸 Error screenshot saved as onboarding_error.png');
-    } finally {
-        console.log('🔍 Browser kept open for inspection. Close manually when done.');
-    }
-}
+ module.exports = {
+    givePage,
+    onboarding,
+    logoutSeller
+};
 
-automate();
+// async function automate() {
+//     const { browser, page } = await givePage();
+    
+//     try {
+//         await onboarding(page);
+//         console.log('🎉 Onboarding completed!');
+//     } catch (error) {
+//         console.error('❌ Onboarding failed:', error.message);
+//         await page.screenshot({ path: 'onboarding_error.png', fullPage: true });
+//         console.log('📸 Error screenshot saved as onboarding_error.png');
+//     } finally {
+//         console.log('🔍 Browser kept open for inspection. Close manually when done.');
+//     }
+// }
+
+// automate();

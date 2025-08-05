@@ -162,7 +162,7 @@ async function searchAndOpenStore(page) {
 
     await page.keyboard.press('Enter');
     //await smart_click_by_text(page, "h3[class='${username}']", 2000);
-    const selector = `h3`;
+    const selector = h3;
     await page.waitForSelector(selector, { timeout: 10000 });
 
     const clicked = await page.evaluate((username) => {
@@ -178,7 +178,7 @@ async function searchAndOpenStore(page) {
 
     console.log(`🔍 Searching for product available in the store: ${storeName}`);
     //await smart_click_by_text(page, storeName, 2000);
-    const selectorProduct = `h3`;
+    const selectorProduct = h3;
     await page.waitForSelector(selectorProduct, { timeout: 10000 });
 
     const clickedProduct = await page.evaluate((storeName) => {
@@ -240,7 +240,7 @@ async function smart_click_with_pause(page, selector, pause) {
         }
         
     } catch (error) {
-        console.error(`❌ Click failed for ${selector}:`, error.message);
+        console.error("❌ Click failed for ${selector}:", error.message);
         return false;
     }
 }
@@ -259,7 +259,7 @@ async function smart_type_with_pause(page, selector, text, pause) {
         await delay(pause);
         return true;
     } catch (error) {
-        console.error(`❌ Type failed for ${selector}:`, error.message);
+        console.error("❌ Type failed for ${selector}:", error.message);
         return false;
     }
 }
@@ -285,17 +285,26 @@ async function smart_click_by_text(page, text, pause = 2000) {
         return false;
         
     } catch (error) {
-        console.error(`❌ Click by text failed for "${text}":`, error.message);
+        console.error("❌ Click by text failed for ${text}:", error.message);
         return false;
     }
  }
+// At bottom of guest_journey.js
+module.exports = {
+    givePage,
+    buyerOnboardingAsGuest,
+    buyerResgisterAsUser,
+    addBalance,
+    searchAndOpenStore
+  };
+  
 
- async function automate() {
-    const { browser, page } = await givePage();
-    await buyerOnboardingAsGuest(page);
-    await buyerResgisterAsUser(page);
-    await addBalance(page);
-    await searchAndOpenStore(page);
-}
+//  async function automate() {
+//     const { browser, page } = await givePage();
+//     await buyerOnboardingAsGuest(page);
+//     await buyerResgisterAsUser(page);
+//     await addBalance(page);
+//     await searchAndOpenStore(page);
+// }
 
-automate();
+// automate();
