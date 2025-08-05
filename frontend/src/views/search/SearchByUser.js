@@ -82,10 +82,7 @@ const SearchByUser = () => {
       
       // Add tags if provided
       if (tags) {
-        const tagList = tags.split(',').filter(Boolean);
-        if (tagList.length > 0) {
-          params['tags[]'] = tagList;
-        }
+        params.tags = tags;
       }
       
       const response = await backend.get('v1/search/users', {
