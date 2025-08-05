@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const path = require('path');
-puppeteer.use(StealthPlugin());
-
 const fs = require('fs');
+const path = require('path');
+
+puppeteer.use(StealthPlugin());
+import { writeFileSync } from 'fs';
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);
 const filePath = 'automation_scripts/automation_scripts/optimized/file3.txt';
 const username = `testUser${RANDOM_SUFFIX}`;                 
@@ -17,7 +18,7 @@ const product_url = "http://localhost/landing"; // For local testing
 
 
 async function givePage() {
-    const browser = await puppeteer.launch({
+    const browser = await launch({
         headless: false,
         defaultViewport: null,
         args: ['--start-maximized']
@@ -102,10 +103,10 @@ async function onboarding(page) {
         password: password
     };
     
-    const outputPath = path.join(__dirname, 'store_user_info.json');
+    const outputPath = join(__dirname, 'store_user_info.json');
     
     try {
-        fs.writeFileSync(outputPath, JSON.stringify(userInfo, null, 2));  // overwrite
+        writeFileSync(outputPath, JSON.stringify(userInfo, null, 2));  // overwrite
         console.log(`📝 Saved user info to ${outputPath}`);
     } catch (err) {
         console.error('❌ Failed to save user info JSON:', err.message);
