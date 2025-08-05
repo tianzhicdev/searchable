@@ -643,11 +643,13 @@ const mockHandlers = {
     // Get params from config object, not URL string
     const params = config?.params || {};
     const username = params.username;
-    const tagNames = params['tags[]'] || [];
+    // Handle tags as comma-separated string (matching backend API)
+    const tagsParam = params.tags || '';
+    const tagIds = tagsParam ? tagsParam.split(',').map(id => parseInt(id)).filter(id => !isNaN(id)) : [];
     const page = parseInt(params.page) || 1;
     const limit = parseInt(params.limit) || 20;
     
-    console.log('[MOCK] Searching users:', { username, tagNames, page, limit });
+    console.log('[MOCK] Searching users:', { username, tagIds, page, limit });
     
     let filteredUsers = [...allMockUsers];
     
@@ -659,11 +661,11 @@ const mockHandlers = {
       );
     }
     
-    // Filter by tags if provided
-    if (tagNames.length > 0) {
+    // Filter by tags if provided (match by tag IDs)
+    if (tagIds.length > 0) {
       filteredUsers = filteredUsers.filter(user => {
-        const userTagNames = user.tags.map(tag => tag.name);
-        return tagNames.every(tagName => userTagNames.includes(tagName));
+        const userTagIds = user.tags.map(tag => tag.id);
+        return tagIds.some(tagId => userTagIds.includes(tagId));
       });
     }
     
