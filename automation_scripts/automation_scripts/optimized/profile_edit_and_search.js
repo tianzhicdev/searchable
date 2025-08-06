@@ -164,6 +164,19 @@ async function createListingForUser1(page) {
     console.log("✅ Listing created successfully for User1");
 }
 
+async function uploadFile(page) {
+    console.log('📤 Uploading file...');
+    const filePath = path.resolve(__dirname, 'maxresdefault.jpg');
+  
+    const [fileChooser] = await Promise.all([
+      page.waitForFileChooser(),
+      page.click('svg[data-testid="AddPhotoAlternateIcon"]') // Replace with your pink box selector
+    ]);
+  
+    await fileChooser.accept([filePath]);
+    console.log('✅ Image uploaded');
+}
+
 async function registerUser2(page) {
     const random2 = Math.floor(Math.random() * 100000);
     const registered_email2 = `user2_${random2}@gmail.com`;
@@ -223,7 +236,17 @@ async function loginWithStoredUser2(page) {
 }
 
 async function selectTagsInUser1Profile(page) {
-    const tags = ["community", "blogger", "freelancer"];
+    // All available tags from both images
+    const allTags = [
+        "agency", "artist", "blogger", "collector", "community",
+        "consultant", "designer", "developer", "educator",
+        "freelancer", "influencer", "musician", "nonprofit",
+        "photographer", "podcaster", "publisher", "researcher",
+        "startup", "store", "streamer", "writer"
+    ];
+
+    // Randomly shuffle and take 3 tags
+    const tags = allTags.sort(() => 0.5 - Math.random()).slice(0, 3);
     let selectedTags = [];
 
     for (const tag of tags) {
@@ -257,52 +280,108 @@ async function selectTagsInUser1Profile(page) {
     await delay(300);
 }
 
-async function uploadFile(page) {
-  console.log('📤 Uploading file...');
-  const filePath = path.resolve(__dirname, 'maxresdefault.jpg');
+async function verifyTagsSearchInUser2(page) {
+    const user1Data = JSON.parse(fs.readFileSync(
+        path.join(__dirname, 'registered_user1_info.json'),
+        'utf-8'
+    ));
 
-  const [fileChooser] = await Promise.all([
-    page.waitForFileChooser(),
-    page.click('svg[data-testid="AddPhotoAlternateIcon"]') // Replace with your pink box selector
-  ]);
+    const allTags = [
+        "agency", "artist", "blogger", "collector", "community",
+        "consultant", "designer", "developer", "educator",
+        "freelancer", "influencer", "musician", "nonprofit",
+        "photographer", "podcaster", "publisher", "researcher",
+        "startup", "store", "streamer", "writer"
+    ];
 
-  await fileChooser.accept([filePath]);
-  console.log('✅ Image uploaded');
-}
+    const username = user1Data.username;
+    const user1Tags = user1Data.tags.map(t => t.toLowerCase());
 
-async function smart_click_with_pause(page, selector, pause) {
-    try {
-        await page.waitForSelector(selector, { timeout: 10000 });
-        
-        const elementExists = await page.evaluate((s) => {
-            const element = document.querySelector(s);
-            if (!element) return false;
-            
-            if (typeof element.click === 'function') {
-                element.click();
-                return true;
-            }
-            
-            const clickableParent = element.closest('button, a, [onclick], [role="button"]');
-            if (clickableParent && typeof clickableParent.click === 'function') {
-                clickableParent.click();
-                return true;
-            }
-            
-            return false;
-        }, selector);
-        
-        if (elementExists) {
-            await delay(pause);
-            return true;
-        } else {
-            console.warn(`⚠️ Element not clickable: ${selector}`);
-            return false;
+    let scenarioComplete = false;
+
+    for (let run = 1; run <= 3; run++) {
+        console.log(`\n🔄 Run #${run} — Selecting random tags...`);
+
+        // 1. Clear search bar
+        await smart_click_with_pause(page, "button[data-testid='button-nav-back']", 1000);
+        await smart_click_with_pause(page, "svg[data-testid='ClearIcon']", 500);
+        await page.focus("input[placeholder*='Search']");
+        await page.keyboard.down('Control');
+        await page.keyboard.press('A');
+        await page.keyboard.up('Control');
+        await page.keyboard.press('Backspace');
+        await page.keyboard.press('Enter');
+
+        // 2. Ensure filters panel is open
+        const isPanelOpen = await page.evaluate(() => {
+            const panel = document.querySelector("div[role='presentation']");
+            return panel && panel.offsetParent !== null;
+        });
+        if (!isPanelOpen) {
+            await smart_click_with_pause(page, "button[data-testid='button-nav-toggle-filters']", 500);
         }
-        
-    } catch (error) {
-        console.error(`❌ Click failed for ${selector}:`, error.message);
-        return false;
+
+        // 3. Clear all filters if visible
+        const cleared = await smart_click_by_text(page, "Clear All Filters", 500);
+        if (cleared) {
+            console.log("♻️ Cleared all filters before selecting new tags");
+        }
+
+        // 4. Pick 2–3 random tags
+        const randomTags = allTags.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 2) + 2);
+        for (const tag of randomTags) {
+            await page.evaluate((tagText) => {
+                const buttons = Array.from(document.querySelectorAll("button"));
+                for (const btn of buttons) {
+                    if (btn.textContent.trim().toLowerCase() === tagText.toLowerCase()) {
+                        btn.click();
+                        break;
+                    }
+                }
+            }, tag);
+            console.log(`✅ Clicked tag: ${tag}`);
+            await delay(300);
+        }
+
+        // 5. Click Search button
+        console.log("🔍 Applying filters...");
+        let searchClicked = await smart_click_with_pause(page, "button[data-testid='button-search-submit']", 1500);
+        if (!searchClicked) {
+            searchClicked = await smart_click_by_text(page, "Search", 1500);
+        }
+        if (!searchClicked) {
+            console.warn("⚠️ Search button not found after selecting tags");
+            continue;
+        }
+
+        // 6. Check if tags are relevant to User1
+        const relevantTags = randomTags.filter(tag => user1Tags.includes(tag.toLowerCase()));
+        if (relevantTags.length > 0) {
+            const foundUser = await page.evaluate((username) => {
+                const lowerUsername = username.toLowerCase();
+                return Array.from(document.querySelectorAll("div.MuiPaper-root.MuiPaper-elevation1 h3"))
+                    .some(el => el.textContent.trim().toLowerCase() === lowerUsername);
+            }, username);
+
+            if (foundUser) {
+                console.log(`🎯 User1 found in results for tags: ${relevantTags.join(", ")}`);
+                console.log("🏆 Tags functionality success — filtering works as expected ✅");
+                scenarioComplete = true;
+                break; // stop the loop immediately
+            } else {
+                console.warn(`❌ User1 NOT found for tags: ${relevantTags.join(", ")}`);
+            }
+        } else {
+            console.log(`ℹ️ No relevant tags for User1 in this run. Selected tags: ${randomTags.join(", ")}`);
+        }
+
+        await delay(2000); // Wait before next run
+    }
+
+    if (scenarioComplete) {
+        console.log("✅ Scenario completed successfully — no further runs needed.");
+    } else {
+        console.warn("❌ Scenario ended — tags did not return User1 in any run.");
     }
 }
 
@@ -317,7 +396,7 @@ async function searchByTags(page) {
     if (clicked) {
         await verifyProfileDetails(page, user1Data);
     } else {
-        console.log(`❌ User1 NOT clicked from partial name search`);
+        console.log("❌ User1 NOT clicked from partial name search");
     }
 }
 
@@ -363,7 +442,7 @@ async function searchAndClickProfile(page, usernameOrPartial) {
         return false;
 
     } catch (error) {
-        console.error(`❌ Error searching/clicking profile "${usernameOrPartial}":`, error.message);
+        console.error("❌ Error searching/clicking profile ${usernameOrPartial}:", error.message);
         return false;
     }
 }
@@ -395,6 +474,42 @@ async function verifyProfileDetails(page, user1Data) {
     console.log(`🖼️ Images is present: ${imagesPresent ? '✅' : '❌'}`);
 }
 
+async function smart_click_with_pause(page, selector, pause) {
+    try {
+        await page.waitForSelector(selector, { timeout: 10000 });
+        
+        const elementExists = await page.evaluate((s) => {
+            const element = document.querySelector(s);
+            if (!element) return false;
+            
+            if (typeof element.click === 'function') {
+                element.click();
+                return true;
+            }
+            
+            const clickableParent = element.closest('button, a, [onclick], [role="button"]');
+            if (clickableParent && typeof clickableParent.click === 'function') {
+                clickableParent.click();
+                return true;
+            }
+            
+            return false;
+        }, selector);
+        
+        if (elementExists) {
+            await delay(pause);
+            return true;
+        } else {
+            console.warn(`⚠️ Element not clickable: ${selector}`);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error("❌ Click failed for ${selector}:", error.message);
+        return false;
+    }
+}
+
 async function smart_type_with_pause(page, selector, text, pause) {
     try {
         await page.waitForSelector(selector, { timeout: 10000 });
@@ -409,7 +524,7 @@ async function smart_type_with_pause(page, selector, text, pause) {
         await delay(pause);
         return true;
     } catch (error) {
-        console.error(`❌ Type failed for ${selector}:`, error.message);
+        console.error("❌ Type failed for ${selector}:", error.message);
         return false;
     }
 }
@@ -435,21 +550,34 @@ async function smart_click_by_text(page, text, pause = 2000) {
         return false;
         
     } catch (error) {
-        console.error(`❌ Click by text failed for "${text}":`, error.message);
+        console.error("❌ Click by text failed for ${text}:", error.message);
         return false;
     }
  }
 
-async function automate() {
-    const { browser, page } = await givePage();
-        await registerUser1(page);
-        await loginWithStoredUser1(page);
-        await editProfileUser1(page);
-        await createListingForUser1(page);
-        await registerUser2(page);
-        await loginWithStoredUser2(page);
-        await searchByTags(page);
+// async function automate() {
+//     const { browser, page } = await givePage();
+//         await registerUser1(page);
+//         await loginWithStoredUser1(page);
+//         await editProfileUser1(page);
+//         await createListingForUser1(page);
+//         await registerUser2(page);
+//         await loginWithStoredUser2(page);
+//         await searchByTags(page);
+//         await verifyTagsSearchInUser2(page);
 
+// }
+
+// automate();
+
+module.exports = {
+    givePage,
+    registerUser1,
+    loginWithStoredUser1,
+    editProfileUser1,
+    createListingForUser1,
+    registerUser2,
+    loginWithStoredUser2,
+    searchByTags,
+    verifyTagsSearchInUser2
 }
-
-automate();
