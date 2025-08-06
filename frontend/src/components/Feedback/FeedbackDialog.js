@@ -119,7 +119,7 @@ const FeedbackDialog = ({ open, onClose }) => {
       data-testid="feedback-dialog"
     >
       <DialogTitle className={classes.dialogTitle}>
-        <Typography variant="h6">Send Feedback</Typography>
+        <Typography variant="h6">Help & Support</Typography>
         <IconButton
           onClick={handleClose}
           disabled={loading}
@@ -132,7 +132,13 @@ const FeedbackDialog = ({ open, onClose }) => {
       
       <DialogContent className={classes.dialogContent}>
         <Typography variant="body2" color="textSecondary" gutterBottom>
-          Your feedback helps us improve:
+          Need help? Contact us on Telegram: <strong>@eccentric_protocol</strong>
+        </Typography>
+        
+        <Box sx={{ mb: 2 }} />
+        
+        <Typography variant="body2" color="textSecondary" gutterBottom>
+          Or send us feedback to help us improve:
         </Typography>
         
         <TextField

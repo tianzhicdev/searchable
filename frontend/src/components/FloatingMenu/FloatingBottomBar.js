@@ -31,7 +31,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import CategoryIcon from '@material-ui/icons/Category';
-import FeedbackIcon from '@material-ui/icons/Feedback';
+import HelpIcon from '@material-ui/icons/Help';
 
 const useStyles = makeStyles((theme) => ({
   floatingBar: {
@@ -199,8 +199,8 @@ const FloatingBottomBar = () => {
     },
     { divider: true },
     {
-      icon: <FeedbackIcon />,
-      label: 'Feedback',
+      icon: <HelpIcon />,
+      label: 'Help',
       onClick: () => {
         setFeedbackDialogOpen(true);
         handleCloseAll();
