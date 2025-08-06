@@ -9,7 +9,7 @@ const filePath = 'automation_scripts/automation_scripts/optimized/file3.txt';
 const username = `testUser${RANDOM_SUFFIX}`;
 const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;
 const password = `testUser${RANDOM_SUFFIX}`;                             
-const storeName = 'Store 1';                                 
+const storeName = `Store 1 ${RANDOM_SUFFIX}`;  // ensures uniqueness
 const productPrice = '4.99';
 
 //const product_url = "https://silkroadonlightning.com/landing";
@@ -114,6 +114,8 @@ async function onboarding(page) {
     
     console.log('Logging out the seller...');
     await logoutSeller(page);
+
+    await delay(3000);
 }
 
 async function uploadFile(page, filePath) {
@@ -148,11 +150,11 @@ async function uploadFile(page, filePath) {
 
 async function logoutSeller(page) {
     console.log("🔒 Logging out seller...");
-    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);
-    await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-logout']", 2000);
-    await delay(2000);
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 1000);
+    await smart_click_by_text(page, "Log Out", 1000);
+    await delay(1000);
     console.log("✅ Seller logged out");
- }
+}
 
 async function smart_click_with_pause(page, selector, pause) {
     try {

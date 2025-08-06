@@ -16,15 +16,10 @@ let email = '';
 let password = '';
 //let productPrice = 4;
 
-try {
-    const data = fs.readFileSync(userInfoPath, 'utf-8');
-    const parsed = JSON.parse(data);
+if (fs.existsSync(userInfoPath)) {
+    const parsed = JSON.parse(fs.readFileSync(userInfoPath, 'utf-8'));
     email = parsed.email;
     password = parsed.password;
-    console.log(`✅ Loaded seller info: ${email}`);
-} catch (e) {
-    console.error('❌ Failed to read seller info:', e.message);
-    process.exit(1);
 }
 
 function delay(ms) {
@@ -56,31 +51,36 @@ async function loginAsSeller(page) {
 
 async function verifyBalance(page) {
     console.log('💰 Navigating to account section...');
-    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);    await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-edit-profile']", 2000);
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);    
+    await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-edit-profile']", 2000);
     
     const randomText = `This is a random bio generated at ${new Date().toLocaleString()}.
     It has multiple lines to test text area input.
     Hope you like it!`;
 
-    await smart_type_with_pause(page, "textarea[name='introduction']", randomText, 2000);
-    await smart_click_with_pause(page, "button[id='button-edit-profile-save']", 2000);
-    console.log('✅ Profile bio updated with random text.');
-    await smart_click_with_pause(page, "button[data-testid='button-nav-back']", 2500);
+    // Focus and clear the textarea first
+    await page.click("textarea[name='introduction']", { clickCount: 3 }); // triple-click selects all text
+    await page.keyboard.press('Backspace'); // delete selected text
 
+    // Now type the new random text
+    await smart_type_with_pause(page, "textarea[name='introduction']", randomText, 2000);
+    await smart_click_by_text(page, "Save Profile", 2000);
+    console.log('✅ Profile bio updated with random text.');
+    //await smart_click_with_pause(page, "button[data-testid='button-nav-back']", 2500);
 
     const balanceAmount = await page.evaluate(() => {
-        const h4s = Array.from(document.querySelectorAll("h4"));
-        for (const h4 of h4s) {
-            if (h4.innerText.includes("USD") && h4.innerText.includes("$")) {
-                const span = h4.querySelector("span");
-                if (span) {
-                    const value = span.textContent.replace(/[^0-9.]/g, '');
-                    return parseFloat(value);
-                }
+        const paragraphElements = Array.from(document.querySelectorAll("p"));
+        for (const p of paragraphElements) {
+            const text = p.innerText.trim();
+            // Match something like "$0 USDT"
+            const match = text.match(/\$([\d.]+)\s*USDT/i);
+            if (match) {
+                return parseFloat(match[1]);
             }
         }
         return null;
     });
+    
 
     if (balanceAmount !== null && !isNaN(balanceAmount)) {
         console.log(`💰 Seller balance: $${balanceAmount.toFixed(2)}`);
@@ -96,6 +96,7 @@ async function verifyBalance(page) {
 }
 
 async function initiateWithdrawal(page) {
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 2000);
     await smart_click_with_pause(page, "li[id='menuitem-floating-bottom-bar-account-withdraw-usdt']", 2000);
     console.log('🏦 Navigated to withdrawal screen');
 
@@ -106,28 +107,35 @@ async function initiateWithdrawal(page) {
 }
 
 async function verifyWithdrawalStatus(page) {
-    console.log('⏳ Waiting 3 minutes for withdrawal confirmation...');
-    
+    console.log('⏳ Waiting 1 minute for withdrawal confirmation...');
+
+    // Navigate to withdrawals
     await smart_click_with_pause(page, "span[class='MuiButton-endIcon MuiButton-iconSizeMedium css-1gnd1fd-MuiButton-endIcon']", 2000);
     await page.evaluate(() => {
         const items = Array.from(document.querySelectorAll("li.MuiMenuItem-root"));
         const withdrawalItem = items.find(el => el.innerText.trim().toLowerCase().includes("withdrawals"));
         if (withdrawalItem) withdrawalItem.click();
     });
-    await delay(2000);    
+    await delay(2000);
 
-    // const statusText = await page.evaluate(() => {
-    //     const el = document.querySelector("span.status"); // Replace with correct selector
-    //     return el ? el.innerText.trim() : null;
-    // });
-    await delay(180000);
+    // Wait for backend processing
+    await delay(60000);
 
+    // Reload page to get updated status
+    await page.reload({ waitUntil: ['networkidle0', 'domcontentloaded'] });
 
-    // if (statusText?.toLowerCase() === "complete") {
-    //     console.log("✅ Withdrawal status: COMPLETE");
-    // } else {
-    //     console.warn(`⚠️ Withdrawal status not complete: ${statusText}`);
-    // }
+    // Extract status text
+    const statusText = await page.evaluate(() => {
+        const elements = Array.from(document.querySelectorAll("span.MuiTypography-root"));
+        const statusElement = elements.find(el => el.innerText.trim().toLowerCase() === "complete");
+        return statusElement ? statusElement.innerText.trim() : null;
+    });
+
+    if (statusText?.toLowerCase() === "complete") {
+        console.log("✅ Withdrawal status: COMPLETE");
+    } else {
+        console.warn(`⚠️ Withdrawal status not complete: ${statusText}`);
+    }
 }
 
 // Reuse helper functions
@@ -173,18 +181,26 @@ async function smart_type_with_pause(page, selector, text, pause) {
     }
 }
 
-async function automate() {
-    const { browser, page } = await givePage();
-    try {
-        await loginAsSeller(page);
-        await verifyBalance(page);
-        await initiateWithdrawal(page);
-        await verifyWithdrawalStatus(page);
-    } catch (err) {
-        console.error('❌ Seller withdrawal flow failed:', err.message);
-    } finally {
-        console.log('🔍 Inspection time. Close browser manually.');
-    }
-}
+module.exports = {
+    givePage,
+    loginAsSeller,
+    verifyBalance,
+    initiateWithdrawal,
+    verifyWithdrawalStatus
+};
 
-automate();
+// async function automate() {
+//     const { browser, page } = await givePage();
+//     try {
+//         await loginAsSeller(page);
+//         await verifyBalance(page);
+//         await initiateWithdrawal(page);
+//         await verifyWithdrawalStatus(page);
+//     } catch (err) {
+//         console.error('❌ Seller withdrawal flow failed:', err.message);
+//     } finally {
+//         console.log('🔍 Inspection time. Close browser manually.');
+//     }
+// }
+
+// automate();

@@ -7,20 +7,16 @@ const path = require('path');
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);                 
 const buyer_email = `testuser${RANDOM_SUFFIX}@gmail.com`;          
 const password = `testuser${RANDOM_SUFFIX}`;                          
-const addBalanceAmount = "20";  
+const addBalanceAmount = '20';  
 const userInfoPath = path.join(__dirname, 'store_user_info.json');
 let username = '';
 let storeName = '';
 
-try {
+if (fs.existsSync(userInfoPath)) {
     const data = fs.readFileSync(userInfoPath, 'utf-8');
     const parsedData = JSON.parse(data);
     username = parsedData.username;
     storeName = parsedData.storeName;
-    console.log(`📦 Seller info loaded: username = ${username}, storeName = ${storeName}`);
-} catch (error) {
-    console.error('❌ Failed to read seller info JSON:', error.message);
-    process.exit(1); // Exit early if seller data isn't available
 }
 
 //const product_url = "https://silkroadonlightning.com/landing";
@@ -103,9 +99,7 @@ async function addBalance(page) {
     await page.focus("div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']");
     await page.click("div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", { clickCount: 3 });
     await page.keyboard.press('Backspace');
-    await smart_type_with_pause(page, "div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", addBalanceAmount, 1000);
-   //await smart_type_with_pause(page, "div[class='MuiOutlinedInput-root MuiInputBase-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl css-1nggkca-MuiInputBase-root-MuiOutlinedInput-root']", "25", 1000);
-
+    await smart_type_with_pause(page, "input[class='MuiOutlinedInput-input MuiInputBase-input css-1uf0eps-MuiInputBase-input-MuiOutlinedInput-input']", addBalanceAmount, 1000);
     console.log('✅ Price set successfully');
 
     await smart_click_with_pause(page, "button[class='MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge MuiButton-containedSizeLarge MuiButton-fullWidth MuiButtonBase-root css-23erxl-MuiButtonBase-root-MuiButton-root']", 3000);
@@ -162,7 +156,7 @@ async function searchAndOpenStore(page) {
 
     await page.keyboard.press('Enter');
     //await smart_click_by_text(page, "h3[class='${username}']", 2000);
-    const selector = h3;
+    const selector = `h3`;
     await page.waitForSelector(selector, { timeout: 10000 });
 
     const clicked = await page.evaluate((username) => {
@@ -178,23 +172,27 @@ async function searchAndOpenStore(page) {
 
     console.log(`🔍 Searching for product available in the store: ${storeName}`);
     //await smart_click_by_text(page, storeName, 2000);
-    const selectorProduct = h3;
+    const selectorProduct = `h3`;
     await page.waitForSelector(selectorProduct, { timeout: 10000 });
 
     const clickedProduct = await page.evaluate((storeName) => {
         const elements = Array.from(document.querySelectorAll("h3"));
         for (const el of elements) {
-            if (el.textContent.trim().toLowerCase().includes(storeName.toLowerCase())) {
+            if (el.textContent.trim().toLowerCase() === storeName.toLowerCase()) {
                 el.click();
                 return true;
             }
         }
         return false;
-    }, storeName);
+    }, storeName);    
 
     //Select item/s after selecting product/s
+    await delay(2000);
+    await smart_click_by_text(page, storeName, 1000);
+    console.log('✅ Published Item selected from Product.');
+
     await smart_click_with_pause(page, "div[class='MuiBox-root css-nb2z2f']", 1000);
-    console.log('✅ Item/s selected from Product.');
+    console.log('✅ Content Item/s selected from Published Items.');
 
     // Click the payment button
     await smart_click_with_pause(page, "button[data-testid='button-pay-stripe']", 4000);
@@ -207,6 +205,15 @@ async function searchAndOpenStore(page) {
     console.log('✅ File download initiated.');
     await smart_click_with_pause(page, "button[class='MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButtonBase-root css-hkny9w-MuiButtonBase-root-MuiButton-root']", 2000);
     console.log('✅ File download completed.');
+}
+
+async function logoutSeller(page) {
+    console.log("🔒 Logging out seller...");
+    await smart_click_with_pause(page, "button[id='button-floating-bottom-bar-account']", 1000);
+    await smart_click_by_text(page, "Log Out", 1000);
+    await delay(1000);
+    console.log("✅ Seller logged out");
+    await delay(3000);
 }
 
 async function smart_click_with_pause(page, selector, pause) {
@@ -240,7 +247,7 @@ async function smart_click_with_pause(page, selector, pause) {
         }
         
     } catch (error) {
-        console.error("❌ Click failed for ${selector}:", error.message);
+        console.error(`❌ Click failed for ${selector}:`, error.message);
         return false;
     }
 }
@@ -259,7 +266,7 @@ async function smart_type_with_pause(page, selector, text, pause) {
         await delay(pause);
         return true;
     } catch (error) {
-        console.error("❌ Type failed for ${selector}:", error.message);
+        console.error(`❌ Type failed for ${selector}:`, error.message);
         return false;
     }
 }
@@ -285,20 +292,20 @@ async function smart_click_by_text(page, text, pause = 2000) {
         return false;
         
     } catch (error) {
-        console.error("❌ Click by text failed for ${text}:", error.message);
+        console.error(`❌ Click by text failed for "${text}":`, error.message);
         return false;
     }
  }
-// At bottom of guest_journey.js
+
 module.exports = {
     givePage,
     buyerOnboardingAsGuest,
     buyerResgisterAsUser,
     addBalance,
-    searchAndOpenStore
+    searchAndOpenStore,
+    logoutSeller
   };
   
-
 //  async function automate() {
 //     const { browser, page } = await givePage();
 //     await buyerOnboardingAsGuest(page);
