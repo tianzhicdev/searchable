@@ -5,7 +5,7 @@ puppeteer.use(StealthPlugin());
 
 const fs = require('fs');
 const RANDOM_SUFFIX = Math.floor(Math.random() * 10000);
-const filePath = 'automation_scripts/automation_scripts/optimized/file3.txt';
+const filePath = 'automation_scripts/optimized/file3.txt';
 const username = `testUser${RANDOM_SUFFIX}`;
 const seller_email = `testuser${RANDOM_SUFFIX}@gmail.com`;
 const password = `testUser${RANDOM_SUFFIX}`;                             

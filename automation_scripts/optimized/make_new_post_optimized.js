@@ -13,8 +13,8 @@ const CONFIG = {
         password: 'testUser5404'
     },
     files: {
-        image: 'automation_scripts/automation_scripts/optimized/maxresdefault.jpg',
-        download: 'automation_scripts/automation_scripts/optimized/file3.txt'
+        image: 'automation_scripts/optimized/maxresdefault.jpg',
+        download: 'automation_scripts/optimized/file3.txt'
     }
 };
 
