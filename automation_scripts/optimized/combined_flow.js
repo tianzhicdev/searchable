@@ -2,6 +2,7 @@ const { givePage: giveSellerPage, onboarding } = require('./seller_onboarding');
 const { givePage: giveBuyerPage, buyerOnboardingAsGuest, buyerResgisterAsUser, addBalance, searchAndOpenStore } = require('./guest_journey');
 const { givePage: giveSellerWithdrawalPage, loginAsSeller, verifyBalance, initiateWithdrawal, verifyWithdrawalStatus } = require('./seller_withdrawal');
 const { givePage: giveProfileEditAndSearch, registerUser1, loginWithStoredUser1, editProfileUser1, createListingForUser1, registerUser2, loginWithStoredUser2, searchByTags, verifyTagsSearchInUser2 } = require('./profile_edit_and_search');
+const { givePage: giveContentDiscoveryPage, contentDiscoveryTag } = require('./content_discovery');
 
 async function sellerSetup() {
     console.log("\n🚀 Seller Onboarding Started...");
@@ -50,9 +51,18 @@ async function profileEditAndSearch() {
     console.log("✅ Profile Edit and Search Journey Finished!");
 }
 
+async function contentDiscovery() {
+    console.log("\n🔍 Content Discovery Journey Started...");
+    const { browser, page } = await giveContentDiscoveryPage();
+    await contentDiscoveryTag(page);
+    await browser.close();
+    console.log("✅ Content Discovery Journey Finished!");
+}
+
 (async () => {
     await sellerSetup();
     await guestJourney();
     await sellerWithdrawal();
     await profileEditAndSearch();
+    await contentDiscovery();
 })();
