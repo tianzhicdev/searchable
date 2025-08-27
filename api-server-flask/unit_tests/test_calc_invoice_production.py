@@ -309,6 +309,68 @@ class TestCalcInvoice(unittest.TestCase):
         
         self.assertEqual(result['amount_usd'], 10.00)  # 0.01 * 1000
         self.assertEqual(result['total_item_count'], 1000)
+        
+    # Input validation tests - 27th august - Sajan
+    def test_negative_count_raises(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Neg Count',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 10.00}]
+        }}}
+        with self.assertRaises(ValueError):
+            calc_invoice(data, [{'id': 'f1', 'count': -1}])
+
+    def test_non_integer_count_raises(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Bad Count',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 10.00}]
+        }}}
+        with self.assertRaises(ValueError):
+            calc_invoice(data, [{'id': 'f1', 'count': "2"}])  # strict: must be int
+
+    def test_negative_catalog_price_raises(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Bad Price',
+            'downloadableFiles': [{'fileId': 'f1', 'price': -9.99}]
+        }}}
+        with self.assertRaises(ValueError):
+            calc_invoice(data, [{'id': 'f1', 'count': 1}])
+
+    def test_selections_none_treated_as_empty(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'No Select',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 10.00}]
+        }}}
+        out = calc_invoice(data, None)  # None => []
+        self.assertEqual(out['amount_usd'], 0.00)
+        self.assertEqual(out['total_amount_usd'], 0.00)
+        self.assertEqual(out['total_item_count'], 0)
+        self.assertEqual(out['description'], 'No Select')
+
+    # Rounding boundaries (Decimal + HALF_UP)
+    def test_rounding_boundary_1005(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Boundary 1.005',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 1.005}]
+        }}}
+        out = calc_invoice(data, [{'id': 'f1', 'count': 1}])
+        self.assertEqual(out['total_amount_usd'], 1.01)
+
+    def test_rounding_boundary_2675(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Boundary 2.675',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 2.675}]
+        }}}
+        out = calc_invoice(data, [{'id': 'f1', 'count': 1}])
+        self.assertEqual(out['total_amount_usd'], 2.68)
+
+    def test_very_large_totals_no_float_drift(self):
+        data = {'payloads': {'public': {
+            'type': 'downloadable', 'title': 'Large Totals',
+            'downloadableFiles': [{'fileId': 'f1', 'price': 0.01}]
+        }}}
+        out = calc_invoice(data, [{'id': 'f1', 'count': 100000}])  # 0.01 * 100000
+        self.assertEqual(out['total_amount_usd'], 1000.00)
+        self.assertEqual(out['total_item_count'], 100000)
 
 
 if __name__ == '__main__':
