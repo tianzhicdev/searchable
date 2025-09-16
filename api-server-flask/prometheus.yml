@@ -1,7 +1,19 @@
+# global:
+#   scrape_interval: 15s
+
+# scrape_configs:
+#   - job_name: "prometheus"
+#     static_configs:
+#       - targets: ["localhost:3006"]
+
 global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: "flask_api"
+  - job_name: "prometheus"
     static_configs:
-      - targets: ["flask_api:5005"]
+      - targets: ["localhost:3006"]
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']

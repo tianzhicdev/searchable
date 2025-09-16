@@ -1,0 +1,11 @@
+groups:
+  - name: example-alerts
+    rules:
+      - alert: HighRequestLatency
+        expr: rate(http_request_duration_seconds_sum[5m]) > 0.5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency detected"
+          description: "The request latency is above 0.5s for the last 5 minutes."
