@@ -309,6 +309,110 @@ class TestCalcInvoice(unittest.TestCase):
         
         self.assertEqual(result['amount_usd'], 10.00)  # 0.01 * 1000
         self.assertEqual(result['total_item_count'], 1000)
+        
+    def test_calc_invoice_allinone_downloadable(self):
+        """Test allinone invoice with only downloadable component"""
+        searchable_data = {
+            'payloads': {
+                'public': {
+                    'type': 'allinone',
+                    'title': 'AllInOne Package',
+                    'components': {
+                        'downloadable': {
+                            'enabled': True,
+                            'files': [
+                                {'fileId': 'file1', 'price': 5.00, 'name': 'Doc1'}
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        selections = [{'component': 'downloadable', 'id': 'file1', 'count': 2}]
+        result = calc_invoice(searchable_data, selections)
+        
+        self.assertEqual(result['amount_usd'], 10.00)  # 5 * 2
+        self.assertIn("Doc1 (x2)", result['description'])
+        self.assertEqual(result['total_item_count'], 2)
+
+    def test_calc_invoice_allinone_offline(self):
+        """Test allinone invoice with offline component"""
+        searchable_data = {
+            'payloads': {
+                'public': {
+                    'type': 'allinone',
+                    'title': 'Service Pack',
+                    'components': {
+                        'offline': {
+                            'enabled': True,
+                            'items': [
+                                {'id': 'item1', 'price': 20.00, 'name': 'Consultation'}
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        selections = [{'component': 'offline', 'id': 'item1', 'count': 3}]
+        result = calc_invoice(searchable_data, selections)
+        
+        self.assertEqual(result['amount_usd'], 60.00)  # 20 * 3
+        self.assertIn("Consultation (x3)", result['description'])
+        self.assertEqual(result['total_item_count'], 3)
+
+    def test_calc_invoice_allinone_donation(self):
+        """Test allinone invoice with donation component"""
+        searchable_data = {
+            'payloads': {
+                'public': {
+                    'type': 'allinone',
+                    'title': 'Donation Pack',
+                    'components': {
+                        'donation': {'enabled': True}
+                    }
+                }
+            }
+        }
+        selections = [{'component': 'donation', 'amount': 15.75}]
+        result = calc_invoice(searchable_data, selections)
+        
+        self.assertEqual(result['amount_usd'], 15.75)
+        self.assertIn("Donation: $15.75", result['description'])
+        self.assertEqual(result['total_item_count'], 1)
+
+    def test_calc_invoice_allinone_mixed(self):
+        """Test allinone invoice combining downloadable, offline, and donation"""
+        searchable_data = {
+            'payloads': {
+                'public': {
+                    'type': 'allinone',
+                    'title': 'Full Bundle',
+                    'components': {
+                        'downloadable': {
+                            'enabled': True,
+                            'files': [{'fileId': 'f1', 'price': 5.00, 'name': 'E-Book'}]
+                        },
+                        'offline': {
+                            'enabled': True,
+                            'items': [{'id': 'i1', 'price': 50.00, 'name': 'Workshop'}]
+                        },
+                        'donation': {'enabled': True}
+                    }
+                }
+            }
+        }
+        selections = [
+            {'component': 'downloadable', 'id': 'f1', 'count': 2},   # 5*2 = 10
+            {'component': 'offline', 'id': 'i1', 'count': 1},       # 50*1 = 50
+            {'component': 'donation', 'amount': 25.00}              # donation
+        ]
+        result = calc_invoice(searchable_data, selections)
+        
+        self.assertEqual(result['amount_usd'], 85.00)  # 10 + 50 + 25
+        self.assertIn("E-Book (x2)", result['description'])
+        self.assertIn("Workshop", result['description'])
+        self.assertIn("Donation: $25.00", result['description'])
+        self.assertEqual(result['total_item_count'], 4)  # 2 + 1 + 1
 
 
 if __name__ == '__main__':
