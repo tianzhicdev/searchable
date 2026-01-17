@@ -504,3 +504,19 @@ CREATE TABLE IF NOT EXISTS feedback (
 
 CREATE INDEX idx_feedback_user_id ON feedback(user_id);
 CREATE INDEX idx_feedback_created_at ON feedback(created_at DESC);
+
+-- Service heartbeat table for monitoring background jobs
+CREATE TABLE IF NOT EXISTS service_heartbeat (
+    id SERIAL PRIMARY KEY,
+    service_name VARCHAR(50) NOT NULL,
+    job_name VARCHAR(100) NOT NULL,
+    last_heartbeat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB DEFAULT '{}',
+    UNIQUE(service_name, job_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_heartbeat_service ON service_heartbeat(service_name);
+CREATE INDEX IF NOT EXISTS idx_heartbeat_timestamp ON service_heartbeat(last_heartbeat DESC);
+
+COMMENT ON TABLE service_heartbeat IS 'Tracks heartbeats from background services for health monitoring';
+COMMENT ON COLUMN service_heartbeat.metadata IS 'Additional context like task count, errors, etc.';

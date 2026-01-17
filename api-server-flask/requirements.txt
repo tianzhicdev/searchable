@@ -39,3 +39,4 @@ zipp==3.11.0
 psycopg2-binary
 prometheus-client
 stripe>=5.0.0
+docker>=6.0.0

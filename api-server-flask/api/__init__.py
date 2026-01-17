@@ -5,7 +5,7 @@ Copyright (c) 2019 - present AppSeed.us
 
 import os, json
 import sys
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_restx import Api
 from .common.models import db
@@ -53,19 +53,33 @@ def initialize_database():
 """
 
 @app.after_request
-def after_request(response):
+def after_request_handler(response):
     """
        Sends back a custom error with {"success", "msg"} format
     """
     if int(response.status_code) >= 400:
+        # Skip transformation for health check and dashboard responses - they have their own format
+        if request.path and ('/health' in request.path or '/dashboard' in request.path):
+            return response
+
         try:
             response_data = json.loads(response.get_data())
+
             if "errors" in response_data:
-                response_data = {"success": False,
-                                "msg": list(response_data["errors"].items())[0][1]}
+                errors = response_data["errors"]
+                # Handle both dict and list error formats
+                if isinstance(errors, dict):
+                    response_data = {"success": False,
+                                    "msg": list(errors.items())[0][1]}
+                elif isinstance(errors, list) and len(errors) > 0:
+                    response_data = {"success": False,
+                                    "msg": errors[0] if isinstance(errors[0], str) else str(errors[0])}
+                else:
+                    # If errors is empty or unexpected type, don't modify
+                    return response
                 response.set_data(json.dumps(response_data))
             response.headers.add('Content-Type', 'application/json')
-        except json.JSONDecodeError:
-            # If response is not valid JSON, don't try to modify it
+        except (json.JSONDecodeError, KeyError, IndexError, AttributeError):
+            # If response is not valid JSON or has unexpected structure, don't try to modify it
             pass
     return response

@@ -150,6 +150,41 @@ async function getGasPrice() {
 
 
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    // Check Web3 provider connection
+    const networkId = await web3.eth.net.getId();
+    const blockNumber = await web3.eth.getBlockNumber();
+
+    // Check if we can access the master wallet
+    const masterAddress = account.address;
+
+    // Quick balance check to verify contract interaction
+    const ethBalance = await web3.eth.getBalance(masterAddress);
+
+    res.json({
+      status: 'healthy',
+      service: 'usdt-api',
+      timestamp: new Date().toISOString(),
+      network_id: networkId.toString(),
+      latest_block: blockNumber.toString(),
+      master_wallet: masterAddress,
+      infura_connected: true,
+      domain: domain
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      service: 'usdt-api',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      infura_connected: false
+    });
+  }
+});
+
 // Get USDT balance
 app.get('/balance/:address', async (req, res) => {
   try {
