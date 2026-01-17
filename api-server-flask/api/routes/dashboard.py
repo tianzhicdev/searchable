@@ -287,10 +287,20 @@ DASHBOARD_HTML_TEMPLATE = """
         .wallet-address {
             font-family: 'Courier New', monospace;
             font-size: 0.7em;
-            color: #60a5fa;
             word-break: break-all;
             line-height: 1.3;
             margin: 6px 0;
+        }
+
+        .wallet-address a {
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .wallet-address a:hover {
+            color: #93c5fd;
+            text-decoration: underline;
         }
 
         @media (min-width: 768px) {
@@ -467,6 +477,9 @@ DASHBOARD_HTML_TEMPLATE = """
             // Docker Containers
             if (data.checks && data.checks.docker_containers) {
                 const docker = data.checks.docker_containers;
+                // Filter out frontend container (it's a build container that exits after build)
+                const displayContainers = docker.containers ?
+                    docker.containers.filter(c => !c.name.toLowerCase().includes('frontend')) : [];
                 html += `
                     <div class="section">
                         <div class="section-title">
@@ -474,7 +487,7 @@ DASHBOARD_HTML_TEMPLATE = """
                             <span class="status-badge ${getStatusClass(docker.status)}">${docker.running || 0}/${docker.expected || 0}</span>
                         </div>
                         <div class="grid">
-                            ${docker.containers ? docker.containers.map(c => `
+                            ${displayContainers.length > 0 ? displayContainers.map(c => `
                                 <div class="card">
                                     <div class="card-title">${c.name}</div>
                                     <div class="card-value">
@@ -520,6 +533,7 @@ DASHBOARD_HTML_TEMPLATE = """
             if (data.checks && data.checks.wallets && data.checks.wallets.wallet) {
                 const walletCheck = data.checks.wallets;
                 const wallet = walletCheck.wallet;
+                const etherscanUrl = wallet.address ? `https://etherscan.io/address/${wallet.address}` : '#';
                 html += `
                     <div class="section">
                         <div class="section-title">
@@ -529,7 +543,11 @@ DASHBOARD_HTML_TEMPLATE = """
                         <div class="grid">
                             <div class="card">
                                 <div class="card-title">${wallet.label || 'Production Wallet'}</div>
-                                <div class="wallet-address">${wallet.address || 'Unknown'}</div>
+                                <div class="wallet-address">
+                                    <a href="${etherscanUrl}" target="_blank" rel="noopener noreferrer">
+                                        ${wallet.address || 'Unknown'}
+                                    </a>
+                                </div>
                                 <div class="card-value">
                                     <span class="status-badge ${getStatusClass(wallet.status)}">
                                         ${wallet.status || 'unknown'}
@@ -537,7 +555,8 @@ DASHBOARD_HTML_TEMPLATE = """
                                 </div>
                                 <div class="card-subtitle">
                                     ETH: ${wallet.eth_balance || '0'}<br>
-                                    USDT: ${wallet.usdt_balance || '0'}
+                                    USDT: ${wallet.usdt_balance || '0'}<br>
+                                    <small style="color: #64748b;">Click address to view on Etherscan</small>
                                 </div>
                             </div>
                         </div>
