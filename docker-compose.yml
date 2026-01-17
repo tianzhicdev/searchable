@@ -89,7 +89,7 @@ services:
       - web_network
   
   db:
-    image: postgres:17  # Pin to version 16 to avoid breaking changes
+    image: postgres:17  
     restart: always
     env_file:
       - ./.env.secrets
