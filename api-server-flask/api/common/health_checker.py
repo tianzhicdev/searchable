@@ -309,15 +309,26 @@ def check_wallets() -> Dict[str, Any]:
         # Only check the single monitored wallet
         monitored_wallet = check_wallet_balance(MONITORED_WALLET, 'Production Wallet')
 
+        # Wallet monitoring is informational only - don't fail health checks on low balance
+        # Users can click through to Etherscan to see real balance
         return {
-            'status': monitored_wallet.get('status', 'unknown'),
-            'wallet': monitored_wallet
+            'status': 'healthy',  # Always healthy - informational only
+            'wallet': monitored_wallet,
+            'note': 'Wallet monitoring is informational - click address to view on Etherscan'
         }
     except Exception as e:
         logger.error(f"Wallet check failed: {e}")
         return {
-            'status': 'unknown',
-            'error': str(e)
+            'status': 'healthy',  # Don't fail health check on wallet API issues
+            'wallet': {
+                'address': MONITORED_WALLET,
+                'label': 'Production Wallet',
+                'status': 'unknown',
+                'error': str(e),
+                'eth_balance': 'unknown',
+                'usdt_balance': 'unknown'
+            },
+            'note': 'Click address to view on Etherscan'
         }
 
 
