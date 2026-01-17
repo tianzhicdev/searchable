@@ -19,47 +19,9 @@ docker exec searchable-db-1 psql --version
 - If it's PostgreSQL 13-17: Should be compatible, but consider upgrading to 16 for consistency
 - If it's PostgreSQL 18+: You MUST pin to version 16 in docker-compose.yml (already done in this branch)
 
-### 2. Verify Database Table
-
-Check if the `service_heartbeat` table exists in production:
-
-```bash
-docker exec searchable-db-1 psql -U searchable -d searchable -c "\dt service_heartbeat"
-```
-
-**Expected Output**:
-- If table exists: `service_heartbeat | table | searchable`
-- If table doesn't exist: `Did not find any relation named "service_heartbeat"`
-
 ## Deployment Steps
 
-### Step 1: Add service_heartbeat Table (if missing)
-
-If the table doesn't exist in production, create it:
-
-```bash
-docker exec searchable-db-1 psql -U searchable -d searchable <<'EOF'
-CREATE TABLE IF NOT EXISTS service_heartbeat (
-    id SERIAL PRIMARY KEY,
-    service_name VARCHAR(50) NOT NULL,
-    job_name VARCHAR(100) NOT NULL,
-    last_heartbeat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    metadata JSONB DEFAULT '{}',
-    UNIQUE(service_name, job_name)
-);
-
-CREATE INDEX IF NOT EXISTS idx_heartbeat_service ON service_heartbeat(service_name);
-CREATE INDEX IF NOT EXISTS idx_heartbeat_timestamp ON service_heartbeat(last_heartbeat DESC);
-EOF
-```
-
-Verify the table was created:
-
-```bash
-docker exec searchable-db-1 psql -U searchable -d searchable -c "SELECT COUNT(*) FROM service_heartbeat;"
-```
-
-### Step 2: Deploy to Production
+### Step 1: Deploy to Production
 
 Deploy the changes to production using the standard deployment process:
 
@@ -74,9 +36,9 @@ Or deploy specific containers:
 ./exec.sh remote deploy background
 ```
 
-### Step 3: Verify Deployment
+### Step 2: Verify Deployment
 
-#### 3.1 Check Flask API Logs
+#### 2.1 Check Flask API Logs
 
 ```bash
 docker logs flask_api --tail 50
@@ -87,7 +49,7 @@ Look for:
 - ✅ "Running comprehensive health checks..."
 - ❌ NO errors about missing tables or Docker socket
 
-#### 3.2 Test Health Endpoint
+#### 2.2 Test Health Endpoint
 
 ```bash
 curl https://your-production-domain.com/api/health | jq '.'
@@ -97,7 +59,7 @@ curl https://your-production-domain.com/api/health | jq '.'
 - Status: 200 (if all healthy) or 503 (if issues detected)
 - JSON with all health checks (database, disk_space, docker_containers, services, background_jobs, wallets, external_apis)
 
-#### 3.3 Access Dashboard
+#### 2.3 Access Dashboard
 
 Open in browser:
 ```
@@ -109,25 +71,7 @@ https://your-production-domain.com/api/dashboard
 - Auto-refreshes every 10 seconds
 - Color-coded status indicators (green/yellow/red)
 
-#### 3.4 Verify Background Job Heartbeats
-
-After 5-10 minutes, check that heartbeats are being recorded:
-
-```bash
-docker exec searchable-db-1 psql -U searchable -d searchable -c "SELECT service_name, job_name, last_heartbeat FROM service_heartbeat ORDER BY last_heartbeat DESC;"
-```
-
-**Expected Output**: 4 rows showing recent timestamps:
-```
- service_name |        job_name        |       last_heartbeat
---------------+------------------------+----------------------------
- background   | withdrawal_checker     | 2026-01-17 04:20:00+00
- background   | invoice_checker        | 2026-01-17 04:19:55+00
- background   | download_token_cleaner | 2026-01-17 04:19:50+00
- background   | lightning_checker      | 2026-01-17 04:19:45+00
-```
-
-### Step 4: Configure Uptimebot
+### Step 3: Configure Uptimebot
 
 Update your uptimebot monitoring to use the new `/api/health` endpoint:
 
@@ -150,10 +94,8 @@ Update your uptimebot monitoring to use the new `/api/health` endpoint:
 
 ### Modified Files
 - `api-server-flask/api/routes/metrics.py` - Enhanced /api/health endpoint
-- `api-server-flask/background.py` - Added heartbeat tracking
 - `api-server-flask/api/file_server.py` - Added /health endpoint
 - `tether_on_eth/index.js` - Added /health endpoint
-- `postgres/init.sql` - Added service_heartbeat table
 - `docker-compose.yml` - Pinned PostgreSQL to version 16, added Docker socket mount
 - `docker-compose.local.yml` - Added Docker socket mount
 - `api-server-flask/requirements.txt` - Added docker>=6.0.0
@@ -167,7 +109,7 @@ The system now monitors:
 2. **Disk Space** - Root and storage volumes (warning at 85%, critical at 90%)
 3. **Docker Containers** - 8 running services (nginx, flask_api, file_server, db, usdt-api, background, metrics, grafana)
 4. **Service Health** - file_server, usdt-api, metrics endpoints
-5. **Background Jobs** - 4 job heartbeats (invoice_checker, withdrawal_checker, lightning_checker, download_token_cleaner)
+5. **Background Service** - Background container running status (via Docker monitoring)
 6. **Production Wallet** - ETH and USDT balance for `0x80b4a2ebeceF714dF8E08692A9D2B3ADFb8Ec516` (warning < 0.1 ETH, critical < 0.05 ETH)
 7. **External APIs** - Stripe and Infura connectivity
 
@@ -181,12 +123,7 @@ If issues occur, rollback by:
    ./exec.sh remote deploy-all
    ```
 
-2. **Remove service_heartbeat table** (optional):
-   ```bash
-   docker exec searchable-db-1 psql -U searchable -d searchable -c "DROP TABLE IF EXISTS service_heartbeat CASCADE;"
-   ```
-
-3. **Check logs for errors**:
+2. **Check logs for errors**:
    ```bash
    docker logs flask_api
    docker logs searchable-background-1
@@ -196,21 +133,20 @@ If issues occur, rollback by:
 
 ### Issue: /api/health returns 500 error
 
-**Cause**: Likely missing service_heartbeat table or Docker socket not mounted
+**Cause**: Likely Docker socket not mounted or service endpoint unreachable
 
 **Fix**:
 1. Check logs: `docker logs flask_api --tail 100`
-2. Create table using Step 1 above
-3. Verify Docker socket mount in docker-compose.yml
-4. Restart: `docker restart flask_api`
+2. Verify Docker socket mount in docker-compose.yml
+3. Restart: `docker restart flask_api`
 
-### Issue: Background jobs show "unknown" status
+### Issue: Background service shows "unknown" status
 
-**Cause**: Heartbeats not being recorded
+**Cause**: Background container not running
 
 **Fix**:
-1. Check background service logs: `docker logs searchable-background-1 --tail 100`
-2. Verify table exists: `docker exec searchable-db-1 psql -U searchable -d searchable -c "\dt service_heartbeat"`
+1. Check container status: `docker ps | grep background`
+2. Check background service logs: `docker logs searchable-background-1 --tail 100`
 3. Restart background service: `docker restart searchable-background-1`
 
 ### Issue: Docker containers showing "unhealthy"
@@ -237,10 +173,10 @@ After 30 minutes of running in production:
 
 1. ✅ Dashboard accessible and showing all metrics
 2. ✅ /api/health returning proper status codes
-3. ✅ Background job heartbeats updating regularly
-4. ✅ Uptimebot receiving 200 responses
-5. ✅ No errors in Flask API logs
-6. ✅ Wallet balance displaying correctly
+3. ✅ Uptimebot receiving 200 responses
+4. ✅ No errors in Flask API logs
+5. ✅ Wallet balance displaying correctly
+6. ✅ All Docker containers running
 
 ## Support
 

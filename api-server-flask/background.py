@@ -20,7 +20,6 @@ from api.common.data_helpers import (
     refresh_stripe_payment
 )
 from api.common.models import PaymentStatus, PaymentType
-from psycopg2.extras import Json
 
 # Configure logging
 logging.basicConfig(
@@ -61,30 +60,6 @@ def decimal_json_encoder(obj):
 def safe_json_dumps(data):
     """Safely serialize data to JSON, handling Decimal types"""
     return json.dumps(data, default=decimal_json_encoder)
-
-
-def update_heartbeat(job_name, metadata=None):
-    """
-    Update heartbeat timestamp for this background job
-
-    Args:
-        job_name: Name of the background job (e.g., 'invoice_checker')
-        metadata: Optional metadata dictionary
-    """
-    try:
-        with database_transaction() as (cur, conn):
-            metadata_json = Json(metadata or {})
-            execute_sql(cur, """
-                INSERT INTO service_heartbeat (service_name, job_name, last_heartbeat, metadata)
-                VALUES (%s, %s, NOW(), %s)
-                ON CONFLICT (service_name, job_name)
-                DO UPDATE SET
-                    last_heartbeat = NOW(),
-                    metadata = EXCLUDED.metadata
-            """, params=('background', job_name, metadata_json))
-    except Exception as e:
-        # Don't let heartbeat failures crash the background job
-        logger.error(f"Failed to update heartbeat for {job_name}: {e}")
 
 
 def check_invoice_payments():
@@ -419,11 +394,9 @@ def invoice_check_thread():
     while True:
         try:
             check_invoice_payments()
-            update_heartbeat('invoice_checker')
         except Exception as e:
             logger.error(f"Error in invoice check thread: {str(e)}")
             logger.error(traceback.format_exc())
-            update_heartbeat('invoice_checker', {'error': str(e)})
 
         time.sleep(CHECK_INVOICE_INTERVAL)
 
@@ -433,11 +406,9 @@ def withdrawal_sender_thread():
     while True:
         try:
             process_pending_withdrawals()
-            update_heartbeat('withdrawal_sender')
         except Exception as e:
             logger.error(f"Error in withdrawal sender thread: {str(e)}")
             logger.error(traceback.format_exc())
-            update_heartbeat('withdrawal_sender', {'error': str(e)})
 
         time.sleep(WITHDRAWAL_SENDER_INTERVAL)
 
@@ -447,11 +418,9 @@ def deposit_check_thread():
     while True:
         try:
             check_deposit_confirmations()
-            update_heartbeat('deposit_checker')
         except Exception as e:
             logger.error(f"Error in deposit check thread: {str(e)}")
             logger.error(traceback.format_exc())
-            update_heartbeat('deposit_checker', {'error': str(e)})
 
         time.sleep(DEPOSIT_CHECK_INTERVAL)
 
@@ -461,11 +430,9 @@ def status_checker_thread():
     while True:
         try:
             check_delayed_withdrawals()
-            update_heartbeat('status_checker')
         except Exception as e:
             logger.error(f"Error in status checker thread: {str(e)}")
             logger.error(traceback.format_exc())
-            update_heartbeat('status_checker', {'error': str(e)})
 
         time.sleep(STATUS_CHECKER_INTERVAL)
 

@@ -71,8 +71,9 @@ DASHBOARD_HTML_TEMPLATE = """
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0f172a;
             color: #e2e8f0;
-            padding: 20px;
+            padding: 12px;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
         .container {
@@ -80,30 +81,66 @@ DASHBOARD_HTML_TEMPLATE = """
             margin: 0 auto;
         }
 
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+        }
+
         header {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border-bottom: 2px solid #334155;
-            padding-bottom: 20px;
+            padding-bottom: 15px;
         }
 
         h1 {
             color: #f1f5f9;
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 1.5em;
+            margin-bottom: 8px;
         }
 
         .last-update {
             color: #94a3b8;
-            font-size: 0.9em;
+            font-size: 0.8em;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        @media (min-width: 768px) {
+            header {
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin-bottom: 10px;
+            }
+
+            .last-update {
+                font-size: 0.9em;
+                flex-direction: row;
+                gap: 12px;
+            }
         }
 
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
             font-weight: 600;
             text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        @media (min-width: 768px) {
+            .status-badge {
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 0.85em;
+            }
         }
 
         .status-healthy {
@@ -128,49 +165,97 @@ DASHBOARD_HTML_TEMPLATE = """
 
         .section {
             background: #1e293b;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
             border: 1px solid #334155;
         }
 
         .section-title {
-            font-size: 1.3em;
-            margin-bottom: 15px;
+            font-size: 1.1em;
+            margin-bottom: 12px;
             color: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 640px) {
+            .grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+        }
+
+        @media (min-width: 768px) {
+            .section {
+                padding: 20px;
+                margin-bottom: 20px;
+                border-radius: 8px;
+            }
+
+            .section-title {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 15px;
+            }
         }
 
         .card {
             background: #0f172a;
-            padding: 15px;
+            padding: 12px;
             border-radius: 6px;
             border: 1px solid #334155;
         }
 
         .card-title {
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #cbd5e1;
+            font-size: 0.9em;
         }
 
         .card-value {
-            font-size: 1.4em;
+            font-size: 1.2em;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .card-subtitle {
             color: #94a3b8;
-            font-size: 0.85em;
+            font-size: 0.8em;
+            line-height: 1.4;
+        }
+
+        @media (min-width: 768px) {
+            .card {
+                padding: 15px;
+            }
+
+            .card-title {
+                margin-bottom: 8px;
+                font-size: 1em;
+            }
+
+            .card-value {
+                font-size: 1.4em;
+                margin-bottom: 5px;
+            }
+
+            .card-subtitle {
+                font-size: 0.85em;
+            }
         }
 
         .progress-bar {
@@ -201,22 +286,33 @@ DASHBOARD_HTML_TEMPLATE = """
 
         .wallet-address {
             font-family: 'Courier New', monospace;
-            font-size: 0.85em;
+            font-size: 0.7em;
             color: #60a5fa;
             word-break: break-all;
+            line-height: 1.3;
+            margin: 6px 0;
+        }
+
+        @media (min-width: 768px) {
+            .wallet-address {
+                font-size: 0.85em;
+                margin: 8px 0;
+            }
         }
 
         .error-list {
             background: #7f1d1d;
             border-left: 4px solid #dc2626;
-            padding: 15px;
-            margin-top: 15px;
+            padding: 12px;
+            margin-top: 12px;
             border-radius: 4px;
+            font-size: 0.85em;
         }
 
         .error-item {
-            padding: 8px 0;
+            padding: 6px 0;
             border-bottom: 1px solid #991b1b;
+            line-height: 1.4;
         }
 
         .error-item:last-child {
@@ -226,14 +322,16 @@ DASHBOARD_HTML_TEMPLATE = """
         .warning-list {
             background: #713f12;
             border-left: 4px solid #f59e0b;
-            padding: 15px;
-            margin-top: 15px;
+            padding: 12px;
+            margin-top: 12px;
             border-radius: 4px;
+            font-size: 0.85em;
         }
 
         .warning-item {
-            padding: 8px 0;
+            padding: 6px 0;
             border-bottom: 1px solid #92400e;
+            line-height: 1.4;
         }
 
         .warning-item:last-child {
@@ -248,6 +346,25 @@ DASHBOARD_HTML_TEMPLATE = """
             background: #0f172a;
             border-radius: 4px;
             margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        @media (min-width: 768px) {
+            .error-list,
+            .warning-list {
+                padding: 15px;
+                margin-top: 15px;
+                font-size: 1em;
+            }
+
+            .error-item,
+            .warning-item {
+                padding: 8px 0;
+            }
+
+            .job-status {
+                font-size: 1em;
+            }
         }
 
         .auto-refresh {
@@ -428,24 +545,20 @@ DASHBOARD_HTML_TEMPLATE = """
                 `;
             }
 
-            // Background Jobs
-            if (data.checks && data.checks.background_jobs && data.checks.background_jobs.jobs) {
-                const jobs = data.checks.background_jobs;
+            // Background Service
+            if (data.checks && data.checks.background_jobs) {
+                const bgJobs = data.checks.background_jobs;
                 html += `
                     <div class="section">
                         <div class="section-title">
-                            ⚙️ Background Jobs
-                            <span class="status-badge ${getStatusClass(jobs.status)}">${jobs.status}</span>
+                            ⚙️ Background Service
+                            <span class="status-badge ${getStatusClass(bgJobs.status)}">${bgJobs.status}</span>
                         </div>
-                        ${Object.entries(jobs.jobs).map(([name, job]) => `
-                            <div class="job-status">
-                                <div>
-                                    <strong>${name}</strong><br>
-                                    <small>${job.seconds_ago}s ago</small>
-                                </div>
-                                <span class="status-badge ${getStatusClass(job.status)}">${job.status}</span>
+                        <div class="card">
+                            <div class="card-subtitle">
+                                ${bgJobs.message || 'Background service is running'}
                             </div>
-                        `).join('')}
+                        </div>
                     </div>
                 `;
             }
