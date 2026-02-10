@@ -51,7 +51,8 @@ const RestRegister = ({ ...others }) => {
         username: '',
         email: '',
         password: '',
-        invite_code: ''
+        invite_code: '',
+        business_subdomain: ''
     });
     const [formErrors, setFormErrors] = useState({});
     const [touched, setTouched] = useState({});
@@ -62,6 +63,8 @@ const RestRegister = ({ ...others }) => {
     const [level, setLevel] = useState('');
     const [inviteCodeValid, setInviteCodeValid] = useState(null); // null, true, or false
     const [checkingInviteCode, setCheckingInviteCode] = useState(false);
+    const [subdomainAvailable, setSubdomainAvailable] = useState(null); // null, true, or false
+    const [checkingSubdomain, setCheckingSubdomain] = useState(false);
 
     const handleClickShowPassword = () => {
         setShowPassword(!showPassword);
@@ -82,7 +85,7 @@ const RestRegister = ({ ...others }) => {
             setInviteCodeValid(null);
             return;
         }
-        
+
         setCheckingInviteCode(true);
         try {
             const response = await axios.get(configData.API_SERVER + `v1/is_active/${code.toUpperCase()}`);
@@ -92,6 +95,27 @@ const RestRegister = ({ ...others }) => {
             setInviteCodeValid(false);
         } finally {
             setCheckingInviteCode(false);
+        }
+    };
+
+    const checkSubdomain = async (subdomain) => {
+        if (!subdomain || subdomain.length < 3) {
+            setSubdomainAvailable(null);
+            return;
+        }
+
+        setCheckingSubdomain(true);
+        try {
+            const response = await axios.get(configData.API_SERVER + `v1/subdomain/check/${subdomain.toLowerCase()}`);
+            setSubdomainAvailable(response.data.available && response.data.valid);
+            if (!response.data.valid) {
+                setFormErrors(prev => ({ ...prev, business_subdomain: response.data.message }));
+            }
+        } catch (error) {
+            console.error('Error checking subdomain:', error);
+            setSubdomainAvailable(false);
+        } finally {
+            setCheckingSubdomain(false);
         }
     };
 
@@ -123,25 +147,36 @@ const RestRegister = ({ ...others }) => {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        
+
         // For invite code, convert to uppercase and limit to 6 chars
         let processedValue = value;
         if (name === 'invite_code') {
             processedValue = value.toUpperCase().slice(0, 6);
         }
-        
+
+        // For business subdomain, convert to lowercase and remove invalid chars
+        if (name === 'business_subdomain') {
+            processedValue = value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 32);
+        }
+
         setFormValues(prev => ({ ...prev, [name]: processedValue }));
-        
+
         if (name === 'password') {
             changePassword(value);
         }
-        
+
         if (name === 'invite_code' && processedValue.length === 6) {
             checkInviteCode(processedValue);
         } else if (name === 'invite_code') {
             setInviteCodeValid(null);
         }
-        
+
+        if (name === 'business_subdomain' && processedValue.length >= 3) {
+            checkSubdomain(processedValue);
+        } else if (name === 'business_subdomain') {
+            setSubdomainAvailable(null);
+        }
+
         // Clear error when user starts typing
         if (formErrors[name]) {
             setFormErrors(prev => ({ ...prev, [name]: '' }));
@@ -176,12 +211,19 @@ const RestRegister = ({ ...others }) => {
         }
         
         try {
-            const response = await axios.post(configData.API_SERVER + 'users/register', {
+            const requestData = {
                 username: formValues.username,
                 password: formValues.password,
                 email: formValues.email,
                 invite_code: formValues.invite_code
-            });
+            };
+
+            // Only include business_subdomain if it's not empty
+            if (formValues.business_subdomain) {
+                requestData.business_subdomain = formValues.business_subdomain;
+            }
+
+            const response = await axios.post(configData.API_SERVER + 'users/register', requestData);
             
             if (response.data.success) {
                 // Clear the logout flag in case it was set
@@ -256,8 +298,49 @@ const RestRegister = ({ ...others }) => {
                     </FormHelperText>
                 )}
             </FormControl>
-            
-            <FormControl 
+
+            <FormControl
+                fullWidth
+                error={Boolean(touched.business_subdomain && formErrors.business_subdomain)}
+            >
+                <TextField
+                    name="business_subdomain"
+                    id="business_subdomain"
+                    type="text"
+                    value={formValues.business_subdomain}
+                    onBlur={handleBlur}
+                    placeholder="Business Subdomain (optional)"
+                    onChange={handleChange}
+                    inputProps={{ maxLength: 32 }}
+                    error={touched.business_subdomain && Boolean(formErrors.business_subdomain)}
+                    InputProps={{
+                        style: { minHeight: touchTargets.input.mobileHeight },
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                {checkingSubdomain && <CircularProgress size={20} />}
+                                {!checkingSubdomain && subdomainAvailable === true && (
+                                    <Typography variant="body2" style={{ color: '#4caf50' }}>✓ Available</Typography>
+                                )}
+                                {!checkingSubdomain && subdomainAvailable === false && (
+                                    <Typography variant="body2" color="error">✗ Taken</Typography>
+                                )}
+                            </InputAdornment>
+                        )
+                    }}
+                    {...testIdProps('input', 'rest-register', 'subdomain-field')}
+                />
+                <FormHelperText error={Boolean(formErrors.business_subdomain)}>
+                    {formErrors.business_subdomain || (formValues.business_subdomain.length === 0
+                        ? `Choose a subdomain for your business (e.g., "acme" → acme.${configData.branding_config.domain})`
+                        : formValues.business_subdomain.length < 3
+                        ? `${3 - formValues.business_subdomain.length} more characters needed (min 3)`
+                        : subdomainAvailable === true
+                        ? `Your subdomain: ${formValues.business_subdomain}.${configData.branding_config.domain}`
+                        : '')}
+                </FormHelperText>
+            </FormControl>
+
+            <FormControl
                 fullWidth
             >
                 <TextField
@@ -287,7 +370,7 @@ const RestRegister = ({ ...others }) => {
                 />
                 <FormHelperText>
                     {formValues.invite_code.length === 0 && "Enter a 6-letter invite code for a $5 reward"}
-                    {formValues.invite_code.length > 0 && formValues.invite_code.length < 6 && 
+                    {formValues.invite_code.length > 0 && formValues.invite_code.length < 6 &&
                         `${6 - formValues.invite_code.length} more letters needed`}
                     {inviteCodeValid === true && "You'll receive $5 after registration!"}
                 </FormHelperText>

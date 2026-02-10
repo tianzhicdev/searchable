@@ -84,6 +84,7 @@ const EditProfile = () => {
     introduction: '',
     profile_image_url: '',
     additional_images: [],
+    business_subdomain: '',
     socialMedia: {
       instagram: '',
       x: '',
@@ -100,6 +101,9 @@ const EditProfile = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [subdomainAvailable, setSubdomainAvailable] = useState(null);
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+  const [subdomainError, setSubdomainError] = useState('');
   
   useEffect(() => {
     if (account.user?._id) {
@@ -124,6 +128,7 @@ const EditProfile = () => {
           introduction: profile.introduction || '',
           profile_image_url: profile.profile_image_url || '',
           additional_images: profile.metadata?.additional_images || [],
+          business_subdomain: profile.metadata?.business_subdomain || '',
           socialMedia: {
             instagram: profile.metadata?.socialMedia?.instagram || '',
             x: profile.metadata?.socialMedia?.x || '',
@@ -188,12 +193,52 @@ const EditProfile = () => {
     }
   };
   
+  const checkSubdomain = async (subdomain) => {
+    if (!subdomain || subdomain.length < 3) {
+      setSubdomainAvailable(null);
+      setSubdomainError('');
+      return;
+    }
+
+    setCheckingSubdomain(true);
+    try {
+      const response = await Backend.get(`v1/subdomain/check/${subdomain.toLowerCase()}`);
+      setSubdomainAvailable(response.data.available && response.data.valid);
+      if (!response.data.valid) {
+        setSubdomainError(response.data.message);
+      } else {
+        setSubdomainError('');
+      }
+    } catch (error) {
+      console.error('Error checking subdomain:', error);
+      setSubdomainAvailable(false);
+      setSubdomainError('Error checking subdomain availability');
+    } finally {
+      setCheckingSubdomain(false);
+    }
+  };
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
+
+    // For business subdomain, convert to lowercase and remove invalid chars
+    let processedValue = value;
+    if (name === 'business_subdomain') {
+      processedValue = value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 32);
+    }
+
     setProfileData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
+
+    // Check subdomain availability
+    if (name === 'business_subdomain' && processedValue.length >= 3) {
+      checkSubdomain(processedValue);
+    } else if (name === 'business_subdomain') {
+      setSubdomainAvailable(null);
+      setSubdomainError('');
+    }
   };
 
   const handleSocialMediaChange = (platform) => (e) => {
@@ -345,9 +390,14 @@ const EditProfile = () => {
           socialMediaData[platform] = username.trim();
         }
       });
-      
+
       if (Object.keys(socialMediaData).length > 0) {
         updateData.metadata.socialMedia = socialMediaData;
+      }
+
+      // Include business subdomain if provided
+      if (profileData.business_subdomain && profileData.business_subdomain.trim()) {
+        updateData.business_subdomain = profileData.business_subdomain.trim();
       }
 
       // Update the profile using the new API
@@ -483,6 +533,45 @@ const EditProfile = () => {
               rows={4}
               placeholder="Tell others about yourself..."
               helperText="Write a brief introduction about yourself"
+            />
+
+            {/* Business Subdomain */}
+            <TextField
+              name="business_subdomain"
+              label="Business Subdomain (optional)"
+              type="text"
+              value={profileData.business_subdomain}
+              onChange={handleFormChange}
+              variant="outlined"
+              fullWidth
+              placeholder="your-business-name"
+              error={Boolean(subdomainError)}
+              helperText={
+                subdomainError ||
+                (profileData.business_subdomain.length === 0
+                  ? "Set a custom subdomain for your business"
+                  : profileData.business_subdomain.length < 3
+                  ? `${3 - profileData.business_subdomain.length} more characters needed (min 3)`
+                  : subdomainAvailable === true
+                  ? `✓ Available: ${profileData.business_subdomain}.${window.location.hostname.split('.').slice(-2).join('.')}`
+                  : subdomainAvailable === false
+                  ? "✗ Subdomain is already taken"
+                  : '')
+              }
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {checkingSubdomain && <CircularProgress size={20} />}
+                    {!checkingSubdomain && subdomainAvailable === true && (
+                      <Typography variant="body2" style={{ color: '#4caf50' }}>✓</Typography>
+                    )}
+                    {!checkingSubdomain && subdomainAvailable === false && (
+                      <Typography variant="body2" color="error">✗</Typography>
+                    )}
+                  </InputAdornment>
+                )
+              }}
+              {...testIdProps('input', 'edit-profile', 'subdomain-field')}
             />
 
             {/* User Tags Section */}

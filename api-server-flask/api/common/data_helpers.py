@@ -1343,25 +1343,25 @@ def get_receipts(user_id):
 def create_feedback(user_id, feedback_text, metadata=None):
     """
     Create a new feedback entry
-    
+
     Args:
         user_id: The ID of the user submitting feedback
         feedback_text: The feedback text content
         metadata: Optional metadata dict with context info
-        
+
     Returns:
         int: The ID of the created feedback or None if failed
     """
     try:
         if metadata is None:
             metadata = {}
-            
+
         result = db.execute_insert("""
             INSERT INTO feedback (user_id, feedback, metadata)
             VALUES (%s, %s, %s)
             RETURNING id
         """, (user_id, feedback_text, Json(metadata)))
-        
+
         if result:
             feedback_id = result[0]
             logger.info(f"Created feedback {feedback_id} for user {user_id}")
@@ -1369,20 +1369,135 @@ def create_feedback(user_id, feedback_text, metadata=None):
         else:
             logger.error("Failed to create feedback - no ID returned")
             return None
-            
+
     except Exception as e:
         logger.error(f"Error creating feedback: {str(e)}")
         return None
 
 
+def get_profile_by_subdomain(subdomain):
+    """
+    Retrieve a user profile by business subdomain
+
+    Args:
+        subdomain: The business subdomain to search for (case-insensitive)
+
+    Returns:
+        dict: The user profile data or None if not found
+    """
+    try:
+        # Case-insensitive search in metadata JSONB field
+        result = db.fetch_one("""
+            SELECT id, user_id, username, profile_image_url, introduction,
+                   metadata, created_at, updated_at
+            FROM user_profile
+            WHERE LOWER(metadata->>'business_subdomain') = LOWER(%s)
+        """, (subdomain,))
+
+        if not result:
+            return None
+
+        return {
+            'id': result[0],
+            'user_id': result[1],
+            'username': result[2],
+            'profile_image_url': result[3],
+            'introduction': result[4],
+            'metadata': result[5],
+            'business_subdomain': result[5].get('business_subdomain') if result[5] else None,
+            'is_guest': result[5].get('is_guest', False) if result[5] else False,
+            'created_at': result[6].isoformat() if result[6] else None,
+            'updated_at': result[7].isoformat() if result[7] else None
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving profile by subdomain {subdomain}: {str(e)}")
+        return None
+
+
+def is_subdomain_available(subdomain, exclude_user_id=None):
+    """
+    Check if a business subdomain is available
+
+    Args:
+        subdomain: The subdomain to check (case-insensitive)
+        exclude_user_id: Optional user_id to exclude from check (for updates)
+
+    Returns:
+        bool: True if subdomain is available, False if taken
+    """
+    try:
+        # Reserved subdomains that cannot be claimed
+        reserved = ['www', 'api', 'admin', 'app', 'mail', 'ftp', 'localhost',
+                   'staging', 'dev', 'test', 'support', 'help', 'blog', 'shop',
+                   'store', 'cdn', 'static', 'assets', 'images', 'files']
+
+        if subdomain.lower() in reserved:
+            logger.info(f"Subdomain {subdomain} is reserved")
+            return False
+
+        # Check if subdomain exists in database
+        if exclude_user_id:
+            result = db.fetch_one("""
+                SELECT user_id
+                FROM user_profile
+                WHERE LOWER(metadata->>'business_subdomain') = LOWER(%s)
+                AND user_id != %s
+            """, (subdomain, exclude_user_id))
+        else:
+            result = db.fetch_one("""
+                SELECT user_id
+                FROM user_profile
+                WHERE LOWER(metadata->>'business_subdomain') = LOWER(%s)
+            """, (subdomain,))
+
+        # If no result, subdomain is available
+        return result is None
+
+    except Exception as e:
+        logger.error(f"Error checking subdomain availability: {str(e)}")
+        return False
+
+
+def validate_subdomain_format(subdomain):
+    """
+    Validate subdomain format
+
+    Args:
+        subdomain: The subdomain string to validate
+
+    Returns:
+        tuple: (is_valid, error_message)
+    """
+    import re
+
+    if not subdomain:
+        return False, "Subdomain cannot be empty"
+
+    if len(subdomain) < 3:
+        return False, "Subdomain must be at least 3 characters"
+
+    if len(subdomain) > 32:
+        return False, "Subdomain must be at most 32 characters"
+
+    # Check format: alphanumeric + hyphens, must start/end with alphanumeric
+    if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$', subdomain.lower()):
+        return False, "Subdomain must contain only letters, numbers, and hyphens, and must start and end with a letter or number"
+
+    # Check for consecutive hyphens
+    if '--' in subdomain:
+        return False, "Subdomain cannot contain consecutive hyphens"
+
+    return True, ""
+
+
 __all__ = [
-    'get_searchableIds_by_user', 
+    'get_searchableIds_by_user',
     'get_searchable',
     'get_invoices',
     'get_payments',
     'get_withdrawals',
     'create_invoice',
-    'create_payment', 
+    'create_payment',
     'update_payment_status',
     'create_withdrawal',
     'check_payment',
@@ -1402,5 +1517,8 @@ __all__ = [
     'update_user_profile',
     'get_rewards',
     'get_downloadable_items_by_user_id',
-    'create_feedback'
+    'create_feedback',
+    'get_profile_by_subdomain',
+    'is_subdomain_available',
+    'validate_subdomain_format'
 ]
