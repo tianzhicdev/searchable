@@ -30,6 +30,7 @@ const usePublishSearchable = (searchableType, options = {}) => {
     title: '',
     description: '',
     currency: 'usd',
+    business_subdomain: '',
     ...initialFormData
   };
 
@@ -51,11 +52,12 @@ const usePublishSearchable = (searchableType, options = {}) => {
       // Extract the public payload data
       const publicData = editData.payloads?.public || {};
       
-      // Set common fields from public payload
+      // Set common fields from public payload or top-level editData
       setFormData({
         title: publicData.title || '',
         description: publicData.description || '',
         currency: publicData.currency || 'usd',
+        business_subdomain: editData.business_subdomain || '',
         ...initialFormData
       });
 
@@ -152,6 +154,11 @@ const usePublishSearchable = (searchableType, options = {}) => {
           }
         }
       };
+
+      // Add business_subdomain at top level if provided
+      if (formData.business_subdomain) {
+        searchableData.business_subdomain = formData.business_subdomain;
+      }
 
       let response;
       
