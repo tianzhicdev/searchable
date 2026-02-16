@@ -45,17 +45,18 @@ const SubdomainRedirect = () => {
 
               switch (searchableType) {
                 case 'downloadable':
-                  detailPath = `/downloadable-searchable-details/${searchableData.searchable_id}`;
+                  detailPath = `/searchable-item/${searchableData.searchable_id}`;
                   break;
                 case 'offline':
-                  detailPath = `/offline-searchable-details/${searchableData.searchable_id}`;
+                  detailPath = `/offline-item/${searchableData.searchable_id}`;
                   break;
                 case 'direct':
-                  detailPath = `/direct-searchable-details/${searchableData.searchable_id}`;
+                  detailPath = `/direct-item/${searchableData.searchable_id}`;
                   break;
                 case 'allinone':
                 default:
-                  detailPath = `/allinone-searchable-details/${searchableData.searchable_id}`;
+                  // Always use allinone-item route for backward compatibility
+                  detailPath = `/allinone-item/${searchableData.searchable_id}`;
                   break;
               }
 
