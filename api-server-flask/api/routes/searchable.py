@@ -107,6 +107,12 @@ class CreateSearchable(Resource):
             if not data:
                 return {"error": "Invalid input"}, 400
 
+            # DEBUG: Log the entire incoming data
+            logger.info(f"Received searchable creation data: {data}")
+            logger.info(f"business_subdomain in data: {'business_subdomain' in data}")
+            if 'business_subdomain' in data:
+                logger.info(f"business_subdomain value: {data.get('business_subdomain')}")
+
             # Validate business_subdomain if provided
             business_subdomain = data.get('business_subdomain', '').strip().lower()
             if business_subdomain:
