@@ -83,7 +83,8 @@ const PublishAllInOneSearchable = () => {
   // Common form data
   const [formData, setFormData] = useState({
     title: '',
-    description: ''
+    description: '',
+    business_subdomain: ''
   });
   
   // Images and tags state
@@ -144,7 +145,8 @@ const PublishAllInOneSearchable = () => {
       // Load common data
       setFormData({
         title: data.payloads?.public?.title || '',
-        description: data.payloads?.public?.description || ''
+        description: data.payloads?.public?.description || '',
+        business_subdomain: data.business_subdomain || ''
       });
       
       setImages(data.payloads?.public?.images || []);
@@ -537,7 +539,12 @@ const PublishAllInOneSearchable = () => {
         },
         tags: selectedTags
       };
-      
+
+      // Add business_subdomain at top level if provided
+      if (formData.business_subdomain) {
+        searchableData.business_subdomain = formData.business_subdomain;
+      }
+
       let response;
       if (existingSearchable) {
         // Use the new update endpoint
