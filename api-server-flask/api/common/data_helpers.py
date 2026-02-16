@@ -1490,6 +1490,90 @@ def validate_subdomain_format(subdomain):
     return True, ""
 
 
+def get_searchable_by_subdomain(subdomain):
+    """
+    Retrieve a searchable by its business subdomain
+
+    Args:
+        subdomain: The business subdomain to search for (case-insensitive)
+
+    Returns:
+        dict: The searchable data or None if not found
+    """
+    try:
+        # Case-insensitive search in searchable_data JSONB field
+        result = db.fetch_one("""
+            SELECT searchable_id, type, searchable_data, user_id, removed
+            FROM searchables
+            WHERE LOWER(searchable_data->>'business_subdomain') = LOWER(%s)
+            AND removed = FALSE
+        """, (subdomain,))
+
+        if not result:
+            return None
+
+        searchable_id, searchable_type, searchable_data, user_id, removed = result
+
+        # Add searchable_id, type, user_id to the data object
+        item_data = dict(searchable_data)
+        item_data['searchable_id'] = searchable_id
+        item_data['type'] = searchable_type
+        item_data['user_id'] = user_id
+        item_data['removed'] = removed
+
+        return item_data
+
+    except Exception as e:
+        logger.error(f"Error retrieving searchable by subdomain {subdomain}: {str(e)}")
+        return None
+
+
+def is_searchable_subdomain_available(subdomain, exclude_searchable_id=None):
+    """
+    Check if a searchable subdomain is available
+
+    Args:
+        subdomain: The subdomain to check (case-insensitive)
+        exclude_searchable_id: Optional searchable_id to exclude from check (for updates)
+
+    Returns:
+        bool: True if subdomain is available, False if taken
+    """
+    try:
+        # Reserved subdomains that cannot be claimed
+        reserved = ['www', 'api', 'admin', 'app', 'mail', 'ftp', 'localhost',
+                   'staging', 'dev', 'test', 'support', 'help', 'blog', 'shop',
+                   'store', 'cdn', 'static', 'assets', 'images', 'files']
+
+        if subdomain.lower() in reserved:
+            logger.info(f"Subdomain {subdomain} is reserved")
+            return False
+
+        # Check if subdomain exists in database
+        if exclude_searchable_id:
+            result = db.fetch_one("""
+                SELECT searchable_id
+                FROM searchables
+                WHERE LOWER(searchable_data->>'business_subdomain') = LOWER(%s)
+                AND searchable_id != %s
+                AND removed = FALSE
+            """, (subdomain, exclude_searchable_id))
+        else:
+            result = db.fetch_one("""
+                SELECT searchable_id
+                FROM searchables
+                WHERE LOWER(searchable_data->>'business_subdomain') = LOWER(%s)
+                AND removed = FALSE
+            """, (subdomain,))
+
+        # If no result, subdomain is available
+        return result is None
+
+    except Exception as e:
+        logger.error(f"Error checking searchable subdomain availability: {str(e)}")
+        return False
+
+
 __all__ = [
     'get_searchableIds_by_user',
     'get_searchable',
@@ -1520,5 +1604,7 @@ __all__ = [
     'create_feedback',
     'get_profile_by_subdomain',
     'is_subdomain_available',
-    'validate_subdomain_format'
+    'validate_subdomain_format',
+    'get_searchable_by_subdomain',
+    'is_searchable_subdomain_available'
 ]

@@ -25,7 +25,10 @@ from ..common.data_helpers import (
     get_invoice_notes,
     create_invoice_note,
     get_invoices_for_searchable,
-    get_user_all_invoices
+    get_user_all_invoices,
+    get_searchable_by_subdomain,
+    is_searchable_subdomain_available,
+    validate_subdomain_format
 )
 from ..common.database_context import database_cursor, database_transaction, db
 from ..common.tag_helpers import get_searchable_tags, add_searchable_tags
@@ -104,15 +107,30 @@ class CreateSearchable(Resource):
             if not data:
                 return {"error": "Invalid input"}, 400
 
+            # Validate business_subdomain if provided
+            business_subdomain = data.get('business_subdomain', '').strip().lower()
+            if business_subdomain:
+                # Validate format
+                is_valid, error_msg = validate_subdomain_format(business_subdomain)
+                if not is_valid:
+                    return {"error": error_msg}, 400
+
+                # Check availability
+                if not is_searchable_subdomain_available(business_subdomain):
+                    return {"error": "Business subdomain is already taken"}, 400
+
+                # Store subdomain in data
+                data['business_subdomain'] = business_subdomain
+
             # Add user info to the searchable data
             data['user_id'] = str(current_user.id)
-            
+
             searchable_type = data.get('payloads', {}).get('public', {}).get('type', 'allinone')
-            
+
             # Insert into searchables table with type field
             logger.info("Executing database insert...")
             sql = "INSERT INTO searchables (user_id, type, searchable_data) VALUES (%s, %s, %s) RETURNING searchable_id;"
-            
+
             row = db.execute_insert(sql, (current_user.id, searchable_type, Json(data)))
             
             if not row:
@@ -417,21 +435,36 @@ class UpdateSearchableItem(Resource):
             data = request.get_json()
             if not data:
                 return {"error": "Invalid input"}, 400
-            
+
             # First, check if the searchable exists and belongs to the current user
             result = db.fetch_one("""
-                SELECT user_id, type, searchable_data FROM searchables 
-                WHERE searchable_id = %s 
+                SELECT user_id, type, searchable_data FROM searchables
+                WHERE searchable_id = %s
                 AND removed = FALSE
             """, (searchable_id,))
-            
+
             if not result:
                 return {"error": "Searchable item not found"}, 404
-            
+
             # Verify ownership
             if result[0] != current_user.id:
                 return {"error": "Access denied"}, 403
-            
+
+            # Validate business_subdomain if provided
+            business_subdomain = data.get('business_subdomain', '').strip().lower()
+            if business_subdomain:
+                # Validate format
+                is_valid, error_msg = validate_subdomain_format(business_subdomain)
+                if not is_valid:
+                    return {"error": error_msg}, 400
+
+                # Check availability (exclude current searchable)
+                if not is_searchable_subdomain_available(business_subdomain, exclude_searchable_id=searchable_id):
+                    return {"error": "Business subdomain is already taken"}, 400
+
+                # Store subdomain in data
+                data['business_subdomain'] = business_subdomain
+
             # Use transaction to ensure atomicity
             with database_transaction() as (cur, conn):
                 # Add user info to the new searchable data
@@ -1198,7 +1231,87 @@ class DownloadSearchableFile(Resource):
             except Exception as e:
                 logger.error(f"Error downloading file: {str(e)}")
                 return {"error": "Failed to download file"}, 500
-            
+
         except Exception as e:
             logger.error(f"Error in download endpoint: {str(e)}")
-            return {"error": str(e)}, 500 
+            return {"error": str(e)}, 500
+
+
+@rest_api.route('/api/v1/searchable/by-subdomain/<string:subdomain>', methods=['GET'])
+class GetSearchableBySubdomain(Resource):
+    """
+    Get searchable by business subdomain
+    """
+    @track_metrics('get_searchable_by_subdomain')
+    def get(self, subdomain, request_origin='unknown'):
+        try:
+            # Get the searchable by subdomain
+            searchable_data = get_searchable_by_subdomain(subdomain)
+
+            if not searchable_data:
+                return {"error": "Searchable not found for this subdomain"}, 404
+
+            # Enrich with username and ratings
+            try:
+                user_id = searchable_data.get('user_id')
+                if user_id:
+                    result = db.fetch_one("""
+                        SELECT u.username,
+                               COALESCE((SELECT AVG(r.rating) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_rating,
+                               COALESCE((SELECT COUNT(*) FROM rating r JOIN invoice i ON r.invoice_id = i.id WHERE i.seller_id = u.id), 0) as seller_total_ratings
+                        FROM users u
+                        WHERE u.id = %s
+                    """, (user_id,))
+
+                    if result:
+                        username, seller_rating, seller_total_ratings = result
+                        searchable_data['username'] = username
+                        searchable_data['seller_rating'] = float(seller_rating) if seller_rating else 0.0
+                        searchable_data['seller_total_ratings'] = seller_total_ratings or 0
+            except Exception as e:
+                logger.error(f"Error enriching searchable with user data: {str(e)}")
+
+            # Add tags
+            searchable_id = searchable_data.get('searchable_id')
+            if searchable_id:
+                tags = get_searchable_tags(searchable_id)
+                searchable_data['tags'] = tags
+
+            return {
+                "searchable": searchable_data
+            }, 200
+
+        except Exception as e:
+            logger.error(f"Error getting searchable by subdomain {subdomain}: {str(e)}")
+            return {"error": str(e)}, 500
+
+
+@rest_api.route('/api/v1/searchable-subdomain/check/<string:subdomain>', methods=['GET'])
+class CheckSearchableSubdomainAvailability(Resource):
+    """
+    Check if a searchable subdomain is available
+    """
+    def get(self, subdomain):
+        try:
+            # First validate the format
+            is_valid, error_msg = validate_subdomain_format(subdomain)
+
+            if not is_valid:
+                return {
+                    "available": False,
+                    "valid": False,
+                    "message": error_msg
+                }, 200
+
+            # Check availability
+            available = is_searchable_subdomain_available(subdomain)
+
+            return {
+                "available": available,
+                "valid": True,
+                "message": "Subdomain is available" if available else "Subdomain is already taken"
+            }, 200
+
+        except Exception as e:
+            logger.error(f"Error checking searchable subdomain availability for {subdomain}: {str(e)}")
+            return {"error": str(e)}, 500
