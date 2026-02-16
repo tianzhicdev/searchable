@@ -1501,6 +1501,7 @@ def get_searchable_by_subdomain(subdomain):
         dict: The searchable data or None if not found
     """
     try:
+        logger.info(f"Searching database for subdomain: {subdomain}")
         # Case-insensitive search in searchable_data JSONB field
         result = db.fetch_one("""
             SELECT searchable_id, type, searchable_data, user_id, removed
@@ -1510,7 +1511,10 @@ def get_searchable_by_subdomain(subdomain):
         """, (subdomain,))
 
         if not result:
+            logger.warning(f"No database result for subdomain: {subdomain}")
             return None
+
+        logger.info(f"Found searchable in database: searchable_id={result[0]}, subdomain={subdomain}")
 
         searchable_id, searchable_type, searchable_data, user_id, removed = result
 

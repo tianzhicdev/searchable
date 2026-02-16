@@ -110,6 +110,7 @@ class CreateSearchable(Resource):
             # Validate business_subdomain if provided
             business_subdomain = data.get('business_subdomain', '').strip().lower()
             if business_subdomain:
+                logger.info(f"Creating searchable with subdomain: {business_subdomain}")
                 # Validate format
                 is_valid, error_msg = validate_subdomain_format(business_subdomain)
                 if not is_valid:
@@ -121,6 +122,9 @@ class CreateSearchable(Resource):
 
                 # Store subdomain in data
                 data['business_subdomain'] = business_subdomain
+                logger.info(f"Subdomain {business_subdomain} added to searchable data")
+            else:
+                logger.info("No subdomain provided for this searchable")
 
             # Add user info to the searchable data
             data['user_id'] = str(current_user.id)
@@ -1245,11 +1249,15 @@ class GetSearchableBySubdomain(Resource):
     @track_metrics('get_searchable_by_subdomain')
     def get(self, subdomain, request_origin='unknown'):
         try:
+            logger.info(f"Looking up searchable for subdomain: {subdomain}")
             # Get the searchable by subdomain
             searchable_data = get_searchable_by_subdomain(subdomain)
 
             if not searchable_data:
+                logger.warning(f"No searchable found for subdomain: {subdomain}")
                 return {"error": "Searchable not found for this subdomain"}, 404
+
+            logger.info(f"Found searchable {searchable_data.get('searchable_id')} for subdomain: {subdomain}")
 
             # Enrich with username and ratings
             try:
