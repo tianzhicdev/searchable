@@ -331,11 +331,11 @@ const RestRegister = ({ ...others }) => {
                 />
                 <FormHelperText error={Boolean(formErrors.business_subdomain)}>
                     {formErrors.business_subdomain || (formValues.business_subdomain.length === 0
-                        ? `Choose a subdomain for your business (e.g., "acme" → acme.${configData.branding_config.domain})`
+                        ? `Choose a subdomain for your business (e.g., "acme" → acme.${configData.BRANDING_CONFIG.domain})`
                         : formValues.business_subdomain.length < 3
                         ? `${3 - formValues.business_subdomain.length} more characters needed (min 3)`
                         : subdomainAvailable === true
-                        ? `Your subdomain: ${formValues.business_subdomain}.${configData.branding_config.domain}`
+                        ? `Your subdomain: ${formValues.business_subdomain}.${configData.BRANDING_CONFIG.domain}`
                         : '')}
                 </FormHelperText>
             </FormControl>
