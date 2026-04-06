@@ -769,8 +769,8 @@ export const themePresets = {
         name: 'Retro 80s',
         description: 'Radical 80s neon colors',
         colors: {
-            primary: '#ff1493',
-            secondary: '#00ff00',
+            primary: '#E09CDE',
+            secondary: '#8BE8C6',
             error: '#ff0000',
             warning: '#ffff00',
             success: '#1e90ff',  // Changed from light cyan to dodger blue for better contrast
@@ -782,22 +782,22 @@ export const themePresets = {
             elevated: '#262626',
         },
         borders: {
-            color: '#ff1493',
-            light: '#ff69b4',
-            dark: '#8b0a50',
-            focus: '#00ff00',
+            color: '#E09CDE',
+            light: '#EBB8EB',
+            dark: '#9B6B9B',
+            focus: '#8BE8C6',
         },
         text: {
             primary: '#ffffff',
-            secondary: '#ff69b4',
+            secondary: '#EBB8EB',
             disabled: '#808080',
             inverse: '#000000',
         },
         gradients: {
-            primaryStart: '#ff1493',
-            primaryEnd: '#ff69b4',
-            secondaryStart: '#00ff00',
-            secondaryEnd: '#00ffff',
+            primaryStart: '#E09CDE',
+            primaryEnd: '#EBB8EB',
+            secondaryStart: '#8BE8C6',
+            secondaryEnd: '#6DD4B0',
         }
     },
     

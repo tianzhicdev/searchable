@@ -3,37 +3,37 @@
 // Single source of truth for all design tokens
 // ===========================
 
-// Core Colors (5 main + additions) - NEON TOKYO THEME
-$primary: #ff0080;        // Hot pink
-$secondary: #00d4ff;      // Bright cyan
+// Core Colors (5 main + additions) - ECCENTRIC PROTOCOL THEME
+$primary: #E09CDE;        // Orchid pink
+$secondary: #8BE8C6;      // Mint/seafoam
 
 $error: #ff1744;          // Error red
 $warning: #ff9100;        // Warning orange
-$success: #00e676;        // Success green
+$success: #1e90ff;        // Dodger blue
 
-// Background Colors - Deep dark with purple undertones
-$bg-primary: #0a0014;     // Deep dark background
-$bg-secondary: #130025;   // Secondary dark purple
-$bg-hover: #1f0d3a;       // Hover state purple
-$bg-elevated: #180530;    // Elevated surface
+// Background Colors - Deep dark
+$bg-primary: #000000;     // Pure black background
+$bg-secondary: #1a1a1a;   // Secondary dark
+$bg-hover: #333333;       // Hover state
+$bg-elevated: #262626;    // Elevated surface
 
-// Border Colors - Neon accents
-$border-color: #ff0080;   // Hot pink border
-$border-light: #00d4ff;   // Cyan borders
-$border-dark: #2a1445;    // Dark purple borders
-$border-focus: #00d4ff;   // Cyan focus
+// Border Colors - Orchid/mint accents
+$border-color: #E09CDE;   // Orchid pink border
+$border-light: #EBB8EB;   // Light orchid borders
+$border-dark: #9B6B9B;    // Dark orchid borders
+$border-focus: #8BE8C6;   // Mint focus
 
 // Text Colors - High contrast for dark backgrounds
-$text-primary: #ff0080;   // Pure white for readability
-$text-secondary: #e0c3fc; // Light purple
-$text-disabled: #8b7b9f;  // Muted purple
-$text-inverse: #0a0014;   // Dark for light backgrounds
+$text-primary: #ffffff;   // Pure white for readability
+$text-secondary: #EBB8EB; // Light orchid
+$text-disabled: #808080;  // Muted gray
+$text-inverse: #000000;   // Dark for light backgrounds
 
-// Gradient Colors - Neon Tokyo gradients
-$gradient-primary-start: #ff0080;     // Hot pink
-$gradient-primary-end: #00d4ff;       // Bright cyan
-$gradient-secondary-start: #00e676;   // Green
-$gradient-secondary-end: #00bcd4;
+// Gradient Colors - Orchid/mint gradients
+$gradient-primary-start: #E09CDE;     // Orchid pink
+$gradient-primary-end: #EBB8EB;       // Light orchid
+$gradient-secondary-start: #8BE8C6;   // Mint
+$gradient-secondary-end: #6DD4B0;
 
 // Typography
 $font-primary: "FreePixel", "Courier New", monospace;
@@ -80,10 +80,10 @@ $transition-speed: 200ms;
 $transition-speed-slow: 300ms;
 $transition-easing: ease-in-out;
 
-// Shadows - Neon glow effects for cyberpunk
-$shadow-sm: 0 0 10px rgba(255, 0, 255, 0.3);
-$shadow-md: 0 0 20px rgba(255, 0, 255, 0.5);
-$shadow-lg: 0 0 30px rgba(0, 255, 255, 0.6);
+// Shadows - Soft glow effects
+$shadow-sm: 0 0 10px rgba(224, 156, 222, 0.3);
+$shadow-md: 0 0 20px rgba(224, 156, 222, 0.5);
+$shadow-lg: 0 0 30px rgba(139, 232, 198, 0.6);
 
 // Z-index Scale
 $z-index-dropdown: 1000;
