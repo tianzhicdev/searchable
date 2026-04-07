@@ -231,9 +231,13 @@ const BaseSearchableDetails = ({
         {/* Two-Column Grid: Left content + Right sticky sidebar */}
         {!isRemoved && (
           <Grid item xs={12} sx={{ mt: 2 }}>
-            <Grid container spacing={3}>
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '7fr 5fr',
+              gap: 3,
+            }}>
               {/* LEFT: Type-specific content sections */}
-              <Grid item xs={12} md={7}>
+              <Box>
                 {renderTypeSpecificContent && (
                   renderTypeSpecificContent({
                     SearchableItem,
@@ -242,27 +246,25 @@ const BaseSearchableDetails = ({
                     loadingRatings
                   })
                 )}
-              </Grid>
+              </Box>
 
               {/* RIGHT: Sticky cart sidebar (desktop) */}
               {!isMobile && (
-                <Grid item xs={12} md={5}>
-                  <Box className={classes.stickyCartSidebar}>
-                    <Typography variant="h6" gutterBottom style={{ fontWeight: 600 }}>
-                      Your Order
-                    </Typography>
-                    {renderCartSidebar({
-                      SearchableItem,
-                      isOwner,
-                      totalPrice
-                    })}
-                    <Box sx={{ mt: 2 }}>
-                      {priceDisplay}
-                    </Box>
+                <Box className={classes.stickyCartSidebar}>
+                  <Typography variant="h6" gutterBottom style={{ fontWeight: 600 }}>
+                    Your Order
+                  </Typography>
+                  {renderCartSidebar({
+                    SearchableItem,
+                    isOwner,
+                    totalPrice
+                  })}
+                  <Box sx={{ mt: 2 }}>
+                    {priceDisplay}
                   </Box>
-                </Grid>
+                </Box>
               )}
-            </Grid>
+            </Box>
           </Grid>
         )}
 

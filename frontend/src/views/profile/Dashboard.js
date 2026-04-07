@@ -283,51 +283,54 @@ const Dashboard = () => {
 
       {/* ===== TWO-COLUMN BODY: Gallery + Invoices ===== */}
       <Grid item xs={12} sx={{ mt: 2 }}>
-        <Grid container spacing={3}>
-          {/* Gallery — Left column (or full width if no gallery) */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: hasGallery ? '7fr 5fr' : '1fr',
+          gap: 3,
+          [theme.breakpoints.down('md')]: {
+            gridTemplateColumns: '1fr',
+          },
+        }}>
+          {/* Gallery */}
           {hasGallery && (
-            <Grid item xs={12} md={7}>
-              <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
-                <Typography variant="h6" gutterBottom>
-                  Gallery
-                </Typography>
-                <Box display="flex" flexWrap="wrap" gap={2} sx={{
-                  [theme.breakpoints.down('sm')]: {
-                    gap: 1,
-                    justifyContent: 'center'
-                  }
-                }}>
-                  {processMediaUrls(userProfile.metadata.additional_images).map((imageUrl, index) => (
-                    <ZoomableImage
-                      key={index}
-                      src={imageUrl}
-                      alt={`Gallery ${index + 1}`}
-                      style={{
-                        width: 150,
-                        height: 150,
-                        objectFit: 'cover',
-                        borderRadius: 4
-                      }}
-                      sx={{
-                        [theme.breakpoints.down('sm')]: {
-                          width: 120,
-                          height: 120
-                        }
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Paper>
-            </Grid>
+            <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
+              <Typography variant="h6" gutterBottom>
+                Gallery
+              </Typography>
+              <Box display="flex" flexWrap="wrap" gap={2} sx={{
+                [theme.breakpoints.down('sm')]: {
+                  gap: 1,
+                  justifyContent: 'center'
+                }
+              }}>
+                {processMediaUrls(userProfile.metadata.additional_images).map((imageUrl, index) => (
+                  <ZoomableImage
+                    key={index}
+                    src={imageUrl}
+                    alt={`Gallery ${index + 1}`}
+                    style={{
+                      width: 150,
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 4
+                    }}
+                    sx={{
+                      [theme.breakpoints.down('sm')]: {
+                        width: 120,
+                        height: 120
+                      }
+                    }}
+                  />
+                ))}
+              </Box>
+            </Paper>
           )}
 
-          {/* Invoices — Right column (or full width if no gallery) */}
-          <Grid item xs={12} md={hasGallery ? 5 : 12}>
-            <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
-              <UserInvoices />
-            </Paper>
-          </Grid>
-        </Grid>
+          {/* Invoices */}
+          <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
+            <UserInvoices />
+          </Paper>
+        </Box>
       </Grid>
 
       {/* Dialogs */}
