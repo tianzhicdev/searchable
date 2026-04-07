@@ -14,6 +14,15 @@ import { ArrowBack, Store } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import backend from '../utilities/Backend';
 import OnboardingAuthWithLoggedInState from '../../components/OnboardingAuthWithLoggedInState';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { robotPixel, sparkleStarPurple, cursorLarge, smileyNeutral } from '../../assets/images/icons';
+
+const onboarding3_2Icons = [
+  { src: robotPixel, alt: 'robot', top: '7%', left: '5%', size: 46, opacity: 0.1, animation: 'float' },
+  { src: sparkleStarPurple, alt: 'sparkle', top: '12%', right: '6%', size: 38, opacity: 0.12, animation: 'pulse' },
+  { src: cursorLarge, alt: 'cursor', bottom: '14%', left: '8%', size: 42, opacity: 0.1, animation: 'float' },
+  { src: smileyNeutral, alt: 'neutral', bottom: '20%', right: '7%', size: 40, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -40,7 +49,8 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(9, 9, 15, 0.85)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -151,8 +161,9 @@ const Onboarding3_2 = () => {
 
   if (!storeData) {
     return (
-      <Box className={classes.root}>
-        <Container maxWidth="md">
+      <Box className={classes.root} style={{ position: 'relative' }}>
+        <DecorativeIcons icons={onboarding3_2Icons} />
+        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
           <Paper className={classes.paper} elevation={0}>
             <CircularProgress />
           </Paper>
@@ -162,8 +173,9 @@ const Onboarding3_2 = () => {
   }
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding3_2Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           {isCreatingStore && (
             <Box className={classes.loadingOverlay}>

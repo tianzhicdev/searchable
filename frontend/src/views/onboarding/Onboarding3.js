@@ -18,6 +18,15 @@ import {
 import { ArrowBack, CloudUpload, Delete, AttachFile } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import backend from '../utilities/Backend';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { cloud, floppyDisk, cassetteTape, sparkleGradientLarge } from '../../assets/images/icons';
+
+const onboarding3Icons = [
+  { src: cloud, alt: 'cloud', top: '6%', left: '4%', size: 44, opacity: 0.1, animation: 'float' },
+  { src: floppyDisk, alt: 'floppy', top: '10%', right: '6%', size: 40, opacity: 0.12, animation: 'pulse' },
+  { src: cassetteTape, alt: 'cassette', bottom: '12%', left: '7%', size: 46, opacity: 0.1, animation: 'float' },
+  { src: sparkleGradientLarge, alt: 'sparkle', bottom: '18%', right: '5%', size: 38, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -48,6 +57,7 @@ const useStyles = makeStyles((theme) => ({
     transition: 'all 0.3s ease',
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
+      boxShadow: `0 0 20px ${theme.palette.primary.main}4D, 0 0 40px ${theme.palette.secondary.main}26`,
     },
   },
   uploadIcon: {
@@ -71,7 +81,8 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(9, 9, 15, 0.85)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -167,8 +178,9 @@ const Onboarding3 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding3Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           {uploading && (
             <Box className={classes.loadingOverlay}>

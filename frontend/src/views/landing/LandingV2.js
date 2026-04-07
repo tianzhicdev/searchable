@@ -12,11 +12,24 @@ import {
 } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import config from '../../config';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import PixelIcon from '../../components/PixelIcon';
+import {
+  smileyHappy,
+  heartPixel,
+  floppyDisk,
+  sparkleStarPurple,
+  robotPixel,
+  catPixel,
+  coinDollar,
+  coinEthereum,
+  coinGeneric,
+} from '../../assets/images/icons';
 
 // Import logo
 import eccentricLogo from '../../assets/images/eccentricprotocol.gif';
 
-// CSS keyframes injected via style tag
+// CSS keyframes
 const keyframes = `
   @keyframes logoFloat {
     0%, 100% { transform: translateY(0px); }
@@ -26,11 +39,6 @@ const keyframes = `
     0%, 100% { opacity: 0.4; transform: scale(1); }
     50% { opacity: 0.7; transform: scale(1.05); }
   }
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
@@ -39,31 +47,60 @@ const keyframes = `
     0%, 100% { opacity: 0.3; transform: translateY(0); }
     50% { opacity: 1; transform: translateY(8px); }
   }
-  @keyframes borderGlow {
-    0%, 100% { border-color: #E09CDE; box-shadow: 0 0 15px rgba(224, 156, 222, 0.2); }
-    50% { border-color: #8BE8C6; box-shadow: 0 0 25px rgba(139, 232, 198, 0.3); }
+  @keyframes neonFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { text-shadow: 0 0 7px currentColor, 0 0 10px currentColor, 0 0 21px currentColor; }
+    20%, 24%, 55% { text-shadow: none; }
+  }
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  @keyframes iconDrift {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    25% { transform: translateY(-6px) rotate(2deg); }
+    75% { transform: translateY(6px) rotate(-2deg); }
   }
 `;
 
-const FeatureCard = ({ icon, title, description, delay, isMobile, theme }) => (
+const heroIcons = [
+  { src: smileyHappy, alt: 'smiley', top: '15%', left: '8%', size: 40, opacity: 0.12 },
+  { src: heartPixel, alt: 'heart', top: '25%', right: '10%', size: 36, opacity: 0.1 },
+  { src: floppyDisk, alt: 'floppy', bottom: '20%', left: '12%', size: 44, opacity: 0.1 },
+  { src: sparkleStarPurple, alt: 'sparkle', top: '35%', left: '85%', size: 32, opacity: 0.15 },
+  { src: robotPixel, alt: 'robot', bottom: '30%', right: '8%', size: 48, opacity: 0.08 },
+  { src: catPixel, alt: 'cat', top: '60%', left: '5%', size: 36, opacity: 0.1 },
+];
+
+const FeatureCard = ({ icon, pixelIconSrc, title, description, delay, isMobile, theme }) => (
   <Box
+    data-testid={`feature-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
+    id={`feature-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     sx={{
       position: 'relative',
       padding: isMobile ? '28px 24px' : '36px 32px',
-      borderRadius: '16px',
-      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-      border: '1px solid rgba(224, 156, 222, 0.2)',
+      background: `${theme.palette.background.paper}B3`,
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+      borderRadius: '12px',
       transition: 'all 0.4s ease',
       animation: `fadeInUp 0.8s ease ${delay}s both`,
       cursor: 'default',
+      overflow: 'hidden',
       '&:hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-        border: '1px solid rgba(139, 232, 198, 0.4)',
+        background: `${theme.palette.background.paper}CC`,
+        border: `1px solid ${theme.palette.primary.main}40`,
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${theme.palette.primary.main}15`,
         transform: 'translateY(-4px)',
-        boxShadow: '0 8px 32px rgba(139, 232, 198, 0.15)',
       }
     }}
   >
+    {/* Pixel icon accent in top right */}
+    {pixelIconSrc && (
+      <Box sx={{ position: 'absolute', top: 12, right: 12, opacity: 0.15 }}>
+        <PixelIcon src={pixelIconSrc} size={28} />
+      </Box>
+    )}
     <Typography
       sx={{
         fontSize: isMobile ? '2rem' : '2.5rem',
@@ -89,7 +126,7 @@ const FeatureCard = ({ icon, title, description, delay, isMobile, theme }) => (
     <Typography
       variant="body1"
       sx={{
-        color: 'rgba(255, 255, 255, 0.6)',
+        color: theme.palette.text.secondary,
         lineHeight: 1.6,
         fontSize: isMobile ? '0.9rem' : '1rem',
       }}
@@ -121,24 +158,46 @@ const LandingV2 = () => {
   const features = [
     {
       icon: '⚡',
+      pixelIconSrc: coinDollar,
       title: 'Lowest Fees on the Planet',
       description: 'Keep more of what you earn. Our fee structure is designed to be the most competitive in the Web3 marketplace space.',
     },
     {
       icon: '🔄',
+      pixelIconSrc: coinEthereum,
       title: 'Seamless USD → USDT',
       description: "We handle the conversion for your buyers automatically. They pay in USD, you receive USDT. It's that simple.",
     },
     {
       icon: '🏦',
+      pixelIconSrc: coinGeneric,
       title: 'Instant USDT Withdrawals',
       description: 'Withdraw to your favourite Ethereum wallet instantly. No waiting periods, no unnecessary holds.',
     },
   ];
 
+  const iconRowItems = [
+    smileyHappy, heartPixel, floppyDisk, sparkleStarPurple,
+    robotPixel, catPixel, coinDollar, coinEthereum,
+  ];
+
   return (
     <Box sx={{ backgroundColor: '#000', minHeight: '100vh', overflow: 'hidden' }}>
       <style>{keyframes}</style>
+
+      {/* Scanline CRT overlay */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 2px)',
+          pointerEvents: 'none',
+          zIndex: 999,
+        }}
+      />
 
       {/* ===== HERO SECTION ===== */}
       <Box
@@ -152,6 +211,9 @@ const LandingV2 = () => {
           px: 2,
         }}
       >
+        {/* Floating pixel icons in hero background */}
+        <DecorativeIcons icons={heroIcons} />
+
         {/* Radial glow behind logo */}
         <Box
           sx={{
@@ -159,7 +221,7 @@ const LandingV2 = () => {
             width: isMobile ? '300px' : '500px',
             height: isMobile ? '300px' : '500px',
             borderRadius: '50%',
-            background: `radial-gradient(circle, rgba(224, 156, 222, 0.15) 0%, rgba(139, 232, 198, 0.08) 40%, transparent 70%)`,
+            background: `radial-gradient(circle, ${theme.palette.primary.main}33 0%, ${theme.palette.secondary.main}1A 40%, transparent 70%)`,
             animation: 'pulseGlow 4s ease-in-out infinite',
             pointerEvents: 'none',
             top: '50%',
@@ -182,17 +244,17 @@ const LandingV2 = () => {
             position: 'relative',
             zIndex: 1,
             mb: 4,
-            filter: 'drop-shadow(0 0 20px rgba(224, 156, 222, 0.3))',
+            filter: `drop-shadow(0 0 20px ${theme.palette.primary.main}80) drop-shadow(0 0 40px ${theme.palette.secondary.main}40)`,
           }}
         />
 
-        {/* Tagline */}
+        {/* Tagline with neon glow */}
         <Typography
           variant={isMobile ? 'h5' : 'h4'}
           data-testid="landing-tagline"
           id="landing-tagline"
           sx={{
-            color: 'rgba(255, 255, 255, 0.85)',
+            color: theme.palette.text.primary,
             fontWeight: 300,
             letterSpacing: '0.08em',
             textAlign: 'center',
@@ -200,12 +262,13 @@ const LandingV2 = () => {
             animation: 'fadeInUp 0.8s ease 0.2s both',
             position: 'relative',
             zIndex: 1,
+            textShadow: `0 0 10px ${theme.palette.primary.main}60, 0 0 20px ${theme.palette.secondary.main}30`,
           }}
         >
           Web3 Digital Content Marketplace
         </Typography>
 
-        {/* CTA Button */}
+        {/* CTA Button with neon glow */}
         <Button
           variant="contained"
           size="large"
@@ -218,18 +281,18 @@ const LandingV2 = () => {
             fontSize: isMobile ? '1rem' : '1.2rem',
             fontWeight: 600,
             letterSpacing: '0.05em',
-            borderRadius: '50px',
+            borderRadius: '8px',
+            border: `1px solid ${theme.palette.primary.main}60`,
             background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-            color: '#000',
-            border: 'none',
+            color: theme.palette.text.inverse,
             position: 'relative',
             zIndex: 1,
             animation: 'fadeInUp 0.8s ease 0.4s both',
-            boxShadow: '0 4px 24px rgba(224, 156, 222, 0.3)',
+            boxShadow: `0 0 15px ${theme.palette.primary.main}80, 0 0 30px ${theme.palette.secondary.main}40`,
             transition: 'all 0.3s ease',
             '&:hover': {
               background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-              boxShadow: '0 6px 32px rgba(139, 232, 198, 0.4)',
+              boxShadow: `0 0 25px ${theme.palette.secondary.main}80, 0 0 50px ${theme.palette.primary.main}40`,
               transform: 'translateY(-2px)',
             },
           }}
@@ -246,16 +309,17 @@ const LandingV2 = () => {
           id="landing-imback"
           sx={{
             mt: 3,
-            color: 'rgba(255, 255, 255, 0.4)',
+            color: theme.palette.text.disabled,
             textDecoration: 'none',
             cursor: 'pointer',
             position: 'relative',
             zIndex: 1,
             animation: 'fadeInUp 0.8s ease 0.6s both',
-            transition: 'color 0.3s ease',
+            transition: 'color 0.3s ease, text-shadow 0.3s ease',
             '&:hover': {
               color: theme.palette.secondary.main,
               textDecoration: 'none',
+              textShadow: `0 0 8px ${theme.palette.secondary.main}80`,
             },
           }}
         >
@@ -270,9 +334,10 @@ const LandingV2 = () => {
             left: '50%',
             transform: 'translateX(-50%)',
             animation: 'scrollIndicator 2s ease-in-out infinite',
-            color: 'rgba(255, 255, 255, 0.3)',
+            color: theme.palette.primary.main,
             fontSize: '1.5rem',
             zIndex: 1,
+            textShadow: `0 0 8px ${theme.palette.primary.main}80`,
           }}
         >
           ↓
@@ -287,14 +352,15 @@ const LandingV2 = () => {
           position: 'relative',
         }}
       >
-        {/* Subtle top divider line */}
+        {/* Neon divider line */}
         <Box
           sx={{
-            width: '80px',
+            width: '120px',
             height: '2px',
             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
             margin: '0 auto',
             mb: isMobile ? 4 : 6,
+            boxShadow: `0 0 10px ${theme.palette.primary.main}80`,
           }}
         />
 
@@ -306,7 +372,7 @@ const LandingV2 = () => {
             textAlign: 'center',
             fontWeight: 700,
             mb: isMobile ? 6 : 8,
-            color: '#fff',
+            color: theme.palette.text.primary,
             animation: 'fadeInUp 0.8s ease 0.1s both',
           }}
         >
@@ -318,6 +384,7 @@ const LandingV2 = () => {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
+              textShadow: 'none',
             }}
           >
             {config.BRANDING_CONFIG.landingIntro}
@@ -331,6 +398,7 @@ const LandingV2 = () => {
               <Grid item xs={12} md={4} key={index}>
                 <FeatureCard
                   icon={feature.icon}
+                  pixelIconSrc={feature.pixelIconSrc}
                   title={feature.title}
                   description={feature.description}
                   delay={0.2 + index * 0.15}
@@ -341,6 +409,33 @@ const LandingV2 = () => {
             ))}
           </Grid>
         </Container>
+      </Box>
+
+      {/* ===== ICON ROW ===== */}
+      <Box
+        sx={{
+          py: 4,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: isMobile ? 3 : 5,
+          flexWrap: 'wrap',
+          opacity: 0.2,
+        }}
+        data-testid="landing-icon-row"
+        id="landing-icon-row"
+      >
+        {iconRowItems.map((src, i) => (
+          <PixelIcon
+            key={i}
+            src={src}
+            alt={`icon-row-${i}`}
+            size={isMobile ? 24 : 32}
+            opacity={1}
+            animation="float"
+            delay={i * 0.3}
+          />
+        ))}
       </Box>
 
       {/* ===== BOTTOM CTA SECTION ===== */}
@@ -359,7 +454,7 @@ const LandingV2 = () => {
             width: '60%',
             height: '200px',
             borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(224, 156, 222, 0.08) 0%, transparent 70%)',
+            background: `radial-gradient(ellipse, ${theme.palette.primary.main}1A 0%, ${theme.palette.secondary.main}0D 50%, transparent 70%)`,
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -373,10 +468,11 @@ const LandingV2 = () => {
           id="landing-bottom-cta-title"
           sx={{
             fontWeight: 600,
-            color: '#fff',
+            color: theme.palette.text.primary,
             mb: 2,
             position: 'relative',
             zIndex: 1,
+            textShadow: `0 0 15px ${theme.palette.primary.main}40`,
           }}
         >
           Ready to start selling?
@@ -385,7 +481,7 @@ const LandingV2 = () => {
         <Typography
           variant="body1"
           sx={{
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: theme.palette.text.secondary,
             maxWidth: '500px',
             margin: '0 auto 32px',
             position: 'relative',
@@ -406,18 +502,19 @@ const LandingV2 = () => {
             py: 1.5,
             fontSize: isMobile ? '1rem' : '1.1rem',
             fontWeight: 600,
-            borderRadius: '50px',
+            borderRadius: '8px',
             background: 'transparent',
             color: theme.palette.primary.main,
             border: `1px solid ${theme.palette.primary.main}`,
             position: 'relative',
             zIndex: 1,
             transition: 'all 0.3s ease',
+            boxShadow: `0 0 10px ${theme.palette.primary.main}30`,
             '&:hover': {
               background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              color: '#000',
+              color: theme.palette.text.inverse,
               borderColor: 'transparent',
-              boxShadow: '0 4px 24px rgba(224, 156, 222, 0.3)',
+              boxShadow: `0 0 25px ${theme.palette.primary.main}60, 0 0 50px ${theme.palette.secondary.main}30`,
               transform: 'translateY(-2px)',
             },
           }}
@@ -431,7 +528,7 @@ const LandingV2 = () => {
           sx={{
             display: 'block',
             mt: 8,
-            color: 'rgba(255, 255, 255, 0.2)',
+            color: theme.palette.text.disabled,
             letterSpacing: '0.05em',
           }}
         >

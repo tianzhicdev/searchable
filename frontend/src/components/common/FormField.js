@@ -7,7 +7,10 @@ import { testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
   textField: {
-    ...touchTargets.input(theme),
+    minHeight: touchTargets.input.height,
+    [theme.breakpoints.down('sm')]: {
+      minHeight: touchTargets.input.mobileHeight,
+    },
     '& .MuiOutlinedInput-root': {
       '& fieldset': {
         borderColor: theme.palette.divider

@@ -59,7 +59,7 @@ class WithdrawFundsUSD(Resource):
                 'address': address,
                 'timestamp': int(time.time()),
                 'original_amount': amount,
-                'fee_percentage': 0.1,
+                'fee_percentage': 1,
                 'amount_after_fee': amount - withdrawal_fee
             }
             

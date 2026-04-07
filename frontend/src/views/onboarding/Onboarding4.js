@@ -12,6 +12,15 @@ import {
 } from '@material-ui/core';
 import { ArrowBack, Add, Delete } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { catPixel, coinEthereum, chatBubble, moonCrescent } from '../../assets/images/icons';
+
+const onboarding4Icons = [
+  { src: catPixel, alt: 'cat', top: '6%', left: '4%', size: 44, opacity: 0.12, animation: 'pulse' },
+  { src: coinEthereum, alt: 'ethereum', top: '10%', right: '5%', size: 40, opacity: 0.1, animation: 'float' },
+  { src: chatBubble, alt: 'chat', bottom: '14%', left: '7%', size: 42, opacity: 0.1, animation: 'float' },
+  { src: moonCrescent, alt: 'moon', bottom: '10%', right: '6%', size: 38, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -51,10 +60,11 @@ const useStyles = makeStyles((theme) => ({
   itemsList: {
     marginTop: theme.spacing(3),
     padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius,
-    boxShadow: 'none !important',
-    border: 'none !important',
+    background: `${theme.palette.background.paper}B3`,
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '12px',
   }
 }));
 
@@ -119,13 +129,14 @@ const Onboarding4 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding4Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" gutterBottom>
               Create Your Catalog

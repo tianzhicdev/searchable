@@ -19,6 +19,14 @@ import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+
+const paymentIcons = [
+  { src: coinDollar, alt: 'dollar', top: '8%', right: '4%', size: 32, opacity: 0.1, animation: 'float' },
+  { src: coinEthereum, alt: 'eth', bottom: '15%', left: '3%', size: 28, opacity: 0.08, animation: 'pulse' },
+  { src: coinGeneric, alt: 'coin', top: '40%', left: '2%', size: 30, opacity: 0.08, animation: 'float' },
+];
 
 const CreditCardRefill = () => {
   const classes = useComponentStyles();
@@ -109,7 +117,8 @@ const CreditCardRefill = () => {
   const totalAmount = amount ? parseFloat(amount) + stripeFee : 0;
   
   return (
-    <Grid container sx={componentSpacing.pageContainer(theme)}>
+    <Grid container sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }}>
+      <DecorativeIcons icons={paymentIcons} />
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
         <PageHeaderButton
           onClick={() => history.push('/dashboard')}

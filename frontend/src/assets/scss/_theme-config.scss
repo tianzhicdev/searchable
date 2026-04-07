@@ -3,37 +3,37 @@
 // Single source of truth for all design tokens
 // ===========================
 
-// Core Colors (5 main + additions) - ECCENTRIC PROTOCOL THEME
-$primary: #E09CDE;        // Orchid pink
-$secondary: #8BE8C6;      // Mint/seafoam
+// Core Colors (5 main + additions) - MIDNIGHT ORCHID THEME
+$primary: #A78BFA;        // Muted violet
+$secondary: #818CF8;      // Indigo-blue
 
-$error: #ff1744;          // Error red
-$warning: #ff9100;        // Warning orange
-$success: #1e90ff;        // Dodger blue
+$error: #F87171;          // Soft red
+$warning: #FBBF24;        // Warm amber
+$success: #34D399;        // Muted emerald
 
-// Background Colors - Deep dark
-$bg-primary: #000000;     // Pure black background
-$bg-secondary: #1a1a1a;   // Secondary dark
-$bg-hover: #333333;       // Hover state
-$bg-elevated: #262626;    // Elevated surface
+// Background Colors - Near-black with cool blue undertone
+$bg-primary: #09090F;     // Near-black cool
+$bg-secondary: #13131D;   // Elevated dark surface
+$bg-hover: #1E1E2E;       // Hover/active surface
+$bg-elevated: #181825;    // Cards, modals
 
-// Border Colors - Orchid/mint accents
-$border-color: #E09CDE;   // Orchid pink border
-$border-light: #EBB8EB;   // Light orchid borders
-$border-dark: #9B6B9B;    // Dark orchid borders
-$border-focus: #8BE8C6;   // Mint focus
+// Border Colors - Subtle purple tint
+$border-color: #2D2D3F;   // Subtle border
+$border-light: rgba(167, 139, 250, 0.2);   // Light violet borders
+$border-dark: rgba(167, 139, 250, 0.4);    // Dark violet borders
+$border-focus: #A78BFA;   // Violet focus
 
 // Text Colors - High contrast for dark backgrounds
-$text-primary: #ffffff;   // Pure white for readability
-$text-secondary: #EBB8EB; // Light orchid
-$text-disabled: #808080;  // Muted gray
-$text-inverse: #000000;   // Dark for light backgrounds
+$text-primary: #E4E4ED;   // Lavender off-white
+$text-secondary: #9CA3AF; // Neutral gray
+$text-disabled: #4B5563;  // Dark gray
+$text-inverse: #09090F;   // Dark for light backgrounds
 
-// Gradient Colors - Orchid/mint gradients
-$gradient-primary-start: #E09CDE;     // Orchid pink
-$gradient-primary-end: #EBB8EB;       // Light orchid
-$gradient-secondary-start: #8BE8C6;   // Mint
-$gradient-secondary-end: #6DD4B0;
+// Gradient Colors - Violet/indigo gradients
+$gradient-primary-start: #A78BFA;     // Violet
+$gradient-primary-end: #818CF8;       // Indigo
+$gradient-secondary-start: #818CF8;   // Indigo
+$gradient-secondary-end: #34D399;     // Emerald
 
 // Typography
 $font-primary: "FreePixel", "Courier New", monospace;
@@ -80,10 +80,10 @@ $transition-speed: 200ms;
 $transition-speed-slow: 300ms;
 $transition-easing: ease-in-out;
 
-// Shadows - Soft glow effects
-$shadow-sm: 0 0 10px rgba(224, 156, 222, 0.3);
-$shadow-md: 0 0 20px rgba(224, 156, 222, 0.5);
-$shadow-lg: 0 0 30px rgba(139, 232, 198, 0.6);
+// Shadows - Subtle violet glow effects
+$shadow-sm: 0 0 10px rgba(167, 139, 250, 0.15);
+$shadow-md: 0 0 20px rgba(167, 139, 250, 0.25);
+$shadow-lg: 0 0 30px rgba(129, 140, 248, 0.3);
 
 // Z-index Scale
 $z-index-dropdown: 1000;

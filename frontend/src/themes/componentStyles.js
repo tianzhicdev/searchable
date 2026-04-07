@@ -31,7 +31,11 @@ const useComponentStyles = makeStyles((theme) => ({
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
         border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
-        borderRadius: borderRadius.lg
+        borderRadius: borderRadius.lg,
+        transition: 'box-shadow 0.3s ease',
+        '&:hover': {
+            boxShadow: `0 0 10px ${themeConfig.primary}15`,
+        }
     },
     
     // Paper style without borders - for account pages and similar content
@@ -148,14 +152,109 @@ const useComponentStyles = makeStyles((theme) => ({
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
         borderRadius: borderRadius.lg,
+        border: `1px solid ${themeConfig.borderColor}`,
         transition: 'all 0.3s ease',
         cursor: 'pointer',
         '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[4]
+            boxShadow: `0 0 15px ${themeConfig.primary}30, 0 0 30px ${themeConfig.secondary}15`,
+            borderColor: themeConfig.primary,
         }
     },
+
+    // Neon glow card
+    cardNeon: {
+        ...componentSpacing.card(theme),
+        backgroundColor: themeConfig.bgSecondary,
+        border: `2px solid ${themeConfig.primary}`,
+        borderImage: `linear-gradient(135deg, ${themeConfig.primary}, ${themeConfig.secondary}) 1`,
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            boxShadow: `0 0 20px ${themeConfig.primary}40, 0 0 40px ${themeConfig.secondary}20`,
+        }
+    },
+
+    // Glassmorphism card - frosted glass effect
+    cardGlass: {
+        ...componentSpacing.card(theme),
+        background: `${themeConfig.bgSecondary}B3`,
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${themeConfig.borderColor}60`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            background: `${themeConfig.bgSecondary}CC`,
+            border: `1px solid ${themeConfig.borderColor}90`,
+            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+        }
+    },
+
+    // Interactive glass card - clickable with lift effect
+    cardGlassInteractive: {
+        ...componentSpacing.card(theme),
+        background: `${themeConfig.bgSecondary}B3`,
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${themeConfig.borderColor}60`,
+        borderRadius: '12px',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            background: `${themeConfig.bgSecondary}CC`,
+            border: `1px solid ${themeConfig.primary}40`,
+            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${themeConfig.primary}15`,
+            transform: 'translateY(-2px)',
+        }
+    },
+
+    // Neon text link
+    textLink: {
+        color: theme.palette?.secondary?.main,
+        textDecoration: 'none',
+        transition: 'text-shadow 0.3s ease',
+        '&:hover': {
+            textShadow: `0 0 8px ${themeConfig.secondary}80`,
+        },
+    },
     
+    // Sticky cart sidebar - for product detail pages (desktop)
+    stickyCartSidebar: {
+        position: 'sticky',
+        top: 24,
+        ...componentSpacing.card(theme),
+        background: `${themeConfig.bgSecondary}B3`,
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: `1px solid ${themeConfig.borderColor}60`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            background: `${themeConfig.bgSecondary}CC`,
+            border: `1px solid ${themeConfig.borderColor}90`,
+            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+        }
+    },
+
+    // Fixed bottom bar for mobile cart/checkout
+    stickyBottomBar: {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1030,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing(2),
+        padding: theme.spacing(1.5, 2),
+        background: `${themeConfig.bgSecondary}E6`,
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: `1px solid ${themeConfig.borderColor}60`,
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
+    },
+
     // Dialog styles
     dialog: componentSpacing.dialog(theme),
     dialogContent: {

@@ -12,6 +12,15 @@ import {
 } from '@material-ui/core';
 import { ArrowBack, AttachMoney } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { heartPixel, smileyBlushing, coinDollar, sparkleGradientLarge } from '../../assets/images/icons';
+
+const onboarding5Icons = [
+  { src: heartPixel, alt: 'heart', top: '7%', left: '5%', size: 40, opacity: 0.12, animation: 'pulse' },
+  { src: smileyBlushing, alt: 'blushing', top: '12%', right: '6%', size: 42, opacity: 0.1, animation: 'float' },
+  { src: coinDollar, alt: 'coin', bottom: '15%', left: '8%', size: 38, opacity: 0.1, animation: 'float' },
+  { src: sparkleGradientLarge, alt: 'sparkle', bottom: '10%', right: '5%', size: 44, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -45,8 +54,12 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
     borderRadius: theme.shape.borderRadius,
     textAlign: 'center',
-    boxShadow: 'none !important',
-    border: 'none !important',
+    boxShadow: `0 0 15px ${theme.palette.primary.main}33, 0 0 30px ${theme.palette.secondary.main}1A`,
+    border: `1px solid ${theme.palette.primary.main}33`,
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      boxShadow: `0 0 20px ${theme.palette.primary.main}66, 0 0 40px ${theme.palette.secondary.main}33`,
+    },
   }
 }));
 
@@ -92,13 +105,14 @@ const Onboarding5 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding5Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" gutterBottom>
               Create Your Donation Page

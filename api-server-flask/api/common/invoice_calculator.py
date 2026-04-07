@@ -46,13 +46,12 @@ def calc_invoice_core(searchable_data, selections):
             description = f"{title} - Direct Payment"
             
             return {
-                "amount_usd": total_amount_usd,
                 "total_amount_usd": total_amount_usd,
                 "description": description,
-                "currency": "usd",  # Hardcoded as this is pure logic without enum dependency
+                "currency": "usd",
                 "total_item_count": total_item_count
             }
-        
+
         # Handle downloadable and offline items with predefined prices
         downloadable_files = public_data.get('downloadableFiles', [])
         offline_items = public_data.get('offlineItems', [])
@@ -91,10 +90,9 @@ def calc_invoice_core(searchable_data, selections):
             description = title
 
         return {
-            "amount_usd": total_amount_usd,
             "total_amount_usd": total_amount_usd,
             "description": description,
-            "currency": "usd",  # Hardcoded as this is pure logic without enum dependency
+            "currency": "usd",
             "total_item_count": total_item_count
         }
 
@@ -185,7 +183,6 @@ def calc_allinone_invoice(public_data, selections):
         description = title
     
     return {
-        "amount_usd": total_amount_usd,
         "total_amount_usd": total_amount_usd,
         "description": description,
         "currency": "usd",

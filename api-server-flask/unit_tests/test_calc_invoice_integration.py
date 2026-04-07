@@ -34,7 +34,7 @@ class TestCalcInvoiceIntegration(unittest.TestCase):
         core_result = calc_invoice_core(searchable_data, selections)
         
         # Verify the expected result
-        self.assertEqual(core_result['amount_usd'], 51.98)
+        self.assertEqual(core_result['total_amount_usd'], 51.98)
         self.assertEqual(core_result['currency'], 'usd')
         self.assertEqual(core_result['description'], 'Test Item (x2 items)')
         self.assertEqual(core_result['total_item_count'], 2)

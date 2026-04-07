@@ -1,29 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useHistory, useLocation } from 'react-router-dom';
-import { 
-  Grid, Typography, Paper, Box, CircularProgress, Avatar, Button, Chip, IconButton
+import {
+  Grid, Typography, Paper, Box, CircularProgress, Avatar, IconButton
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import PersonIcon from '@material-ui/icons/Person';
+import StarIcon from '@material-ui/icons/Star';
 import useComponentStyles from '../../themes/componentStyles';
-import { componentSpacing, spacing } from '../../utils/spacing';
+import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
-import { navigateWithStack, navigateBack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
+import { navigateBack, debugNavigationStack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import SearchableList from '../searchables/SearchableList';
 import { testIdProps } from '../../utils/testIds';
 
+// Glass card style helper
+const glassCard = (theme) => ({
+  background: `${theme.palette.background.paper}B3`,
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+  borderRadius: '12px',
+  boxShadow: 'none',
+});
+
 const UserProfile = () => {
   const classes = useComponentStyles();
   const theme = useTheme();
-  const { identifier } = useParams(); // user_id
+  const { identifier } = useParams();
   const history = useHistory();
   const location = useLocation();
-  
+
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,28 +48,19 @@ const UserProfile = () => {
   const fetchUserProfile = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      let response;
-      
-      // Get profile by user ID
-      response = await backend.get(`v1/profile/${identifier}`);
-      
+      const response = await backend.get(`v1/profile/${identifier}`);
       const { profile } = response.data;
       setProfileData(profile);
-      
-      // Set up search criteria for SearchableList
+
       if (profile && profile.user_id) {
         setSearchCriteria({
           searchTerm: '',
-          filters: {
-            user_id: profile.user_id
-          },
+          filters: { user_id: profile.user_id },
           currentPage: currentPage,
-          searchTrigger: Date.now() // Trigger initial search
+          searchTrigger: Date.now()
         });
       }
-      
     } catch (err) {
       console.error('Error fetching user profile:', err);
       if (err.response?.status === 404) {
@@ -77,25 +79,20 @@ const UserProfile = () => {
   };
 
   const handlePageChange = (newPage) => {
-    console.log('[USER PROFILE] Page change requested:', newPage);
     setCurrentPage(newPage);
-    
-    // Update search criteria with new page
     if (profileData && profileData.user_id) {
       setSearchCriteria({
         searchTerm: '',
-        filters: {
-          user_id: profileData.user_id
-        },
+        filters: { user_id: profileData.user_id },
         currentPage: newPage,
-        searchTrigger: Date.now() // Trigger new search
+        searchTrigger: Date.now()
       });
     }
   };
 
   if (loading) {
     return (
-      <Grid container>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
             <CircularProgress />
@@ -107,125 +104,91 @@ const UserProfile = () => {
 
   if (error) {
     return (
-      <Grid container>
+      <Grid container sx={componentSpacing.pageContainer(theme)}>
         <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
-          <Paper elevation={3} className={classes.paper}>
-            <Box mb={2}>
-              <PageHeaderButton
-                onClick={handleBackClick}
-              />
-              <Typography variant="h6" style={{ marginTop: '16px' }}>
-                User Profile
-              </Typography>
-            </Box>
-            <Typography variant="body1" color="error">
-              {error}
-            </Typography>
+          <PageHeaderButton onClick={handleBackClick} />
+        </Grid>
+        <Grid item xs={12}>
+          <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
+            <Typography variant="body1" color="error">{error}</Typography>
           </Paper>
         </Grid>
       </Grid>
     );
   }
 
+  const hasGallery = profileData?.metadata?.additional_images && profileData.metadata.additional_images.length > 0;
+  const hasRating = typeof profileData?.seller_rating === 'number' && profileData?.seller_total_ratings > 0;
+
   return (
-    <Grid container {...testIdProps('page', 'user-profile', 'container')}>
-      {/* Header */}
+    <Grid container sx={componentSpacing.pageContainer(theme)} {...testIdProps('page', 'user-profile', 'container')}>
+
+      {/* Back Button */}
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)} {...testIdProps('section', 'profile', 'header')}>
-        <PageHeaderButton
-          onClick={handleBackClick}
-        />
+        <PageHeaderButton onClick={handleBackClick} />
       </Grid>
 
-      {/* Profile Information */}
-      <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
-        <Paper elevation={3} sx={componentSpacing.card(theme)} {...testIdProps('card', 'profile', 'info')}>
-          <Box display="flex" flexDirection="column" alignItems="center" textAlign="center" {...testIdProps('section', 'profile', 'content')}>
-            {/* Profile Image */}
-            <Box sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }} {...testIdProps('section', 'profile', 'image')}>
-              {profileData.profile_image_url ? (
-                <Avatar 
-                  src={getMediaUrl(profileData.profile_image_url)} 
-                  alt={profileData.username}
-                  sx={{ 
-                    width: 100, 
-                    height: 100,
-                    [theme.breakpoints.down('sm')]: {
-                      width: 80,
-                      height: 80
-                    }
-                  }}
-                  {...testIdProps('image', 'profile', 'avatar')}
-                />
-              ) : (
-                <Avatar sx={{ 
-                  width: 100, 
-                  height: 100, 
-                  backgroundColor: theme.palette.secondary.main,
-                  [theme.breakpoints.down('sm')]: {
-                    width: 80,
-                    height: 80
-                  }
-                }} {...testIdProps('image', 'profile', 'default-avatar')}>
-                  <PersonIcon sx={{ fontSize: 60, [theme.breakpoints.down('sm')]: { fontSize: 48 } }} />
-                </Avatar>
-              )}
-            </Box>
+      {/* ===== PROFILE HEADER — horizontal glass card ===== */}
+      <Grid item xs={12}>
+        <Paper elevation={0} sx={{
+          ...componentSpacing.card(theme),
+          ...glassCard(theme),
+          display: 'flex',
+          gap: 3,
+          alignItems: 'center',
+          padding: '24px 32px',
+          [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            textAlign: 'center',
+            gap: 2,
+            padding: '20px 16px',
+          },
+        }} {...testIdProps('card', 'profile', 'info')}>
 
-            {/* Username */}
-            <Typography variant="h5" gutterBottom {...testIdProps('text', 'profile', 'username')}>
+          {/* LEFT: Avatar */}
+          <Avatar
+            src={profileData.profile_image_url ? getMediaUrl(profileData.profile_image_url) : undefined}
+            alt={profileData.username}
+            sx={{
+              width: 120, height: 120, flexShrink: 0,
+              backgroundColor: theme.palette.secondary.main,
+              [theme.breakpoints.down('sm')]: { width: 88, height: 88 },
+            }}
+            {...testIdProps('image', 'profile', 'avatar')}
+          >
+            {!profileData.profile_image_url && <PersonIcon style={{ fontSize: 56 }} />}
+          </Avatar>
+
+          {/* CENTER: Info */}
+          <Box sx={{ flex: 1, minWidth: 0 }} {...testIdProps('section', 'profile', 'content')}>
+            <Typography variant="h4" className={classes.userText} style={{ fontWeight: 700 }}
+              {...testIdProps('text', 'profile', 'username')}>
               {profileData.username}
             </Typography>
 
-            {/* Display tags below name */}
             {profileData.tags && profileData.tags.length > 0 && (
-              <Box style={{ marginTop: 8, marginBottom: 16 }} {...testIdProps('section', 'profile', 'tags')}>
+              <Box style={{ marginTop: 8 }} {...testIdProps('section', 'profile', 'tags')}>
                 <TagsOnProfile tags={profileData.tags} />
               </Box>
             )}
 
-            {/* Introduction */}
             {profileData.introduction && (
-              <Box sx={{ 
-                mb: theme.spacing(spacing.element.md), 
-                maxWidth: '600px',
-                px: theme.spacing(2),
-                [theme.breakpoints.down('sm')]: { 
-                  mb: theme.spacing(spacing.element.xs),
-                  px: theme.spacing(1)
-                }
-              }} {...testIdProps('section', 'profile', 'introduction')}>
-                <Typography variant="body1" color="textSecondary" {...testIdProps('text', 'profile', 'introduction-text')}>
-                  {profileData.introduction}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Seller Rating */}
-            {typeof profileData.seller_rating === 'number' && profileData.seller_total_ratings > 0 && (
-              <Box mt={1} {...testIdProps('section', 'profile', 'rating')}>
-                <Typography variant="body1" {...testIdProps('text', 'profile', 'rating-value')}>
-                  ★ {profileData.seller_rating.toFixed(1)} ({profileData.seller_total_ratings} reviews)
-                </Typography>
-              </Box>
-            )}
-
-            {/* Member since */}
-            {profileData.created_at && (
-              <Typography variant="body2" color="textSecondary" {...testIdProps('text', 'profile', 'member-since')}>
-                Member since {new Date(profileData.created_at).toLocaleDateString()}
+              <Typography variant="body1" style={{ marginTop: 10, fontStyle: 'italic', opacity: 0.85 }}
+                {...testIdProps('text', 'profile', 'introduction-text')}>
+                "{profileData.introduction}"
               </Typography>
             )}
 
             {/* Social Media Links */}
             {profileData.metadata?.socialMedia && (
-              <Box mt={2} display="flex" gap={1} justifyContent="center">
+              <Box mt={1.5} display="flex" gap={1} sx={{
+                [theme.breakpoints.down('sm')]: { justifyContent: 'center' },
+              }}>
                 {SOCIAL_MEDIA_PLATFORMS.map((platform) => {
                   const username = profileData.metadata.socialMedia[platform.id];
                   if (!username) return null;
-                  
                   const Icon = platform.icon;
                   const url = formatSocialMediaUrl(platform.id, username);
-                  
                   return (
                     <IconButton
                       key={platform.id}
@@ -233,7 +196,7 @@ const UserProfile = () => {
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      // Color managed by theme override for MuiSvgIcon
+                      size="small"
                       title={`${platform.name}: @${username}`}
                     >
                       <Icon />
@@ -243,63 +206,87 @@ const UserProfile = () => {
               </Box>
             )}
           </Box>
+
+          {/* RIGHT: Rating + Member since badges */}
+          <Box sx={{
+            display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0, alignItems: 'flex-end',
+            [theme.breakpoints.down('sm')]: { alignItems: 'center' },
+          }}>
+            {hasRating && (
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 0.5,
+                padding: '6px 14px',
+                ...glassCard(theme),
+                borderRadius: '20px',
+              }} {...testIdProps('section', 'profile', 'rating')}>
+                <StarIcon style={{ color: theme.palette.warning.main, fontSize: 20 }} />
+                <Typography variant="body1" style={{ fontWeight: 600 }}
+                  {...testIdProps('text', 'profile', 'rating-value')}>
+                  {profileData.seller_rating.toFixed(1)}
+                </Typography>
+                <Typography variant="body2" className={classes.staticText}>
+                  ({profileData.seller_total_ratings})
+                </Typography>
+              </Box>
+            )}
+
+            {profileData.created_at && (
+              <Typography variant="caption" className={classes.staticText}
+                {...testIdProps('text', 'profile', 'member-since')}>
+                Member since {new Date(profileData.created_at).toLocaleDateString()}
+              </Typography>
+            )}
+          </Box>
         </Paper>
       </Grid>
 
-      {/* Additional Images Section */}
-      {profileData.metadata?.additional_images && profileData.metadata.additional_images.length > 0 && (
-        <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
-          <Paper elevation={3} sx={componentSpacing.card(theme)}>
-            <Typography variant="h6" gutterBottom>
-              Gallery
-            </Typography>
-            <Box display="flex" flexWrap="wrap" gap={2} sx={{ 
-              [theme.breakpoints.down('sm')]: { 
-                gap: 1,
-                justifyContent: 'center' 
-              } 
-            }}>
-              {processMediaUrls(profileData.metadata.additional_images).map((imageUrl, index) => (
-                <ZoomableImage 
-                  key={index}
-                  src={imageUrl} 
-                  alt={`Gallery ${index + 1}`}
-                  style={{ 
-                    width: 200, 
-                    height: 200, 
-                    objectFit: 'cover',
-                    borderRadius: 4
-                  }}
-                  sx={{
-                    [theme.breakpoints.down('sm')]: {
-                      width: 150,
-                      height: 150
-                    }
-                  }}
-                />
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-      )}
-
-      {/* Published Items Section */}
-      <Grid item xs={12} sx={{ mb: theme.spacing(spacing.element.md), [theme.breakpoints.down('sm')]: { mb: theme.spacing(spacing.element.xs) } }}>
-
-          <Typography variant="h6" gutterBottom>
-            Published Items
-          </Typography>
-          
-          {searchCriteria ? (
-            <SearchableList 
-              criteria={searchCriteria} 
-              onPageChange={handlePageChange}
-            />
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              Loading published items...
-            </Typography>
+      {/* ===== TWO-COLUMN BODY: Gallery + Published Items ===== */}
+      <Grid item xs={12} sx={{ mt: 2 }}>
+        <Grid container spacing={3}>
+          {/* Gallery — Left column */}
+          {hasGallery && (
+            <Grid item xs={12} md={5}>
+              <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
+                <Typography variant="h6" gutterBottom>Gallery</Typography>
+                <Box display="flex" flexWrap="wrap" gap={2} sx={{
+                  [theme.breakpoints.down('sm')]: { gap: 1, justifyContent: 'center' }
+                }}>
+                  {processMediaUrls(profileData.metadata.additional_images).map((imageUrl, index) => (
+                    <ZoomableImage
+                      key={index}
+                      src={imageUrl}
+                      alt={`Gallery ${index + 1}`}
+                      style={{
+                        width: 150, height: 150,
+                        objectFit: 'cover', borderRadius: 4
+                      }}
+                      sx={{
+                        [theme.breakpoints.down('sm')]: { width: 120, height: 120 }
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+            </Grid>
           )}
+
+          {/* Published Items — Right column (or full width if no gallery) */}
+          <Grid item xs={12} md={hasGallery ? 7 : 12}>
+            <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
+              <Typography variant="h6" gutterBottom>Published Items</Typography>
+              {searchCriteria ? (
+                <SearchableList
+                  criteria={searchCriteria}
+                  onPageChange={handlePageChange}
+                />
+              ) : (
+                <Typography variant="body2" color="textSecondary">
+                  Loading published items...
+                </Typography>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
       </Grid>
     </Grid>
   );

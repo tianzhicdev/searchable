@@ -187,7 +187,7 @@ def insert_invoice_record(buyer_id, seller_id, searchable_id, amount, platform_f
             seller_id=seller_id,
             searchable_id=searchable_id,
             amount=amount,
-            fee=platform_fee,  # Platform fee (0.1%)
+            fee=platform_fee,  # Platform fee (1%)
             currency=currency,
             invoice_type=invoice_type,
             external_id=external_id,
@@ -366,14 +366,14 @@ class CreateInvoiceV1(Resource):
                 item_name = searchable_data.get('payloads', {}).get('public', {}).get('title', f'Item #{searchable_id}')
                 
                 # Calculate fees
-                # Platform fee: 0.1% of the total amount
-                platform_fee = total_amount_usd * 0.01  # 1%
-                
+                # Platform fee: 1% of the total amount
+                platform_fee = round(total_amount_usd * 0.01, 2)
+
                 # Stripe fee: 3.5% of total amount (which user pays on top)
-                stripe_fee = total_amount_usd * 0.035  # 3.5%
-                
+                stripe_fee = round(total_amount_usd * 0.035, 2)
+
                 # Amount user pays = total + stripe fee
-                amount_to_charge = total_amount_usd + stripe_fee
+                amount_to_charge = round(total_amount_usd + stripe_fee, 2)
                 
                 # Create Stripe checkout session
                 session = stripe.checkout.Session.create(
@@ -402,13 +402,13 @@ class CreateInvoiceV1(Resource):
                 }
                 
                 # Use the helper function to insert the record
-                # Invoice.amount = total price, Invoice.fee = platform fee (0.1%)
+                # Invoice.amount = total price, Invoice.fee = platform fee (1%)
                 invoice_record = insert_invoice_record(
                     buyer_id=buyer_id,
                     seller_id=seller_id,
                     searchable_id=searchable_id,
                     amount=total_amount_usd,  # Original amount without any fees
-                    platform_fee=platform_fee,  # 0.1% platform fee
+                    platform_fee=platform_fee,  # 1% platform fee
                     stripe_fee=stripe_fee,      # 3.5% Stripe fee (for reference)
                     currency=Currency.USD.value,
                     invoice_type=PaymentType.STRIPE.value,
@@ -485,7 +485,7 @@ class CreateBalanceInvoiceV1(Resource):
             if not invoice_details:
                 return {"error": "Failed to calculate invoice"}, 400
             
-            total_amount = invoice_details['amount_usd']
+            total_amount = invoice_details['total_amount_usd']
             description = invoice_details.get('description', 'Balance Payment')
             
             # Validate user has sufficient balance

@@ -13,6 +13,15 @@ import {
 } from '@material-ui/core';
 import { ArrowBack, CloudDownload, Store, Favorite } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { smileyHappy, floppyDisk, heartPixel, sparkleStarPurple } from '../../assets/images/icons';
+
+const onboarding2Icons = [
+  { src: smileyHappy, alt: 'happy', top: '8%', left: '6%', size: 42, opacity: 0.12, animation: 'float' },
+  { src: floppyDisk, alt: 'floppy', top: '12%', right: '7%', size: 44, opacity: 0.1, animation: 'pulse' },
+  { src: heartPixel, alt: 'heart', bottom: '18%', left: '8%', size: 38, opacity: 0.12, animation: 'float' },
+  { src: sparkleStarPurple, alt: 'sparkle', bottom: '14%', right: '5%', size: 40, opacity: 0.1, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -62,12 +71,22 @@ const useStyles = makeStyles((theme) => ({
       }
     },
     '&:hover': {
-      transform: 'translateY(-10px)',
+      transform: 'translateY(-6px)',
+      '& .MuiCardContent-root': {
+        background: `${theme.palette.background.paper}CC`,
+        border: `1px solid ${theme.palette.primary.main}40`,
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${theme.palette.primary.main}15`,
+      },
     },
   },
   cardContent: {
     padding: theme.spacing(4),
     textAlign: 'center',
+    background: `${theme.palette.background.paper}B3`,
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '12px',
     transition: 'all 0.3s ease',
   },
   icon: {
@@ -118,13 +137,14 @@ const Onboarding2 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding2Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" className={classes.title}>
               Your first posting

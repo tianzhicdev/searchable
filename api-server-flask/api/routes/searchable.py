@@ -173,7 +173,7 @@ class CreateSearchable(Resource):
             logger.error(f"Error creating searchable: {str(e)}")
             logger.error(f"Traceback: {error_traceback}")
             
-            return {"error": str(e), "error_details": error_traceback}, 500
+            return {"error": str(e)}, 500
 
 @rest_api.route('/api/v1/searchable/search', methods=['GET'])
 class SearchSearchables(Resource):

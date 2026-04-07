@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Grid, Typography, Paper, Box, Button,
-  List, ListItem, ListItemText, Chip, TextField,
-  InputAdornment, RadioGroup, FormControlLabel, Radio,
-  Checkbox, FormGroup, Divider, IconButton, Accordion,
+import {
+  Typography, Paper, Box, Button, TextField,
+  InputAdornment, Divider, IconButton, Accordion,
   AccordionSummary, AccordionDetails
 } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/styles';
 import {
   CloudDownload, Storefront, Favorite,
-  ShoppingCart, AttachMoney, Check as CheckIcon,
+  Check as CheckIcon,
   Add as AddIcon, Remove as RemoveIcon, GetApp as GetAppIcon,
   ExpandMore as ExpandMoreIcon
 } from '@material-ui/icons';
@@ -19,13 +17,20 @@ import useSearchableDetails from '../../hooks/useSearchableDetails';
 import InvoiceList from '../payments/InvoiceList';
 import RatingDisplay from '../../components/Rating/RatingDisplay';
 import { formatUSD } from '../../utils/searchableUtils';
-import useComponentStyles from '../../themes/componentStyles';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
 import backend from '../utilities/Backend';
-import { generateTestId, testIdProps } from '../../utils/testIds';
+import { testIdProps } from '../../utils/testIds';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { heartPixel, coinEthereum, coinGeneric } from '../../assets/images/icons';
+
+const detailsIcons = [
+  { src: heartPixel, alt: 'heart', top: '5%', right: '3%', size: 32, opacity: 0.1, animation: 'pulse' },
+  { src: coinEthereum, alt: 'eth', top: '35%', left: '2%', size: 28, opacity: 0.08, animation: 'float' },
+  { src: coinGeneric, alt: 'coin', bottom: '15%', right: '4%', size: 30, opacity: 0.08, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
-  // Downloadable file styles (from DownloadableSearchableDetails)
+  // Downloadable file styles
   fileItem: {
     ...detailPageStyles.card(theme),
     display: 'flex',
@@ -48,7 +53,7 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.action.selected,
     border: `2px solid ${theme.palette.primary.main}`,
   },
-  // Offline item styles (from OfflineSearchableDetails)
+  // Offline item styles
   itemCard: {
     ...detailPageStyles.card(theme),
     padding: theme.spacing(2),
@@ -98,40 +103,47 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+// Glass card styling helper
+const glassCardSx = (theme) => ({
+  background: `${theme.palette.background.paper}B3`,
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+  border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+  borderRadius: '12px',
+  boxShadow: 'none',
+  padding: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+});
+
 const AllInOneSearchableDetails = () => {
-  const classes = useComponentStyles();
   const detailClasses = useStyles();
   const theme = useTheme();
   const history = useHistory();
   const { id } = useParams();
-  
+
   const {
     SearchableItem,
     createInvoice,
     createBalancePayment,
-    formatCurrency,
     loading,
-    error,
     searchableRating,
     loadingRatings,
-    fetchRatings
   } = useSearchableDetails();
-  
+
   // Component state
-  const [selectedFiles, setSelectedFiles] = useState({});  // For downloadable files
-  const [selectedOfflineItems, setSelectedOfflineItems] = useState({});  // For offline items with counts
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const [selectedOfflineItems, setSelectedOfflineItems] = useState({});
   const [donationAmount, setDonationAmount] = useState('');
   const [selectedDonation, setSelectedDonation] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [userPaidFiles, setUserPaidFiles] = useState(new Set());  // Files current user has paid for
+  const [userPaidFiles, setUserPaidFiles] = useState(new Set());
 
   // Redirect if not an allinone searchable
   useEffect(() => {
     if (SearchableItem && !loading) {
       const publicData = SearchableItem.payloads?.public || {};
       const searchableType = publicData.type || SearchableItem.type;
-      
-      // If this is not an allinone searchable, redirect to the appropriate route
+
       if (searchableType !== 'allinone') {
         let redirectPath = '';
         switch (searchableType) {
@@ -145,11 +157,8 @@ const AllInOneSearchableDetails = () => {
             redirectPath = `/direct-item/${id}`;
             break;
           default:
-            // Unknown type, stay on current page
             return;
         }
-        
-        // Redirect to the appropriate searchable details page
         history.replace(redirectPath);
       }
     }
@@ -159,8 +168,7 @@ const AllInOneSearchableDetails = () => {
   useEffect(() => {
     if (SearchableItem && SearchableItem.searchable_id) {
       fetchUserPaidFiles();
-      
-      // Initialize selectedFiles for downloadable files that have fileId
+
       const publicData = SearchableItem.payloads?.public || {};
       const components = publicData.components;
       if (components?.downloadable?.enabled && components.downloadable.files) {
@@ -185,12 +193,10 @@ const AllInOneSearchableDetails = () => {
     }
   };
 
-  // Downloadable file selection (from DownloadableSearchableDetails)
   const handleFileSelection = (fileId, selected) => {
     setSelectedFiles(prev => ({ ...prev, [fileId]: selected }));
   };
 
-  // Offline item quantity handlers (from OfflineSearchableDetails)
   const handleItemSelection = (itemId, count) => {
     setSelectedOfflineItems(prev => ({ ...prev, [itemId]: Math.max(0, count) }));
   };
@@ -212,11 +218,10 @@ const AllInOneSearchableDetails = () => {
   const handleDonationSelect = () => {
     const components = SearchableItem?.payloads?.public?.components || {};
     const donation = components.donation || {};
-    
+
     if (donation.pricingMode === 'fixed') {
       setSelectedDonation(donation.fixedAmount);
     } else if ((donation.pricingMode === 'flexible' || donation.pricingMode === 'preset') && donationAmount) {
-      // Handle both flexible and legacy preset mode the same way
       setSelectedDonation(parseFloat(donationAmount));
     }
   };
@@ -227,8 +232,6 @@ const AllInOneSearchableDetails = () => {
         `v1/download-file/${SearchableItem.searchable_id}/${fileId}`,
         { responseType: 'blob' }
       );
-      
-      // Create a download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -243,15 +246,13 @@ const AllInOneSearchableDetails = () => {
 
   const calculateTotal = () => {
     if (!SearchableItem) return 0;
-    
+
     const publicData = SearchableItem.payloads?.public || {};
     const components = publicData.components;
-    
-    // This component only handles allinone searchables
     if (!components) return 0;
-    
+
     let total = 0;
-    
+
     // Add downloadable files
     if (components.downloadable?.enabled) {
       const files = components.downloadable.files || [];
@@ -264,7 +265,7 @@ const AllInOneSearchableDetails = () => {
         }
       });
     }
-    
+
     // Add offline items with quantities
     if (components.offline?.enabled) {
       const items = components.offline.items || [];
@@ -277,87 +278,71 @@ const AllInOneSearchableDetails = () => {
         }
       });
     }
-    
+
     // Add donation
     if (components.donation?.enabled && selectedDonation) {
       total += parseFloat(selectedDonation) || 0;
     }
-    
+
     return total;
+  };
+
+  const buildSelections = () => {
+    const publicData = SearchableItem.payloads?.public || {};
+    const components = publicData.components;
+    if (!components) return [];
+
+    const selections = [];
+
+    if (components.downloadable?.enabled) {
+      Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
+        if (isSelected) {
+          const file = components.downloadable.files.find(f =>
+            f.fileId && String(f.fileId) === String(fileId)
+          );
+          if (file) {
+            selections.push({ id: file.fileId, component: 'downloadable', count: 1 });
+          }
+        }
+      });
+    }
+
+    if (components.offline?.enabled) {
+      Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
+        if (count > 0) {
+          const item = components.offline.items.find(i =>
+            String(i.id) === String(itemId)
+          );
+          if (item) {
+            selections.push({ id: item.id, component: 'offline', count: count });
+          }
+        }
+      });
+    }
+
+    if (components.donation?.enabled && selectedDonation) {
+      selections.push({ component: 'donation', amount: selectedDonation });
+    }
+
+    return selections;
   };
 
   const handlePayment = async () => {
     if (!SearchableItem) return;
-    
+
     setProcessing(true);
     try {
-      const publicData = SearchableItem.payloads?.public || {};
-      const components = publicData.components;
-      
-      // This component only handles allinone searchables
-      if (!components) {
-        console.error('Invalid searchable type for AllInOneSearchableDetails');
-        return;
-      }
-      
-      // Build selections array in the format expected by backend
-      const selections = [];
-      
-      // Add downloadable files
-      if (components.downloadable?.enabled) {
-        Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
-          if (isSelected) {
-            const file = components.downloadable.files.find(f => 
-              f.fileId && String(f.fileId) === String(fileId)
-            );
-            if (file) {
-              selections.push({
-                id: file.fileId,
-                component: 'downloadable',
-                count: 1
-              });
-            }
-          }
-        });
-      }
-      
-      // Add offline items
-      if (components.offline?.enabled) {
-        Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
-          if (count > 0) {
-            const item = components.offline.items.find(i => 
-              String(i.id) === String(itemId)
-            );
-            if (item) {
-              selections.push({
-                id: item.id,
-                component: 'offline',
-                count: count
-              });
-            }
-          }
-        });
-      }
-      
-      // Add donation
-      if (components.donation?.enabled && selectedDonation) {
-        selections.push({
-          component: 'donation',
-          amount: selectedDonation
-        });
-      }
-      
+      const selections = buildSelections();
       const invoiceData = {
         searchable_id: SearchableItem.searchable_id,
         invoice_type: 'stripe',
         selections: selections
       };
-      
+
       await createInvoice(invoiceData);
-      // Refresh paid files after successful payment
       setTimeout(() => {
         fetchUserPaidFiles();
-        window.location.reload(); // Refresh to update receipt list
+        window.location.reload();
       }, 2000);
     } catch (error) {
       console.error('Payment failed:', error);
@@ -368,77 +353,20 @@ const AllInOneSearchableDetails = () => {
 
   const handleBalancePayment = async () => {
     if (!SearchableItem) return;
-    
+
     setProcessing(true);
     try {
-      const publicData = SearchableItem.payloads?.public || {};
-      const components = publicData.components;
-      
-      // This component only handles allinone searchables
-      if (!components) {
-        console.error('Invalid searchable type for AllInOneSearchableDetails');
-        return;
-      }
-      
-      // Build selections array in the same format as handlePayment for consistency
-      const selections = [];
-      
-      // Add downloadable files
-      if (components.downloadable?.enabled) {
-        Object.entries(selectedFiles).forEach(([fileId, isSelected]) => {
-          if (isSelected) {
-            const file = components.downloadable.files.find(f => 
-              f.fileId && String(f.fileId) === String(fileId)
-            );
-            if (file) {
-              selections.push({
-                id: file.fileId,
-                component: 'downloadable',
-                count: 1
-              });
-            }
-          }
-        });
-      }
-      
-      // Add offline items
-      if (components.offline?.enabled) {
-        Object.entries(selectedOfflineItems).forEach(([itemId, count]) => {
-          if (count > 0) {
-            const item = components.offline.items.find(i => 
-              String(i.id) === String(itemId)
-            );
-            if (item) {
-              selections.push({
-                id: item.id,
-                component: 'offline',
-                count: count
-              });
-            }
-          }
-        });
-      }
-      
-      // Add donation
-      if (components.donation?.enabled && selectedDonation) {
-        selections.push({
-          component: 'donation',
-          amount: selectedDonation
-        });
-      }
-      
-      // Send in the same format as stripe payment
+      const selections = buildSelections();
       const invoiceData = {
         searchable_id: SearchableItem.searchable_id,
         invoice_type: 'balance',
         selections: selections
       };
-      
+
       await createBalancePayment(invoiceData);
-      // Refresh paid files after successful payment
       setTimeout(() => {
         fetchUserPaidFiles();
-        window.location.reload(); // Refresh to update receipt list
+        window.location.reload();
       }, 2000);
     } catch (error) {
       console.error('Balance payment failed:', error);
@@ -447,22 +375,20 @@ const AllInOneSearchableDetails = () => {
     }
   };
 
+  // ===== TYPE-SPECIFIC CONTENT (left column in two-column layout) =====
   const renderTypeSpecificContent = () => {
     if (!SearchableItem) return null;
-    
+
     const publicData = SearchableItem.payloads?.public || {};
     const components = publicData.components || {};
-    
-    // This component only handles allinone searchables
-    // Non-allinone types are redirected in useEffect
-    
+
     return (
-      <Grid item xs={12} {...testIdProps('page', 'allinone-details', 'content')}>
-        {/* Downloadable section */}
+      <Box {...testIdProps('page', 'allinone-details', 'content')}>
+        {/* Downloadable section — glass card */}
         {components.downloadable?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+          <Paper
+            elevation={0}
+            sx={glassCardSx(theme)}
             {...testIdProps('section', 'allinone-downloadable', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
@@ -474,7 +400,6 @@ const AllInOneSearchableDetails = () => {
             {components.downloadable.files?.length > 0 ? (
               <Box>
                 {components.downloadable.files.map((file) => {
-                  // Skip files without fileId
                   if (!file.fileId) {
                     console.warn('File missing fileId:', file);
                     return null;
@@ -482,7 +407,7 @@ const AllInOneSearchableDetails = () => {
                   const fileIdStr = file.fileId.toString();
                   const isPaid = userPaidFiles.has(fileIdStr);
                   return (
-                    <Paper 
+                    <Paper
                       key={file.fileId}
                       className={`${detailClasses.fileItem} ${selectedFiles[file.fileId] ? detailClasses.fileItemSelected : ''}`}
                       onClick={() => !isPaid && handleFileSelection(file.fileId, !selectedFiles[file.fileId])}
@@ -508,7 +433,6 @@ const AllInOneSearchableDetails = () => {
                             startIcon={<GetAppIcon />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              // console.log("Downloading paid file:", file);
                               handleDownload(file.fileId, file.name);
                             }}
                             {...testIdProps('button', 'download-file', file.fileId)}
@@ -517,7 +441,7 @@ const AllInOneSearchableDetails = () => {
                           </Button>
                         ) : (
                           selectedFiles[file.fileId] && (
-                            <CheckIcon style={{ color: '#1976d2', fontSize: 28 }} />
+                            <CheckIcon style={{ color: theme.palette.primary.main, fontSize: 28 }} />
                           )
                         )}
                       </Box>
@@ -533,11 +457,11 @@ const AllInOneSearchableDetails = () => {
           </Paper>
         )}
 
-        {/* Offline section */}
+        {/* Offline section — glass card */}
         {components.offline?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+          <Paper
+            elevation={0}
+            sx={glassCardSx(theme)}
             {...testIdProps('section', 'allinone-offline', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
@@ -548,12 +472,11 @@ const AllInOneSearchableDetails = () => {
             </Box>
             {components.offline.items?.length > 0 ? (
               <Box>
-                {components.offline.items.map((item, index) => {
+                {components.offline.items.map((item) => {
                   const currentCount = selectedOfflineItems[item.id] || 0;
-                  
                   return (
-                    <Box 
-                      key={item.id} 
+                    <Box
+                      key={item.id}
                       className={detailClasses.itemDivider}
                       {...testIdProps('item', 'allinone-offline', item.id)}
                     >
@@ -569,9 +492,8 @@ const AllInOneSearchableDetails = () => {
                         <Typography variant="body1" style={{ fontWeight: 500, fontSize: '1.1rem', color: theme.palette.primary.main }}>
                           {formatUSD(item.price)}
                         </Typography>
-                        
                         <Box className={detailClasses.quantityControls}>
-                          <IconButton 
+                          <IconButton
                             size="small"
                             onClick={() => decrementCount(item.id)}
                             disabled={currentCount === 0}
@@ -589,7 +511,7 @@ const AllInOneSearchableDetails = () => {
                             className={detailClasses.quantityInput}
                             {...testIdProps('input', 'offline-quantity', item.id)}
                           />
-                          <IconButton 
+                          <IconButton
                             size="small"
                             onClick={() => incrementCount(item.id)}
                             {...testIdProps('button', 'offline-increment', item.id)}
@@ -610,11 +532,11 @@ const AllInOneSearchableDetails = () => {
           </Paper>
         )}
 
-        {/* Donation section */}
+        {/* Donation section — glass card */}
         {components.donation?.enabled && (
-          <Paper 
-            elevation={1} 
-            style={{ marginBottom: 16, padding: 16, backgroundColor: theme.palette.background.paper }}
+          <Paper
+            elevation={0}
+            sx={glassCardSx(theme)}
             {...testIdProps('section', 'allinone-donation', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
@@ -623,7 +545,7 @@ const AllInOneSearchableDetails = () => {
                 Support the Creator
               </Typography>
             </Box>
-            
+
             {components.donation.pricingMode === 'fixed' && (
               <Box>
                 <Typography variant="body1" paragraph>
@@ -649,8 +571,7 @@ const AllInOneSearchableDetails = () => {
                 <Typography variant="body1" paragraph>
                   Choose or enter a donation amount:
                 </Typography>
-                
-                {/* Quick amount buttons */}
+
                 {components.donation.presetAmounts?.length > 0 && (
                   <Box mb={3}>
                     <Typography variant="subtitle2" gutterBottom>
@@ -672,8 +593,7 @@ const AllInOneSearchableDetails = () => {
                     </Box>
                   </Box>
                 )}
-                
-                {/* Custom amount input */}
+
                 <Typography variant="subtitle2" gutterBottom>
                   Or enter custom amount:
                 </Typography>
@@ -690,7 +610,7 @@ const AllInOneSearchableDetails = () => {
                   placeholder="Enter any amount"
                   {...testIdProps('input', 'donation-custom', 'amount')}
                 />
-                
+
                 <Button
                   variant="contained"
                   color="primary"
@@ -706,39 +626,101 @@ const AllInOneSearchableDetails = () => {
             )}
           </Paper>
         )}
+      </Box>
+    );
+  };
 
-        {/* Cart summary */}
-        {(Object.values(selectedFiles).some(selected => selected) || 
-          Object.values(selectedOfflineItems).some(count => count > 0) || 
-          selectedDonation) && (
-          <Box className={detailClasses.totalSection} mt={3} {...testIdProps('section', 'allinone-cart', 'summary')}>
-            <Typography variant="h6" gutterBottom>
-              Selected Items
-            </Typography>
-            
-            {Object.values(selectedFiles).filter(selected => selected).length > 0 && (
-              <Typography variant="body2">
-                {Object.values(selectedFiles).filter(selected => selected).length} file(s) selected
-              </Typography>
-            )}
-            
-            {Object.entries(selectedOfflineItems).filter(([id, count]) => count > 0).length > 0 && (
-              <Typography variant="body2">
-                {Object.entries(selectedOfflineItems)
-                  .filter(([id, count]) => count > 0)
-                  .reduce((total, [id, count]) => total + count, 0)} item(s) selected
-              </Typography>
-            )}
-            
-            {selectedDonation && (
-              <Typography variant="body2">
-                Donation: {formatUSD(selectedDonation)}
-              </Typography>
-            )}
+  // ===== CART SIDEBAR (right column in two-column layout) =====
+  const renderCartSidebar = () => {
+    const hasSelectedFiles = Object.values(selectedFiles).some(selected => selected);
+    const hasSelectedOffline = Object.values(selectedOfflineItems).some(count => count > 0);
+    const hasSelections = hasSelectedFiles || hasSelectedOffline || selectedDonation;
+
+    if (!hasSelections) {
+      return (
+        <Typography variant="body2" color="textSecondary" style={{ fontStyle: 'italic' }}>
+          Select items to add to your order
+        </Typography>
+      );
+    }
+
+    const publicData = SearchableItem?.payloads?.public || {};
+    const components = publicData.components || {};
+
+    return (
+      <Box {...testIdProps('section', 'allinone-cart', 'summary')}>
+        {/* Selected files */}
+        {hasSelectedFiles && (
+          <Box mb={1}>
+            {Object.entries(selectedFiles)
+              .filter(([, selected]) => selected)
+              .map(([fileId]) => {
+                const file = components.downloadable?.files?.find(f =>
+                  f.fileId && String(f.fileId) === String(fileId)
+                );
+                if (!file) return null;
+                return (
+                  <Box key={fileId} display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" style={{ flex: 1 }} noWrap>
+                      {file.name}
+                    </Typography>
+                    <Typography variant="body2" style={{ fontWeight: 500, marginLeft: 8 }}>
+                      {formatUSD(file.price)}
+                    </Typography>
+                  </Box>
+                );
+              })}
           </Box>
         )}
 
-      </Grid>
+        {/* Selected offline items */}
+        {hasSelectedOffline && (
+          <Box mb={1}>
+            {Object.entries(selectedOfflineItems)
+              .filter(([, count]) => count > 0)
+              .map(([itemId, count]) => {
+                const item = components.offline?.items?.find(i =>
+                  String(i.id) === String(itemId)
+                );
+                if (!item) return null;
+                return (
+                  <Box key={itemId} display="flex" justifyContent="space-between" mb={0.5}>
+                    <Typography variant="body2" style={{ flex: 1 }} noWrap>
+                      {item.name} x{count}
+                    </Typography>
+                    <Typography variant="body2" style={{ fontWeight: 500, marginLeft: 8 }}>
+                      {formatUSD((parseFloat(item.price) || 0) * count)}
+                    </Typography>
+                  </Box>
+                );
+              })}
+          </Box>
+        )}
+
+        {/* Donation */}
+        {selectedDonation && (
+          <Box mb={1}>
+            <Box display="flex" justifyContent="space-between" mb={0.5}>
+              <Typography variant="body2">Donation</Typography>
+              <Typography variant="body2" style={{ fontWeight: 500 }}>
+                {formatUSD(selectedDonation)}
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        <Divider style={{ margin: '8px 0' }} />
+
+        {/* Total */}
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="subtitle1" style={{ fontWeight: 600 }}>
+            Total
+          </Typography>
+          <Typography variant="h6" style={{ fontWeight: 700 }}>
+            {formatUSD(calculateTotal())}
+          </Typography>
+        </Box>
+      </Box>
     );
   };
 
@@ -749,7 +731,7 @@ const AllInOneSearchableDetails = () => {
     if (!searchableRating || !searchableRating.individual_ratings || searchableRating.individual_ratings.length === 0) {
       return null;
     }
-    
+
     return (
       <Accordion defaultExpanded={false} {...testIdProps('section', 'allinone-reviews', 'accordion')}>
         <AccordionSummary
@@ -778,32 +760,28 @@ const AllInOneSearchableDetails = () => {
 
   // Render receipts content separately
   const renderReceiptsContent = ({ id }) => (
-    <InvoiceList 
-      searchableId={id} 
+    <InvoiceList
+      searchableId={id}
       refreshUserPaidFiles={fetchUserPaidFiles}
     />
   );
 
   return (
-    <BaseSearchableDetails
-      renderTypeSpecificContent={renderTypeSpecificContent}
-      renderReviewsContent={renderReviewsContent}
-      renderReceiptsContent={renderReceiptsContent}
-      onPayment={handlePayment}
-      onBalancePayment={handleBalancePayment}
-      totalPrice={totalPrice}
-      payButtonText="Pay Now"
-      disabled={totalPrice === 0 || processing}
-    />
+    <Box sx={{ position: 'relative' }}>
+      <DecorativeIcons icons={detailsIcons} />
+      <BaseSearchableDetails
+        renderTypeSpecificContent={renderTypeSpecificContent}
+        renderCartSidebar={renderCartSidebar}
+        renderReviewsContent={renderReviewsContent}
+        renderReceiptsContent={renderReceiptsContent}
+        onPayment={handlePayment}
+        onBalancePayment={handleBalancePayment}
+        totalPrice={totalPrice}
+        payButtonText="Pay Now"
+        disabled={totalPrice === 0 || processing}
+      />
+    </Box>
   );
-};
-
-// Helper function
-const formatFileSize = (bytes) => {
-  if (!bytes) return 'Unknown';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
 export default AllInOneSearchableDetails;

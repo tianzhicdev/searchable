@@ -17,6 +17,15 @@ import {
 } from '@material-ui/core';
 import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { coinDollar, coinGeneric, smileyWinking, progressBarHalf } from '../../assets/images/icons';
+
+const onboarding3_1Icons = [
+  { src: coinDollar, alt: 'coin', top: '8%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
+  { src: smileyWinking, alt: 'wink', top: '14%', right: '7%', size: 42, opacity: 0.1, animation: 'pulse' },
+  { src: progressBarHalf, alt: 'progress', bottom: '16%', left: '6%', size: 48, opacity: 0.1, animation: 'float' },
+  { src: coinGeneric, alt: 'coin-generic', bottom: '12%', right: '8%', size: 36, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -141,13 +150,14 @@ const Onboarding3_1 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding3_1Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
             <Typography variant="h3" gutterBottom>
               Set Up Your Store

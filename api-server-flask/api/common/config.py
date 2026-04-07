@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-import os, random, string
+import os, secrets
 from datetime import timedelta
 from .logging_config import setup_logger
 
@@ -13,14 +13,13 @@ class BaseConfig():
     
     SECRET_KEY = os.getenv('SECRET_KEY', None)
     if not SECRET_KEY:
-        SECRET_KEY = ''.join(random.choice( string.ascii_lowercase  ) for i in range( 32 ))
+        SECRET_KEY = secrets.token_hex(32)
+        logger.warning("SECRET_KEY not set via environment variable — using random generated key. Set SECRET_KEY env var for production.")
 
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', None)
     if not JWT_SECRET_KEY:
-        JWT_SECRET_KEY = ''.join(random.choice( string.ascii_lowercase  ) for i in range( 32 ))
-
-    logger.info(f"SECRET_KEY: {SECRET_KEY}")
-    logger.info(f"JWT_SECRET_KEY: {JWT_SECRET_KEY}")
+        JWT_SECRET_KEY = secrets.token_hex(32)
+        logger.warning("JWT_SECRET_KEY not set via environment variable — using random generated key. Set JWT_SECRET_KEY env var for production.")
     GITHUB_CLIENT_ID     = os.getenv('GITHUB_CLIENT_ID' , None)
     GITHUB_CLIENT_SECRET = os.getenv('GITHUB_SECRET_KEY', None)
     
@@ -50,10 +49,8 @@ class BaseConfig():
                 DB_PORT,
                 DB_NAME
             ) 
-            logger.info(f"SQLALCHEMY_DATABASE_URI: {SQLALCHEMY_DATABASE_URI}")
-
             USE_SQLITE  = False
-            logger.info(f'> Successfully connected to the database {SQLALCHEMY_DATABASE_URI}')
+            logger.info('> Successfully connected to the relational database')
 
         except Exception as e:
 

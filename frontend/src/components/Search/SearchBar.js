@@ -31,6 +31,10 @@ const useStyles = makeStyles((theme) => ({
   searchField: {
     flex: 1,
     '& .MuiOutlinedInput-root': {
+      transition: 'box-shadow 0.3s ease',
+      '&.Mui-focused': {
+        boxShadow: `0 0 10px ${theme.palette.primary.main}40, 0 0 20px ${theme.palette.secondary.main}20`,
+      },
       // Touch-friendly sizing on mobile
       [theme.breakpoints.down('sm')]: {
         minHeight: 48,

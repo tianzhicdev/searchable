@@ -588,8 +588,8 @@ const PublishAllInOneSearchable = () => {
   }
 
   return (
-    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }} {...testIdProps('page', 'publish-allinone', 'container')}>
-      <Grid container spacing={3}>
+    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto', position: 'relative' }} {...testIdProps('page', 'publish-allinone', 'container')}>
+      <Grid container spacing={3} style={{ position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} {...testIdProps('section', 'publish-allinone', 'header')}>
           <Typography variant="h4" gutterBottom>
             {existingSearchable ? 'Edit' : 'Create'} All-In-One Offering
