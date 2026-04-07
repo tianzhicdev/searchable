@@ -123,7 +123,11 @@ export const responsiveMargin = (scale) => (theme) => ({
 export const componentSpacing = {
   // Main container/page wrapper
   pageContainer: (theme) => ({
+    maxWidth: 960,
+    width: '100%',
+    margin: '0 auto',
     padding: theme.spacing(spacing.container.md),
+    boxSizing: 'border-box',
     [theme.breakpoints.down('sm')]: {
       padding: theme.spacing(spacing.container.xs)
     }

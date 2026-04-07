@@ -129,12 +129,10 @@ const Dashboard = () => {
           display: 'flex',
           gap: 3,
           alignItems: 'center',
-          padding: '24px 32px',
           [theme.breakpoints.down('sm')]: {
             flexDirection: 'column',
             textAlign: 'center',
             gap: 2,
-            padding: '20px 16px',
           },
         }}>
           {/* LEFT: Avatar */}

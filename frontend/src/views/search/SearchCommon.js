@@ -13,12 +13,13 @@ import {
   ExitToApp as ExitToAppIcon,
   Add as AddIcon
 } from '@material-ui/icons';
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles, useTheme } from '@material-ui/styles';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
 import { navigateWithStack } from '../../utils/navigationUtils';
+import { componentSpacing } from '../../utils/spacing';
 import { testIds } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
@@ -123,6 +124,7 @@ const SearchCommon = ({
   children
 }) => {
   const classes = useStyles();
+  const theme = useTheme();
   const history = useHistory();
   const location = useLocation();
   const handleLogout = useLogout();
@@ -140,7 +142,7 @@ const SearchCommon = ({
   };
 
   return (
-    <Box data-testid={testIds.page.container(`search-${searchType}`)} sx={{ position: 'relative' }}>
+    <Box data-testid={testIds.page.container(`search-${searchType}`)} sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }}>
       <Grid container margin={0} spacing={0} padding={0} sx={{ position: 'relative', zIndex: 1 }}>
 
         {/* Top Navigation Bar */}

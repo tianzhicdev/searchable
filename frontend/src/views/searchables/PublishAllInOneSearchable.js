@@ -34,6 +34,7 @@ import PublishSearchableCommon from '../../components/PublishSearchableCommon';
 import PublishSearchableActions from '../../components/PublishSearchableActions';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
+import { componentSpacing } from '../../utils/spacing';
 import { generateTestId, testIdProps } from '../../utils/testIds';
 
 const useStyles = makeStyles((theme) => ({
@@ -588,7 +589,7 @@ const PublishAllInOneSearchable = () => {
   }
 
   return (
-    <Box style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto', position: 'relative' }} {...testIdProps('page', 'publish-allinone', 'container')}>
+    <Box sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }} {...testIdProps('page', 'publish-allinone', 'container')}>
       <Grid container spacing={3} style={{ position: 'relative', zIndex: 1 }}>
         <Grid item xs={12} {...testIdProps('section', 'publish-allinone', 'header')}>
           <Typography variant="h4" gutterBottom>
