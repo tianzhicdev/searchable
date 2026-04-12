@@ -4,7 +4,7 @@ import {
   FormControl, FormLabel, RadioGroup, Radio, Button, IconButton
 } from '@material-ui/core';
 import { useLocation } from 'react-router-dom';
-import { Delete } from '@material-ui/icons';
+import { closeX as deleteIcon } from '../../assets/images/icons';
 import BasePublishSearchable from '../../components/BasePublishSearchable';
 
 const PublishDirectSearchable = () => {
@@ -187,7 +187,7 @@ const PublishDirectSearchable = () => {
                   size="small"
                   color="secondary"
                 >
-                  <Delete />
+                  <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                 </IconButton>
               )}
             </Box>

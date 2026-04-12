@@ -5,13 +5,9 @@ import {
   InputAdornment,
   IconButton
 } from '@material-ui/core';
-import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  FilterList as FilterIcon
-} from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { testIds } from '../../utils/testIds';
+import { compassSearch, closeX, menuBars } from '../../assets/images/icons';
 
 const useStyles = makeStyles((theme) => ({
   searchContainer: {
@@ -31,6 +27,10 @@ const useStyles = makeStyles((theme) => ({
   searchField: {
     flex: 1,
     '& .MuiOutlinedInput-root': {
+      transition: 'box-shadow 0.3s ease',
+      '&.Mui-focused': {
+        boxShadow: `0 0 10px ${theme.palette.primary.main}40, 0 0 20px ${theme.palette.secondary.main}20`,
+      },
       // Touch-friendly sizing on mobile
       [theme.breakpoints.down('sm')]: {
         minHeight: 48,
@@ -89,9 +89,10 @@ const SearchBar = ({
                 <IconButton
                   size="small"
                   onClick={() => onSearchTermChange('')}
+                  aria-label="Clear search"
                   data-testid={testIds.button.nav('clear-search')}
                 >
-                  <ClearIcon />
+                  <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                 </IconButton>
               </InputAdornment>
             )
@@ -104,9 +105,10 @@ const SearchBar = ({
           color="primary"
           disabled={loading}
           className={classes.iconButton}
+          aria-label={searchButtonText}
           data-testid={testIds.button.submit('search')}
         >
-          <SearchIcon />
+          <img src={compassSearch} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
         </IconButton>
         
         <IconButton
@@ -114,9 +116,10 @@ const SearchBar = ({
           color={showFilters ? "primary" : "default"}
           onClick={onToggleFilters}
           className={classes.iconButton}
+          aria-label={showFilters ? 'Hide filters' : 'Show filters'}
           data-testid={testIds.button.nav('toggle-filters')}
         >
-          <FilterIcon />
+          <img src={menuBars} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
         </IconButton>
       </form>
     </Box>

@@ -8,10 +8,8 @@ import {
   useTheme, useMediaQuery, Link
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { 
-  ExpandMore, ExpandLess, Message, Star, Person, 
-  AccountCircle, Comment, Send 
-} from '@material-ui/icons';
+import { ExpandMore, ExpandLess } from '@material-ui/icons';
+import { chatBubble, sparkleStarPurple, cursorArrowGradient } from '../../assets/images/icons';
 import { Rating } from '@material-ui/lab';
 import PropTypes from 'prop-types';
 import Backend from '../utilities/Backend';
@@ -414,7 +412,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                         {/* Action Buttons */}
                         <Box className={`${classes.marginMd} ${classes.paddingXs}`} display="flex">
                             <Button
-                                startIcon={<Message className={classes.iconColor} />}
+                                startIcon={<img src={chatBubble} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                                 onClick={handleNotesExpandClick}
                                 size="small"
                                 className={`${classes.systemText} ${classes.marginXs}`}
@@ -426,7 +424,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                             
                             {userRole === 'buyer' && !hasRated && !loadingRatingStatus && (
                                 <Button
-                                    startIcon={<Star className={classes.iconColor} />}
+                                    startIcon={<img src={sparkleStarPurple} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                                     onClick={() => setRatingDialogOpen(true)}
                                     size="small"
                                     className={`${classes.eightBitDragonFont} ${classes.systemText} ${classes.marginXs}`}
@@ -504,7 +502,7 @@ const Invoice = ({ invoice, userRole, onRatingSubmitted }) => {
                                         className={`${classes.paddingXs} ${classes.iconButton}`}
                                         style={{ minWidth: '32px' }}
                                     >
-                                        <Send fontSize="small" className={classes.iconColor} />
+                                        <img src={cursorArrowGradient} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                                     </Button>
                                 </Box>
                             </Box>

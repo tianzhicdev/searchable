@@ -17,12 +17,8 @@ import {
   Divider,
   useTheme
 } from '@material-ui/core';
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  AccountCircle
-} from '@material-ui/icons';
+import { Visibility, VisibilityOff } from '@material-ui/icons';
+import { chatBubble, profileUser } from '../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
@@ -318,7 +314,7 @@ const EditAccount = () => {
           <form onSubmit={handleSubmit} className={styles.formContainer} {...testIdProps('form', 'edit-account', 'container')}>
             {/* Account Information Section */}
             <Typography variant="h6" className={styles.sectionTitle}>
-              <AccountCircle style={{ verticalAlign: 'middle', marginRight: 8 }} />
+              <img src={profileUser} alt="" style={{ width: 20, height: 20, objectFit: 'contain', verticalAlign: 'middle', marginRight: 8 }} />
               Account Information
             </Typography>
             
@@ -335,7 +331,7 @@ const EditAccount = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <AccountCircle />
+                      <img src={profileUser} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                     </InputAdornment>
                   )
                 }}
@@ -360,7 +356,7 @@ const EditAccount = () => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Email />
+                      <img src={chatBubble} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                     </InputAdornment>
                   )
                 }}

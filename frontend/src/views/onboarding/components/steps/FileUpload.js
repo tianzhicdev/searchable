@@ -13,15 +13,12 @@ import {
   Alert,
   Paper,
 } from '@material-ui/core';
-import {
-  CloudUpload as CloudUploadIcon,
-  InsertDriveFile as FileIcon,
-  Delete as DeleteIcon,
-} from '@material-ui/icons';
+import { cloudCool as cloudUploadIcon, floppyDisk as fileIcon, closeX as deleteIcon } from '../../../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import backend from '../../../../views/utilities/Backend';
 import { testIdProps } from '../../../../utils/testIds';
+import ActionButtonLabel from '../../../../components/common/ActionButtonLabel';
 
 const useStyles = makeStyles((theme) => ({
   dropzone: {
@@ -42,8 +39,6 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.primary.light,
   },
   uploadIcon: {
-    fontSize: 48,
-    color: theme.palette.text.secondary,
     marginBottom: theme.spacing(2),
   },
   fileList: {
@@ -204,7 +199,7 @@ const FileUpload = ({ stepConfig }) => {
           accept={stepConfig.validation?.allowedTypes?.map(type => `.${type}`).join(',')}
           {...testIdProps('input', 'file-upload', 'file-input')}
         />
-        <CloudUploadIcon className={classes.uploadIcon} {...testIdProps('icon', 'file-upload', 'upload')} />
+        <img src={cloudUploadIcon} alt="" className={classes.uploadIcon} style={{ width: 48, height: 48, objectFit: 'contain' }} {...testIdProps('icon', 'file-upload', 'upload')} />
         <Typography variant="h6" {...testIdProps('text', 'file-upload', 'title')}>
           {isDragOver ? 'Drop files here' : 'Drag & drop files here'}
         </Typography>
@@ -252,7 +247,7 @@ const FileUpload = ({ stepConfig }) => {
             {uploadedFiles.map((file) => (
               <ListItem key={file.id} className={classes.fileItem} {...testIdProps('list', 'uploaded-files', `item-${file.id}`)}>
                 <ListItemIcon>
-                  <FileIcon {...testIdProps('icon', 'file', 'document')} />
+                  <img src={fileIcon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} {...testIdProps('icon', 'file', 'document')} />
                 </ListItemIcon>
                 <ListItemText
                   primary={file.name}
@@ -267,7 +262,7 @@ const FileUpload = ({ stepConfig }) => {
                     disabled={uploading}
                     {...testIdProps('button', 'file', 'delete')}
                   >
-                    <DeleteIcon />
+                    <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
@@ -284,9 +279,11 @@ const FileUpload = ({ stepConfig }) => {
         className={classes.continueButton}
         onClick={handleContinue}
         disabled={uploading}
+        aria-label={stepConfig.nextButton?.text || 'Continue'}
+        title={stepConfig.nextButton?.text || 'Continue'}
         {...testIdProps('button', 'file-upload', 'continue')}
       >
-        {stepConfig.nextButton?.text || 'Continue'}
+        <ActionButtonLabel label={stepConfig.nextButton?.text || 'Continue'} size={22} />
       </Button>
     </Box>
   );

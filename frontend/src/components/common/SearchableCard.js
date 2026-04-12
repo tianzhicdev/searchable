@@ -10,13 +10,8 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { useHistory } from 'react-router-dom';
-import { 
-  GetApp as DownloadIcon,
-  Visibility as ViewIcon,
-  Person as PersonIcon,
-  LocationOn as LocationIcon
-} from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { floppyDisk, cursorPointer, profileUser, catPixel as physicalItemsIcon } from '../../assets/images/icons';
 import PriceDisplay from './PriceDisplay';
 import UserMiniProfile from './UserMiniProfile';
 import RatingDisplay from './RatingDisplay';
@@ -103,11 +98,11 @@ const getTypeColor = (type) => {
   }
 };
 
-const getTypeIcon = (type) => {
+const getTypeIconSrc = (type) => {
   switch (type) {
-    case 'direct': return ViewIcon;
-    case 'downloadable': return DownloadIcon;
-    case 'offline': return LocationIcon;
+    case 'direct': return cursorPointer;
+    case 'downloadable': return floppyDisk;
+    case 'offline': return physicalItemsIcon;
     default: return null;
   }
 };
@@ -138,7 +133,7 @@ const SearchableCard = ({
     e.stopPropagation();
   };
 
-  const TypeIcon = getTypeIcon(searchable.type);
+  const typeIconSrc = getTypeIconSrc(searchable.type);
 
   return (
     <Card 
@@ -157,7 +152,7 @@ const SearchableCard = ({
             size="small"
             color={getTypeColor(searchable.type)}
             className={classes.typeChip}
-            icon={TypeIcon ? <TypeIcon fontSize="small" /> : undefined}
+            icon={typeIconSrc ? <img src={typeIconSrc} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} /> : undefined}
           />
         </Box>
       )}

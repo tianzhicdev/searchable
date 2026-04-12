@@ -20,19 +20,19 @@ def get_db_connection():
     with conn.cursor() as cursor:
         cursor.execute("SELECT current_database(), current_user, inet_client_addr(), inet_client_port()")
         connection_details = cursor.fetchone()
-        print(f"Connected to database: {connection_details[0]}")
-        print(f"Connected as user: {connection_details[1]}")
-        print(f"Client address: {connection_details[2]}")
-        print(f"Client port: {connection_details[3]}")
+        logger.debug(f"Connected to database: {connection_details[0]}")
+        logger.debug(f"Connected as user: {connection_details[1]}")
+        logger.debug(f"Client address: {connection_details[2]}")
+        logger.debug(f"Client port: {connection_details[3]}")
     return conn
 
 def execute_sql(cursor, sql, params=None, commit=False, connection=None):
     """Execute SQL with logging and return results if applicable"""
     if params:
-        print(f"Executing SQL: {sql.replace(chr(10), ' ')} with params: {params}")
+        logger.debug(f"Executing SQL: {sql.replace(chr(10), ' ')} with params: {params}")
         cursor.execute(sql, params)
     else:
-        print(f"Executing SQL: {sql.replace(chr(10), ' ')}")
+        logger.debug(f"Executing SQL: {sql.replace(chr(10), ' ')}")
         cursor.execute(sql)
     if commit and connection:
         connection.commit()

@@ -30,15 +30,19 @@ const useComponentStyles = makeStyles((theme) => ({
     paper: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
-        borderRadius: borderRadius.lg
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        transition: 'border-color 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.3)',
+        }
     },
-    
+
     // Paper style without borders - for account pages and similar content
     paperNoBorder: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        borderRadius: borderRadius.lg
+        borderRadius: '12px',
     },
     
     box: {
@@ -147,15 +151,94 @@ const useComponentStyles = makeStyles((theme) => ({
     cardHover: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        borderRadius: borderRadius.lg,
+        borderRadius: '12px',
+        border: `1px solid rgba(167,139,250,0.15)`,
         transition: 'all 0.3s ease',
         cursor: 'pointer',
         '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: theme.shadows[4]
+            borderColor: 'rgba(167,139,250,0.4)',
         }
     },
+
+    // Accent card — stronger border
+    cardNeon: {
+        ...componentSpacing.card(theme),
+        backgroundColor: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.3)`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.5)',
+        }
+    },
+
+    // Standard card
+    cardGlass: {
+        ...componentSpacing.card(theme),
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.3)',
+        }
+    },
+
+    // Interactive card - clickable with lift effect
+    cardGlassInteractive: {
+        ...componentSpacing.card(theme),
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.35)',
+            transform: 'translateY(-2px)',
+        }
+    },
+
+    // Neon text link
+    textLink: {
+        color: theme.palette?.secondary?.main,
+        textDecoration: 'none',
+        transition: 'text-shadow 0.3s ease',
+        '&:hover': {
+            textShadow: `0 0 8px ${themeConfig.secondary}80`,
+        },
+    },
     
+    // Sticky cart sidebar - for product detail pages (desktop)
+    stickyCartSidebar: {
+        position: 'sticky',
+        top: 24,
+        ...componentSpacing.card(theme),
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.3)',
+        }
+    },
+
+    // Fixed bottom bar for mobile cart/checkout
+    stickyBottomBar: {
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1030,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing(2),
+        padding: theme.spacing(1.5, 2),
+        background: themeConfig.bgSecondary,
+        borderTop: `1px solid rgba(167,139,250,0.2)`,
+    },
+
     // Dialog styles
     dialog: componentSpacing.dialog(theme),
     dialogContent: {

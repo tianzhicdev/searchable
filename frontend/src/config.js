@@ -1,7 +1,4 @@
 
-// Log all environment variables for debugging
-console.log('All process.env:', process.env);
-
 let BACKEND_SERVER = null;
 
 let SHOW_DEBUG_INFO = false;
@@ -20,8 +17,7 @@ if (process.env.REACT_APP_BRANDING === 'eccentricprotocol') {
 
 // Theme configuration
 // Available themes: cyberpunk, vaporwave, matrix, synthwave, hacker, neonTokyo, bloodMoon, deepSpace, arcade, original
-let APP_THEME = process.env.REACT_APP_THEME || 'retro80s'; // Default to neonTokyo
-console.log('Selected theme:', APP_THEME); 
+let APP_THEME = process.env.REACT_APP_THEME || 'retro80s';
 
 let branding_config = {
   logo: 'camel_logo.jpg',
@@ -65,8 +61,6 @@ if (process.env.REACT_APP_ENV === 'local' || APP_BRANDING === 'local') {
 } else {
   BACKEND_SERVER = `https://${branding_config.domain}/api/`;
 }
-console.log('BACKEND_SERVER:', BACKEND_SERVER);
-
 
 const config = {
     // basename: only at build time to set, and don't add '/' at end off BASENAME for breadcrumbs, also don't put only '/' use blank('') instead,
@@ -83,9 +77,6 @@ const config = {
     BRANDING_CONFIG: branding_config,
     APP_THEME: APP_THEME // Add theme to config
 };
-
-// Log the configuration for debugging purposes
-console.log('Application config:', config);
 
 
 export default config;

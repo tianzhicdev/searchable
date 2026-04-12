@@ -6,8 +6,8 @@ import {
   Paper,
   Divider
 } from '@material-ui/core';
-import { AccountCircle, PersonAdd, ExitToApp, Store, MonetizationOn } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { profileUser, cursorArrowGradient, browserWindowsOk, coinDollar } from '../assets/images/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import OnboardingAuth from './OnboardingAuth';
@@ -99,9 +99,9 @@ const OnboardingAuthWithLoggedInState = ({
   // Determine the appropriate icon based on context
   const getContextIcon = () => {
     if (submitButtonIcon) return submitButtonIcon;
-    if (contextText.includes('store')) return <Store />;
-    if (contextText.includes('payment')) return <MonetizationOn />;
-    return <AccountCircle />;
+    if (contextText.includes('store')) return <img src={browserWindowsOk} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />;
+    if (contextText.includes('payment')) return <img src={coinDollar} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />;
+    return <img src={profileUser} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />;
   };
 
   return (
@@ -137,7 +137,7 @@ const OnboardingAuthWithLoggedInState = ({
             <Typography variant="button" display="block">
               {submitButtonText.replace('...', '')} as {user?.username || user?.email}
             </Typography>
-            <Typography variant="caption" style={{ color: 'white' }}>
+            <Typography variant="caption" color="primary">
               Continue with your current account
             </Typography>
           </Box>
@@ -150,13 +150,13 @@ const OnboardingAuthWithLoggedInState = ({
           fullWidth
           className={classes.optionButton}
           onClick={handleLoginAnother}
-          startIcon={<ExitToApp className={classes.optionIcon} />}
+          startIcon={<img src={cursorArrowGradient} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} className={classes.optionIcon} />}
         >
           <Box>
             <Typography variant="button" display="block">
               Login with Another Account
             </Typography>
-            <Typography variant="caption" style={{ color: 'white' }}>
+            <Typography variant="caption" color="primary">
               Switch to a different existing account
             </Typography>
           </Box>
@@ -169,13 +169,13 @@ const OnboardingAuthWithLoggedInState = ({
           fullWidth
           className={classes.optionButton}
           onClick={handleRegisterNew}
-          startIcon={<PersonAdd className={classes.optionIcon} />}
+          startIcon={<img src={profileUser} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} className={classes.optionIcon} />}
         >
           <Box>
             <Typography variant="button" display="block">
               Register New Account
             </Typography>
-            <Typography variant="caption" style={{ color: 'white' }}>
+            <Typography variant="caption" color="primary">
               Create a completely new account
             </Typography>
           </Box>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@material-ui/core';
-import { LocationOn } from '@material-ui/icons';
+import { compassSearch } from '../../assets/images/icons';
 import EnhancedBasePublishSearchable, {
   createPublishConfig,
   createFieldConfig,
@@ -21,7 +21,7 @@ const LocationSection = ({ formData, handleInputChange, error, fieldConfig }) =>
       multiline
       rows={2}
       placeholder="Enter the complete address"
-      startAdornment={<LocationOn />}
+      startAdornment={<img src={compassSearch} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
     />
     
     <Box mt={2}>

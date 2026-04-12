@@ -10,17 +10,26 @@ import {
   CardContent,
   Box
 } from '@material-ui/core';
-import { Storefront, ShoppingCart } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { browserWindowsOk, floppyDisk as shopIcon } from '../../assets/images/icons';
 import { componentSpacing } from '../../utils/spacing';
 import config from '../../config';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { smileyCute, smileyBlushing, robotPixel, catPixel } from '../../assets/images/icons';
+
+
+const onboardingIcons = [
+  { src: smileyCute, alt: 'smiley', top: '10%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
+  { src: robotPixel, alt: 'robot', top: '15%', right: '8%', size: 48, opacity: 0.1, animation: 'float' },
+  { src: catPixel, alt: 'cat', bottom: '15%', left: '10%', size: 44, opacity: 0.12, animation: 'pulse' },
+  { src: smileyBlushing, alt: 'blushing', bottom: '20%', right: '6%', size: 36, opacity: 0.1, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     ...componentSpacing.card(theme),
@@ -44,14 +53,14 @@ const useStyles = makeStyles((theme) => ({
     },
     '&::before': {
       left: 0,
-      background: 'linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)',
+      background: `linear-gradient(90deg, ${theme.palette.background.default} 0%, transparent 100%)`,
       [theme.breakpoints.down('sm')]: {
         background: 'none',
       },
     },
     '&::after': {
       right: 0,
-      background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%)',
+      background: `linear-gradient(90deg, transparent 0%, ${theme.palette.background.default} 100%)`,
       [theme.breakpoints.down('sm')]: {
         background: 'none',
       },
@@ -92,12 +101,20 @@ const useStyles = makeStyles((theme) => ({
       }
     },
     '&:hover': {
-      transform: 'translateY(-10px)',
+      transform: 'translateY(-6px)',
+      '& .MuiCardContent-root': {
+        border: `1px solid ${theme.palette.primary.main}40`,
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+      },
     },
   },
   cardContent: {
     ...componentSpacing.card(theme),
     textAlign: 'center',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '12px',
+    transition: 'all 0.3s ease',
   },
   icon: {
     fontSize: 64,
@@ -125,11 +142,12 @@ const Onboarding1 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboardingIcons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
 
-          <Typography variant="h5" className={classes.subtitle} gutterBottom>
+          <Typography variant="h5" className={classes.subtitle} gutterBottom color="primary">
             What would you like to do?
           </Typography>
           
@@ -139,8 +157,8 @@ const Onboarding1 = () => {
                 <Card elevation={0}>
                   <CardActionArea onClick={handleSellerClick}>
                     <CardContent className={classes.cardContent}>
-                      <Storefront className={classes.icon} />
-                      <Typography variant="h5" className={classes.optionTitle}>
+                      <img src={browserWindowsOk} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />
+                      <Typography variant="h5" className={classes.optionTitle} color="primary">
                         I want to earn
                       </Typography>
                       <Typography variant="body1" className={classes.optionDescription}>
@@ -155,8 +173,8 @@ const Onboarding1 = () => {
                 <Card elevation={0}>
                   <CardActionArea onClick={handleShopperClick}>
                     <CardContent className={classes.cardContent}>
-                      <ShoppingCart className={classes.icon} />
-                      <Typography variant="h5" className={classes.optionTitle}>
+                      <img src={shopIcon} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />
+                      <Typography variant="h5" className={classes.optionTitle} color="primary">
                         I want to shop
                       </Typography>
                       <Typography variant="body1" className={classes.optionDescription}>

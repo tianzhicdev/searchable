@@ -3,6 +3,7 @@
  * Single source for all component style overrides
  */
 import themeConfig from './themeLoader';
+import bgSkyWide from '../assets/images/bg-sky-wide.jpg';
 
 // ===========================
 // REUSABLE STYLE PATTERNS
@@ -47,11 +48,11 @@ const inputBase = {
 };
 
 const paperBase = {
-    borderRadius: themeConfig.borderRadius,
+    borderRadius: '12px',
     backgroundImage: 'none',
     backgroundColor: themeConfig.bgSecondary,
-    border: 'none',
-    boxShadow: 'none',
+    border: `1px solid rgba(167,139,250,0.15)`,
+    boxShadow: `0 0 20px rgba(167,139,250,0.08), inset 0 0 30px rgba(167,139,250,0.03)`,
 };
 
 // ===========================
@@ -73,6 +74,11 @@ export const componentStyleOverrides = (theme) => {
                 body {
                     font-family: ${themeConfig.fontPrimary};
                     background-color: ${themeConfig.bgPrimary};
+                    background-image: url(${bgSkyWide});
+                    background-size: cover;
+                    background-position: center top;
+                    background-attachment: fixed;
+                    background-repeat: no-repeat;
                     color: ${themeConfig.textPrimary};
                 }
                 
@@ -244,6 +250,8 @@ export const componentStyleOverrides = (theme) => {
                     ...paperBase,
                     padding: themeConfig.spacingLg,
                     minWidth: '400px',
+                    border: '1px solid rgba(167,139,250,0.2)',
+                    boxShadow: '0 0 40px rgba(167,139,250,0.15), 0 0 80px rgba(129,140,248,0.08)',
                 }
             }
         },
@@ -253,6 +261,7 @@ export const componentStyleOverrides = (theme) => {
             styleOverrides: {
                 root: {
                     fontFamily: themeConfig.fontPrimary,
+                    textShadow: '0 1px 4px rgba(0,0,0,0.6), 0 0 12px rgba(0,0,0,0.3)',
                 }
             }
         },

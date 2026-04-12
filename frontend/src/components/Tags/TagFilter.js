@@ -6,8 +6,8 @@ import {
   Button,
   useMediaQuery
 } from '@material-ui/core';
-import { Clear as ClearIcon, Search as SearchIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { closeX, compassSearch } from '../../assets/images/icons';
 import { useTheme } from '@material-ui/core/styles';
 import Backend from '../../views/utilities/Backend';
 import { touchTargets } from '../../utils/spacing';
@@ -241,7 +241,7 @@ const TagFilter = ({
                 variant="contained"
                 color="primary"
                 size={isMobile ? "small" : "medium"}
-                startIcon={<SearchIcon />}
+                startIcon={<img src={compassSearch} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 onClick={onSearch}
               >
                 Search
@@ -252,7 +252,7 @@ const TagFilter = ({
                 className={classes.clearButton}
                 variant="outlined"
                 size={isMobile ? "small" : "medium"}
-                startIcon={<ClearIcon />}
+                startIcon={<img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 onClick={handleClearAll}
                 style={{ flex: 1 }}
               >

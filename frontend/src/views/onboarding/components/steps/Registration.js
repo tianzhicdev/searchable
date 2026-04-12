@@ -12,8 +12,8 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  CheckCircle,
 } from '@material-ui/icons';
+import { checkmark } from '../../../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import backend from '../../../../views/utilities/Backend';
@@ -277,7 +277,7 @@ const Registration = ({ stepConfig }) => {
                   }`}
                   {...testIdProps('text', 'password', `requirement-${req.id}`)}
                 >
-                  <CheckCircle fontSize="small" />
+                  <img src={checkmark} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
                   <Typography variant="body2">{req.text}</Typography>
                 </Box>
               ))}

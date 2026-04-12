@@ -1,5 +1,5 @@
 import React from 'react';
-import { 
+import {
   Typography, Paper, Box, Divider
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
@@ -8,78 +8,91 @@ import TagsOnProfile from '../Tags/TagsOnProfile';
 import { useHistory } from 'react-router-dom';
 import { navigateWithStack } from '../../utils/navigationUtils';
 import { useTheme } from '@material-ui/core/styles';
+import { catPixel as physicalItemsIcon } from '../../assets/images/icons';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import PaymentIcon from '@material-ui/icons/Payment';
-import StorefrontIcon from '@material-ui/icons/Storefront';
+import StarIcon from '@material-ui/icons/Star';
 
 const useStyles = makeStyles((theme) => ({
   profileCard: {
     cursor: 'pointer',
-    transition: 'box-shadow 0.3s ease',
     width: '100%',
     padding: 0,
     overflow: 'hidden',
     position: 'relative',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider}40`,
+    borderRadius: '12px',
+    boxShadow: 'none',
+    transition: 'all 0.3s ease',
     '&:hover': {
-      boxShadow: theme.shadows[4]
+      transform: 'translateY(-4px)',
+      background: theme.palette.background.paper,
+      border: `1px solid ${theme.palette.primary.main}40`,
+      boxShadow: `0 12px 40px rgba(0,0,0,0.3), 0 0 20px ${theme.palette.primary.main}15`,
     }
   },
   imageContainer: {
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: theme.palette.grey[100],
-    aspectRatio: '16 / 9', // Consistent aspect ratio
+    backgroundColor: theme.palette.grey[900] || theme.palette.grey[100],
+    aspectRatio: '16 / 9',
     [theme.breakpoints.down('sm')]: {
-      aspectRatio: '4 / 3' // More square on mobile
+      aspectRatio: '4 / 3'
     }
   },
   image: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover'
+    objectFit: 'cover',
+    transition: 'transform 0.4s ease',
+    '$profileCard:hover &': {
+      transform: 'scale(1.03)',
+    }
   },
   contentContainer: {
-    padding: theme.spacing(2), // Reduced from 2.5
+    padding: theme.spacing(2),
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(1.5) // Reduced from 2
+      padding: theme.spacing(1.5)
     }
   },
   title: {
-    fontWeight: 'bold',
-    marginBottom: theme.spacing(0.5), // Reduced from 1
-    fontSize: '1.5rem', // Increased from 1.25rem
+    fontWeight: 700,
+    marginBottom: theme.spacing(0.5),
+    fontSize: '1.4rem',
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
     color: theme.palette.primary.main,
+    lineHeight: 1.2,
     [theme.breakpoints.down('sm')]: {
-      fontSize: '1.25rem' // Increased from 1.125rem
+      fontSize: '1.2rem'
     }
   },
   description: {
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
-    marginTop: theme.spacing(0.5), // Reduced from 1
+    marginTop: theme.spacing(0.75),
     color: theme.palette.text.secondary,
-    fontSize: '1.125rem', // Increased from 0.9375rem
+    fontSize: '0.95rem',
+    lineHeight: 1.5,
     [theme.breakpoints.down('sm')]: {
-      fontSize: '1rem' // Increased from 0.875rem
+      fontSize: '0.9rem'
     }
   },
   tagsSection: {
-    marginTop: theme.spacing(1), // Reduced from 2
+    marginTop: theme.spacing(1),
     display: 'flex',
     alignItems: 'center',
     [theme.breakpoints.down('sm')]: {
-      marginTop: theme.spacing(0.75) // Reduced from 1.5
+      marginTop: theme.spacing(0.75)
     }
   },
   metaInfo: {
-    marginTop: theme.spacing(0.5), // Reduced from 1
+    marginTop: theme.spacing(0.75),
     color: theme.palette.text.secondary,
-    fontSize: '1.0625rem', // Increased from 0.9375rem
+    fontSize: '0.95rem',
     [theme.breakpoints.down('sm')]: {
-      marginTop: theme.spacing(0.5), // Reduced from 0.75
-      fontSize: '0.9375rem' // Increased from 0.875rem
+      fontSize: '0.875rem'
     }
   },
   noImagePlaceholder: {
@@ -88,63 +101,97 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.palette.grey[200],
+    backgroundColor: theme.palette.grey[900] || theme.palette.grey[200],
     color: theme.palette.text.secondary
   },
   typeIconContainer: {
     display: 'flex',
-    gap: theme.spacing(1),
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(1),
+    gap: theme.spacing(0.75),
+    marginTop: theme.spacing(0.75),
+    marginBottom: theme.spacing(0.75),
     '& .MuiSvgIcon-root': {
-      fontSize: '1.2rem',
-      color: theme.palette.secondary.main
+      fontSize: '1.1rem',
+      color: theme.palette.secondary.main,
+      opacity: 0.8
     }
+  },
+  typeIconImage: {
+    width: 18,
+    height: 18,
+    objectFit: 'contain',
+    opacity: 0.8,
+  },
+  // Price badge overlay on image
+  priceBadge: {
+    position: 'absolute',
+    top: theme.spacing(1.5),
+    right: theme.spacing(1.5),
+    background: theme.palette.background.paper,
+    borderRadius: '8px',
+    padding: theme.spacing(0.5, 1),
+    fontWeight: 700,
+    fontSize: '0.9rem',
+    color: theme.palette.primary.main,
+  },
+  // Rating badge
+  ratingBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    fontSize: '0.85rem',
+    color: theme.palette.text.secondary,
+    '& .MuiSvgIcon-root': {
+      fontSize: '0.95rem',
+      color: theme.palette.warning.main,
+    }
+  },
+  // Meta row for inline layout
+  metaRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: theme.spacing(0.5),
+    marginTop: theme.spacing(0.5),
   }
 }));
 
-const MiniProfile = ({ 
-  type = 'searchable', // 'searchable' or 'user'
+const MiniProfile = ({
+  type = 'searchable',
   data,
   onClick
 }) => {
-  console.log('MiniProfile data:', data);
   const classes = useStyles();
   const history = useHistory();
   const theme = useTheme();
-  
+
   if (!data) return null;
-  
-  // Helper function to truncate text
+
   const truncateText = (text, maxLength) => {
     if (!text) return '';
     return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
-  
-  // Helper function to get searchable type icons
+
   const getSearchableTypeIcons = (data) => {
     const publicData = data.payloads?.public || {};
     const searchableType = publicData.type || data.type;
     const icons = [];
-    
+
     if (searchableType === 'allinone') {
-      // For allinone, check which components are enabled
       const components = publicData.components || {};
-      
       if (components.downloadable?.enabled && components.downloadable?.files?.length > 0) {
         icons.push(<GetAppIcon key="downloadable" />);
       }
       if (components.offline?.enabled && components.offline?.items?.length > 0) {
-        icons.push(<StorefrontIcon key="offline" />);
+        icons.push(<img src={physicalItemsIcon} alt="" className={classes.typeIconImage} key="offline" />);
       }
       if (components.donation?.enabled) {
         icons.push(<PaymentIcon key="donation" />);
       }
     } else {
-      // For legacy types, show single icon
-      switch(searchableType) {
+      switch (searchableType) {
         case 'offline':
-          icons.push(<StorefrontIcon key="offline" />);
+          icons.push(<img src={physicalItemsIcon} alt="" className={classes.typeIconImage} key="offline" />);
           break;
         case 'direct':
           icons.push(<PaymentIcon key="direct" />);
@@ -154,13 +201,11 @@ const MiniProfile = ({
           break;
       }
     }
-    
     return icons;
   };
-  
-  // Extract common data based on type
+
   let title, description, imageUrl, tags, metaInfo, clickPath;
-  
+
   if (type === 'searchable') {
     const publicData = data.payloads?.public || {};
     title = publicData.title;
@@ -176,8 +221,6 @@ const MiniProfile = ({
       rating: data.avg_rating,
       totalRatings: data.total_ratings
     };
-    
-    // Always use allinone-item route for backward compatibility
     clickPath = `/allinone-item/${data.searchable_id}`;
   } else if (type === 'user') {
     title = data.displayName || data.username;
@@ -194,8 +237,6 @@ const MiniProfile = ({
     clickPath = `/profile/${data.user_id || data.id}`;
   }
 
-  console.log('MiniProfile metaInfo:', metaInfo);
-  
   const handleClick = () => {
     if (onClick) {
       onClick(data);
@@ -203,100 +244,102 @@ const MiniProfile = ({
       navigateWithStack(history, clickPath);
     }
   };
-  
+
   return (
-    <Paper className={classes.profileCard} onClick={handleClick}>
-      {/* Image at the top taking full width - only show if image exists */}
+    <Paper className={classes.profileCard} onClick={handleClick} elevation={0}>
+      {/* Image with price badge overlay */}
       {imageUrl && (
-        <Box className={classes.imageContainer}>
-          <img 
-            src={imageUrl} 
+        <Box className={classes.imageContainer} style={{ position: 'relative' }}>
+          <img
+            src={imageUrl}
             alt={title}
             className={classes.image}
           />
+          {/* Price badge on image */}
+          {type === 'searchable' && metaInfo.price && (
+            <Box className={classes.priceBadge}>
+              ${metaInfo.price}
+            </Box>
+          )}
         </Box>
       )}
-      
-      {/* Content below the image */}
+
+      {/* Content */}
       <Box className={classes.contentContainer}>
         <Typography variant="h3" className={classes.title}>
           {truncateText(title, 50)}
         </Typography>
 
-        {/* Type icons below title */}
-        {type === 'searchable' && (() => {
-          const icons = getSearchableTypeIcons(data);
-          return icons.length > 0 ? (
-            <Box className={classes.typeIconContainer}>
-              {icons}
-            </Box>
-          ) : null;
-        })()}
+        {/* Type icons + rating on same row */}
+        {type === 'searchable' && (
+          <Box className={classes.metaRow}>
+            {(() => {
+              const icons = getSearchableTypeIcons(data);
+              return icons.length > 0 ? (
+                <Box className={classes.typeIconContainer} style={{ margin: 0 }}>
+                  {icons}
+                </Box>
+              ) : <span />;
+            })()}
+            {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
+              <Box className={classes.ratingBadge}>
+                <StarIcon />
+                {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings})
+              </Box>
+            )}
+          </Box>
+        )}
 
-        <Divider />
-        
-        {/* Meta information based on type */}
+        <Divider style={{ margin: '6px 0' }} />
+
+        {/* Searchable meta */}
         {type === 'searchable' && metaInfo.username && (
           <Box className={classes.metaInfo}>
-            <PostedBy 
-              username={metaInfo.username} 
-              userId={metaInfo.userId} 
+            <PostedBy
+              username={metaInfo.username}
+              userId={metaInfo.userId}
               maxLength={30}
               rating={data.seller_rating}
               totalRatings={data.seller_total_ratings}
             />
-            
-            {metaInfo.price && (
-              <Typography variant="body1">
-                Price: ${metaInfo.price}
-              </Typography>
-            )}
-            
             {metaInfo.category && (
-              <Typography variant="body1">
-                Category: {truncateText(metaInfo.category, 30)}
-              </Typography>
-            )}
-            
-            {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
-              <Typography variant="body1">
-                Item Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings} reviews)
+              <Typography variant="body2" style={{ marginTop: 2 }}>
+                {truncateText(metaInfo.category, 30)}
               </Typography>
             )}
           </Box>
         )}
-        
+
+        {/* User meta */}
         {type === 'user' && (
           <Box className={classes.metaInfo}>
-            {metaInfo.username && title !== metaInfo.username && (
-              <Typography variant="body1">
-                @{metaInfo.username}
-              </Typography>
-            )}
-            
+            <Box className={classes.metaRow}>
+              {metaInfo.username && title !== metaInfo.username && (
+                <Typography variant="body2">@{metaInfo.username}</Typography>
+              )}
+              {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
+                <Box className={classes.ratingBadge}>
+                  <StarIcon />
+                  {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings})
+                </Box>
+              )}
+            </Box>
             {typeof metaInfo.searchableCount === 'number' && (
-              <Typography variant="body1">
-                Items: {metaInfo.searchableCount}
-              </Typography>
-            )}
-            
-            {typeof metaInfo.rating === 'number' && metaInfo.totalRatings > 0 && (
-              <Typography variant="body1">
-                Rating: {metaInfo.rating.toFixed(1)} ({metaInfo.totalRatings} reviews)
+              <Typography variant="body2" style={{ marginTop: 2 }}>
+                {metaInfo.searchableCount} item{metaInfo.searchableCount !== 1 ? 's' : ''}
               </Typography>
             )}
           </Box>
         )}
-        
+
         {/* Description */}
         {description && (
-          <Typography variant="body1" className={classes.description}>
-            {type === 'searchable' ? 'Description: ' : ''}
+          <Typography variant="body2" className={classes.description}>
             {truncateText(description, 150)}
           </Typography>
         )}
-        
-        {/* Tags Section */}
+
+        {/* Tags */}
         {tags && tags.length > 0 && (
           <Box className={classes.tagsSection}>
             <TagsOnProfile tags={tags} />

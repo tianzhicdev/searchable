@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Typography, Box, Button, CircularProgress, Grid } from '@material-ui/core';
-import { Share as ShareIcon, Edit as EditIcon, Delete as DeleteIcon } from '@material-ui/icons';
 import useComponentStyles from '../themes/componentStyles';
+import { networkNodes, cursorPointer, closeX } from '../assets/images/icons';
 import PayButton from './Payment/PayButton';
 import ShareDialog from './ShareDialog';
 
@@ -60,7 +60,7 @@ const SearchableDetailsPriceDisplay = ({
                 color="primary"
                 onClick={() => setShareDialogOpen(true)}
                 fullWidth
-                startIcon={<ShareIcon />}
+                startIcon={<img src={networkNodes} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 disabled={processing}
               >
                 Share
@@ -71,7 +71,7 @@ const SearchableDetailsPriceDisplay = ({
                 variant="contained"
                 onClick={onEditItem}
                 fullWidth
-                startIcon={<EditIcon />}
+                startIcon={<img src={cursorPointer} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 disabled={processing}
               >
                 Edit
@@ -84,7 +84,7 @@ const SearchableDetailsPriceDisplay = ({
                 onClick={onRemoveItem}
                 disabled={isRemoving || processing}
                 fullWidth
-                startIcon={isRemoving ? <CircularProgress size={20} /> : <DeleteIcon />}
+                startIcon={isRemoving ? <CircularProgress size={20} /> : <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               >
                 {isRemoving ? 'Deleting...' : 'Delete'}
               </Button>

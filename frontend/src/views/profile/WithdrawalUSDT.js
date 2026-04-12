@@ -34,11 +34,11 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'center'
   },
   balanceAmount: {
-    color: '#ffffff',
+    color: theme.palette.primary.main,
     fontWeight: 'bold'
   },
   balanceLabel: {
-    color: '#ffffff'
+    color: theme.palette.primary.main
   },
   submitButton: {
     marginTop: theme.spacing(2)

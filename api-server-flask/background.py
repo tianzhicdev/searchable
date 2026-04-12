@@ -20,7 +20,6 @@ from api.common.data_helpers import (
     refresh_stripe_payment
 )
 from api.common.models import PaymentStatus, PaymentType
-from psycopg2.extras import Json
 
 # Configure logging
 logging.basicConfig(
@@ -398,7 +397,7 @@ def invoice_check_thread():
         except Exception as e:
             logger.error(f"Error in invoice check thread: {str(e)}")
             logger.error(traceback.format_exc())
-        
+
         time.sleep(CHECK_INVOICE_INTERVAL)
 
 
@@ -410,7 +409,7 @@ def withdrawal_sender_thread():
         except Exception as e:
             logger.error(f"Error in withdrawal sender thread: {str(e)}")
             logger.error(traceback.format_exc())
-        
+
         time.sleep(WITHDRAWAL_SENDER_INTERVAL)
 
 
@@ -422,7 +421,7 @@ def deposit_check_thread():
         except Exception as e:
             logger.error(f"Error in deposit check thread: {str(e)}")
             logger.error(traceback.format_exc())
-        
+
         time.sleep(DEPOSIT_CHECK_INTERVAL)
 
 
@@ -434,7 +433,7 @@ def status_checker_thread():
         except Exception as e:
             logger.error(f"Error in status checker thread: {str(e)}")
             logger.error(traceback.format_exc())
-        
+
         time.sleep(STATUS_CHECKER_INTERVAL)
 
 

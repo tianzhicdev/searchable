@@ -10,24 +10,39 @@ import {
   Snackbar,
   Alert
 } from '@material-ui/core';
-import { ArrowBack, Store } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { catPixel as physicalItemsIcon } from '../../assets/images/icons';
 import backend from '../utilities/Backend';
 import OnboardingAuthWithLoggedInState from '../../components/OnboardingAuthWithLoggedInState';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { smileyCute, cursorMedium, snowflakeSmall, coinDollar } from '../../assets/images/icons';
+
+
+const onboarding4_1Icons = [
+  { src: smileyCute, alt: 'cute', top: '8%', left: '6%', size: 42, opacity: 0.12, animation: 'float' },
+  { src: cursorMedium, alt: 'cursor', top: '14%', right: '5%', size: 40, opacity: 0.1, animation: 'pulse' },
+  { src: snowflakeSmall, alt: 'snowflake', bottom: '16%', left: '5%', size: 36, opacity: 0.1, animation: 'float' },
+  { src: coinDollar, alt: 'coin', bottom: '12%', right: '7%', size: 44, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -40,7 +55,7 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(9, 9, 15, 0.95)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -146,8 +161,9 @@ const Onboarding4_1 = () => {
 
   if (!catalogData) {
     return (
-      <Box className={classes.root}>
-        <Container maxWidth="md">
+      <Box className={classes.root} style={{ position: 'relative' }}>
+        <DecorativeIcons icons={onboarding4_1Icons} />
+        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
           <Paper className={classes.paper} elevation={0}>
             <CircularProgress />
           </Paper>
@@ -157,13 +173,14 @@ const Onboarding4_1 = () => {
   }
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding4_1Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           {isCreatingStore && (
             <Box className={classes.loadingOverlay}>
               <Box textAlign="center">
-                <Store className={classes.successIcon} />
+                <img src={physicalItemsIcon} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} className={classes.successIcon} />
                 <Typography variant="h6">
                   Creating your store catalog...
                 </Typography>
@@ -179,7 +196,7 @@ const Onboarding4_1 = () => {
             <OnboardingAuthWithLoggedInState
               onSuccess={handleAuthSuccess}
               submitButtonText={isCreatingStore ? "Creating..." : "Open My Store"}
-              submitButtonIcon={<Store />}
+              submitButtonIcon={<img src={physicalItemsIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               contextText={`publish "${catalogData.storeName}"`}
             />
           </Box>

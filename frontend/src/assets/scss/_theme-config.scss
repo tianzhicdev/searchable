@@ -3,37 +3,37 @@
 // Single source of truth for all design tokens
 // ===========================
 
-// Core Colors (5 main + additions) - NEON TOKYO THEME
-$primary: #ff0080;        // Hot pink
-$secondary: #00d4ff;      // Bright cyan
+// Core Colors (5 main + additions) - MIDNIGHT ORCHID THEME
+$primary: #A78BFA;        // Muted violet
+$secondary: #818CF8;      // Indigo-blue
 
-$error: #ff1744;          // Error red
-$warning: #ff9100;        // Warning orange
-$success: #00e676;        // Success green
+$error: #F87171;          // Soft red
+$warning: #FBBF24;        // Warm amber
+$success: #34D399;        // Muted emerald
 
-// Background Colors - Deep dark with purple undertones
-$bg-primary: #0a0014;     // Deep dark background
-$bg-secondary: #130025;   // Secondary dark purple
-$bg-hover: #1f0d3a;       // Hover state purple
-$bg-elevated: #180530;    // Elevated surface
+// Background Colors - Near-black with cool blue undertone
+$bg-primary: #09090F;     // Near-black cool
+$bg-secondary: #13131D;   // Elevated dark surface
+$bg-hover: #1E1E2E;       // Hover/active surface
+$bg-elevated: #181825;    // Cards, modals
 
-// Border Colors - Neon accents
-$border-color: #ff0080;   // Hot pink border
-$border-light: #00d4ff;   // Cyan borders
-$border-dark: #2a1445;    // Dark purple borders
-$border-focus: #00d4ff;   // Cyan focus
+// Border Colors - Subtle purple tint
+$border-color: #2D2D3F;   // Subtle border
+$border-light: rgba(167, 139, 250, 0.2);   // Light violet borders
+$border-dark: rgba(167, 139, 250, 0.4);    // Dark violet borders
+$border-focus: #A78BFA;   // Violet focus
 
 // Text Colors - High contrast for dark backgrounds
-$text-primary: #ff0080;   // Pure white for readability
-$text-secondary: #e0c3fc; // Light purple
-$text-disabled: #8b7b9f;  // Muted purple
-$text-inverse: #0a0014;   // Dark for light backgrounds
+$text-primary: #E4E4ED;   // Lavender off-white
+$text-secondary: #9CA3AF; // Neutral gray
+$text-disabled: #4B5563;  // Dark gray
+$text-inverse: #09090F;   // Dark for light backgrounds
 
-// Gradient Colors - Neon Tokyo gradients
-$gradient-primary-start: #ff0080;     // Hot pink
-$gradient-primary-end: #00d4ff;       // Bright cyan
-$gradient-secondary-start: #00e676;   // Green
-$gradient-secondary-end: #00bcd4;
+// Gradient Colors - Violet/indigo gradients
+$gradient-primary-start: #A78BFA;     // Violet
+$gradient-primary-end: #818CF8;       // Indigo
+$gradient-secondary-start: #818CF8;   // Indigo
+$gradient-secondary-end: #34D399;     // Emerald
 
 // Typography
 $font-primary: "FreePixel", "Courier New", monospace;
@@ -80,10 +80,10 @@ $transition-speed: 200ms;
 $transition-speed-slow: 300ms;
 $transition-easing: ease-in-out;
 
-// Shadows - Neon glow effects for cyberpunk
-$shadow-sm: 0 0 10px rgba(255, 0, 255, 0.3);
-$shadow-md: 0 0 20px rgba(255, 0, 255, 0.5);
-$shadow-lg: 0 0 30px rgba(0, 255, 255, 0.6);
+// Shadows - Subtle violet glow effects
+$shadow-sm: 0 0 10px rgba(167, 139, 250, 0.15);
+$shadow-md: 0 0 20px rgba(167, 139, 250, 0.25);
+$shadow-lg: 0 0 30px rgba(129, 140, 248, 0.3);
 
 // Z-index Scale
 $z-index-dropdown: 1000;

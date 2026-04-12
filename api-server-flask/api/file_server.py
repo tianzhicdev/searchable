@@ -107,5 +107,75 @@ def download_file():
         logger.exception(f"Error during file download: {str(e)}")
         return jsonify({"error": f"File download failed: {str(e)}"}), 500
 
+@app.route('/health', methods=['GET'])
+def health():
+    """
+    Health check endpoint for file server
+
+    Checks:
+    - Storage directory is accessible
+    - Storage directory is writable
+    - Disk space availability
+
+    Returns:
+    - 200 if healthy
+    - 503 if unhealthy
+    """
+    try:
+        import shutil
+        from datetime import datetime, timezone
+
+        # Check if storage directory exists and is accessible
+        if not os.path.exists(UPLOAD_FOLDER):
+            logger.error(f"Storage folder does not exist: {UPLOAD_FOLDER}")
+            return jsonify({
+                "status": "unhealthy",
+                "error": "Storage folder not accessible",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }), 503
+
+        # Check if storage directory is writable
+        if not os.access(UPLOAD_FOLDER, os.W_OK):
+            logger.error(f"Storage folder is not writable: {UPLOAD_FOLDER}")
+            return jsonify({
+                "status": "unhealthy",
+                "error": "Storage folder not writable",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }), 503
+
+        # Check disk space
+        usage = shutil.disk_usage(UPLOAD_FOLDER)
+        percent_used = (usage.used / usage.total) * 100
+        gb_free = usage.free / (1024**3)
+
+        # Warning if >90% used
+        if percent_used >= 90:
+            logger.warning(f"Disk space critical: {percent_used:.1f}% used")
+            return jsonify({
+                "status": "degraded",
+                "warning": "Low disk space",
+                "disk_percent_used": round(percent_used, 1),
+                "disk_gb_free": round(gb_free, 2),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }), 503
+
+        # All checks passed
+        return jsonify({
+            "status": "healthy",
+            "service": "file_server",
+            "storage_path": UPLOAD_FOLDER,
+            "disk_percent_used": round(percent_used, 1),
+            "disk_gb_free": round(gb_free, 2),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 200
+
+    except Exception as e:
+        logger.exception(f"Health check failed: {str(e)}")
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 503
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5006, debug=False)

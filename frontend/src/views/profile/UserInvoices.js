@@ -14,14 +14,8 @@ import {
   MenuItem
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
-import { 
-  TrendingUp,
-  TrendingDown,
-  AccountBalanceWallet,
-  CardGiftcard,
-  MoreVert,
-  AccountBalance
-} from '@material-ui/icons';
+import { MoreVert } from '@material-ui/icons';
+import { percentGrowth, walletCircuit, diamondGem } from '../../assets/images/icons';
 import Backend from '../utilities/Backend';
 import Invoice from '../payments/Invoice';
 import RewardComponent from '../../components/Reward/RewardComponent';
@@ -314,28 +308,28 @@ const UserInvoices = () => {
             onClick={() => handleMenuItemClick(0)}
             selected={activeTab === 0}
           >
-            <TrendingDown style={{ marginRight: 8 }} />
+            <img src={percentGrowth} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
             Purchases ({stats.purchasesCount})
           </MenuItem>
           <MenuItem 
             onClick={() => handleMenuItemClick(1)}
             selected={activeTab === 1}
           >
-            <TrendingUp style={{ marginRight: 8 }} />
+            <img src={percentGrowth} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
             Sales ({stats.salesCount})
           </MenuItem>
           <MenuItem 
             onClick={() => handleMenuItemClick(2)}
             selected={activeTab === 2}
           >
-            <AccountBalanceWallet style={{ marginRight: 8 }} />
+            <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
             Withdrawals ({stats.withdrawalsCount})
           </MenuItem>
           <MenuItem 
             onClick={() => handleMenuItemClick(3)}
             selected={activeTab === 3}
           >
-            <AccountBalance style={{ marginRight: 8 }} />
+            <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
             Deposits ({stats.depositsCount})
           </MenuItem>
           {stats.totalRewards > 0 && (
@@ -343,7 +337,7 @@ const UserInvoices = () => {
               onClick={() => handleMenuItemClick(4)}
               selected={activeTab === 4}
             >
-              <CardGiftcard style={{ marginRight: 8 }} />
+              <img src={diamondGem} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
               Gifts ({stats.rewardsCount})
             </MenuItem>
           )}
@@ -361,15 +355,7 @@ const UserInvoices = () => {
                     py: theme.spacing(3)
                   }
                 }}>
-                  <TrendingDown sx={{ 
-                    fontSize: 48, 
-                    color: theme.palette.grey[500], 
-                    mb: theme.spacing(2),
-                    [theme.breakpoints.down('sm')]: {
-                      fontSize: 36,
-                      mb: theme.spacing(1.5)
-                    }
-                  }} />
+                  <img src={percentGrowth} alt="" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No purchases yet
                   </Typography>
@@ -405,15 +391,7 @@ const UserInvoices = () => {
                     py: theme.spacing(3)
                   }
                 }}>
-                  <TrendingUp sx={{ 
-                    fontSize: 48, 
-                    color: theme.palette.grey[500], 
-                    mb: theme.spacing(2),
-                    [theme.breakpoints.down('sm')]: {
-                      fontSize: 36,
-                      mb: theme.spacing(1.5)
-                    }
-                  }} />
+                  <img src={percentGrowth} alt="" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No sales yet
                   </Typography>
@@ -449,15 +427,7 @@ const UserInvoices = () => {
                     py: theme.spacing(3)
                   }
                 }}>
-                  <AccountBalanceWallet sx={{ 
-                    fontSize: 48, 
-                    color: theme.palette.grey[500], 
-                    mb: theme.spacing(2),
-                    [theme.breakpoints.down('sm')]: {
-                      fontSize: 36,
-                      mb: theme.spacing(1.5)
-                    }
-                  }} />
+                  <img src={walletCircuit} alt="" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No withdrawals yet
                   </Typography>
@@ -494,15 +464,7 @@ const UserInvoices = () => {
                     py: theme.spacing(3)
                   }
                 }}>
-                  <AccountBalance sx={{ 
-                    fontSize: 48, 
-                    color: theme.palette.grey[500], 
-                    mb: theme.spacing(2),
-                    [theme.breakpoints.down('sm')]: {
-                      fontSize: 36,
-                      mb: theme.spacing(1.5)
-                    }
-                  }} />
+                  <img src={walletCircuit} alt="" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No deposits yet
                   </Typography>
@@ -550,15 +512,7 @@ const UserInvoices = () => {
                     py: theme.spacing(3)
                   }
                 }}>
-                  <CardGiftcard sx={{ 
-                    fontSize: 48, 
-                    color: theme.palette.grey[500], 
-                    mb: theme.spacing(2),
-                    [theme.breakpoints.down('sm')]: {
-                      fontSize: 36,
-                      mb: theme.spacing(1.5)
-                    }
-                  }} />
+                  <img src={diamondGem} alt="" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
                   <Typography variant="h6" className={classes.staticText}>
                     No rewards yet
                   </Typography>

@@ -2,10 +2,14 @@
 from flask import Response
 from flask_restx import Resource
 from datetime import datetime, timezone
+import logging
 
 # Import from our new structure
 from .. import rest_api
 from ..common.metrics import generate_latest
+from ..common.health_checker import run_all_health_checks
+
+logger = logging.getLogger(__name__)
 
 @rest_api.route('/metrics')
 class MetricsResource(Resource):
@@ -32,14 +36,44 @@ class MetricsResource(Resource):
 @rest_api.route('/api/health')
 class HealthResource(Resource):
     """
-    Health check endpoint
+    Comprehensive health check endpoint
+    Returns 200 if healthy, 503 if unhealthy/degraded
     """
     def get(self):
         """
-        Simple health check endpoint with timestamp
+        Run comprehensive health checks on all services and dependencies
+
+        Returns detailed status of:
+        - Database connectivity
+        - Disk space
+        - Docker containers
+        - Service endpoints
+        - Background jobs
+        - Wallet balances
+        - External APIs
         """
-        return {
-            "status": "healthy",
-            "service": "api-server-flask",
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }, 200
+        try:
+            health_data = run_all_health_checks()
+
+            # Determine HTTP status code
+            status = health_data.get('status', 'unknown')
+
+            if status == 'healthy':
+                http_status = 200
+            else:
+                # Return 503 for unhealthy or degraded status
+                http_status = 503
+
+            logger.info(f"Health check completed: {status}")
+
+            return health_data, http_status
+
+        except Exception as e:
+            logger.error(f"Health check failed with exception: {e}", exc_info=True)
+            return {
+                "status": "unhealthy",
+                "service": "api-server-flask",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "error": str(e),
+                "message": "Health check system failure"
+            }, 503

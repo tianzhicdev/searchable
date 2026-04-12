@@ -7,8 +7,8 @@ import {
   Link,
   Paper
 } from '@material-ui/core';
-import { Download } from '@material-ui/icons';
 import { componentSpacing } from '../utils/spacing';
+import { floppyDisk } from '../assets/images/icons';
 import { useTheme } from '@material-ui/core/styles';
 import { navigateWithStack } from '../utils/navigationUtils';
 
@@ -71,7 +71,7 @@ const DownloadableProfile = ({ downloadableItem, onDownload }) => {
               <Button
                 variant="contained"
                 size="small"
-                startIcon={<Download />}
+                startIcon={<img src={floppyDisk} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 onClick={() => handleDownload(file)}
                 sx={{
                   width: { xs: '100%', sm: 'auto' }

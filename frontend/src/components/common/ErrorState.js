@@ -1,8 +1,8 @@
 import React from 'react';
 import { Box, Typography, Button } from '@material-ui/core';
-import { Error as ErrorIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import ActionButton from './ActionButton';
+import { smileyDizzy } from '../../assets/images/icons';
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -45,7 +45,7 @@ const ErrorState = ({
       className={`${classes.container} ${className || ''}`}
       style={{ minHeight }}
     >
-      <ErrorIcon className={classes.icon} />
+      <img src={smileyDizzy} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />
       
       <Typography variant="h6" className={classes.title}>
         {title}

@@ -26,7 +26,7 @@ services:
   flask_api:
     container_name: flask_api
     restart: always
-    env_file: 
+    env_file:
       # - ./api-server-flask/.env
       - ./.env.secrets
     build:
@@ -34,8 +34,11 @@ services:
       dockerfile: Dockerfile.api
     volumes:
       - ./logs:/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker monitoring
     ports:
       - "5005:5005"
+    environment:
+      - DOCKER_MONITORING_ENABLED=true
     networks:
       - db_network
       - web_network
@@ -75,7 +78,7 @@ services:
       - web_network
   
   db:
-    image: postgres
+    image: postgres:17
     restart: always
     env_file:
       - ./.env.secrets

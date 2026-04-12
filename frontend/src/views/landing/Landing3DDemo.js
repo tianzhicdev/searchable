@@ -17,7 +17,7 @@ import {
   useTheme,
   useMediaQuery
 } from '@material-ui/core';
-import { ExpandMore, ExpandLess, Refresh, Save } from '@material-ui/icons';
+import { ExpandMore, ExpandLess, Refresh } from '@material-ui/icons';
 import { useSelector } from 'react-redux';
 import Galaxy3D from '../../components/Galaxy3D';
 import { galaxyConfigs } from '../../components/Galaxy3D/configs';

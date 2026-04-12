@@ -34,7 +34,6 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 9.99)
         self.assertEqual(result['total_amount_usd'], 9.99)
         self.assertEqual(result['description'], 'Test Document')
         self.assertEqual(result['currency'], 'usd')
@@ -62,7 +61,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         expected_total = round((9.99 * 2) + (15.50 * 1), 2)
-        self.assertEqual(result['amount_usd'], expected_total)
         self.assertEqual(result['total_amount_usd'], expected_total)
         self.assertEqual(result['description'], 'Test Bundle (x3 items)')
         self.assertEqual(result['currency'], 'usd')
@@ -90,7 +88,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         expected_total = round((25.00 * 1) + (50.00 * 2), 2)
-        self.assertEqual(result['amount_usd'], expected_total)
         self.assertEqual(result['total_amount_usd'], expected_total)
         self.assertEqual(result['description'], 'Offline Service (x3 items)')
         self.assertEqual(result['currency'], 'usd')
@@ -112,7 +109,6 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 100.50)
         self.assertEqual(result['total_amount_usd'], 100.50)
         self.assertEqual(result['description'], 'Direct Payment Item - Direct Payment')
         self.assertEqual(result['currency'], 'usd')
@@ -136,7 +132,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         expected_total = round((50.25 * 2) + (75.00 * 1), 2)
-        self.assertEqual(result['amount_usd'], expected_total)
         self.assertEqual(result['total_amount_usd'], expected_total)
         self.assertEqual(result['description'], 'Direct Service - Direct Payment')
         self.assertEqual(result['currency'], 'usd')
@@ -166,7 +161,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         expected_total = 10.00 + 20.00
-        self.assertEqual(result['amount_usd'], expected_total)
         self.assertEqual(result['total_amount_usd'], expected_total)
         self.assertEqual(result['description'], 'Mixed Package (x2 items)')
         self.assertEqual(result['currency'], 'usd')
@@ -189,7 +183,6 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 0.00)
         self.assertEqual(result['total_amount_usd'], 0.00)
         self.assertEqual(result['description'], 'Empty Selection')
         self.assertEqual(result['currency'], 'usd')
@@ -213,7 +206,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         # 1.999 * 3 = 5.997, should round to 6.00
-        self.assertEqual(result['amount_usd'], 6.00)
         self.assertEqual(result['total_amount_usd'], 6.00)
 
     def test_calc_invoice_invalid_selections(self):
@@ -237,7 +229,6 @@ class TestCalcInvoice(unittest.TestCase):
         result = calc_invoice(searchable_data, selections)
         
         # Should only count valid selections
-        self.assertEqual(result['amount_usd'], 10.00)
         self.assertEqual(result['total_amount_usd'], 10.00)
         self.assertEqual(result['total_item_count'], 1)
 
@@ -266,7 +257,7 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 15.00)
+        self.assertEqual(result['total_amount_usd'], 15.00)
         self.assertEqual(result['total_item_count'], 1)
 
     def test_calc_invoice_edge_case_zero_price(self):
@@ -286,7 +277,6 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 0.00)
         self.assertEqual(result['total_amount_usd'], 0.00)
         self.assertEqual(result['total_item_count'], 5)
 
@@ -307,7 +297,7 @@ class TestCalcInvoice(unittest.TestCase):
         
         result = calc_invoice(searchable_data, selections)
         
-        self.assertEqual(result['amount_usd'], 10.00)  # 0.01 * 1000
+        self.assertEqual(result['total_amount_usd'], 10.00)  # 0.01 * 1000
         self.assertEqual(result['total_item_count'], 1000)
 
 

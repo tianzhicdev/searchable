@@ -1,8 +1,8 @@
 import React from 'react';
 import { Box, Typography, Avatar, Chip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { Person as PersonIcon, Verified as VerifiedIcon } from '@material-ui/icons';
 import { Link } from 'react-router-dom';
+import { profileUser, checkmark as verifiedCheckmark } from '../../assets/images/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import RatingDisplay from './RatingDisplay';
 
@@ -109,7 +109,7 @@ const UserMiniProfile = ({
         src={avatarSrc || user.avatar_url}
         className={`${classes.avatar} ${getSizeClass()}`}
       >
-        {!avatarSrc && !user.avatar_url && <PersonIcon />}
+        {!avatarSrc && !user.avatar_url && <img src={profileUser} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
       </Avatar>
 
       <Box className={classes.info}>
@@ -122,7 +122,7 @@ const UserMiniProfile = ({
           </Typography>
           
           {user.is_verified && (
-            <VerifiedIcon className={classes.verifiedIcon} />
+            <img src={verifiedCheckmark} alt="verified" style={{ width: 16, height: 16, objectFit: 'contain' }} className={classes.verifiedIcon} />
           )}
           
           {showRole && user.is_publisher && !inline && (

@@ -10,8 +10,8 @@ import {
   CircularProgress,
   Alert
 } from '@material-ui/core';
-import { Download } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { floppyDisk } from '../../assets/images/icons';
 import { componentSpacing, spacing } from '../../utils/spacing';
 import { useTheme } from '@material-ui/core/styles';
 import backend from '../utilities/Backend';
@@ -133,15 +133,7 @@ const MyDownloads = () => {
                 py: theme.spacing(3)
               }
             }}>
-              <Download sx={{ 
-                fontSize: 64, 
-                color: theme.palette.grey[400], 
-                mb: theme.spacing(2),
-                [theme.breakpoints.down('sm')]: {
-                  fontSize: 48,
-                  mb: theme.spacing(1.5)
-                }
-              }} />
+              <img src={floppyDisk} alt="" style={{ width: 64, height: 64, objectFit: 'contain', opacity: 0.5, marginBottom: theme.spacing(2) }} />
               <Typography variant="h6" gutterBottom>
                 No Downloads Yet
               </Typography>

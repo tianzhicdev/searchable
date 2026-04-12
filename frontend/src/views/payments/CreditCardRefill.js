@@ -12,13 +12,19 @@ import {
   Alert,
   useTheme
 } from '@material-ui/core';
-import {
-  CreditCard as CreditCardIcon
-} from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+import ActionButtonLabel from '../../components/common/ActionButtonLabel';
+
+const paymentIcons = [
+  { src: coinDollar, alt: 'dollar', top: '8%', right: '4%', size: 32, opacity: 0.1, animation: 'float' },
+  { src: coinEthereum, alt: 'eth', bottom: '15%', left: '3%', size: 28, opacity: 0.08, animation: 'pulse' },
+  { src: coinGeneric, alt: 'coin', top: '40%', left: '2%', size: 30, opacity: 0.08, animation: 'float' },
+];
 
 const CreditCardRefill = () => {
   const classes = useComponentStyles();
@@ -109,7 +115,8 @@ const CreditCardRefill = () => {
   const totalAmount = amount ? parseFloat(amount) + stripeFee : 0;
   
   return (
-    <Grid container sx={componentSpacing.pageContainer(theme)}>
+    <Grid container sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }}>
+      <DecorativeIcons icons={paymentIcons} />
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)}>
         <PageHeaderButton
           onClick={() => history.push('/dashboard')}
@@ -194,9 +201,14 @@ const CreditCardRefill = () => {
             size="large"
             onClick={handleSubmit}
             disabled={!amount || parseFloat(amount) <= 0 || processing}
-            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            aria-label={processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
+            title={processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
           >
-            {processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
+            {processing ? (
+              <CircularProgress size={20} aria-label="Processing..." />
+            ) : (
+              <ActionButtonLabel label={`Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`} />
+            )}
           </Button>
           
           <Box mt={2}>

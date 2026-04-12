@@ -11,15 +11,25 @@ import {
   Box,
   IconButton
 } from '@material-ui/core';
-import { ArrowBack, CloudDownload, Store, Favorite } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { floppyDisk as downloadIcon, catPixel as physicalItemsIcon, heartPixel as donationIcon } from '../../assets/images/icons';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { smileyHappy, floppyDisk, heartPixel, sparkleStarPurple } from '../../assets/images/icons';
+
+
+const onboarding2Icons = [
+  { src: smileyHappy, alt: 'happy', top: '8%', left: '6%', size: 42, opacity: 0.12, animation: 'float' },
+  { src: floppyDisk, alt: 'floppy', top: '12%', right: '7%', size: 44, opacity: 0.1, animation: 'pulse' },
+  { src: heartPixel, alt: 'heart', bottom: '18%', left: '8%', size: 38, opacity: 0.12, animation: 'float' },
+  { src: sparkleStarPurple, alt: 'sparkle', bottom: '14%', right: '5%', size: 40, opacity: 0.1, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
@@ -62,12 +72,19 @@ const useStyles = makeStyles((theme) => ({
       }
     },
     '&:hover': {
-      transform: 'translateY(-10px)',
+      transform: 'translateY(-6px)',
+      '& .MuiCardContent-root': {
+        border: `1px solid ${theme.palette.primary.main}40`,
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+      },
     },
   },
   cardContent: {
     padding: theme.spacing(4),
     textAlign: 'center',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '12px',
     transition: 'all 0.3s ease',
   },
   icon: {
@@ -96,19 +113,19 @@ const Onboarding2 = () => {
     {
       title: 'Sell my digital content',
       description: 'Upload and sell content like PDFs, music, videos, or software',
-      icon: <CloudDownload className={classes.icon} />,
+      icon: <img src={downloadIcon} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />,
       path: '/onboarding-3'
     },
     {
       title: 'Create a donation page',
       description: 'Accept donations and tips from supporters',
-      icon: <Favorite className={classes.icon} />,
+      icon: <img src={donationIcon} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />,
       path: '/onboarding-5'
     },
     {
       title: 'Create catalog for my store',
       description: 'Build a product catalog with multiple items and categories',
-      icon: <Store className={classes.icon} />,
+      icon: <img src={physicalItemsIcon} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />,
       path: '/onboarding-4'
     },
   ];
@@ -118,15 +135,16 @@ const Onboarding2 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding2Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" className={classes.title}>
+            <Typography variant="h3" className={classes.title} color="primary">
               Your first posting
             </Typography>
           </Box>

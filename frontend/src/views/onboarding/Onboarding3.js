@@ -15,23 +15,38 @@ import {
   Snackbar,
   Alert
 } from '@material-ui/core';
-import { ArrowBack, CloudUpload, Delete, AttachFile } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { cloudCool, closeX as deleteIcon, floppyDisk as attachIcon } from '../../assets/images/icons';
 import backend from '../utilities/Backend';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { cloud, floppyDisk, cassetteTape, sparkleGradientLarge } from '../../assets/images/icons';
+
+
+const onboarding3Icons = [
+  { src: cloud, alt: 'cloud', top: '6%', left: '4%', size: 44, opacity: 0.1, animation: 'float' },
+  { src: floppyDisk, alt: 'floppy', top: '10%', right: '6%', size: 40, opacity: 0.12, animation: 'pulse' },
+  { src: cassetteTape, alt: 'cassette', bottom: '12%', left: '7%', size: 46, opacity: 0.1, animation: 'float' },
+  { src: sparkleGradientLarge, alt: 'sparkle', bottom: '18%', right: '5%', size: 38, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -48,6 +63,7 @@ const useStyles = makeStyles((theme) => ({
     transition: 'all 0.3s ease',
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
+      boxShadow: `0 0 20px ${theme.palette.primary.main}4D, 0 0 40px ${theme.palette.secondary.main}26`,
     },
   },
   uploadIcon: {
@@ -71,7 +87,7 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: 'rgba(9, 9, 15, 0.95)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -167,8 +183,9 @@ const Onboarding3 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding3Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           {uploading && (
             <Box className={classes.loadingOverlay}>
@@ -181,7 +198,7 @@ const Onboarding3 = () => {
           </IconButton>
           
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography variant="h3" gutterBottom color="primary">
               Upload Your Digital Content
             </Typography>
           </Box>
@@ -193,7 +210,7 @@ const Onboarding3 = () => {
             className={classes.uploadSection}
             onClick={() => fileInputRef.current?.click()}
           >
-            <CloudUpload className={classes.uploadIcon} />
+            <img src={cloudCool} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.uploadIcon} />
             <Typography variant="h6">
               Upload files here
             </Typography>
@@ -203,7 +220,7 @@ const Onboarding3 = () => {
             <Button
               variant="contained"
               color="primary"
-              startIcon={<AttachFile />}
+              startIcon={<img src={attachIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               style={{ marginTop: 16 }}
             >
               Select Files
@@ -237,7 +254,7 @@ const Onboarding3 = () => {
                         onClick={() => handleRemoveFile(file.id)}
                         disabled={uploading}
                       >
-                        <Delete />
+                        <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>

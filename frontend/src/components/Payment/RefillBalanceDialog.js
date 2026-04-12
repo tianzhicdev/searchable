@@ -13,12 +13,8 @@ import {
   Box,
   IconButton
 } from '@material-ui/core';
-import {
-  Close as CloseIcon,
-  CreditCard as CreditCardIcon,
-  AccountBalanceWallet as WalletIcon
-} from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
+import { closeX, coinDollarGold, coinEthereum } from '../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
@@ -84,7 +80,7 @@ const RefillBalanceDialog = ({
               Refill Balance
             </Typography>
             <IconButton onClick={onClose} size="small">
-              <CloseIcon />
+              <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
             </IconButton>
           </Box>
         </DialogTitle>
@@ -109,7 +105,7 @@ const RefillBalanceDialog = ({
           <List>
             <ListItem button onClick={handleUSDTRefill}>
               <ListItemIcon>
-                <WalletIcon />
+                <img src={coinEthereum} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
               </ListItemIcon>
               <ListItemText
                 primary={
@@ -127,7 +123,7 @@ const RefillBalanceDialog = ({
             
             <ListItem button onClick={handleCreditCardRefill}>
               <ListItemIcon>
-                <CreditCardIcon />
+                <img src={coinDollarGold} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
               </ListItemIcon>
               <ListItemText
                 primary={

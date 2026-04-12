@@ -9,7 +9,6 @@ import {
   InputAdornment,
   Button
 } from '@material-ui/core';
-import { ContentCopy } from '@material-ui/icons';
 import useComponentStyles from '../themes/componentStyles';
 import Logo from '../ui-component/Logo';
 import ZoomableImage from '../components/ZoomableImage';

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { 
-  Paper, CardContent, Typography, Divider, Box, Chip, IconButton, Collapse, Link
+import {
+  Paper, CardContent, Typography, Divider, Box, Chip, IconButton, Collapse, Link,
+  useTheme
 } from '@material-ui/core';
 import { ExpandMore, ExpandLess } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
@@ -26,6 +27,7 @@ const UnifiedReceipt = ({
 }) => {
   const classes = useComponentStyles();
   const styles = useStyles();
+  const theme = useTheme();
   const history = useHistory();
   const [expanded, setExpanded] = useState(false);
 
@@ -64,7 +66,7 @@ const UnifiedReceipt = ({
         variant="caption"
         style={{
           backgroundColor: getStatusColor(data.status),
-          color: '#fff',
+          color: theme.palette.primary.main,
           padding: '2px 8px',
           borderRadius: '4px',
           fontWeight: 'bold',

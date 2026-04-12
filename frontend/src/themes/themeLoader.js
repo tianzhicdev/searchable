@@ -5,13 +5,11 @@
 import config from '../config';
 import { themePresets } from './presets';
 
-// Get the selected theme from config (defaults to neonTokyo)
-const selectedThemeName = config.APP_THEME || 'neonTokyo';
+// Get the selected theme from config (defaults to retro80s)
+const selectedThemeName = config.APP_THEME || 'retro80s';
 
 // Get the theme preset
-const selectedTheme = themePresets[selectedThemeName] || themePresets.neonTokyo;
-
-console.log(`Loading theme: ${selectedThemeName}`, selectedTheme);
+const selectedTheme = themePresets[selectedThemeName] || themePresets.retro80s;
 
 // Convert theme preset to the format expected by the app
 export const themeConfig = {

@@ -15,9 +15,9 @@ export const gradients = {
     dark: createGradient(themeConfig.bgSecondary, themeConfig.bgPrimary, '180deg'),
     success: createGradient(themeConfig.success, themeConfig.primary),
     error: createGradient(themeConfig.error, themeConfig.warning),
-    neonPulse: createGradient('#ff00ff', '#00ffff', '45deg'),
-    cyberGlow: createGradient('#00ff88', '#ff00ff', '90deg'),
-    matrixRain: createGradient('#00ff00', '#003300', '180deg'),
+    neonPulse: createGradient(themeConfig.primary, themeConfig.secondary, '45deg'),
+    cyberGlow: createGradient(themeConfig.secondary, themeConfig.primary, '90deg'),
+    matrixRain: createGradient(themeConfig.secondary, themeConfig.bgSecondary, '180deg'),
 };
 
 // Gradient text style (webkit only)

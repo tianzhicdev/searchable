@@ -7,8 +7,8 @@ import {
   Box,
   Button
 } from '@material-ui/core';
-import { CheckCircle, Store, ShoppingCart, MonetizationOn } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { checkmark, catPixel as physicalItemsIcon, floppyDisk, coinDollar } from '../../assets/images/icons';
 // import confetti from 'canvas-confetti'; // Uncomment when library is installed
 
 const useStyles = makeStyles((theme) => ({
@@ -17,7 +17,6 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(6),
@@ -130,7 +129,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
     switch (type) {
       case 'downloadable':
         return {
-          icon: <ShoppingCart className={classes.storeIcon} />,
+          icon: <img src={floppyDisk} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} className={classes.storeIcon} />,
           title: 'Congratulations! Your Digital Store is Live!',
           subtitle: 'Your content is ready to be sold. Customers can now discover and purchase your digital content.',
           storeLabel: 'Store Name',
@@ -142,7 +141,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
         };
       case 'offline':
         return {
-          icon: <Store className={classes.storeIcon} />,
+          icon: <img src={physicalItemsIcon} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} className={classes.storeIcon} />,
           title: '🎊 Amazing! Your Catalog is Ready!',
           subtitle: 'Your store catalog is now live. Customers can browse your items and place orders.',
           storeLabel: 'Store Name',
@@ -154,7 +153,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
         };
       case 'direct':
         return {
-          icon: <MonetizationOn className={classes.storeIcon} />,
+          icon: <img src={coinDollar} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} className={classes.storeIcon} />,
           title: '💝 Wonderful! Your Donation Page is Active!',
           subtitle: 'You can now receive donations from supporters who believe in your cause.',
           storeLabel: 'Donation Page',
@@ -166,7 +165,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
         };
       default:
         return {
-          icon: <CheckCircle className={classes.storeIcon} />,
+          icon: <img src={checkmark} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} className={classes.storeIcon} />,
           title: 'Success!',
           subtitle: 'Your page is ready.',
           storeLabel: 'Page Name',
@@ -181,7 +180,7 @@ const OnboardingCongrats = ({ type, storeName, redirectPath }) => {
     <Box className={classes.root}>
       <Container maxWidth="sm">
         <Paper className={classes.paper} elevation={0}>
-          <CheckCircle className={classes.successIcon} />
+          <img src={checkmark} alt="" style={{ width: 80, height: 80, objectFit: 'contain' }} className={classes.successIcon} />
           
           <Typography variant="h4" className={classes.title}>
             {content.title.split('').map((char, i) => (

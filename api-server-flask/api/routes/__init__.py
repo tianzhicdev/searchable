@@ -2,7 +2,7 @@
 # Import all route modules to register them with Flask-RESTX
 
 from . import auth
-from . import payment  
+from . import payment
 from . import searchable
 from . import files
 from . import withdrawals
@@ -13,6 +13,7 @@ from . import tags
 from . import deposits
 from . import ai_content
 from . import feedback
+from . import dashboard
 
 # This ensures all routes are registered when the package is imported
-__all__ = ['auth', 'payment', 'searchable', 'files', 'withdrawals', 'metrics', 'profiles', 'media', 'tags', 'deposits', 'ai_content', 'feedback'] 
+__all__ = ['auth', 'payment', 'searchable', 'files', 'withdrawals', 'metrics', 'profiles', 'media', 'tags', 'deposits', 'ai_content', 'feedback', 'dashboard'] 

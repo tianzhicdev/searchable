@@ -19,20 +19,31 @@ import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import { testIdProps } from '../../utils/testIds';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+
+const refillIcons = [
+  { src: coinEthereum, alt: 'eth', top: '8%', right: '3%', size: 34, opacity: 0.1, animation: 'float' },
+  { src: coinDollar, alt: 'dollar', bottom: '12%', left: '4%', size: 30, opacity: 0.08, animation: 'pulse' },
+  { src: coinGeneric, alt: 'coin', top: '45%', left: '2%', size: 28, opacity: 0.08, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   addressBox: {
-    backgroundColor: theme.palette.grey[100],
+    background: `${theme.palette.background.paper}`,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '12px',
     padding: theme.spacing(2),
-    borderRadius: theme.shape.borderRadius,
     cursor: 'pointer',
+    transition: 'all 0.3s ease',
     '&:hover': {
-      backgroundColor: theme.palette.grey[200]
+      background: `${theme.palette.background.paper}`,
+      border: `1px solid ${theme.palette.primary.main}40`,
     },
     wordBreak: 'break-all',
     fontFamily: 'monospace',
     '& .MuiTypography-root': {
-      color: theme.palette.text.primary === '#ff69b4' || theme.palette.text.secondary === '#ff69b4' ? '#000000' : theme.palette.text.primary
+      color: theme.palette.text.primary
     }
   },
   qrContainer: {
@@ -91,7 +102,8 @@ const RefillUSDT = () => {
   };
 
   return (
-    <Grid container sx={componentSpacing.pageContainer(theme)} {...testIdProps('page', 'refill-usdt', 'container')}>
+    <Grid container sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }} {...testIdProps('page', 'refill-usdt', 'container')}>
+      <DecorativeIcons icons={refillIcons} />
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)} {...testIdProps('section', 'refill', 'header')}>
         <PageHeaderButton
           onClick={() => navigateBack(history, '/dashboard')}

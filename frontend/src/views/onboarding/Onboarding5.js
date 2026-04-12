@@ -10,22 +10,37 @@ import {
   TextField,
   InputAdornment
 } from '@material-ui/core';
-import { ArrowBack, AttachMoney } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { coinDollar as coinDollarIcon } from '../../assets/images/icons';
+import DecorativeIcons from '../../components/DecorativeIcons';
+import { heartPixel, smileyBlushing, coinDollar, sparkleGradientLarge } from '../../assets/images/icons';
+
+
+const onboarding5Icons = [
+  { src: heartPixel, alt: 'heart', top: '7%', left: '5%', size: 40, opacity: 0.12, animation: 'pulse' },
+  { src: smileyBlushing, alt: 'blushing', top: '12%', right: '6%', size: 42, opacity: 0.1, animation: 'float' },
+  { src: coinDollar, alt: 'coin', bottom: '15%', left: '8%', size: 38, opacity: 0.1, animation: 'float' },
+  { src: sparkleGradientLarge, alt: 'sparkle', bottom: '10%', right: '5%', size: 44, opacity: 0.12, animation: 'float' },
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -45,8 +60,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
     borderRadius: theme.shape.borderRadius,
     textAlign: 'center',
-    boxShadow: 'none !important',
-    border: 'none !important',
+    border: `1px solid ${theme.palette.primary.main}33`,
+    transition: 'all 0.3s ease',
   }
 }));
 
@@ -92,15 +107,16 @@ const Onboarding5 = () => {
   };
 
   return (
-    <Box className={classes.root}>
-      <Container maxWidth="md">
+    <Box className={classes.root} style={{ position: 'relative' }}>
+      <DecorativeIcons icons={onboarding5Icons} />
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
           <IconButton className={classes.backButton} onClick={handleBack}>
             <ArrowBack />
           </IconButton>
-          
+
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography variant="h3" gutterBottom color="primary">
               Create Your Donation Page
             </Typography>
           </Box>
@@ -135,7 +151,7 @@ const Onboarding5 = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <AttachMoney />
+                    <img src={coinDollarIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                   </InputAdornment>
                 ),
               }}

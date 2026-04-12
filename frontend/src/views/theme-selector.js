@@ -21,7 +21,7 @@ import {
     DialogActions,
     TextField
 } from '@material-ui/core';
-import { CheckCircle, ContentCopy, Save } from '@material-ui/icons';
+import { checkmark, floppyDisk as copyIcon, floppyDisk as saveIcon } from '../assets/images/icons';
 import { themePresets, generateScssFromPreset } from '../themes/presets';
 import { gradients } from '../themes/gradients';
 import { componentSpacing } from '../utils/spacing';
@@ -93,7 +93,7 @@ const ThemeSelector = () => {
                             {preset.name}
                         </Typography>
                         {isSelected && (
-                            <CheckCircle style={{ color: preset.colors.success }} />
+                            <img src={checkmark} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                         )}
                     </Box>
                     
@@ -235,7 +235,7 @@ const ThemeSelector = () => {
                     variant="contained"
                     color="primary"
                     size="large"
-                    startIcon={<Save />}
+                    startIcon={<img src={saveIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                     onClick={handleApplyTheme}
                     style={{ marginTop: 20 }}
                 >
@@ -271,7 +271,7 @@ const ThemeSelector = () => {
                             Theme Configuration for {themePresets[selectedTheme].name}
                         </Typography>
                         <IconButton onClick={handleCopyToClipboard}>
-                            <ContentCopy />
+                            <img src={copyIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                         </IconButton>
                     </Box>
                 </DialogTitle>
@@ -296,7 +296,7 @@ const ThemeSelector = () => {
                         variant="contained" 
                         color="primary" 
                         onClick={handleCopyToClipboard}
-                        startIcon={<ContentCopy />}
+                        startIcon={<img src={copyIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                         className={styles.button}
                     >
                         Copy to Clipboard

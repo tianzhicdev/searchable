@@ -2,10 +2,8 @@ import React from 'react';
 import { 
   Paper, Typography, Box, Chip 
 } from '@material-ui/core';
-import { 
-  CardGiftcard 
-} from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { diamondGem } from '../../assets/images/icons';
 
 const RewardComponent = ({ reward }) => {
   const classes = useComponentStyles();
@@ -44,7 +42,7 @@ const RewardComponent = ({ reward }) => {
       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
         <Box flex={1}>
           <Box display="flex" alignItems="center" gap={1} mb={1}>
-            <CardGiftcard color="primary" />
+            <img src={diamondGem} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
             <Chip 
               label={getRewardTypeDisplayName(reward.metadata)}
               color="primary"

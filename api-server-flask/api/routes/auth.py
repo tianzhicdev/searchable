@@ -29,7 +29,8 @@ DEV_TOKEN = os.environ.get('DEV_BYPASS_TOKEN')
 signup_model = rest_api.model('SignUpModel', {"username": fields.String(required=True, min_length=2, max_length=32),
                                               "email": fields.String(required=True, min_length=4, max_length=64),
                                               "password": fields.String(required=True, min_length=4, max_length=16),
-                                              "invite_code": fields.String(required=False, min_length=0, max_length=6)
+                                              "invite_code": fields.String(required=False, min_length=0, max_length=6),
+                                              "business_subdomain": fields.String(required=False, min_length=3, max_length=32)
                                               })
 
 login_model = rest_api.model('LoginModel', {"email": fields.String(required=True, min_length=4, max_length=64),
@@ -154,11 +155,24 @@ class Register(Resource):
         _email = req_data.get("email")
         _password = req_data.get("password")
         _invite_code = req_data.get("invite_code", "").strip().upper()
+        _business_subdomain = req_data.get("business_subdomain", "").strip().lower()
 
         user_exists = Users.get_by_email(_email)
         if user_exists:
             return {"success": False,
                     "msg": "Email already taken"}, 400
+
+        # Validate subdomain if provided
+        from ..common.data_helpers import validate_subdomain_format, is_subdomain_available
+        if _business_subdomain:
+            is_valid, error_msg = validate_subdomain_format(_business_subdomain)
+            if not is_valid:
+                return {"success": False,
+                        "msg": error_msg}, 400
+
+            if not is_subdomain_available(_business_subdomain):
+                return {"success": False,
+                        "msg": "Business subdomain is already taken"}, 400
 
         # Check if this is a guest registration request
         is_guest_request = _email == 'GUEST_REGISTRATION_REQUEST'
@@ -187,25 +201,32 @@ class Register(Resource):
         
         # Create user_profile record
         try:
+            profile_metadata = {
+                "created_via": "guest_registration" if is_guest else "registration",
+                "registration_date": datetime.utcnow().isoformat(),
+                "is_guest": is_guest
+            }
+
+            # Add subdomain to metadata if provided
+            if _business_subdomain:
+                profile_metadata["business_subdomain"] = _business_subdomain
+
             success = db_ops.execute_update(
-                """INSERT INTO user_profile (user_id, username, metadata) 
+                """INSERT INTO user_profile (user_id, username, metadata)
                    VALUES (%s, %s, %s)""",
                 (
                     new_user.id,
                     new_user.username,
-                    Json({
-                        "created_via": "guest_registration" if is_guest else "registration",
-                        "registration_date": datetime.utcnow().isoformat(),
-                        "is_guest": is_guest
-                    })
+                    Json(profile_metadata)
                 )
             )
-            
+
             if success:
-                logger.info(f"Created user_profile for user {new_user.id}")
+                logger.info(f"Created user_profile for user {new_user.id}" +
+                           (f" with subdomain {_business_subdomain}" if _business_subdomain else ""))
             else:
                 logger.warning(f"Failed to create user_profile for user {new_user.id}")
-            
+
         except Exception as e:
             logger.error(f"Failed to create user_profile for user {new_user.id}: {e}")
             # Don't fail registration if profile creation fails

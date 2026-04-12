@@ -20,6 +20,9 @@ from ..common.data_helpers import (
     get_rewards,
     get_db_connection,
     execute_sql,
+    get_profile_by_subdomain,
+    is_subdomain_available,
+    validate_subdomain_format,
 )
 from ..common.database_context import db
 from ..common.tag_helpers import get_user_tags
@@ -209,19 +212,36 @@ class UpdateMyProfile(Resource):
     def put(self, current_user, request_origin='unknown'):
         try:
             data = request.get_json()
-            
+
             if not data:
                 return {"error": "No data provided"}, 400
-            
+
             user_id = current_user.id
-            
+
             # Extract update fields
             username = data.get('username')
             introduction = data.get('introduction')
             profile_image_data = data.get('profile_image')  # Legacy base64 support
             profile_image_url = data.get('profile_image_url')  # URL/URI support
             metadata = data.get('metadata', {})
-            
+            business_subdomain = data.get('business_subdomain', '').strip().lower() if data.get('business_subdomain') else None
+
+            # Validate subdomain if provided
+            if business_subdomain:
+                is_valid, error_msg = validate_subdomain_format(business_subdomain)
+                if not is_valid:
+                    return {"error": error_msg}, 400
+
+                # Check availability (exclude current user)
+                if not is_subdomain_available(business_subdomain, exclude_user_id=user_id):
+                    return {"error": "Business subdomain is already taken"}, 400
+
+                # Add subdomain to metadata
+                metadata['business_subdomain'] = business_subdomain
+            elif 'business_subdomain' in data and business_subdomain is None:
+                # If business_subdomain is explicitly set to null/empty, remove it
+                metadata['business_subdomain'] = None
+
             # Handle profile image
             final_profile_image_url = None
             if profile_image_url:
@@ -232,11 +252,18 @@ class UpdateMyProfile(Resource):
                 final_profile_image_url = validate_and_process_profile_image(profile_image_data)
                 if not final_profile_image_url:
                     return {"error": "Invalid profile image or file too large"}, 400
-            
+
             # Check if profile exists
             existing_profile = get_user_profile(user_id)
-            
+
             if existing_profile:
+                # Merge with existing metadata if not replacing entirely
+                if metadata and existing_profile.get('metadata'):
+                    existing_metadata = existing_profile.get('metadata', {})
+                    # Merge new metadata with existing
+                    merged_metadata = {**existing_metadata, **metadata}
+                    metadata = merged_metadata
+
                 # Update existing profile
                 profile = update_user_profile(
                     user_id=user_id,
@@ -254,21 +281,21 @@ class UpdateMyProfile(Resource):
                     introduction=introduction,
                     metadata=metadata
                 )
-            
+
             if not profile:
                 return {"error": "Failed to update profile"}, 500
-            
+
             # Get user's tags
             user_tags = get_user_tags(user_id)
-            
+
             # Add tags to profile
             profile['tags'] = user_tags
-            
+
             return {
                 "message": "Profile updated successfully",
                 "profile": profile
             }, 200
-            
+
         except Exception as e:
             logger.error(f"Error updating profile: {str(e)}")
             return {"error": str(e)}, 500
@@ -362,19 +389,93 @@ class GetUserRewards(Resource):
     def get(self, current_user, request_origin='unknown'):
         try:
             user_id = current_user.id
-            
+
             # Get rewards for the user
             rewards = get_rewards(user_id=user_id)
-            
+
             # Calculate total reward amount
             total_rewards = sum(reward['amount'] for reward in rewards)
-            
+
             return {
                 "rewards": rewards,
                 "total_amount": total_rewards,
                 "count": len(rewards)
             }, 200
-            
+
         except Exception as e:
             logger.error(f"Error getting rewards for user {current_user.id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/profile/by-subdomain/<string:subdomain>', methods=['GET'])
+class GetProfileBySubdomain(Resource):
+    """
+    Get user profile by business subdomain
+    """
+    @track_metrics('get_profile_by_subdomain')
+    def get(self, subdomain, request_origin='unknown'):
+        try:
+            # Get the profile by subdomain
+            profile = get_profile_by_subdomain(subdomain)
+
+            if not profile:
+                return {"error": "Profile not found for this subdomain"}, 404
+
+            user_id = profile['user_id']
+
+            # Get user's tags
+            user_tags = get_user_tags(user_id)
+
+            # Get seller rating
+            avg_rating, total_ratings = get_seller_rating(user_id)
+
+            # Add tags and rating to profile
+            profile['tags'] = user_tags
+            profile['seller_rating'] = avg_rating
+            profile['seller_total_ratings'] = total_ratings
+
+            # Get user's searchables
+            searchable_ids = get_searchableIds_by_user(user_id)
+            searchables = []
+            for searchable_id in searchable_ids:
+                searchable = get_searchable(searchable_id)
+                if searchable:
+                    searchables.append(searchable)
+
+            return {
+                "profile": profile,
+                "searchables": searchables
+            }, 200
+
+        except Exception as e:
+            logger.error(f"Error getting profile by subdomain {subdomain}: {str(e)}")
+            return {"error": str(e)}, 500
+
+@rest_api.route('/api/v1/subdomain/check/<string:subdomain>', methods=['GET'])
+class CheckSubdomainAvailability(Resource):
+    """
+    Check if a subdomain is available
+    """
+    def get(self, subdomain):
+        try:
+            # First validate the format
+            is_valid, error_msg = validate_subdomain_format(subdomain)
+
+            if not is_valid:
+                return {
+                    "available": False,
+                    "valid": False,
+                    "message": error_msg
+                }, 200
+
+            # Check availability
+            available = is_subdomain_available(subdomain)
+
+            return {
+                "available": available,
+                "valid": True,
+                "message": "Subdomain is available" if available else "Subdomain is already taken"
+            }, 200
+
+        except Exception as e:
+            logger.error(f"Error checking subdomain availability for {subdomain}: {str(e)}")
             return {"error": str(e)}, 500
