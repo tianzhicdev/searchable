@@ -9,13 +9,9 @@ import {
   CircularProgress,
   Divider
 } from '@material-ui/core';
-import {
-  CreditCard as CreditCardIcon,
-  AccountBalanceWallet as WalletIcon,
-  AccountBalance as BalanceIcon,
-  ExpandMore as ExpandMoreIcon
-} from '@material-ui/icons';
+import { ExpandMore as ExpandMoreIcon } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
+import { walletCircuit, coinEthereum } from '../../assets/images/icons';
 import DepositComponent from '../Deposit/DepositComponent';
 import RefillBalanceDialog from './RefillBalanceDialog';
 import BalancePaymentDialog from './BalancePaymentDialog';
@@ -152,7 +148,7 @@ const PayButton = ({
             onClick={handleBalanceClick}
             disabled={processing}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
+            startIcon={processing ? <CircularProgress size={20} /> : <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             data-testid={testIds.button.pay('balance')}
           >
             <Typography variant="body2" className={classes.staticText}>
@@ -166,7 +162,7 @@ const PayButton = ({
             onClick={handleCreditCardClick}
             disabled={processing}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            startIcon={processing ? <CircularProgress size={20} /> : <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             data-testid={testIds.button.pay('stripe')}
           >
             <Typography variant="body2" className={classes.staticText}>
@@ -224,7 +220,7 @@ const PayButton = ({
             onClick={handleCreditCardClick}
             disabled={processing}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            startIcon={processing ? <CircularProgress size={20} /> : <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             data-testid={testIds.button.pay('stripe')}
           >
             <Typography variant="body2" className={classes.staticText}>
@@ -238,7 +234,7 @@ const PayButton = ({
             onClick={() => setRefillDialogOpen(true)}
             disabled={processing}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : <WalletIcon />}
+            startIcon={processing ? <CircularProgress size={20} /> : <img src={coinEthereum} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             data-testid={testIds.button.nav('refill-balance')}
           >
             <Typography variant="body2" className={classes.staticText}>
@@ -323,7 +319,7 @@ const PayButton = ({
         data-testid={testIds.nav.menu('payment-options')}
       >
         <MenuItem onClick={handleCreditCardClick} data-testid={testIds.nav.item('payment-stripe')}>
-          <CreditCardIcon />
+          <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
               Credit Card (Stripe)
@@ -335,7 +331,7 @@ const PayButton = ({
         </MenuItem>
         
         <MenuItem onClick={handleDepositClick} data-testid={testIds.nav.item('payment-usdt')}>
-          <WalletIcon />
+          <img src={coinEthereum} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
               USDT Deposit
@@ -354,7 +350,7 @@ const PayButton = ({
               disabled={!canPayWithBalance}
               data-testid={testIds.nav.item('payment-balance')}
             >
-              <BalanceIcon color={canPayWithBalance ? "inherit" : "disabled"} />
+              <img src={walletCircuit} alt="" style={{ width: 20, height: 20, objectFit: 'contain', opacity: canPayWithBalance ? 1 : 0.4 }} />
               <Box ml={1}>
                 <Typography variant="body2" className={classes.staticText}>
                   Pay with Balance

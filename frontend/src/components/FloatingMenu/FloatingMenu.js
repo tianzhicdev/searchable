@@ -12,24 +12,24 @@ import { makeStyles } from '@material-ui/styles';
 import { useHistory } from 'react-router-dom';
 import { useLogout } from '../LogoutHandler';
 import FeedbackDialog from '../Feedback/FeedbackDialog';
+import {
+  gridDashboard,
+  profileUser,
+  floppyDisk,
+  coinDollarGold,
+  coinEthereum,
+  walletCircuit,
+  padlock,
+} from '../../assets/images/icons';
 
 // Icons
 import MenuIcon from '@material-ui/icons/Menu';
 import CloseIcon from '@material-ui/icons/Close';
 import AddIcon from '@material-ui/icons/Add';
-import DashboardIcon from '@material-ui/icons/Dashboard';
 import SearchIcon from '@material-ui/icons/Search';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-import SendIcon from '@material-ui/icons/Send';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
-import PersonIcon from '@material-ui/icons/Person';
-import GetAppIcon from '@material-ui/icons/GetApp';
-import MoneyOffIcon from '@material-ui/icons/MoneyOff';
-import EditIcon from '@material-ui/icons/Edit';
-import LockIcon from '@material-ui/icons/Lock';
-import CreditCardIcon from '@material-ui/icons/CreditCard';
-import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 
 const useStyles = makeStyles((theme) => ({
@@ -101,6 +101,12 @@ const useStyles = makeStyles((theme) => ({
       color: theme.palette.text.secondary,
     }
   },
+  menuIconGraphic: {
+    width: 22,
+    height: 22,
+    display: 'block',
+    objectFit: 'contain',
+  },
   divider: {
     backgroundColor: theme.palette.divider,
   }
@@ -154,6 +160,10 @@ const FloatingMenu = () => {
     handleClose();
   };
 
+  const renderMenuIcon = (src) => (
+    <img src={src} alt="" aria-hidden="true" className={classes.menuIconGraphic} />
+  );
+
   const menuItems = [
     { 
       icon: <AccountCircleIcon />, 
@@ -185,42 +195,42 @@ const FloatingMenu = () => {
   
   const accountMenuItems = [
     {
-      icon: <DashboardIcon />,
+      icon: renderMenuIcon(gridDashboard),
       label: 'My Dashboard',
       onClick: () => handleNavigation('/dashboard')
     },
     {
-      icon: <PersonIcon />,
+      icon: renderMenuIcon(profileUser),
       label: 'Profile Page',
       onClick: () => handleNavigation(`/profile/${account.user?._id}`)
     },
     {
-      icon: <GetAppIcon />,
+      icon: renderMenuIcon(floppyDisk),
       label: 'My Downloads',
       onClick: () => handleNavigation('/my-downloads')
     },
     {
-      icon: <CreditCardIcon />,
+      icon: renderMenuIcon(coinDollarGold),
       label: 'Refill with Credit Card',
       onClick: () => handleNavigation('/credit-card-refill')
     },
     {
-      icon: <AttachMoneyIcon />,
+      icon: renderMenuIcon(coinEthereum),
       label: 'Refill with USDT',
       onClick: () => handleNavigation('/refill-usdt')
     },
     {
-      icon: <MoneyOffIcon />,
+      icon: renderMenuIcon(walletCircuit),
       label: 'Withdraw USDT',
       onClick: () => handleNavigation('/withdrawal-usdt')
     },
     {
-      icon: <EditIcon />,
+      icon: renderMenuIcon(profileUser),
       label: 'Edit Profile',
       onClick: () => handleNavigation('/edit-profile')
     },
     {
-      icon: <LockIcon />,
+      icon: renderMenuIcon(padlock),
       label: 'Edit Account',
       onClick: () => handleNavigation('/edit-account')
     },

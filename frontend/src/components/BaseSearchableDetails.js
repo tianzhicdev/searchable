@@ -137,14 +137,12 @@ const BaseSearchableDetails = ({
     position: 'relative'
   } : {};
 
-  // Glass card styling
+  // Glass card styling — matches component.png gradient glow design
   const glassCardSx = {
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    background: theme.palette.background.paper,
+    border: '1px solid rgba(167,139,250,0.15)',
     borderRadius: '12px',
-    boxShadow: 'none',
+    boxShadow: '0 0 20px rgba(167,139,250,0.08), inset 0 0 30px rgba(167,139,250,0.03)',
   };
 
   // Price display component (reused in both layouts)

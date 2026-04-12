@@ -10,10 +10,12 @@ import {
   TextField,
   InputAdornment
 } from '@material-ui/core';
-import { ArrowBack, AttachMoney } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { coinDollar as coinDollarIcon } from '../../assets/images/icons';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { heartPixel, smileyBlushing, coinDollar, sparkleGradientLarge } from '../../assets/images/icons';
+
 
 const onboarding5Icons = [
   { src: heartPixel, alt: 'heart', top: '7%', left: '5%', size: 40, opacity: 0.12, animation: 'pulse' },
@@ -27,14 +29,18 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -54,12 +60,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
     borderRadius: theme.shape.borderRadius,
     textAlign: 'center',
-    boxShadow: `0 0 15px ${theme.palette.primary.main}33, 0 0 30px ${theme.palette.secondary.main}1A`,
     border: `1px solid ${theme.palette.primary.main}33`,
     transition: 'all 0.3s ease',
-    '&:hover': {
-      boxShadow: `0 0 20px ${theme.palette.primary.main}66, 0 0 40px ${theme.palette.secondary.main}33`,
-    },
   }
 }));
 
@@ -114,7 +116,7 @@ const Onboarding5 = () => {
           </IconButton>
 
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography variant="h3" gutterBottom color="primary">
               Create Your Donation Page
             </Typography>
           </Box>
@@ -149,7 +151,7 @@ const Onboarding5 = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <AttachMoney />
+                    <img src={coinDollarIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                   </InputAdornment>
                 ),
               }}

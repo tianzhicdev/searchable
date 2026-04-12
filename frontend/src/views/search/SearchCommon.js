@@ -4,23 +4,17 @@ import {
   Grid,
   Button,
   IconButton,
-  Typography,
   Tooltip
 } from '@material-ui/core';
-import {
-  Person as PersonIcon,
-  Dashboard as DashboardIcon,
-  ExitToApp as ExitToAppIcon,
-  Add as AddIcon
-} from '@material-ui/icons';
 import { makeStyles, useTheme } from '@material-ui/styles';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useLogout } from '../../components/LogoutHandler';
 import TagFilter from '../../components/Tags/TagFilter';
 import SearchBar from '../../components/Search/SearchBar';
 import { navigateWithStack } from '../../utils/navigationUtils';
 import { componentSpacing } from '../../utils/spacing';
 import { testIds } from '../../utils/testIds';
+import { closeX as publishIcon, gridDashboard as dashboardIcon, profileUser as profileIcon, characterBlue as logoutIcon } from '../../assets/images/icons';
 
 const useStyles = makeStyles((theme) => ({
   // Top navigation bar
@@ -39,9 +33,7 @@ const useStyles = makeStyles((theme) => ({
   tabPills: {
     display: 'flex',
     gap: theme.spacing(0.5),
-    background: `${theme.palette.background.paper}80`,
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    background: theme.palette.background.paper,
     borderRadius: '24px',
     padding: 3,
     border: `1px solid ${theme.palette.divider}40`,
@@ -88,11 +80,9 @@ const useStyles = makeStyles((theme) => ({
       background: `${theme.palette.primary.main}15`,
     }
   },
-  // Search area with glass effect
+  // Search area
   searchArea: {
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
+    background: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}40`,
     borderRadius: '12px',
     padding: theme.spacing(2),
@@ -126,7 +116,6 @@ const SearchCommon = ({
   const classes = useStyles();
   const theme = useTheme();
   const history = useHistory();
-  const location = useLocation();
   const handleLogout = useLogout();
 
   const isUserSearch = searchType === 'user';
@@ -175,8 +164,9 @@ const SearchCommon = ({
                   className={classes.quickActionBtn}
                   onClick={() => navigateWithStack(history, '/publish-allinone')}
                   size="small"
+                  aria-label="Publish"
                 >
-                  <AddIcon />
+                  <img src={publishIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain', transform: 'rotate(45deg)' }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Dashboard">
@@ -184,8 +174,9 @@ const SearchCommon = ({
                   className={classes.quickActionBtn}
                   onClick={() => navigateWithStack(history, '/dashboard')}
                   size="small"
+                  aria-label="Dashboard"
                 >
-                  <DashboardIcon />
+                  <img src={dashboardIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Profile">
@@ -193,8 +184,9 @@ const SearchCommon = ({
                   className={classes.quickActionBtn}
                   onClick={() => navigateWithStack(history, '/edit-profile')}
                   size="small"
+                  aria-label="Profile"
                 >
-                  <PersonIcon />
+                  <img src={profileIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Logout">
@@ -202,8 +194,9 @@ const SearchCommon = ({
                   className={classes.quickActionBtn}
                   onClick={handleLogout}
                   size="small"
+                  aria-label="Logout"
                 >
-                  <ExitToAppIcon />
+                  <img src={logoutIcon} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                 </IconButton>
               </Tooltip>
             </Box>

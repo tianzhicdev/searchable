@@ -30,16 +30,14 @@ const refillIcons = [
 
 const useStyles = makeStyles((theme) => ({
   addressBox: {
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    background: `${theme.palette.background.paper}`,
     border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
     borderRadius: '12px',
     padding: theme.spacing(2),
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     '&:hover': {
-      background: `${theme.palette.background.paper}CC`,
+      background: `${theme.palette.background.paper}`,
       border: `1px solid ${theme.palette.primary.main}40`,
     },
     wordBreak: 'break-all',

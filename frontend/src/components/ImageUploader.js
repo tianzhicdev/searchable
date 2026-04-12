@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Box, Typography, IconButton
 } from '@material-ui/core';
-import { Delete as DeleteIcon, AddPhotoAlternate as AddPhotoAlternateIcon } from '@material-ui/icons';
+import { closeX as deleteIcon, cloudCool as addPhotoIcon } from '../assets/images/icons';
 import { useTheme } from '@material-ui/core/styles';
 import Backend from '../views/utilities/Backend';
 import ZoomableImage from './ZoomableImage';
@@ -138,7 +138,7 @@ const ImageUploader = ({
                 }
               }}
             >
-              <DeleteIcon fontSize="small" />
+              <img src={deleteIcon} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
             </IconButton>
           </Box>
         ))}
@@ -169,7 +169,7 @@ const ImageUploader = ({
                 }}
               >
                 <IconButton component="span" disabled={loading} style={{ color: theme.palette.primary.main }}>
-                  <AddPhotoAlternateIcon />
+                  <img src={addPhotoIcon} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
                 </IconButton>
               </Box>
             </label>

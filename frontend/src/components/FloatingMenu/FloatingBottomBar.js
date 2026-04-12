@@ -15,20 +15,21 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { useLogout } from '../LogoutHandler';
 import { testIdProps } from '../../utils/testIds';
 import FeedbackDialog from '../Feedback/FeedbackDialog';
+import myAccountBotGif from '../../assets/images/icons/avatars/generated/my-account-bot-transparent.gif';
+import {
+  gridDashboard,
+  profileUser,
+  floppyDisk,
+  coinDollarGold,
+  coinEthereum,
+  walletCircuit,
+  padlock,
+  characterBlue
+} from '../../assets/images/icons';
 
 // Icons
-import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import SearchIcon from '@material-ui/icons/Search';
 import AddIcon from '@material-ui/icons/Add';
-import DashboardIcon from '@material-ui/icons/Dashboard';
-import PersonIcon from '@material-ui/icons/Person';
-import GetAppIcon from '@material-ui/icons/GetApp';
-import CreditCardIcon from '@material-ui/icons/CreditCard';
-import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
-import MoneyOffIcon from '@material-ui/icons/MoneyOff';
-import EditIcon from '@material-ui/icons/Edit';
-import LockIcon from '@material-ui/icons/Lock';
-import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import PersonSearchIcon from '@material-ui/icons/PersonSearch';
 import CategoryIcon from '@material-ui/icons/Category';
 import HelpIcon from '@material-ui/icons/Help';
@@ -69,6 +70,23 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down('sm')]: {
       padding: theme.spacing(1),
     }
+  },
+  accountGif: {
+    width: 30,
+    height: 30,
+    display: 'block',
+    objectFit: 'contain',
+    pointerEvents: 'none',
+    [theme.breakpoints.down('sm')]: {
+      width: 26,
+      height: 26,
+    }
+  },
+  menuIconGraphic: {
+    width: 22,
+    height: 22,
+    display: 'block',
+    objectFit: 'contain',
   },
   activeIcon: {
     backgroundColor: theme.palette.primary.main,
@@ -154,46 +172,50 @@ const FloatingBottomBar = () => {
     handleCloseAll();
   };
 
+  const renderMenuIcon = (src) => (
+    <img src={src} alt="" aria-hidden="true" className={classes.menuIconGraphic} />
+  );
+
   const accountMenuItems = [
     {
-      icon: <DashboardIcon />,
+      icon: renderMenuIcon(gridDashboard),
       label: 'My Dashboard',
       onClick: () => handleNavigation('/dashboard')
     },
     {
-      icon: <PersonIcon />,
+      icon: renderMenuIcon(profileUser),
       label: 'Profile Page',
       onClick: () => handleNavigation(`/profile/${account.user?._id}`)
     },
     {
-      icon: <GetAppIcon />,
+      icon: renderMenuIcon(floppyDisk),
       label: 'My Downloads',
       onClick: () => handleNavigation('/my-downloads')
     },
     { divider: true },
     {
-      icon: <CreditCardIcon />,
+      icon: renderMenuIcon(coinDollarGold),
       label: 'Refill with Credit Card',
       onClick: () => handleNavigation('/credit-card-refill')
     },
     {
-      icon: <AttachMoneyIcon />,
+      icon: renderMenuIcon(coinEthereum),
       label: 'Refill with USDT',
       onClick: () => handleNavigation('/refill-usdt')
     },
     {
-      icon: <MoneyOffIcon />,
+      icon: renderMenuIcon(walletCircuit),
       label: 'Withdraw USDT',
       onClick: () => handleNavigation('/withdrawal-usdt')
     },
     { divider: true },
     {
-      icon: <EditIcon />,
+      icon: renderMenuIcon(profileUser),
       label: 'Edit Profile',
       onClick: () => handleNavigation('/edit-profile')
     },
     {
-      icon: <LockIcon />,
+      icon: renderMenuIcon(padlock),
       label: 'Edit Account',
       onClick: () => handleNavigation('/edit-account')
     },
@@ -208,7 +230,7 @@ const FloatingBottomBar = () => {
       testId: 'feedback-menu-item'
     },
     {
-      icon: <ExitToAppIcon />,
+      icon: renderMenuIcon(characterBlue),
       label: 'Log Out',
       onClick: handleLogout
     }
@@ -238,7 +260,7 @@ const FloatingBottomBar = () => {
             aria-label="My Account"
             {...testIdProps('button', 'floating-bottom-bar', 'account')}
           >
-            <AccountCircleIcon />
+            <img src={myAccountBotGif} alt="" aria-hidden="true" className={classes.accountGif} />
           </IconButton>
           
           <IconButton

@@ -6,11 +6,10 @@ import {
 } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/styles';
 import {
-  CloudDownload, Storefront, Favorite,
-  Check as CheckIcon,
-  Add as AddIcon, Remove as RemoveIcon, GetApp as GetAppIcon,
+  Add as AddIcon, Remove as RemoveIcon,
   ExpandMore as ExpandMoreIcon
 } from '@material-ui/icons';
+import { floppyDisk, catPixel as physicalItemsIcon, heartPixel, checkmark, coinEthereum, coinGeneric } from '../../assets/images/icons';
 import { useHistory, useParams } from 'react-router-dom';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
@@ -21,7 +20,6 @@ import { detailPageStyles } from '../../utils/detailPageSpacing';
 import backend from '../utilities/Backend';
 import { testIdProps } from '../../utils/testIds';
 import DecorativeIcons from '../../components/DecorativeIcons';
-import { heartPixel, coinEthereum, coinGeneric } from '../../assets/images/icons';
 
 const detailsIcons = [
   { src: heartPixel, alt: 'heart', top: '5%', right: '3%', size: 32, opacity: 0.1, animation: 'pulse' },
@@ -105,9 +103,7 @@ const useStyles = makeStyles((theme) => ({
 
 // Glass card styling helper
 const glassCardSx = (theme) => ({
-  background: `${theme.palette.background.paper}B3`,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+  background: theme.palette.background.paper,
   border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
   borderRadius: '12px',
   boxShadow: 'none',
@@ -392,7 +388,7 @@ const AllInOneSearchableDetails = () => {
             {...testIdProps('section', 'allinone-downloadable', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
-              <CloudDownload style={{ marginRight: 8, color: theme.palette.primary.main }} />
+              <img src={floppyDisk} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6" color="primary">
                 Digital Downloads
               </Typography>
@@ -430,7 +426,7 @@ const AllInOneSearchableDetails = () => {
                           <Button
                             variant="contained"
                             color="primary"
-                            startIcon={<GetAppIcon />}
+                            startIcon={<img src={floppyDisk} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDownload(file.fileId, file.name);
@@ -441,7 +437,7 @@ const AllInOneSearchableDetails = () => {
                           </Button>
                         ) : (
                           selectedFiles[file.fileId] && (
-                            <CheckIcon style={{ color: theme.palette.primary.main, fontSize: 28 }} />
+                            <img src={checkmark} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} />
                           )
                         )}
                       </Box>
@@ -465,7 +461,7 @@ const AllInOneSearchableDetails = () => {
             {...testIdProps('section', 'allinone-offline', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
-              <Storefront style={{ marginRight: 8, color: theme.palette.primary.main }} />
+              <img src={physicalItemsIcon} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6" color="primary">
                 Physical Items
               </Typography>
@@ -540,7 +536,7 @@ const AllInOneSearchableDetails = () => {
             {...testIdProps('section', 'allinone-donation', 'container')}
           >
             <Box display="flex" alignItems="center" mb={2}>
-              <Favorite style={{ marginRight: 8, color: theme.palette.primary.main }} />
+              <img src={heartPixel} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6" color="primary">
                 Support the Creator
               </Typography>

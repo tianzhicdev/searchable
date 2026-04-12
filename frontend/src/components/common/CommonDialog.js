@@ -10,8 +10,8 @@ import {
   Alert,
   Box
 } from '@material-ui/core';
-import { Close as CloseIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { closeX } from '../../assets/images/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import ActionButton from './ActionButton';
 import { componentSpacing } from '../../utils/spacing';
@@ -152,7 +152,7 @@ const CommonDialog = ({
               size="small"
               data-testid={testId ? `${testId}-close` : testIds.button.nav('dialog-close')}
             >
-              <CloseIcon />
+              <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
             </IconButton>
           )}
         </DialogTitle>

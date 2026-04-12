@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTheme } from '@material-ui/core';
 import { Grid, Typography, Box, useMediaQuery } from '@material-ui/core';
@@ -21,8 +21,14 @@ const Login = () => {
     const classes = useComponentStyles();
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
+    useEffect(() => {
+      document.body.style.backgroundImage = 'none';
+      document.body.style.backgroundColor = '#000';
+      return () => { document.body.style.backgroundImage = ''; document.body.style.backgroundColor = ''; };
+    }, []);
+
     return (
-    <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
       <DecorativeIcons icons={authIcons} />
       <Box sx={{
         display: 'flex',
@@ -44,9 +50,7 @@ const Login = () => {
 
         <Box sx={{
           width: '100%',
-          background: `${theme.palette.background.paper}B3`,
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: `${theme.palette.background.paper}`,
           border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
           borderRadius: '12px',
           padding: theme.spacing(4),

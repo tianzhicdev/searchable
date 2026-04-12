@@ -8,9 +8,9 @@ import TagsOnProfile from '../Tags/TagsOnProfile';
 import { useHistory } from 'react-router-dom';
 import { navigateWithStack } from '../../utils/navigationUtils';
 import { useTheme } from '@material-ui/core/styles';
+import { catPixel as physicalItemsIcon } from '../../assets/images/icons';
 import GetAppIcon from '@material-ui/icons/GetApp';
 import PaymentIcon from '@material-ui/icons/Payment';
-import StorefrontIcon from '@material-ui/icons/Storefront';
 import StarIcon from '@material-ui/icons/Star';
 
 const useStyles = makeStyles((theme) => ({
@@ -20,17 +20,14 @@ const useStyles = makeStyles((theme) => ({
     padding: 0,
     overflow: 'hidden',
     position: 'relative',
-    // Glassmorphism
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
+    background: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider}40`,
     borderRadius: '12px',
     boxShadow: 'none',
     transition: 'all 0.3s ease',
     '&:hover': {
       transform: 'translateY(-4px)',
-      background: `${theme.palette.background.paper}CC`,
+      background: theme.palette.background.paper,
       border: `1px solid ${theme.palette.primary.main}40`,
       boxShadow: `0 12px 40px rgba(0,0,0,0.3), 0 0 20px ${theme.palette.primary.main}15`,
     }
@@ -118,14 +115,18 @@ const useStyles = makeStyles((theme) => ({
       opacity: 0.8
     }
   },
+  typeIconImage: {
+    width: 18,
+    height: 18,
+    objectFit: 'contain',
+    opacity: 0.8,
+  },
   // Price badge overlay on image
   priceBadge: {
     position: 'absolute',
     top: theme.spacing(1.5),
     right: theme.spacing(1.5),
-    background: `${theme.palette.background.paper}CC`,
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+    background: theme.palette.background.paper,
     borderRadius: '8px',
     padding: theme.spacing(0.5, 1),
     fontWeight: 700,
@@ -182,7 +183,7 @@ const MiniProfile = ({
         icons.push(<GetAppIcon key="downloadable" />);
       }
       if (components.offline?.enabled && components.offline?.items?.length > 0) {
-        icons.push(<StorefrontIcon key="offline" />);
+        icons.push(<img src={physicalItemsIcon} alt="" className={classes.typeIconImage} key="offline" />);
       }
       if (components.donation?.enabled) {
         icons.push(<PaymentIcon key="donation" />);
@@ -190,7 +191,7 @@ const MiniProfile = ({
     } else {
       switch (searchableType) {
         case 'offline':
-          icons.push(<StorefrontIcon key="offline" />);
+          icons.push(<img src={physicalItemsIcon} alt="" className={classes.typeIconImage} key="offline" />);
           break;
         case 'direct':
           icons.push(<PaymentIcon key="direct" />);

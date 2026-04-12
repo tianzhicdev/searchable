@@ -10,10 +10,12 @@ import {
   TextField,
   Grid
 } from '@material-ui/core';
-import { ArrowBack, Add, Delete } from '@material-ui/icons';
+import { ArrowBack, Add } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { closeX as deleteIcon } from '../../assets/images/icons';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { catPixel, coinEthereum, chatBubble, moonCrescent } from '../../assets/images/icons';
+
 
 const onboarding4Icons = [
   { src: catPixel, alt: 'cat', top: '6%', left: '4%', size: 44, opacity: 0.12, animation: 'pulse' },
@@ -27,14 +29,18 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -60,9 +66,7 @@ const useStyles = makeStyles((theme) => ({
   itemsList: {
     marginTop: theme.spacing(3),
     padding: theme.spacing(2),
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    background: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
     borderRadius: '12px',
   }
@@ -138,7 +142,7 @@ const Onboarding4 = () => {
           </IconButton>
 
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography variant="h3" gutterBottom color="primary">
               Create Your Catalog
             </Typography>
           </Box>
@@ -209,7 +213,7 @@ const Onboarding4 = () => {
                         onClick={() => handleRemoveItem(item.id)}
                         color="secondary"
                       >
-                        <Delete />
+                        <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                       </IconButton>
                     </Box>
                   ))}

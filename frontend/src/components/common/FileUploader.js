@@ -1,13 +1,8 @@
 import React, { useCallback } from 'react';
 import { Box, Typography, CircularProgress, IconButton } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { 
-  CloudUpload as UploadIcon, 
-  InsertDriveFile as FileIcon,
-  Close as CloseIcon,
-  Image as ImageIcon
-} from '@material-ui/icons';
 import { useDropzone } from 'react-dropzone';
+import { cloudCool, floppyDisk, closeX } from '../../assets/images/icons';
 import ActionButton from './ActionButton';
 
 const useStyles = makeStyles((theme) => ({
@@ -156,7 +151,7 @@ const FileUploader = ({
               className={classes.removeButton}
               onClick={() => onRemove(index)}
             >
-              <CloseIcon fontSize="small" />
+              <img src={closeX} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
             </IconButton>
           )}
         </Box>
@@ -166,7 +161,7 @@ const FileUploader = ({
     return (
       <Box key={index} className={classes.preview}>
         <Box className={classes.previewFile}>
-          <FileIcon fontSize="large" color="action" />
+          <img src={floppyDisk} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />
           <Typography 
             variant="caption" 
             className={classes.fileName}
@@ -181,7 +176,7 @@ const FileUploader = ({
             className={classes.removeButton}
             onClick={() => onRemove(index)}
           >
-            <CloseIcon fontSize="small" />
+            <img src={closeX} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} />
           </IconButton>
         )}
       </Box>
@@ -206,7 +201,7 @@ const FileUploader = ({
             <CircularProgress size={40} />
           ) : (
             <>
-              <UploadIcon className={classes.icon} />
+              <img src={cloudCool} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} className={classes.icon} />
               <Typography variant="body1" className={classes.text}>
                 {text}
               </Typography>

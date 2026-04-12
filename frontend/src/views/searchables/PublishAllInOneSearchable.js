@@ -18,15 +18,8 @@ import {
   Paper,
   CircularProgress
 } from '@material-ui/core';
-import {
-  CloudUpload,
-  Delete,
-  AttachFile,
-  Add,
-  Storefront,
-  Favorite,
-  CloudDownload
-} from '@material-ui/icons';
+import { Add } from '@material-ui/icons';
+import { cloudCool, closeX as deleteIcon, floppyDisk, catPixel as physicalItemsIcon, heartPixel } from '../../assets/images/icons';
 import { v4 as uuidv4 } from 'uuid';
 import { useTheme } from '@material-ui/core/styles';
 import { makeStyles } from '@material-ui/styles';
@@ -43,7 +36,7 @@ const useStyles = makeStyles((theme) => ({
     transition: 'all 0.3s ease',
     '&.ready': {
       backgroundColor: theme.palette.primary.main,
-      color: 'white',
+      color: theme.palette.primary.contrastText,
       animation: '$pulse 1.5s infinite',
       border: `2px solid ${theme.palette.primary.light}`,
     },
@@ -590,7 +583,15 @@ const PublishAllInOneSearchable = () => {
 
   return (
     <Box sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }} {...testIdProps('page', 'publish-allinone', 'container')}>
-      <Grid container spacing={3} style={{ position: 'relative', zIndex: 1 }}>
+      <Box sx={{
+        background: `${theme.palette.background.paper}`,
+        border: `1px solid ${theme.palette.divider}40`,
+        borderRadius: '12px',
+        padding: theme.spacing(3),
+        position: 'relative',
+        zIndex: 1,
+      }}>
+      <Grid container spacing={3}>
         <Grid item xs={12} {...testIdProps('section', 'publish-allinone', 'header')}>
           <Typography variant="h4" gutterBottom>
             {existingSearchable ? 'Edit' : 'Create'} All-In-One Offering
@@ -626,7 +627,7 @@ const PublishAllInOneSearchable = () => {
           }
           label={
             <Box display="flex" alignItems="center">
-              <CloudDownload style={{ marginRight: 8 }} />
+              <img src={floppyDisk} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6">Digital Downloads</Typography>
             </Box>
           }
@@ -643,7 +644,7 @@ const PublishAllInOneSearchable = () => {
               <Button
                 variant="contained"
                 component="label"
-                startIcon={<AttachFile />}
+                startIcon={<img src={floppyDisk} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                 style={{ marginBottom: 12 }}
                 {...testIdProps('button', 'publish-allinone-downloadable', 'upload')}
               >
@@ -705,7 +706,7 @@ const PublishAllInOneSearchable = () => {
                   className={`${classes.addButton} ${newFile.file && newFile.price ? 'ready' : ''}`}
                   {...testIdProps('button', 'publish-allinone-file', 'add')}
                 >
-                  {uploadingFiles ? <CircularProgress size={20} style={{ color: 'white' }} /> : <Add />}
+                  {uploadingFiles ? <CircularProgress size={20} style={{ color: theme.palette.primary.contrastText }} /> : <Add />}
                 </IconButton>
               </Box>
             </Paper>
@@ -754,7 +755,7 @@ const PublishAllInOneSearchable = () => {
                         size="small"
                         {...testIdProps('button', 'publish-allinone-file', `delete-${file.id}`)}
                       >
-                        <Delete />
+                        <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                       </IconButton>
                     </Box>
                   </Box>
@@ -778,7 +779,7 @@ const PublishAllInOneSearchable = () => {
           }
           label={
             <Box display="flex" alignItems="center">
-              <Storefront style={{ marginRight: 8 }} />
+              <img src={physicalItemsIcon} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6">Physical Items</Typography>
             </Box>
           }
@@ -885,7 +886,7 @@ const PublishAllInOneSearchable = () => {
                         size="small"
                         {...testIdProps('button', 'publish-allinone-offline', `delete-${item.id}`)}
                       >
-                        <Delete />
+                        <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                       </IconButton>
                     </Box>
                   </Box>
@@ -909,7 +910,7 @@ const PublishAllInOneSearchable = () => {
           }
           label={
             <Box display="flex" alignItems="center">
-              <Favorite style={{ marginRight: 8 }} />
+              <img src={heartPixel} alt="" style={{ width: 24, height: 24, objectFit: 'contain', marginRight: 8 }} />
               <Typography variant="h6">Donations</Typography>
             </Box>
           }
@@ -994,7 +995,7 @@ const PublishAllInOneSearchable = () => {
                           size="small"
                           {...testIdProps('button', 'publish-allinone-donation', `delete-preset-${index}`)}
                         >
-                          <Delete />
+                          <img src={deleteIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                         </IconButton>
                       )}
                     </Box>
@@ -1039,6 +1040,7 @@ const PublishAllInOneSearchable = () => {
         />
       </Grid>
       </Grid>
+      </Box>
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   Box,
@@ -24,6 +24,9 @@ import {
   coinDollar,
   coinEthereum,
   coinGeneric,
+  percentGrowth,
+  walletCircuit,
+  networkNodes,
 } from '../../assets/images/icons';
 
 // Import logo
@@ -71,16 +74,14 @@ const heroIcons = [
   { src: catPixel, alt: 'cat', top: '60%', left: '5%', size: 36, opacity: 0.1 },
 ];
 
-const FeatureCard = ({ icon, pixelIconSrc, title, description, delay, isMobile, theme }) => (
+const FeatureCard = ({ icon, iconSrc, iconAlt, pixelIconSrc, title, description, delay, isMobile, theme }) => (
   <Box
     data-testid={`feature-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     id={`feature-card-${title.toLowerCase().replace(/\s+/g, '-')}`}
     sx={{
       position: 'relative',
       padding: isMobile ? '28px 24px' : '36px 32px',
-      background: `${theme.palette.background.paper}B3`,
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
+      background: `${theme.palette.background.paper}`,
       border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
       borderRadius: '12px',
       transition: 'all 0.4s ease',
@@ -88,7 +89,7 @@ const FeatureCard = ({ icon, pixelIconSrc, title, description, delay, isMobile, 
       cursor: 'default',
       overflow: 'hidden',
       '&:hover': {
-        background: `${theme.palette.background.paper}CC`,
+        background: `${theme.palette.background.paper}`,
         border: `1px solid ${theme.palette.primary.main}40`,
         boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${theme.palette.primary.main}15`,
         transform: 'translateY(-4px)',
@@ -101,15 +102,30 @@ const FeatureCard = ({ icon, pixelIconSrc, title, description, delay, isMobile, 
         <PixelIcon src={pixelIconSrc} size={28} />
       </Box>
     )}
-    <Typography
-      sx={{
-        fontSize: isMobile ? '2rem' : '2.5rem',
-        mb: 2,
-        lineHeight: 1,
-      }}
-    >
-      {icon}
-    </Typography>
+    {iconSrc ? (
+      <Box sx={{ mb: 2, display: 'inline-flex' }}>
+        <PixelIcon
+          src={iconSrc}
+          alt={iconAlt || title}
+          size={isMobile ? 44 : 56}
+          opacity={1}
+          animation="float"
+          sx={{
+            filter: `drop-shadow(0 0 12px ${theme.palette.primary.main}40)`,
+          }}
+        />
+      </Box>
+    ) : (
+      <Typography
+        sx={{
+          fontSize: isMobile ? '2rem' : '2.5rem',
+          mb: 2,
+          lineHeight: 1,
+        }}
+      >
+        {icon}
+      </Typography>
+    )}
     <Typography
       variant="h6"
       sx={{
@@ -157,19 +173,22 @@ const LandingV2 = () => {
 
   const features = [
     {
-      icon: '⚡',
+      iconSrc: percentGrowth,
+      iconAlt: 'fee savings',
       pixelIconSrc: coinDollar,
       title: 'Lowest Fees on the Planet',
       description: 'Keep more of what you earn. Our fee structure is designed to be the most competitive in the Web3 marketplace space.',
     },
     {
-      icon: '🔄',
+      iconSrc: networkNodes,
+      iconAlt: 'currency conversion',
       pixelIconSrc: coinEthereum,
       title: 'Seamless USD → USDT',
       description: "We handle the conversion for your buyers automatically. They pay in USD, you receive USDT. It's that simple.",
     },
     {
-      icon: '🏦',
+      iconSrc: walletCircuit,
+      iconAlt: 'instant withdrawals',
       pixelIconSrc: coinGeneric,
       title: 'Instant USDT Withdrawals',
       description: 'Withdraw to your favourite Ethereum wallet instantly. No waiting periods, no unnecessary holds.',
@@ -180,6 +199,16 @@ const LandingV2 = () => {
     smileyHappy, heartPixel, floppyDisk, sparkleStarPurple,
     robotPixel, catPixel, coinDollar, coinEthereum,
   ];
+
+  // Override body sky background on landing page
+  useEffect(() => {
+    document.body.style.backgroundImage = 'none';
+    document.body.style.backgroundColor = '#000';
+    return () => {
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundColor = '';
+    };
+  }, []);
 
   return (
     <Box sx={{ backgroundColor: '#000', minHeight: '100vh', overflow: 'hidden' }}>
@@ -398,6 +427,8 @@ const LandingV2 = () => {
               <Grid item xs={12} md={4} key={index}>
                 <FeatureCard
                   icon={feature.icon}
+                  iconSrc={feature.iconSrc}
+                  iconAlt={feature.iconAlt}
                   pixelIconSrc={feature.pixelIconSrc}
                   title={feature.title}
                   description={feature.description}

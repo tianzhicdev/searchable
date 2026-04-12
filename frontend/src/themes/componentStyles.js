@@ -30,19 +30,19 @@ const useComponentStyles = makeStyles((theme) => ({
     paper: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        border: `${themeConfig.borderWidth} ${themeConfig.borderStyle} ${themeConfig.borderColor}`,
-        borderRadius: borderRadius.lg,
-        transition: 'box-shadow 0.3s ease',
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        transition: 'border-color 0.3s ease',
         '&:hover': {
-            boxShadow: `0 0 10px ${themeConfig.primary}15`,
+            borderColor: 'rgba(167,139,250,0.3)',
         }
     },
-    
+
     // Paper style without borders - for account pages and similar content
     paperNoBorder: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        borderRadius: borderRadius.lg
+        borderRadius: '12px',
     },
     
     box: {
@@ -151,59 +151,50 @@ const useComponentStyles = makeStyles((theme) => ({
     cardHover: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        borderRadius: borderRadius.lg,
-        border: `1px solid ${themeConfig.borderColor}`,
+        borderRadius: '12px',
+        border: `1px solid rgba(167,139,250,0.15)`,
         transition: 'all 0.3s ease',
         cursor: 'pointer',
         '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: `0 0 15px ${themeConfig.primary}30, 0 0 30px ${themeConfig.secondary}15`,
-            borderColor: themeConfig.primary,
+            borderColor: 'rgba(167,139,250,0.4)',
         }
     },
 
-    // Neon glow card
+    // Accent card — stronger border
     cardNeon: {
         ...componentSpacing.card(theme),
         backgroundColor: themeConfig.bgSecondary,
-        border: `2px solid ${themeConfig.primary}`,
-        borderImage: `linear-gradient(135deg, ${themeConfig.primary}, ${themeConfig.secondary}) 1`,
-        transition: 'all 0.3s ease',
-        '&:hover': {
-            boxShadow: `0 0 20px ${themeConfig.primary}40, 0 0 40px ${themeConfig.secondary}20`,
-        }
-    },
-
-    // Glassmorphism card - frosted glass effect
-    cardGlass: {
-        ...componentSpacing.card(theme),
-        background: `${themeConfig.bgSecondary}B3`,
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: `1px solid ${themeConfig.borderColor}60`,
+        border: `1px solid rgba(167,139,250,0.3)`,
         borderRadius: '12px',
         transition: 'all 0.3s ease',
         '&:hover': {
-            background: `${themeConfig.bgSecondary}CC`,
-            border: `1px solid ${themeConfig.borderColor}90`,
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+            borderColor: 'rgba(167,139,250,0.5)',
         }
     },
 
-    // Interactive glass card - clickable with lift effect
+    // Standard card
+    cardGlass: {
+        ...componentSpacing.card(theme),
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
+        borderRadius: '12px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+            borderColor: 'rgba(167,139,250,0.3)',
+        }
+    },
+
+    // Interactive card - clickable with lift effect
     cardGlassInteractive: {
         ...componentSpacing.card(theme),
-        background: `${themeConfig.bgSecondary}B3`,
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: `1px solid ${themeConfig.borderColor}60`,
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
         borderRadius: '12px',
         cursor: 'pointer',
         transition: 'all 0.3s ease',
         '&:hover': {
-            background: `${themeConfig.bgSecondary}CC`,
-            border: `1px solid ${themeConfig.primary}40`,
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${themeConfig.primary}15`,
+            borderColor: 'rgba(167,139,250,0.35)',
             transform: 'translateY(-2px)',
         }
     },
@@ -223,16 +214,12 @@ const useComponentStyles = makeStyles((theme) => ({
         position: 'sticky',
         top: 24,
         ...componentSpacing.card(theme),
-        background: `${themeConfig.bgSecondary}B3`,
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: `1px solid ${themeConfig.borderColor}60`,
+        background: themeConfig.bgSecondary,
+        border: `1px solid rgba(167,139,250,0.15)`,
         borderRadius: '12px',
         transition: 'all 0.3s ease',
         '&:hover': {
-            background: `${themeConfig.bgSecondary}CC`,
-            border: `1px solid ${themeConfig.borderColor}90`,
-            boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
+            borderColor: 'rgba(167,139,250,0.3)',
         }
     },
 
@@ -248,11 +235,8 @@ const useComponentStyles = makeStyles((theme) => ({
         justifyContent: 'space-between',
         gap: theme.spacing(2),
         padding: theme.spacing(1.5, 2),
-        background: `${themeConfig.bgSecondary}E6`,
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: `1px solid ${themeConfig.borderColor}60`,
-        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)',
+        background: themeConfig.bgSecondary,
+        borderTop: `1px solid rgba(167,139,250,0.2)`,
     },
 
     // Dialog styles

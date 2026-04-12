@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography, Box, Tooltip } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { AttachMoney as MoneyIcon } from '@material-ui/icons';
+import { coinDollar } from '../../assets/images/icons';
 import useComponentStyles from '../../themes/componentStyles';
 
 const useStyles = makeStyles((theme) => ({
@@ -84,7 +84,7 @@ const PriceDisplay = ({
 
     return (
       <Box className={`${classes.priceContainer} ${className || ''}`}>
-        {showIcon && <MoneyIcon className={classes.icon} />}
+        {showIcon && <img src={coinDollar} alt="" style={{ width: 16, height: 16, objectFit: 'contain' }} className={classes.icon} />}
         
         {originalAmount && originalAmount > amount && (
           <Typography

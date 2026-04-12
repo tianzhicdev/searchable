@@ -4,7 +4,7 @@ import {
   Typography, Box, TextField, InputAdornment, ButtonGroup, Button
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { AttachMoney } from '@material-ui/icons';
+import { coinDollar as coinDollarIcon } from '../../assets/images/icons';
 import Alert from '@material-ui/lab/Alert';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
@@ -210,7 +210,7 @@ const DirectSearchableDetails = () => {
                     key={amount}
                     variant={paymentAmount === amount ? 'contained' : 'outlined'}
                     onClick={() => setPaymentAmount(amount)}
-                    startIcon={<AttachMoney />}
+                    startIcon={<img src={coinDollarIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
                   >
                     ${amount.toFixed(2)}
                   </Button>

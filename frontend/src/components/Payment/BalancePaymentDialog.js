@@ -10,14 +10,11 @@ import {
   IconButton,
   CircularProgress
 } from '@material-ui/core';
-import {
-  Close as CloseIcon,
-  AccountBalance as BalanceIcon,
-  CheckCircle as CheckCircleIcon
-} from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { closeX, walletCircuit, checkmark } from '../../assets/images/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing } from '../../utils/spacing';
+import ActionButtonLabel from '../common/ActionButtonLabel';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -68,14 +65,14 @@ const BalancePaymentDialog = ({
             size="small"
             disabled={processing}
           >
-            <CloseIcon />
+            <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
           </IconButton>
         </Box>
       </DialogTitle>
       
       <DialogContent className={styles.dialogContent}>
         <Box mb={3} textAlign="center">
-          <BalanceIcon style={{ fontSize: 48, color: '#4caf50', marginBottom: 16 }} />
+          <img src={walletCircuit} alt="" style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 16 }} />
           
           <Typography variant="body1" className={classes.staticText} gutterBottom>
             Are you sure you want to pay with your balance?
@@ -128,7 +125,7 @@ const BalancePaymentDialog = ({
         </Box>
         
         <Box mt={2} display="flex" alignItems="center" justifyContent="center">
-          <CheckCircleIcon style={{ color: '#4caf50', marginRight: 8 }} />
+          <img src={checkmark} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: 8 }} />
           <Typography variant="body2" className={classes.userText}>
             No transaction fees when paying with balance!
           </Typography>
@@ -147,10 +144,15 @@ const BalancePaymentDialog = ({
           variant="contained"
           onClick={onConfirm}
           disabled={processing}
-          startIcon={processing ? <CircularProgress size={20} /> : <BalanceIcon />}
+          aria-label={processing ? 'Processing...' : 'Confirm Payment'}
+          title={processing ? 'Processing...' : 'Confirm Payment'}
           className={styles.button}
         >
-          {processing ? 'Processing...' : 'Confirm Payment'}
+          {processing ? (
+            <CircularProgress size={20} aria-label="Processing..." />
+          ) : (
+            <ActionButtonLabel label="Confirm Payment" />
+          )}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,23 +1,15 @@
 // Pixel art icon exports
-export { default as cassetteTape } from './cassette-tape.png';
-export { default as catPixel } from './cat-pixel.png';
-export { default as chatBubble } from './chat-bubble.png';
-export { default as cloud } from './cloud.png';
-export { default as coinDollar } from './coin-dollar.png';
-export { default as coinEthereum } from './coin-ethereum.png';
-export { default as coinGeneric } from './coin-generic.png';
-export { default as cursorLarge } from './cursor-large.png';
-export { default as cursorMedium } from './cursor-medium.png';
-export { default as floppyDisk } from './floppy-disk.png';
-export { default as heartPixel } from './heart-pixel.png';
-export { default as moonCrescent } from './moon-crescent.png';
-export { default as progressBarHalf } from './progress-bar-half.png';
-export { default as robotPixel } from './robot-pixel.png';
-export { default as smileyBlushing } from './smiley-blushing.png';
-export { default as smileyCute } from './smiley-cute.png';
-export { default as smileyHappy } from './smiley-happy.png';
-export { default as smileyNeutral } from './smiley-neutral.png';
-export { default as smileyWinking } from './smiley-winking.png';
-export { default as snowflakeSmall } from './snowflake-small.png';
-export { default as sparkleGradientLarge } from './sparkle-gradient-large.png';
-export { default as sparkleStarPurple } from './sparkle-star-purple.png';
+// Keep this root barrel stable so existing component imports do not change.
+
+export * from './avatars';
+export * from './commerce';
+export * from './controls';
+export * from './nature';
+export * from './navigation';
+export * from './objects';
+export * from './shapes';
+export * from './smileys';
+export * from './sparkles';
+export * from './system';
+
+// Intentionally not re-exporting `legacy` or `source/extracted`.

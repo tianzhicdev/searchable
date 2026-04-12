@@ -8,11 +8,16 @@ import {
   Snackbar, Alert, Button,
   IconButton, Avatar, useTheme
 } from '@material-ui/core';
-import PersonIcon from '@material-ui/icons/Person';
-import EditIcon from '@material-ui/icons/Edit';
-import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
-import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
 import UserInvoices from './UserInvoices';
+import {
+  profileUser as profileUserIcon,
+  profileUser as editProfileIcon,
+  walletCircuit as withdrawIcon,
+  coinDollarGold as refillIcon,
+  progressBarHalf,
+  coinDollar,
+  smileyWinking
+} from '../../assets/images/icons';
 import backend from '../utilities/Backend';
 import ZoomableImage from '../../components/ZoomableImage';
 import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
@@ -24,22 +29,18 @@ import RefillBalanceDialog from '../../components/Payment/RefillBalanceDialog';
 import WithdrawalDialog, { openWithdrawalDialog } from '../../components/WithdrawalDialog';
 import { testIdProps } from '../../utils/testIds';
 import DecorativeIcons from '../../components/DecorativeIcons';
-import { progressBarHalf, coinDollar, smileyWinking } from '../../assets/images/icons';
-
 const dashboardIcons = [
   { src: progressBarHalf, alt: 'progress', top: '5%', right: '3%', size: 36, opacity: 0.1, animation: 'float' },
   { src: coinDollar, alt: 'coin', top: '30%', left: '2%', size: 32, opacity: 0.08, animation: 'pulse' },
   { src: smileyWinking, alt: 'smiley', bottom: '15%', right: '4%', size: 30, opacity: 0.1, animation: 'float' },
 ];
 
-// Glass card style helper
+// Glass card style helper — matches component.png gradient glow design
 const glassCard = (theme) => ({
-  background: `${theme.palette.background.paper}B3`,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+  background: theme.palette.background.paper,
+  border: '1px solid rgba(167,139,250,0.15)',
   borderRadius: '12px',
-  boxShadow: 'none',
+  boxShadow: '0 0 20px rgba(167,139,250,0.08), inset 0 0 30px rgba(167,139,250,0.03)',
 });
 
 const Dashboard = () => {
@@ -55,8 +56,11 @@ const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState('');
 
   const account = useSelector((state) => state.account);
+  const accountUser = account.user;
   const history = useHistory();
   const location = useLocation();
+  const displayUsername = accountUser?.username || 'Loading profile...';
+  const displayEmail = accountUser?.email || '';
 
   useEffect(() => {
     fetchBalance();
@@ -145,17 +149,17 @@ const Dashboard = () => {
                 [theme.breakpoints.down('sm')]: { width: 72, height: 72 },
               }}
             >
-              {!userProfile.profile_image_url && <PersonIcon style={{ fontSize: 48 }} />}
+              {!userProfile.profile_image_url && <img src={profileUserIcon} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} />}
             </Avatar>
           )}
 
           {/* CENTER: Info */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography variant="h5" className={classes.userText} style={{ fontWeight: 600 }}>
-              {account.user.username}
+              {displayUsername}
             </Typography>
             <Typography variant="body2" className={classes.staticText} style={{ marginTop: 2 }}>
-              {account.user.email}
+              {displayEmail}
             </Typography>
 
             {userProfile?.tags && userProfile.tags.length > 0 && (
@@ -209,7 +213,7 @@ const Dashboard = () => {
               variant="contained"
               color="primary"
               size="small"
-              startIcon={<EditIcon />}
+              startIcon={<img src={editProfileIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               onClick={handleEditClick}
               {...testIdProps('button', 'dashboard', 'edit-profile')}
             >
@@ -218,7 +222,7 @@ const Dashboard = () => {
             <Button
               variant="contained"
               size="small"
-              startIcon={<AccountBalanceWalletIcon />}
+              startIcon={<img src={withdrawIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               onClick={handleWithdrawalUSDTClick}
               {...testIdProps('button', 'dashboard', 'withdraw')}
             >
@@ -227,7 +231,7 @@ const Dashboard = () => {
             <Button
               variant="contained"
               size="small"
-              startIcon={<AddCircleOutlineIcon />}
+              startIcon={<img src={refillIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               onClick={() => setRefillDialogOpen(true)}
               {...testIdProps('button', 'dashboard', 'refill')}
             >
@@ -267,7 +271,7 @@ const Dashboard = () => {
             <Typography variant="body1" className={classes.userText} style={{
               wordBreak: 'break-all', fontWeight: 500
             }}>
-              {account.user.email}
+              {displayEmail}
             </Typography>
           </Paper>
 
@@ -275,7 +279,7 @@ const Dashboard = () => {
           <Paper elevation={0} sx={{ ...componentSpacing.card(theme), ...glassCard(theme) }}>
             <Typography variant="caption" className={classes.staticText}>Member</Typography>
             <Typography variant="body1" className={classes.userText} style={{ fontWeight: 500 }}>
-              {account.user.username}
+              {displayUsername}
             </Typography>
           </Paper>
         </Box>

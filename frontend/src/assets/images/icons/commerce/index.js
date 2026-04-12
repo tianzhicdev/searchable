@@ -1,0 +1,13 @@
+export { default as coinBit } from './coin-bit.png';
+export { default as coinBitcoin } from './coin-bitcoin.png';
+export { default as coinDollar } from './coin-dollar.png';
+export { default as coinDollarGold } from './coin-dollar-gold.png';
+export { default as coinDollarPink } from './coin-dollar-pink.png';
+export { default as coinDollarSilver } from './coin-dollar-silver.png';
+export { default as coinEthereum } from './coin-ethereum.png';
+export { default as coinGeneric } from './coin-generic.png';
+export { default as coinPurple } from './coin-purple.png';
+export { default as diamondGem } from './diamond-gem.png';
+export { default as heartPixel } from './heart-pixel.png';
+export { default as percentGrowth } from './percent-growth.png';
+export { default as walletCircuit } from './wallet-circuit.png';

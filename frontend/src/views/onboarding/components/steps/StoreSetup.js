@@ -10,6 +10,7 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import { useOnboarding } from '../../OnboardingProvider';
 import { componentSpacing, touchTargets } from '../../../../utils/spacing';
+import ActionButtonLabel from '../../../../components/common/ActionButtonLabel';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -195,8 +196,10 @@ const StoreSetup = ({ stepConfig }) => {
         fullWidth
         className={classes.continueButton}
         onClick={handleContinue}
+        aria-label={stepConfig.nextButton?.text || 'Continue'}
+        title={stepConfig.nextButton?.text || 'Continue'}
       >
-        {stepConfig.nextButton?.text || 'Continue'}
+        <ActionButtonLabel label={stepConfig.nextButton?.text || 'Continue'} size={22} />
       </Button>
     </Box>
   );

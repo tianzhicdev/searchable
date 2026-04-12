@@ -9,8 +9,8 @@ import {
   Container
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
-import { PersonAdd } from '@material-ui/icons';
 import { isGuestUser } from '../../utils/guestUtils';
+import { profileUser } from '../../assets/images/icons';
 
 const useStyles = makeStyles((theme) => ({
   banner: {
@@ -87,7 +87,7 @@ const GuestUserBanner = () => {
           <Button
             variant="contained"
             className={classes.registerButton}
-            startIcon={<PersonAdd />}
+            startIcon={<img src={profileUser} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             onClick={handleRegisterClick}
             size="medium"
           >

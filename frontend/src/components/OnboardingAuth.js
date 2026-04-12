@@ -15,6 +15,7 @@ import { useDispatch } from 'react-redux';
 import { performLogin, performRegistrationAndLogin } from '../services/authService';
 import { componentSpacing, touchTargets } from '../utils/spacing';
 import { testIdProps } from '../utils/testIds';
+import ActionButtonLabel, { shouldUseActionGlyph } from './common/ActionButtonLabel';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -54,6 +55,7 @@ const OnboardingAuth = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(false);
+  const useGlyphLabel = shouldUseActionGlyph(submitButtonText);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -257,13 +259,15 @@ const OnboardingAuth = ({
           fullWidth
           className={classes.submitButton}
           disabled={isSubmitting}
-          startIcon={submitButtonIcon}
+          startIcon={useGlyphLabel ? null : submitButtonIcon}
+          aria-label={isSubmitting ? 'Processing...' : submitButtonText}
+          title={isSubmitting ? 'Processing...' : submitButtonText}
           {...testIdProps('button', 'onboarding-auth', 'submit')}
         >
           {isSubmitting ? (
-            <CircularProgress size={24} color="inherit" />
+            <CircularProgress size={24} color="inherit" aria-label="Processing..." />
           ) : (
-            submitButtonText
+            <ActionButtonLabel label={submitButtonText} size={22} />
           )}
         </Button>
       </form>

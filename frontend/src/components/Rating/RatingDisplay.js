@@ -8,7 +8,7 @@ import {
   useMediaQuery
 } from '@material-ui/core';
 import { Rating } from '@material-ui/lab';
-import { Star, StarBorder } from '@material-ui/icons';
+import { sparkleStarPurple } from '../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import { useTheme } from '@material-ui/core/styles';
 import { componentSpacing, touchTargets } from '../../utils/spacing';
@@ -90,7 +90,8 @@ const RatingDisplay = ({
           value={averageRating}
           readOnly
           precision={0.1}
-          emptyIcon={<StarBorder fontSize="inherit" />}
+          emptyIcon={<img src={sparkleStarPurple} alt="" style={{ width: '1em', height: '1em', objectFit: 'contain', opacity: 0.3 }} />}
+            icon={<img src={sparkleStarPurple} alt="" style={{ width: '1em', height: '1em', objectFit: 'contain' }} />}
         />
         <Typography variant={isMobile ? "subtitle1" : "h6"}>
           {averageRating.toFixed(1)}
@@ -127,7 +128,8 @@ const RatingDisplay = ({
                     value={ratingItem.rating}
                     readOnly
                     size={isMobile ? "small" : "medium"}
-                    emptyIcon={<StarBorder fontSize="inherit" />}
+                    emptyIcon={<img src={sparkleStarPurple} alt="" style={{ width: '1em', height: '1em', objectFit: 'contain', opacity: 0.3 }} />}
+            icon={<img src={sparkleStarPurple} alt="" style={{ width: '1em', height: '1em', objectFit: 'contain' }} />}
                   />
                 </Box>
                 

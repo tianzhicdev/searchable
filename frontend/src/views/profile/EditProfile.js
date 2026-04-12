@@ -16,10 +16,7 @@ import {
   Alert,
   useTheme
 } from '@material-ui/core';
-import {
-  PhotoCamera,
-  Person
-} from '@material-ui/icons';
+import { cloudCool, profileUser as profileUserIcon } from '../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import Backend from '../utilities/Backend';
@@ -488,7 +485,7 @@ const EditProfile = () => {
                   />
                 ) : (
                   <Avatar className={styles.avatar}>
-                    <Person style={{ fontSize: 60 }} />
+                    <img src={profileUserIcon} alt="" style={{ width: 60, height: 60, objectFit: 'contain' }} />
                   </Avatar>
                 )}
                 <input
@@ -504,7 +501,7 @@ const EditProfile = () => {
                     aria-label="upload picture"
                     component="span"
                   >
-                    <PhotoCamera />
+                    <img src={cloudCool} alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
                   </IconButton>
                 </label>
               </Box>

@@ -10,12 +10,14 @@ import {
   Snackbar,
   Alert
 } from '@material-ui/core';
-import { ArrowBack, MonetizationOn } from '@material-ui/icons';
+import { ArrowBack } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { coinDollar as coinDollarIcon } from '../../assets/images/icons';
 import backend from '../utilities/Backend';
 import OnboardingAuthWithLoggedInState from '../../components/OnboardingAuthWithLoggedInState';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { smileyHappy, moonCrescent, cassetteTape, heartPixel } from '../../assets/images/icons';
+
 
 const onboarding5_1Icons = [
   { src: smileyHappy, alt: 'happy', top: '9%', left: '4%', size: 40, opacity: 0.1, animation: 'float' },
@@ -29,14 +31,18 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -49,8 +55,7 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(9, 9, 15, 0.85)',
-    backdropFilter: 'blur(8px)',
+    backgroundColor: 'rgba(9, 9, 15, 0.95)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -173,7 +178,7 @@ const Onboarding5_1 = () => {
           {isCreatingPage && (
             <Box className={classes.loadingOverlay}>
               <Box textAlign="center">
-                <MonetizationOn className={classes.successIcon} />
+                <img src={coinDollarIcon} alt="" style={{ width: 48, height: 48, objectFit: 'contain' }} className={classes.successIcon} />
                 <Typography variant="h6">
                   Creating your donation page...
                 </Typography>
@@ -189,7 +194,7 @@ const Onboarding5_1 = () => {
             <OnboardingAuthWithLoggedInState
               onSuccess={handleAuthSuccess}
               submitButtonText={isCreatingPage ? "Creating..." : "Create Donation Page"}
-              submitButtonIcon={<MonetizationOn />}
+              submitButtonIcon={<img src={coinDollarIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
               contextText={`create "${donationData.title}"`}
             />
           </Box>

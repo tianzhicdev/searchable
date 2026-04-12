@@ -18,14 +18,12 @@ import TagsOnProfile from '../../components/Tags/TagsOnProfile';
 import SearchableList from '../searchables/SearchableList';
 import { testIdProps } from '../../utils/testIds';
 
-// Glass card style helper
+// Glass card style helper — matches component.png gradient glow design
 const glassCard = (theme) => ({
-  background: `${theme.palette.background.paper}B3`,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-  border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+  background: theme.palette.background.paper,
+  border: '1px solid rgba(167,139,250,0.15)',
   borderRadius: '12px',
-  boxShadow: 'none',
+  boxShadow: '0 0 20px rgba(167,139,250,0.08), inset 0 0 30px rgba(167,139,250,0.03)',
 });
 
 const UserProfile = () => {

@@ -20,6 +20,7 @@ import { makeStyles } from '@material-ui/styles';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { coinDollar, coinGeneric, smileyWinking, progressBarHalf } from '../../assets/images/icons';
 
+
 const onboarding3_1Icons = [
   { src: coinDollar, alt: 'coin', top: '8%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
   { src: smileyWinking, alt: 'wink', top: '14%', right: '7%', size: 42, opacity: 0.1, animation: 'pulse' },
@@ -32,14 +33,18 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     paddingTop: theme.spacing(4),
     paddingBottom: theme.spacing(4),
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     padding: theme.spacing(4),
     position: 'relative',
-    boxShadow: 'none !important',
-    border: 'none !important',
-    background: 'transparent !important',
+    background: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
+    borderRadius: '16px',
+    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(3, 2),
+    },
   },
   backButton: {
     position: 'absolute',
@@ -159,7 +164,7 @@ const Onboarding3_1 = () => {
           </IconButton>
 
           <Box style={{ paddingTop: 48 }}>
-            <Typography variant="h3" gutterBottom>
+            <Typography variant="h3" gutterBottom color="primary">
               Set Up Your Store
             </Typography>
           </Box>

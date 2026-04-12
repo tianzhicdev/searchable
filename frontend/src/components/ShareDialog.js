@@ -12,8 +12,8 @@ import {
   Snackbar,
   Alert
 } from '@material-ui/core';
-import { ContentCopy, Close as CloseIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { closeX, floppyDisk as copyIcon } from '../assets/images/icons';
 import QRCode from 'react-qr-code';
 import useComponentStyles from '../themes/componentStyles';
 import { componentSpacing } from '../utils/spacing';
@@ -83,7 +83,7 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Share "{title}"</Typography>
             <IconButton onClick={handleClose} size="small" {...testIdProps('button', 'share', 'close')}>
-              <CloseIcon />
+              <img src={closeX} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
             </IconButton>
           </Box>
         </DialogTitle>
@@ -129,7 +129,7 @@ const ShareDialog = ({ open, onClose, searchableId, title, searchableType }) => 
                   title="Copy to clipboard"
                   {...testIdProps('button', 'share', 'copy-url')}
                 >
-                  <ContentCopy />
+                  <img src={copyIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                 </IconButton>
               </Box>
             </Box>

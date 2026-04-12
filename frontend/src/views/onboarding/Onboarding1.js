@@ -10,12 +10,13 @@ import {
   CardContent,
   Box
 } from '@material-ui/core';
-import { Storefront, ShoppingCart } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
+import { browserWindowsOk, floppyDisk as shopIcon } from '../../assets/images/icons';
 import { componentSpacing } from '../../utils/spacing';
 import config from '../../config';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { smileyCute, smileyBlushing, robotPixel, catPixel } from '../../assets/images/icons';
+
 
 const onboardingIcons = [
   { src: smileyCute, alt: 'smiley', top: '10%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
@@ -29,7 +30,6 @@ const useStyles = makeStyles((theme) => ({
     minHeight: '100vh',
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: theme.palette.background.default,
   },
   paper: {
     ...componentSpacing.card(theme),
@@ -103,18 +103,15 @@ const useStyles = makeStyles((theme) => ({
     '&:hover': {
       transform: 'translateY(-6px)',
       '& .MuiCardContent-root': {
-        background: `${theme.palette.background.paper}CC`,
         border: `1px solid ${theme.palette.primary.main}40`,
-        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px ${theme.palette.primary.main}15`,
+        boxShadow: `0 8px 32px rgba(0, 0, 0, 0.3)`,
       },
     },
   },
   cardContent: {
     ...componentSpacing.card(theme),
     textAlign: 'center',
-    background: `${theme.palette.background.paper}B3`,
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
+    background: theme.palette.background.paper,
     border: `1px solid ${theme.palette.divider || 'rgba(167,139,250,0.2)'}`,
     borderRadius: '12px',
     transition: 'all 0.3s ease',
@@ -150,7 +147,7 @@ const Onboarding1 = () => {
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
         <Paper className={classes.paper} elevation={0}>
 
-          <Typography variant="h5" className={classes.subtitle} gutterBottom>
+          <Typography variant="h5" className={classes.subtitle} gutterBottom color="primary">
             What would you like to do?
           </Typography>
           
@@ -160,8 +157,8 @@ const Onboarding1 = () => {
                 <Card elevation={0}>
                   <CardActionArea onClick={handleSellerClick}>
                     <CardContent className={classes.cardContent}>
-                      <Storefront className={classes.icon} />
-                      <Typography variant="h5" className={classes.optionTitle}>
+                      <img src={browserWindowsOk} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />
+                      <Typography variant="h5" className={classes.optionTitle} color="primary">
                         I want to earn
                       </Typography>
                       <Typography variant="body1" className={classes.optionDescription}>
@@ -176,8 +173,8 @@ const Onboarding1 = () => {
                 <Card elevation={0}>
                   <CardActionArea onClick={handleShopperClick}>
                     <CardContent className={classes.cardContent}>
-                      <ShoppingCart className={classes.icon} />
-                      <Typography variant="h5" className={classes.optionTitle}>
+                      <img src={shopIcon} alt="" style={{ width: 64, height: 64, objectFit: 'contain' }} className={classes.icon} />
+                      <Typography variant="h5" className={classes.optionTitle} color="primary">
                         I want to shop
                       </Typography>
                       <Typography variant="body1" className={classes.optionDescription}>

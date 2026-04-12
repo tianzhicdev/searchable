@@ -12,15 +12,13 @@ import {
   Alert,
   useTheme
 } from '@material-ui/core';
-import {
-  CreditCard as CreditCardIcon
-} from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
 import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import DecorativeIcons from '../../components/DecorativeIcons';
 import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+import ActionButtonLabel from '../../components/common/ActionButtonLabel';
 
 const paymentIcons = [
   { src: coinDollar, alt: 'dollar', top: '8%', right: '4%', size: 32, opacity: 0.1, animation: 'float' },
@@ -203,9 +201,14 @@ const CreditCardRefill = () => {
             size="large"
             onClick={handleSubmit}
             disabled={!amount || parseFloat(amount) <= 0 || processing}
-            startIcon={processing ? <CircularProgress size={20} /> : <CreditCardIcon />}
+            aria-label={processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
+            title={processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
           >
-            {processing ? 'Processing...' : `Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`}
+            {processing ? (
+              <CircularProgress size={20} aria-label="Processing..." />
+            ) : (
+              <ActionButtonLabel label={`Continue to Payment ${amount ? formatCurrency(totalAmount) : ''}`} />
+            )}
           </Button>
           
           <Box mt={2}>

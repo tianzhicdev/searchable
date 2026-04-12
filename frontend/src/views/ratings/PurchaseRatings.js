@@ -20,7 +20,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { Rating } from '@material-ui/lab';
-import { Star, StarBorder, RateReview } from '@material-ui/icons';
+import { sparkleStarPurple } from '../../assets/images/icons';
 import { formatDate } from '../utilities/Date';
 import RatingComponent from '../../components/Rating/RatingComponent';
 import config from '../../config';
@@ -263,7 +263,7 @@ const PurchaseRatings = () => {
                           onClick={() => handleRateItem(purchase)}
                           size="small"
                         >
-                          <RateReview />
+                          <img src={sparkleStarPurple} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                         </IconButton>
                       </Tooltip>
                     )}
@@ -271,7 +271,7 @@ const PurchaseRatings = () => {
                     {purchase.already_rated && (
                       <Tooltip title="Already rated">
                         <IconButton className={classes.actionButton} disabled size="small">
-                          <Star color="action" />
+                          <img src={sparkleStarPurple} alt="" style={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.5 }} />
                         </IconButton>
                       </Tooltip>
                     )}
