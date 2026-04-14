@@ -21,6 +21,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { coinDollar, coinGeneric, smileyWinking, progressBarHalf } from '../../assets/images/icons';
 
 
+
 const onboarding3_1Icons = [
   { src: coinDollar, alt: 'coin', top: '8%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
   { src: smileyWinking, alt: 'wink', top: '14%', right: '7%', size: 42, opacity: 0.1, animation: 'pulse' },

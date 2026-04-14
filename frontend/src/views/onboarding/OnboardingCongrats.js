@@ -9,6 +9,7 @@ import {
 } from '@material-ui/core';
 import { makeStyles } from '@material-ui/styles';
 import { checkmark, catPixel as physicalItemsIcon, floppyDisk, coinDollar } from '../../assets/images/icons';
+
 // import confetti from 'canvas-confetti'; // Uncomment when library is installed
 
 const useStyles = makeStyles((theme) => ({

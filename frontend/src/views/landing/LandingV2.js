@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import useDarkBackground from '../../hooks/useDarkBackground';
 import { useHistory } from 'react-router-dom';
 import {
   Box,
@@ -22,12 +23,13 @@ import {
   robotPixel,
   catPixel,
   coinDollar,
-  coinEthereum,
+  coinDollarGold,
   coinGeneric,
   percentGrowth,
   walletCircuit,
   networkNodes,
 } from '../../assets/images/icons';
+import { CRYPTO_PAYMENT_ASSET, CRYPTO_PAYMENT_NETWORK_SHORT } from '../../utils/cryptoPaymentConfig';
 
 // Import logo
 import eccentricLogo from '../../assets/images/eccentricprotocol.gif';
@@ -182,36 +184,28 @@ const LandingV2 = () => {
     {
       iconSrc: networkNodes,
       iconAlt: 'currency conversion',
-      pixelIconSrc: coinEthereum,
-      title: 'Seamless USD → USDT',
-      description: "We handle the conversion for your buyers automatically. They pay in USD, you receive USDT. It's that simple.",
+      pixelIconSrc: coinDollarGold,
+      title: `Seamless USD → ${CRYPTO_PAYMENT_ASSET}`,
+      description: `We handle the conversion path for your buyers automatically. They pay in USD, and your crypto rail runs through ${CRYPTO_PAYMENT_ASSET} on ${CRYPTO_PAYMENT_NETWORK_SHORT}.`,
     },
     {
       iconSrc: walletCircuit,
       iconAlt: 'instant withdrawals',
       pixelIconSrc: coinGeneric,
-      title: 'Instant USDT Withdrawals',
-      description: 'Withdraw to your favourite Ethereum wallet instantly. No waiting periods, no unnecessary holds.',
+      title: `Instant ${CRYPTO_PAYMENT_ASSET} Withdrawals`,
+      description: `Withdraw to your favourite ${CRYPTO_PAYMENT_NETWORK_SHORT} wallet without extra custody steps or manual conversion.`,
     },
   ];
 
   const iconRowItems = [
     smileyHappy, heartPixel, floppyDisk, sparkleStarPurple,
-    robotPixel, catPixel, coinDollar, coinEthereum,
+    robotPixel, catPixel, coinDollar, coinDollarGold,
   ];
 
-  // Override body sky background on landing page
-  useEffect(() => {
-    document.body.style.backgroundImage = 'none';
-    document.body.style.backgroundColor = '#000';
-    return () => {
-      document.body.style.backgroundImage = '';
-      document.body.style.backgroundColor = '';
-    };
-  }, []);
+  useDarkBackground();
 
   return (
-    <Box sx={{ backgroundColor: '#000', minHeight: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ minHeight: '100vh', overflow: 'hidden' }}>
       <style>{keyframes}</style>
 
       {/* Scanline CRT overlay */}

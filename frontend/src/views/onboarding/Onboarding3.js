@@ -23,6 +23,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { cloud, floppyDisk, cassetteTape, sparkleGradientLarge } from '../../assets/images/icons';
 
 
+
 const onboarding3Icons = [
   { src: cloud, alt: 'cloud', top: '6%', left: '4%', size: 44, opacity: 0.1, animation: 'float' },
   { src: floppyDisk, alt: 'floppy', top: '10%', right: '6%', size: 40, opacity: 0.12, animation: 'pulse' },

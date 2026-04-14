@@ -7,19 +7,19 @@ import {
   Box,
   IconButton,
   Button,
-  TextField,
-  Grid
+  TextField
 } from '@material-ui/core';
 import { ArrowBack, Add } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/styles';
 import { closeX as deleteIcon } from '../../assets/images/icons';
 import DecorativeIcons from '../../components/DecorativeIcons';
-import { catPixel, coinEthereum, chatBubble, moonCrescent } from '../../assets/images/icons';
+import { catPixel, coinDollarGold, chatBubble, moonCrescent } from '../../assets/images/icons';
+
 
 
 const onboarding4Icons = [
   { src: catPixel, alt: 'cat', top: '6%', left: '4%', size: 44, opacity: 0.12, animation: 'pulse' },
-  { src: coinEthereum, alt: 'ethereum', top: '10%', right: '5%', size: 40, opacity: 0.1, animation: 'float' },
+  { src: coinDollarGold, alt: 'usdc', top: '10%', right: '5%', size: 40, opacity: 0.1, animation: 'float' },
   { src: chatBubble, alt: 'chat', bottom: '14%', left: '7%', size: 42, opacity: 0.1, animation: 'float' },
   { src: moonCrescent, alt: 'moon', bottom: '10%', right: '6%', size: 38, opacity: 0.12, animation: 'float' },
 ];

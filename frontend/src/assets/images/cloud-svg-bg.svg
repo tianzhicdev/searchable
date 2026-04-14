@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#89CFF0"/>
+      <stop offset="15%" stop-color="#7EC8E3"/>
+      <stop offset="40%" stop-color="#A8DAEA"/>
+      <stop offset="60%" stop-color="#B5E0F0"/>
+      <stop offset="80%" stop-color="#C2E6F5"/>
+      <stop offset="100%" stop-color="#D0ECFA"/>
+    </linearGradient>
+
+    <radialGradient id="purpleTL" cx="0%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#C9A0DC" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#B48AD8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#B48AD8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleBR" cx="100%" cy="100%" r="65%">
+      <stop offset="0%" stop-color="#C9A0DC" stop-opacity="0.7"/>
+      <stop offset="35%" stop-color="#B48AD8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#B48AD8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleBL" cx="0%" cy="100%" r="55%">
+      <stop offset="0%" stop-color="#D4A0E0" stop-opacity="0.55"/>
+      <stop offset="40%" stop-color="#C090D0" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#C090D0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleR" cx="100%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#C9A0DC" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#B48AD8" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#B48AD8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleL" cx="0%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#D4A0E0" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#C090D0" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#C090D0" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="mintTR" cx="100%" cy="0%" r="45%">
+      <stop offset="0%" stop-color="#A8F0C8" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#90E8B8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#90E8B8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mintBL" cx="0%" cy="85%" r="40%">
+      <stop offset="0%" stop-color="#A8F0C8" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#90E8B8" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#90E8B8" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="f3"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="f5"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="f8"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="f12"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="f20"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="f35"><feGaussianBlur stdDeviation="35"/></filter>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1440" height="1800" fill="url(#sky)"/>
+
+  <!-- Color overlays -->
+  <rect width="1440" height="1800" fill="url(#purpleTL)"/>
+  <rect width="1440" height="1800" fill="url(#purpleBR)"/>
+  <rect width="1440" height="1800" fill="url(#purpleBL)"/>
+  <rect width="1440" height="1800" fill="url(#purpleR)"/>
+  <rect width="1440" height="1800" fill="url(#purpleL)"/>
+  <rect width="1440" height="1800" fill="url(#mintTR)"/>
+  <rect width="1440" height="1800" fill="url(#mintBL)"/>
+
+  <!-- ============================================ -->
+  <!--  TOP CLOUD BANK - big fluffy cluster         -->
+  <!-- ============================================ -->
+  <!-- Shadow/base layer -->
+  <ellipse cx="320" cy="310" rx="300" ry="90" fill="#C8D8E8" opacity="0.35" filter="url(#f12)"/>
+  <!-- Main body -->
+  <ellipse cx="280" cy="280" rx="260" ry="85" fill="#FFFFFF" opacity="0.7" filter="url(#f8)"/>
+  <!-- Puffs - defined bumps -->
+  <ellipse cx="150" cy="260" rx="90" ry="65" fill="#FFFFFF" opacity="0.88" filter="url(#f5)"/>
+  <ellipse cx="240" cy="230" rx="100" ry="75" fill="#FFFFFF" opacity="0.92" filter="url(#f5)"/>
+  <ellipse cx="340" cy="220" rx="110" ry="80" fill="#FFFFFF" opacity="0.95" filter="url(#f5)"/>
+  <ellipse cx="440" cy="240" rx="95" ry="70" fill="#FFFFFF" opacity="0.88" filter="url(#f5)"/>
+  <ellipse cx="520" cy="260" rx="75" ry="55" fill="#FFFFFF" opacity="0.8" filter="url(#f5)"/>
+  <!-- Inner puffs - extra definition -->
+  <ellipse cx="200" cy="245" rx="60" ry="45" fill="#FFFFFF" opacity="0.95" filter="url(#f3)"/>
+  <ellipse cx="310" cy="225" rx="70" ry="50" fill="#FFFFFF" opacity="0.97" filter="url(#f3)"/>
+  <ellipse cx="400" cy="235" rx="55" ry="42" fill="#FFFFFF" opacity="0.93" filter="url(#f3)"/>
+  <!-- Pink underside -->
+  <ellipse cx="320" cy="310" rx="220" ry="45" fill="#E8D0F0" opacity="0.35" filter="url(#f8)"/>
+  <!-- Bright white highlights -->
+  <ellipse cx="290" cy="220" rx="45" ry="30" fill="#FFFFFF" filter="url(#f3)"/>
+  <ellipse cx="380" cy="225" rx="35" ry="25" fill="#FFFFFF" filter="url(#f3)"/>
+
+  <!-- ============================================ -->
+  <!--  TOP RIGHT CLOUD                              -->
+  <!-- ============================================ -->
+  <ellipse cx="1150" cy="220" rx="240" ry="75" fill="#C8D8E8" opacity="0.3" filter="url(#f12)"/>
+  <ellipse cx="1120" cy="195" rx="200" ry="70" fill="#FFFFFF" opacity="0.65" filter="url(#f8)"/>
+  <ellipse cx="1050" cy="175" rx="90" ry="65" fill="#FFFFFF" opacity="0.88" filter="url(#f5)"/>
+  <ellipse cx="1140" cy="165" rx="100" ry="72" fill="#FFFFFF" opacity="0.93" filter="url(#f5)"/>
+  <ellipse cx="1240" cy="175" rx="95" ry="68" fill="#FFFFFF" opacity="0.9" filter="url(#f5)"/>
+  <ellipse cx="1330" cy="195" rx="75" ry="55" fill="#FFFFFF" opacity="0.8" filter="url(#f5)"/>
+  <ellipse cx="1100" cy="170" rx="55" ry="40" fill="#FFFFFF" opacity="0.95" filter="url(#f3)"/>
+  <ellipse cx="1195" cy="165" rx="60" ry="42" fill="#FFFFFF" opacity="0.97" filter="url(#f3)"/>
+  <ellipse cx="1280" cy="178" rx="45" ry="35" fill="#FFFFFF" opacity="0.92" filter="url(#f3)"/>
+  <ellipse cx="1150" cy="225" rx="200" ry="40" fill="#E0D0F0" opacity="0.3" filter="url(#f8)"/>
+  <ellipse cx="1160" cy="165" rx="40" ry="28" fill="#FFFFFF" filter="url(#f3)"/>
+
+  <!-- ============================================ -->
+  <!--  SMALL CLOUD - top center                    -->
+  <!-- ============================================ -->
+  <ellipse cx="760" cy="310" rx="100" ry="45" fill="#FFFFFF" opacity="0.6" filter="url(#f8)"/>
+  <ellipse cx="740" cy="295" rx="65" ry="42" fill="#FFFFFF" opacity="0.85" filter="url(#f5)"/>
+  <ellipse cx="800" cy="300" rx="55" ry="38" fill="#FFFFFF" opacity="0.82" filter="url(#f5)"/>
+  <ellipse cx="770" cy="292" rx="40" ry="28" fill="#FFFFFF" opacity="0.93" filter="url(#f3)"/>
+
+  <!-- ============================================ -->
+  <!--  FAR RIGHT EDGE CLOUD (partially off-screen) -->
+  <!-- ============================================ -->
+  <ellipse cx="1420" cy="350" rx="120" ry="70" fill="#FFFFFF" opacity="0.6" filter="url(#f8)"/>
+  <ellipse cx="1430" cy="335" rx="80" ry="55" fill="#FFFFFF" opacity="0.8" filter="url(#f5)"/>
+  <ellipse cx="1400" cy="340" rx="60" ry="45" fill="#FFFFFF" opacity="0.85" filter="url(#f5)"/>
+  <ellipse cx="1430" cy="370" rx="100" ry="30" fill="#E8D8F0" opacity="0.3" filter="url(#f8)"/>
+
+  <!-- ============================================ -->
+  <!--  MID-UPPER SCATTERED CLOUDS                   -->
+  <!-- ============================================ -->
+  <!-- Left wisp cluster -->
+  <ellipse cx="120" cy="480" rx="110" ry="40" fill="#FFFFFF" opacity="0.55" filter="url(#f8)"/>
+  <ellipse cx="100" cy="470" rx="70" ry="35" fill="#FFFFFF" opacity="0.75" filter="url(#f5)"/>
+  <ellipse cx="150" cy="475" rx="55" ry="30" fill="#FFFFFF" opacity="0.7" filter="url(#f5)"/>
+
+  <!-- Center-left small puff -->
+  <ellipse cx="520" cy="450" rx="70" ry="35" fill="#FFFFFF" opacity="0.55" filter="url(#f5)"/>
+  <ellipse cx="530" cy="442" rx="45" ry="28" fill="#FFFFFF" opacity="0.75" filter="url(#f3)"/>
+
+  <!-- Center-right small puff -->
+  <ellipse cx="920" cy="420" rx="65" ry="32" fill="#FFFFFF" opacity="0.5" filter="url(#f5)"/>
+  <ellipse cx="925" cy="414" rx="40" ry="25" fill="#FFFFFF" opacity="0.72" filter="url(#f3)"/>
+
+  <!-- Right wisp -->
+  <ellipse cx="1300" cy="460" rx="90" ry="35" fill="#FFFFFF" opacity="0.45" filter="url(#f8)"/>
+  <ellipse cx="1310" cy="452" rx="55" ry="28" fill="#FFFFFF" opacity="0.65" filter="url(#f5)"/>
+
+  <!-- ============================================ -->
+  <!--  MIDDLE ZONE - gentle wisps                   -->
+  <!-- ============================================ -->
+  <ellipse cx="250" cy="620" rx="140" ry="30" fill="#FFFFFF" opacity="0.35" filter="url(#f8)"/>
+  <ellipse cx="700" cy="580" rx="180" ry="28" fill="#FFFFFF" opacity="0.25" filter="url(#f12)"/>
+  <ellipse cx="1200" cy="650" rx="160" ry="32" fill="#FFFFFF" opacity="0.3" filter="url(#f8)"/>
+
+  <!-- Medium cloud - center -->
+  <ellipse cx="680" cy="720" rx="120" ry="50" fill="#FFFFFF" opacity="0.5" filter="url(#f8)"/>
+  <ellipse cx="660" cy="710" rx="75" ry="42" fill="#FFFFFF" opacity="0.72" filter="url(#f5)"/>
+  <ellipse cx="720" cy="715" rx="65" ry="38" fill="#FFFFFF" opacity="0.68" filter="url(#f5)"/>
+  <ellipse cx="685" cy="705" rx="45" ry="28" fill="#FFFFFF" opacity="0.85" filter="url(#f3)"/>
+
+  <!-- Medium cloud - left -->
+  <ellipse cx="180" cy="780" rx="100" ry="45" fill="#FFFFFF" opacity="0.45" filter="url(#f8)"/>
+  <ellipse cx="160" cy="770" rx="65" ry="38" fill="#FFFFFF" opacity="0.68" filter="url(#f5)"/>
+  <ellipse cx="210" cy="772" rx="55" ry="35" fill="#FFFFFF" opacity="0.65" filter="url(#f5)"/>
+
+  <!-- Medium cloud - right -->
+  <ellipse cx="1250" cy="800" rx="110" ry="48" fill="#FFFFFF" opacity="0.45" filter="url(#f8)"/>
+  <ellipse cx="1230" cy="790" rx="70" ry="40" fill="#FFFFFF" opacity="0.7" filter="url(#f5)"/>
+  <ellipse cx="1285" cy="792" rx="60" ry="36" fill="#FFFFFF" opacity="0.65" filter="url(#f5)"/>
+
+  <!-- Purple haze bands -->
+  <ellipse cx="720" cy="870" rx="700" ry="40" fill="#C9A0DC" filter="url(#f35)" opacity="0.12"/>
+  <ellipse cx="720" cy="950" rx="600" ry="35" fill="#B8A0D8" filter="url(#f35)" opacity="0.08"/>
+
+  <!-- ============================================ -->
+  <!--  SMALL SCATTERED PUFFS - mid section          -->
+  <!-- ============================================ -->
+  <ellipse cx="400" cy="680" rx="50" ry="25" fill="#FFFFFF" opacity="0.45" filter="url(#f5)"/>
+  <ellipse cx="1050" cy="730" rx="45" ry="22" fill="#FFFFFF" opacity="0.4" filter="url(#f5)"/>
+  <ellipse cx="550" cy="850" rx="55" ry="28" fill="#FFFFFF" opacity="0.35" filter="url(#f5)"/>
+  <ellipse cx="900" cy="880" rx="50" ry="25" fill="#FFFFFF" opacity="0.32" filter="url(#f5)"/>
+  <ellipse cx="350" cy="950" rx="48" ry="24" fill="#FFFFFF" opacity="0.3" filter="url(#f5)"/>
+  <ellipse cx="1100" cy="960" rx="52" ry="26" fill="#FFFFFF" opacity="0.3" filter="url(#f5)"/>
+
+  <!-- ============================================ -->
+  <!--  LOWER-MID CLOUDS                             -->
+  <!-- ============================================ -->
+  <!-- Cloud cluster center-left -->
+  <ellipse cx="450" cy="1080" rx="130" ry="55" fill="#FFFFFF" opacity="0.5" filter="url(#f8)"/>
+  <ellipse cx="420" cy="1068" rx="80" ry="45" fill="#FFFFFF" opacity="0.75" filter="url(#f5)"/>
+  <ellipse cx="490" cy="1070" rx="70" ry="42" fill="#FFFFFF" opacity="0.72" filter="url(#f5)"/>
+  <ellipse cx="450" cy="1063" rx="50" ry="30" fill="#FFFFFF" opacity="0.88" filter="url(#f3)"/>
+
+  <!-- Cloud cluster center-right -->
+  <ellipse cx="1000" cy="1100" rx="120" ry="50" fill="#FFFFFF" opacity="0.48" filter="url(#f8)"/>
+  <ellipse cx="975" cy="1088" rx="75" ry="42" fill="#FFFFFF" opacity="0.72" filter="url(#f5)"/>
+  <ellipse cx="1040" cy="1090" rx="65" ry="38" fill="#FFFFFF" opacity="0.68" filter="url(#f5)"/>
+  <ellipse cx="1000" cy="1084" rx="45" ry="28" fill="#FFFFFF" opacity="0.85" filter="url(#f3)"/>
+
+  <!-- Small puffs -->
+  <ellipse cx="200" cy="1050" rx="55" ry="28" fill="#FFFFFF" opacity="0.38" filter="url(#f5)"/>
+  <ellipse cx="1350" cy="1070" rx="50" ry="25" fill="#FFFFFF" opacity="0.35" filter="url(#f5)"/>
+  <ellipse cx="720" cy="1150" rx="60" ry="30" fill="#FFFFFF" opacity="0.32" filter="url(#f5)"/>
+
+  <!-- ============================================ -->
+  <!--  BOTTOM LEFT CLOUD MASS                       -->
+  <!-- ============================================ -->
+  <!-- Shadow -->
+  <ellipse cx="300" cy="1400" rx="320" ry="95" fill="#C0D0E0" opacity="0.3" filter="url(#f12)"/>
+  <!-- Base -->
+  <ellipse cx="280" cy="1370" rx="300" ry="90" fill="#FFFFFF" opacity="0.65" filter="url(#f8)"/>
+  <!-- Puffs -->
+  <ellipse cx="100" cy="1350" rx="95" ry="70" fill="#FFFFFF" opacity="0.85" filter="url(#f5)"/>
+  <ellipse cx="190" cy="1330" rx="100" ry="75" fill="#FFFFFF" opacity="0.9" filter="url(#f5)"/>
+  <ellipse cx="290" cy="1320" rx="110" ry="82" fill="#FFFFFF" opacity="0.93" filter="url(#f5)"/>
+  <ellipse cx="390" cy="1335" rx="100" ry="72" fill="#FFFFFF" opacity="0.88" filter="url(#f5)"/>
+  <ellipse cx="480" cy="1355" rx="85" ry="60" fill="#FFFFFF" opacity="0.8" filter="url(#f5)"/>
+  <ellipse cx="550" cy="1370" rx="65" ry="45" fill="#FFFFFF" opacity="0.7" filter="url(#f5)"/>
+  <!-- Inner detail -->
+  <ellipse cx="150" cy="1340" rx="55" ry="42" fill="#FFFFFF" opacity="0.95" filter="url(#f3)"/>
+  <ellipse cx="250" cy="1325" rx="65" ry="48" fill="#FFFFFF" opacity="0.97" filter="url(#f3)"/>
+  <ellipse cx="340" cy="1322" rx="60" ry="45" fill="#FFFFFF" opacity="0.95" filter="url(#f3)"/>
+  <ellipse cx="430" cy="1335" rx="50" ry="38" fill="#FFFFFF" opacity="0.92" filter="url(#f3)"/>
+  <!-- Pink/purple underside -->
+  <ellipse cx="300" cy="1410" rx="260" ry="50" fill="#DCC0EE" opacity="0.4" filter="url(#f8)"/>
+  <ellipse cx="200" cy="1405" rx="150" ry="35" fill="#E8D0F0" opacity="0.3" filter="url(#f8)"/>
+  <!-- White highlights -->
+  <ellipse cx="260" cy="1318" rx="40" ry="28" fill="#FFFFFF" filter="url(#f3)"/>
+  <ellipse cx="360" cy="1320" rx="35" ry="24" fill="#FFFFFF" filter="url(#f3)"/>
+
+  <!-- ============================================ -->
+  <!--  BOTTOM RIGHT CLOUD MASS                      -->
+  <!-- ============================================ -->
+  <ellipse cx="1150" cy="1420" rx="340" ry="100" fill="#C0D0E0" opacity="0.3" filter="url(#f12)"/>
+  <ellipse cx="1130" cy="1390" rx="310" ry="95" fill="#FFFFFF" opacity="0.65" filter="url(#f8)"/>
+  <ellipse cx="950" cy="1375" rx="90" ry="65" fill="#FFFFFF" opacity="0.82" filter="url(#f5)"/>
+  <ellipse cx="1040" cy="1355" rx="100" ry="75" fill="#FFFFFF" opacity="0.9" filter="url(#f5)"/>
+  <ellipse cx="1150" cy="1345" rx="115" ry="85" fill="#FFFFFF" opacity="0.94" filter="url(#f5)"/>
+  <ellipse cx="1260" cy="1355" rx="105" ry="75" fill="#FFFFFF" opacity="0.9" filter="url(#f5)"/>
+  <ellipse cx="1360" cy="1370" rx="90" ry="65" fill="#FFFFFF" opacity="0.84" filter="url(#f5)"/>
+  <ellipse cx="1430" cy="1385" rx="70" ry="50" fill="#FFFFFF" opacity="0.75" filter="url(#f5)"/>
+  <!-- Inner detail -->
+  <ellipse cx="1000" cy="1358" rx="55" ry="40" fill="#FFFFFF" opacity="0.93" filter="url(#f3)"/>
+  <ellipse cx="1100" cy="1348" rx="65" ry="48" fill="#FFFFFF" opacity="0.96" filter="url(#f3)"/>
+  <ellipse cx="1200" cy="1345" rx="60" ry="45" fill="#FFFFFF" opacity="0.95" filter="url(#f3)"/>
+  <ellipse cx="1300" cy="1355" rx="55" ry="40" fill="#FFFFFF" opacity="0.92" filter="url(#f3)"/>
+  <!-- Purple underside -->
+  <ellipse cx="1150" cy="1440" rx="280" ry="55" fill="#D8B8E8" opacity="0.4" filter="url(#f8)"/>
+  <ellipse cx="1250" cy="1435" rx="160" ry="35" fill="#E0C8F0" opacity="0.3" filter="url(#f8)"/>
+  <!-- Highlights -->
+  <ellipse cx="1120" cy="1342" rx="42" ry="28" fill="#FFFFFF" filter="url(#f3)"/>
+  <ellipse cx="1220" cy="1345" rx="38" ry="25" fill="#FFFFFF" filter="url(#f3)"/>
+
+  <!-- ============================================ -->
+  <!--  BOTTOM CENTER BRIDGE CLOUDS                  -->
+  <!-- ============================================ -->
+  <ellipse cx="700" cy="1480" rx="140" ry="60" fill="#FFFFFF" opacity="0.55" filter="url(#f8)"/>
+  <ellipse cx="670" cy="1468" rx="80" ry="48" fill="#FFFFFF" opacity="0.78" filter="url(#f5)"/>
+  <ellipse cx="740" cy="1465" rx="75" ry="45" fill="#FFFFFF" opacity="0.75" filter="url(#f5)"/>
+  <ellipse cx="810" cy="1475" rx="65" ry="40" fill="#FFFFFF" opacity="0.65" filter="url(#f5)"/>
+  <ellipse cx="700" cy="1462" rx="50" ry="30" fill="#FFFFFF" opacity="0.88" filter="url(#f3)"/>
+  <ellipse cx="700" cy="1505" rx="120" ry="30" fill="#E8D8F0" opacity="0.3" filter="url(#f8)"/>
+
+  <!-- ============================================ -->
+  <!--  MORE BOTTOM SCATTERED                        -->
+  <!-- ============================================ -->
+  <ellipse cx="600" cy="1280" rx="75" ry="38" fill="#FFFFFF" opacity="0.42" filter="url(#f5)"/>
+  <ellipse cx="610" cy="1272" rx="48" ry="30" fill="#FFFFFF" opacity="0.65" filter="url(#f3)"/>
+  <ellipse cx="850" cy="1250" rx="65" ry="32" fill="#FFFFFF" opacity="0.38" filter="url(#f5)"/>
+  <ellipse cx="855" cy="1244" rx="40" ry="25" fill="#FFFFFF" opacity="0.6" filter="url(#f3)"/>
+  <ellipse cx="150" cy="1220" rx="70" ry="35" fill="#FFFFFF" opacity="0.35" filter="url(#f5)"/>
+  <ellipse cx="1350" cy="1200" rx="60" ry="30" fill="#FFFFFF" opacity="0.33" filter="url(#f5)"/>
+
+  <!-- ============================================ -->
+  <!--  HORIZON GLOW                                 -->
+  <!-- ============================================ -->
+  <ellipse cx="720" cy="1720" rx="800" ry="100" fill="#E0D0F0" filter="url(#f35)" opacity="0.35"/>
+  <ellipse cx="720" cy="1780" rx="700" ry="70" fill="#E8DCF4" filter="url(#f35)" opacity="0.25"/>
+  <ellipse cx="300" cy="1760" rx="400" ry="60" fill="#D8C0E8" filter="url(#f35)" opacity="0.2"/>
+  <ellipse cx="1100" cy="1750" rx="450" ry="65" fill="#DCC8F0" filter="url(#f35)" opacity="0.2"/>
+</svg>

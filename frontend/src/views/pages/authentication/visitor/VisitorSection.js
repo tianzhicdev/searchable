@@ -22,6 +22,7 @@ import { ACCOUNT_INITIALIZE } from '../../../../store/actions';
 import { generateGuestCredentials } from '../../../../utils/guestUtils';
 import configData from '../../../../config';
 import axios from 'axios';
+import useDarkBackground from '../../../../hooks/useDarkBackground';
 
 //================================|| VISITOR SECTION ||================================//
 
@@ -32,6 +33,7 @@ const VisitorSection = () => {
     const history = useHistory();
     const location = useLocation();
     const dispatch = useDispatch();
+    useDarkBackground();
     const [isCreatingGuest, setIsCreatingGuest] = useState(false);
 
     // Get the intended destination from location state or default to home

@@ -3,7 +3,7 @@
  * Single source for all component style overrides
  */
 import themeConfig from './themeLoader';
-import bgSkyWide from '../assets/images/bg-sky-wide.jpg';
+import cloudSvgBg from '../assets/images/cloud-svg-bg.svg';
 
 // ===========================
 // REUSABLE STYLE PATTERNS
@@ -73,13 +73,16 @@ export const componentStyleOverrides = (theme) => {
                 
                 body {
                     font-family: ${themeConfig.fontPrimary};
-                    background-color: ${themeConfig.bgPrimary};
-                    background-image: url(${bgSkyWide});
+                    background-color: #89CFF0;
+                    background-image: url(${cloudSvgBg});
                     background-size: cover;
                     background-position: center top;
-                    background-attachment: fixed;
                     background-repeat: no-repeat;
+                    background-attachment: fixed;
                     color: ${themeConfig.textPrimary};
+                }
+                html {
+                    background-color: #89CFF0;
                 }
                 
                 ::-webkit-scrollbar {

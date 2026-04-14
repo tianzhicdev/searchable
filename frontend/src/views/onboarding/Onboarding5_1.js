@@ -19,6 +19,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { smileyHappy, moonCrescent, cassetteTape, heartPixel } from '../../assets/images/icons';
 
 
+
 const onboarding5_1Icons = [
   { src: smileyHappy, alt: 'happy', top: '9%', left: '4%', size: 40, opacity: 0.1, animation: 'float' },
   { src: moonCrescent, alt: 'moon', top: '13%', right: '6%', size: 44, opacity: 0.12, animation: 'pulse' },

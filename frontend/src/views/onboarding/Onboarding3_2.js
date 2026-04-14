@@ -19,6 +19,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { robotPixel, sparkleStarPurple, cursorLarge, smileyNeutral } from '../../assets/images/icons';
 
 
+
 const onboarding3_2Icons = [
   { src: robotPixel, alt: 'robot', top: '7%', left: '5%', size: 46, opacity: 0.1, animation: 'float' },
   { src: sparkleStarPurple, alt: 'sparkle', top: '12%', right: '6%', size: 38, opacity: 0.12, animation: 'pulse' },

@@ -19,6 +19,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { smileyCute, cursorMedium, snowflakeSmall, coinDollar } from '../../assets/images/icons';
 
 
+
 const onboarding4_1Icons = [
   { src: smileyCute, alt: 'cute', top: '8%', left: '6%', size: 42, opacity: 0.12, animation: 'float' },
   { src: cursorMedium, alt: 'cursor', top: '14%', right: '5%', size: 40, opacity: 0.1, animation: 'pulse' },

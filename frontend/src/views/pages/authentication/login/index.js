@@ -8,6 +8,7 @@ import useComponentStyles from '../../../../themes/componentStyles';
 import { testIdProps } from '../../../../utils/testIds';
 import DecorativeIcons from '../../../../components/DecorativeIcons';
 import { moonCrescent, cloud, sparkleGradientLarge } from '../../../../assets/images/icons';
+import useDarkBackground from '../../../../hooks/useDarkBackground';
 
 const authIcons = [
   { src: moonCrescent, alt: 'moon', top: '10%', left: '5%', size: 40, opacity: 0.12, animation: 'float' },
@@ -21,14 +22,10 @@ const Login = () => {
     const classes = useComponentStyles();
     const matchDownSM = useMediaQuery(theme.breakpoints.down('sm'));
 
-    useEffect(() => {
-      document.body.style.backgroundImage = 'none';
-      document.body.style.backgroundColor = '#000';
-      return () => { document.body.style.backgroundImage = ''; document.body.style.backgroundColor = ''; };
-    }, []);
+    useDarkBackground();
 
     return (
-    <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+    <Box sx={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <DecorativeIcons icons={authIcons} />
       <Box sx={{
         display: 'flex',

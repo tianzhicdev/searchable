@@ -17,6 +17,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 import { heartPixel, smileyBlushing, coinDollar, sparkleGradientLarge } from '../../assets/images/icons';
 
 
+
 const onboarding5Icons = [
   { src: heartPixel, alt: 'heart', top: '7%', left: '5%', size: 40, opacity: 0.12, animation: 'pulse' },
   { src: smileyBlushing, alt: 'blushing', top: '12%', right: '6%', size: 42, opacity: 0.1, animation: 'float' },
