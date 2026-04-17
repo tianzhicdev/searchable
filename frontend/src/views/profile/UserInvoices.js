@@ -488,7 +488,7 @@ const UserInvoices = () => {
                           address: deposit.address,
                           tx_hash: deposit.tx_hash
                         },
-                        currency: deposit.type === 'stripe' ? 'usd' : 'usdt'
+                        currency: deposit.type === 'stripe' ? 'usd' : 'usdc'
                       }}
                       formatCurrency={(amount, currency) => {
                         if (amount === '0.00000000') return 'Pending';

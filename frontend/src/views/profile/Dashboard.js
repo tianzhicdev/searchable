@@ -53,7 +53,6 @@ const Dashboard = () => {
 
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [refillDialogOpen, setRefillDialogOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   const account = useSelector((state) => state.account);
   const accountUser = account.user;
@@ -92,7 +91,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleWithdrawalUSDTClick = () => {
+  const handleWithdrawalClick = () => {
     openWithdrawalDialog();
   };
 
@@ -223,7 +222,7 @@ const Dashboard = () => {
               variant="contained"
               size="small"
               startIcon={<img src={withdrawIcon} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
-              onClick={handleWithdrawalUSDTClick}
+              onClick={handleWithdrawalClick}
               {...testIdProps('button', 'dashboard', 'withdraw')}
             >
               Withdraw
@@ -260,7 +259,7 @@ const Dashboard = () => {
               <Typography variant="body1" color="error">{error}</Typography>
             ) : (
               <Typography variant="h5" className={classes.userText} style={{ fontWeight: 700 }}>
-                ${balance.usd} USDT
+                ${balance.usd} USD
               </Typography>
             )}
           </Paper>
@@ -354,7 +353,7 @@ const Dashboard = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={handleCloseSuccessMessage} severity="success">
-          {successMessage || 'Withdrawal successful! Your funds have been sent.'}
+          Withdrawal successful! Your funds have been sent.
         </Alert>
       </Snackbar>
     </Grid>

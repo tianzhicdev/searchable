@@ -19,6 +19,13 @@ import backend from '../utilities/Backend';
 import { componentSpacing } from '../../utils/spacing';
 import { navigateBack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
+import {
+  CRYPTO_PAYMENT_ASSET,
+  CRYPTO_PAYMENT_NETWORK,
+  CRYPTO_PAYMENT_RAIL,
+  CRYPTO_PAYMENT_WALLET_LABEL,
+  isValidSolanaAddress,
+} from '../../utils/cryptoPaymentConfig';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -44,11 +51,6 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(2)
   }
 }));
-
-// Ethereum address validation regex
-const isValidEthereumAddress = (address) => {
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
-};
 
 const WithdrawalUSDT = () => {
   const classes = useComponentStyles();
@@ -96,9 +98,8 @@ const WithdrawalUSDT = () => {
       setSubmitError('');
     }
     
-    // Validate Ethereum address format
-    if (value && !isValidEthereumAddress(value)) {
-      setSubmitError('Please enter a valid Ethereum address (starts with 0x followed by 40 hexadecimal characters)');
+    if (value && !isValidSolanaAddress(value)) {
+      setSubmitError('Please enter a valid Solana wallet or token account address');
     }
   };
   
@@ -121,9 +122,8 @@ const WithdrawalUSDT = () => {
       return;
     }
     
-    // Validate Ethereum address format
-    if (!isValidEthereumAddress(address.trim())) {
-      setSubmitError('Invalid Ethereum address. Must start with 0x followed by 40 hexadecimal characters');
+    if (!isValidSolanaAddress(address.trim())) {
+      setSubmitError('Invalid Solana address. Please enter a valid wallet or token account address');
       return;
     }
     
@@ -144,12 +144,13 @@ const WithdrawalUSDT = () => {
       const response = await backend.post(
         'v1/withdrawal-usd',
         { 
+          type: CRYPTO_PAYMENT_RAIL,
           address: address.trim(),
           amount: parseFloat(amount)
         }
       );
       
-      console.log('USDT Withdrawal response:', response.data);
+      console.log('USDC withdrawal response:', response.data);
       setSuccess(true);
       setAddress('');
       setAmount('');
@@ -163,13 +164,13 @@ const WithdrawalUSDT = () => {
       }, 2000);
       
     } catch (err) {
-      console.error('Error processing USDT withdrawal:', err);
+      console.error('Error processing crypto withdrawal:', err);
       
       if (err.response?.status === 400 && 
           err.response?.data?.error === "Insufficient funds") {
         setSubmitError(`Insufficient funds. Available balance: $${balance.usd} USD`);
       } else {
-        setSubmitError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+        setSubmitError(err.response?.data?.error || err.response?.data?.msg || 'Failed to process withdrawal. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -203,7 +204,7 @@ const WithdrawalUSDT = () => {
       <Grid item xs={12} md={6}>
         <Paper className={classes.paperNoBorder}>
           <Typography variant="h4" gutterBottom>
-            Withdraw USDT
+            Withdraw {CRYPTO_PAYMENT_ASSET}
           </Typography>
           
           {/* Balance Display */}
@@ -217,14 +218,13 @@ const WithdrawalUSDT = () => {
           </Box>
           
           <form onSubmit={handleSubmit} className={styles.formContainer}>
-            {/* Ethereum Address */}
             <TextField
-              id="usdt-address"
-              label="Ethereum Wallet Address"
+              id="crypto-address"
+              label={CRYPTO_PAYMENT_WALLET_LABEL}
               type="text"
               value={address}
               onChange={handleAddressChange}
-              placeholder="Enter Ethereum wallet address to receive USDT"
+              placeholder={`Enter the ${CRYPTO_PAYMENT_NETWORK} wallet or token account that should receive ${CRYPTO_PAYMENT_ASSET}`}
               variant="outlined"
               fullWidth
               multiline
@@ -235,13 +235,13 @@ const WithdrawalUSDT = () => {
                   fontFamily: 'monospace'
                 }
               }}
-              error={Boolean(submitError && (submitError.includes('address') || submitError.includes('Ethereum')))}
-              helperText="Enter the Ethereum address where you want to receive USDT"
+              error={Boolean(submitError && submitError.toLowerCase().includes('address'))}
+              helperText={`Enter the ${CRYPTO_PAYMENT_NETWORK} wallet or token account where you want to receive ${CRYPTO_PAYMENT_ASSET}`}
             />
             
             {/* Amount */}
             <TextField
-              id="usdt-amount"
+              id="crypto-amount"
               label="Amount (USD)"
               type="text"
               value={amount}
@@ -253,7 +253,7 @@ const WithdrawalUSDT = () => {
                 startAdornment: <Typography style={{ marginRight: 8 }}>$</Typography>,
               }}
               error={Boolean(submitError && (submitError.includes('amount') || submitError.includes('Insufficient')))}
-              helperText="Amount will be converted to USDT at current exchange rate"
+              helperText={`${CRYPTO_PAYMENT_ASSET} is sent 1:1 against your USD balance on ${CRYPTO_PAYMENT_NETWORK}`}
             />
             
             {/* Error Display */}
@@ -266,13 +266,13 @@ const WithdrawalUSDT = () => {
             {/* Info Section */}
             <Box mt={2} mb={2}>
               <Typography variant="body2" color="textSecondary" gutterBottom>
-                • USDT will be sent on the Ethereum network
+                • Withdrawals are sent as native {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK}
               </Typography>
               <Typography variant="body2" color="textSecondary" gutterBottom>
-                • Processing time: ~30 seconds
+                • Processing time is usually under a minute
               </Typography>
               <Typography variant="body2" color="textSecondary">
-                • Network fees may apply
+                • Use a wallet or token account that supports {CRYPTO_PAYMENT_ASSET}
               </Typography>
             </Box>
             
@@ -286,7 +286,7 @@ const WithdrawalUSDT = () => {
               fullWidth
               size="large"
             >
-              {loading ? <CircularProgress size={24} /> : 'Withdraw USDT'}
+              {loading ? <CircularProgress size={24} /> : `Withdraw ${CRYPTO_PAYMENT_ASSET}`}
             </Button>
           </form>
         </Paper>

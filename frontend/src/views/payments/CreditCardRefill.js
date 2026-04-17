@@ -8,7 +8,6 @@ import {
   Button,
   Box,
   CircularProgress,
-  InputAdornment,
   Alert,
   useTheme
 } from '@material-ui/core';
@@ -17,12 +16,12 @@ import { componentSpacing } from '../../utils/spacing';
 import backend from '../utilities/Backend';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import DecorativeIcons from '../../components/DecorativeIcons';
-import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+import { coinDollar, coinDollarGold, coinGeneric } from '../../assets/images/icons';
 import ActionButtonLabel from '../../components/common/ActionButtonLabel';
 
 const paymentIcons = [
   { src: coinDollar, alt: 'dollar', top: '8%', right: '4%', size: 32, opacity: 0.1, animation: 'float' },
-  { src: coinEthereum, alt: 'eth', bottom: '15%', left: '3%', size: 28, opacity: 0.08, animation: 'pulse' },
+  { src: coinDollarGold, alt: 'usdc', bottom: '15%', left: '3%', size: 28, opacity: 0.08, animation: 'pulse' },
   { src: coinGeneric, alt: 'coin', top: '40%', left: '2%', size: 30, opacity: 0.08, animation: 'float' },
 ];
 
@@ -35,7 +34,6 @@ const CreditCardRefill = () => {
   const [amount, setAmount] = useState('20.00');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   
   // Check for deposit status in URL
   useEffect(() => {
@@ -137,12 +135,6 @@ const CreditCardRefill = () => {
           {error && (
             <Box mb={2}>
               <Alert severity="error">{error}</Alert>
-            </Box>
-          )}
-          
-          {success && (
-            <Box mb={2}>
-              <Alert severity="success">{success}</Alert>
             </Box>
           )}
           

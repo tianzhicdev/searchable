@@ -1972,10 +1972,10 @@ const mockHandlers = {
           fee: 0.10,
           currency: 'usd',
           status: 'complete',
-          type: 'usdt',
+          type: 'usdc_solana',
           created_at: new Date(Date.now() - 604800000).toISOString(),
           metadata: {
-            address: '0x742d35Cc6634C0532925a3b844Bc9e7595f89234'
+            address: '4nMpgUxqA6qVTvaktxj7pBJkzUnJQArxGxnxvY2vS6E3'
           }
         }
       ],
@@ -2005,22 +2005,22 @@ const mockHandlers = {
         {
           deposit_id: 2,
           amount: '50.00',
-          currency: 'usdt',
-          type: 'usdt',
+          currency: 'usdc',
+          type: 'usdc_solana',
           status: 'complete',
           created_at: new Date(Date.now() - 864000000).toISOString(),
-          address: '0x742d35Cc6634C0532925a3b844Bc9e7595f89234',
-          tx_hash: '0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+          address: '4nMpgUxqA6qVTvaktxj7pBJkzUnJQArxGxnxvY2vS6E3',
+          tx_hash: '3as7Ly9G5boooZeAULfkZtw8BofBUaWVam3HqqxCeYNjZfKME9r1DgzDfRN5EJnzZry5ZSycEbAcD1TBmJ9cziNh',
           metadata: {}
         },
         {
           deposit_id: 3,
           amount: '0.00000000',
-          currency: 'usdt',
-          type: 'usdt',
+          currency: 'usdc',
+          type: 'usdc_solana',
           status: 'pending',
           created_at: new Date(Date.now() - 3600000).toISOString(),
-          address: '0x123456789abcdef123456789abcdef123456789a',
+          address: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr',
           tx_hash: null,
           metadata: {}
         }

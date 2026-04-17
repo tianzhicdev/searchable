@@ -4,6 +4,21 @@ Welcome to the Searchable platform documentation.
 
 ## Features
 
+### Payments
+
+USDC on Solana is the primary crypto payment rail. Deposits and withdrawals run on Solana Devnet.
+
+**Documentation:**
+- **[USDC on Solana — Implementation and Verification](./USDC_SOLANA_IMPLEMENTATION.md)** - What was implemented, architecture overview, how to verify on Devnet, and mainnet migration checklist
+- **[Solana USDC and Ethereum USDT Research](./PAYMENTS_USDC_SOLANA_RESEARCH.md)** - Original research: repo constraints, architecture options, and recommended implementation path
+
+### Infrastructure Research
+
+Research on replacing the current VPS stack with Cloudflare and Neon.
+
+**Documentation:**
+- **[Cloudflare and Neon Migration Research](./CLOUDFLARE_NEON_MIGRATION_RESEARCH.md)** - Current infrastructure fit analysis, service-by-service migration notes, and dev/prod environment strategy
+
 ### Business Subdomain System
 Users can claim custom subdomains for their business profiles (e.g., `acme.ungovernable.wtf`).
 
@@ -53,8 +68,14 @@ searchable/
 ├── nginx/                   # NGINX reverse proxy
 │   └── conf.d/
 │       └── default.conf     # Wildcard subdomain support
+├── usdc_on_solana/           # Solana USDC service
+│   └── ...                  # Address generation, transfers, sweeps
+├── tether_on_eth/           # Ethereum USDT service (legacy)
+│   └── ...                  # HD wallet, transfers
 └── docs/                    # Documentation
     ├── README.md            # This file
+    ├── USDC_SOLANA_IMPLEMENTATION.md
+    ├── PAYMENTS_USDC_SOLANA_RESEARCH.md
     ├── SUBDOMAIN_QUICKSTART.md
     ├── SUBDOMAIN_FEATURE.md
     └── CLOUDFLARE_SUBDOMAIN_SETUP.md
@@ -222,4 +243,4 @@ For issues or questions:
 
 ---
 
-**Last Updated:** 2025-02-10
+**Last Updated:** 2026-04-13

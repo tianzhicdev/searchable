@@ -8,6 +8,7 @@ import sys
 from flask import Flask, request
 from flask_cors import CORS
 from flask_restx import Api
+from sqlalchemy import text
 from .common.models import db
 from .common.logging_config import setup_logger
 from .common.metrics_collector import init_metrics
@@ -33,6 +34,31 @@ init_metrics(metrics_domain=metrics_domain)
 # Using new organized structure
 from .routes import *
 
+
+def apply_schema_compatibility_patches():
+    """Keep legacy databases compatible with current code paths."""
+    statements = [
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'withdrawal'
+            ) THEN
+                ALTER TABLE withdrawal DROP CONSTRAINT IF EXISTS withdrawal_type_check;
+                ALTER TABLE withdrawal
+                ADD CONSTRAINT withdrawal_type_check
+                CHECK (type IN ('bank_transfer', 'usdt', 'usdc_solana'));
+            END IF;
+        END $$;
+        """
+    ]
+
+    for statement in statements:
+        db.session.execute(text(statement))
+    db.session.commit()
+
 # Setup database
 @app.before_first_request
 def initialize_database():
@@ -40,6 +66,7 @@ def initialize_database():
         logger.info("Initializing database...")
         logger.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
         db.create_all()
+        apply_schema_compatibility_patches()
         
         logger.info('Successfully initialized the database')
     except Exception as e:

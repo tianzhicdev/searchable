@@ -15,6 +15,13 @@ import {
 import { makeStyles } from '@material-ui/styles';
 import backend from '../views/utilities/Backend';
 import { componentSpacing } from '../utils/spacing';
+import {
+  CRYPTO_PAYMENT_ASSET,
+  CRYPTO_PAYMENT_NETWORK,
+  CRYPTO_PAYMENT_RAIL,
+  CRYPTO_PAYMENT_WALLET_LABEL,
+  isValidSolanaAddress,
+} from '../utils/cryptoPaymentConfig';
 
 // Singleton pattern to manage dialog state
 const withdrawalDialogState = {
@@ -76,6 +83,9 @@ const WithdrawalDialog = () => {
   
   const handleAddressChange = (e) => {
     setAddress(e.target.value);
+    if (error) {
+      setError(null);
+    }
   };
   
   const handleAmountChange = (e) => {
@@ -88,6 +98,11 @@ const WithdrawalDialog = () => {
   const handleSubmit = async () => {
     if (!address || address.trim() === '') {
       setError('Please enter a valid withdrawal address');
+      return;
+    }
+
+    if (!isValidSolanaAddress(address.trim())) {
+      setError('Please enter a valid Solana wallet or token account address');
       return;
     }
     
@@ -108,12 +123,13 @@ const WithdrawalDialog = () => {
       const response = await backend.post(
         'v1/withdrawal-usd',
         { 
+          type: CRYPTO_PAYMENT_RAIL,
           address: address.trim(),
           amount: parseFloat(amount)
         }
       );
       
-      console.log('USDT Withdrawal response:', response.data);
+      console.log('USDC withdrawal response:', response.data);
       setSuccess(true);
       setAddress('');
       setAmount('');
@@ -127,13 +143,13 @@ const WithdrawalDialog = () => {
       }, 2000);
       
     } catch (err) {
-      console.error('Error processing USDT withdrawal:', err);
+      console.error('Error processing crypto withdrawal:', err);
       
       if (err.response?.status === 400 && 
           err.response?.data?.error === "Insufficient funds") {
         setError(`Insufficient funds. Available balance: $${balance.usd} USD`);
       } else {
-        setError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+        setError(err.response?.data?.error || err.response?.data?.msg || 'Failed to process withdrawal. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -154,15 +170,15 @@ const WithdrawalDialog = () => {
   return (
     <>
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth className={styles.dialog}>
-        <DialogTitle>Withdraw USDT</DialogTitle>
+        <DialogTitle>Withdraw {CRYPTO_PAYMENT_ASSET}</DialogTitle>
         <DialogContent className={styles.dialogContent}>
           <TextField
-            id="usdt-address"
-            label="Ethereum Wallet Address"
+            id="crypto-address"
+            label={CRYPTO_PAYMENT_WALLET_LABEL}
             type="text"
             value={address}
             onChange={handleAddressChange}
-            placeholder="Enter Ethereum wallet address to receive USDT"
+            placeholder={`Enter the ${CRYPTO_PAYMENT_NETWORK} wallet or token account that should receive ${CRYPTO_PAYMENT_ASSET}`}
             variant="outlined"
             fullWidth
             margin="normal"
@@ -175,7 +191,7 @@ const WithdrawalDialog = () => {
             }}
           />
           <TextField
-            id="usdt-amount"
+            id="crypto-amount"
             label="Amount"
             type="text"
             value={amount}
@@ -195,6 +211,9 @@ const WithdrawalDialog = () => {
           )}
           <Typography variant="body2" style={{ marginTop: 16 }}>
             Available balance: ${balance.usd} USD
+          </Typography>
+          <Typography variant="body2" style={{ marginTop: 8 }}>
+            Sent as {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK}
           </Typography>
         </DialogContent>
         <DialogActions>

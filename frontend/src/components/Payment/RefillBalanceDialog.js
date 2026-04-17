@@ -14,11 +14,12 @@ import {
   IconButton
 } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
-import { closeX, coinDollarGold, coinEthereum } from '../../assets/images/icons';
+import { closeX, coinDollarGold, coinGeneric } from '../../assets/images/icons';
 import { makeStyles } from '@material-ui/styles';
 import useComponentStyles from '../../themes/componentStyles';
 import DepositComponent from '../Deposit/DepositComponent';
 import { componentSpacing } from '../../utils/spacing';
+import { CRYPTO_PAYMENT_ASSET, CRYPTO_PAYMENT_LABEL } from '../../utils/cryptoPaymentConfig';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -49,7 +50,7 @@ const RefillBalanceDialog = ({
     history.push('/credit-card-refill');
   };
   
-  const handleUSDTRefill = () => {
+  const handleCryptoRefill = () => {
     setDepositDialogOpen(true);
   };
   
@@ -103,19 +104,19 @@ const RefillBalanceDialog = ({
           </Typography>
           
           <List>
-            <ListItem button onClick={handleUSDTRefill}>
+            <ListItem button onClick={handleCryptoRefill}>
               <ListItemIcon>
-                <img src={coinEthereum} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                <img src={coinDollarGold} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
               </ListItemIcon>
               <ListItemText
                 primary={
                   <Typography variant="body1" className={classes.staticText}>
-                    Refill with USDT
+                    Refill with {CRYPTO_PAYMENT_ASSET}
                   </Typography>
                 }
                 secondary={
                   <Typography variant="body2" className={classes.userText}>
-                    Add balance using USDT cryptocurrency (no fees)
+                    Add balance using {CRYPTO_PAYMENT_LABEL} (no card fees)
                   </Typography>
                 }
               />
@@ -123,7 +124,7 @@ const RefillBalanceDialog = ({
             
             <ListItem button onClick={handleCreditCardRefill}>
               <ListItemIcon>
-                <img src={coinDollarGold} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                <img src={coinGeneric} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
               </ListItemIcon>
               <ListItemText
                 primary={
@@ -148,12 +149,12 @@ const RefillBalanceDialog = ({
         </DialogActions>
       </Dialog>
       
-      {/* USDT Deposit Dialog */}
+      {/* Crypto Deposit Dialog */}
       <DepositComponent
         open={depositDialogOpen}
         onClose={() => setDepositDialogOpen(false)}
         onDepositCreated={handleDepositCreated}
-        title="Refill Balance with USDT"
+        title={`Refill Balance with ${CRYPTO_PAYMENT_ASSET}`}
         showInstructions={true}
       />
     </>

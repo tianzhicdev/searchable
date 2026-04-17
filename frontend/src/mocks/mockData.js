@@ -433,33 +433,33 @@ export const mockWithdrawals = {
       amount: 100.00,
       fee: 0.10,  // Platform fee (0.1% of 100)
       status: "complete",
-      type: "usdt_eth",
+      type: "usdc_solana",
       created_at: new Date(Date.now() - 86400000).toISOString(),
       metadata: {
-        address: "0x742E96Ac4fF1234A3b8DcE9B7B5678901234567F",
-        transaction_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        address: "4nMpgUxqA6qVTvaktxj7pBJkzUnJQArxGxnxvY2vS6E3",
+        transaction_hash: "3as7Ly9G5boooZeAULfkZtw8BofBUaWVam3HqqxCeYNjZfKME9r1DgzDfRN5EJnzZry5ZSycEbAcD1TBmJ9cziNh"
       }
     },
     {
-      id: "withdrawal-2", 
+      id: "withdrawal-2",
       amount: 250.00,
       fee: 0.25,  // Platform fee (0.1% of 250)
       status: "complete",
-      type: "lightning",
+      type: "usdc_solana",
       created_at: new Date(Date.now() - 172800000).toISOString(),
       metadata: {
-        address: "lnbc2500000p1pvjluezsp5zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3"
+        address: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
       }
     },
     {
       id: "withdrawal-3",
-      amount: 50.00, 
+      amount: 50.00,
       fee: 0.05,  // Platform fee (0.1% of 50)
       status: "pending",
-      type: "usdt_eth",
+      type: "usdc_solana",
       created_at: new Date(Date.now() - 3600000).toISOString(),
       metadata: {
-        address: "0x123ABC456DEF789GHI012JKL345MNO678PQR901S"
+        address: "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
       }
     }
   ]
@@ -649,11 +649,11 @@ export const mockDeposits = {
     {
       deposit_id: "mock-deposit-1",
       amount: "100.00",
-      currency: "USDT",
+      currency: "USDC",
       status: "complete",
-      type: "usdt",
-      address: "0x742d35cc6634c0532925a3b844bc9e7595ed5e6e",
-      tx_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+      type: "usdc_solana",
+      address: "4nMpgUxqA6qVTvaktxj7pBJkzUnJQArxGxnxvY2vS6E3",
+      tx_hash: "3as7Ly9G5boooZeAULfkZtw8BofBUaWVam3HqqxCeYNjZfKME9r1DgzDfRN5EJnzZry5ZSycEbAcD1TBmJ9cziNh",
       created_at: new Date(Date.now() - 86400000).toISOString(),
       expires_at: new Date(Date.now() - 63400000).toISOString(),
       metadata: {
@@ -679,10 +679,10 @@ export const mockDeposits = {
     {
       deposit_id: "mock-deposit-3",
       amount: "0.00000000",
-      currency: "USDT", 
+      currency: "USDC",
       status: "pending",
-      type: "usdt",
-      address: "0xfedcba987654321098765432109876543210fedc",
+      type: "usdc_solana",
+      address: "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
       tx_hash: null,
       created_at: new Date(Date.now() - 172800000).toISOString(),
       expires_at: new Date(Date.now() + 3600000).toISOString(),

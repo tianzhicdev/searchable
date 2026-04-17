@@ -9,7 +9,7 @@ import {
   Add as AddIcon, Remove as RemoveIcon,
   ExpandMore as ExpandMoreIcon
 } from '@material-ui/icons';
-import { floppyDisk, catPixel as physicalItemsIcon, heartPixel, checkmark, coinEthereum, coinGeneric } from '../../assets/images/icons';
+import { floppyDisk, catPixel as physicalItemsIcon, heartPixel, checkmark, coinDollarGold, coinGeneric } from '../../assets/images/icons';
 import { useHistory, useParams } from 'react-router-dom';
 import BaseSearchableDetails from '../../components/BaseSearchableDetails';
 import useSearchableDetails from '../../hooks/useSearchableDetails';
@@ -23,7 +23,7 @@ import DecorativeIcons from '../../components/DecorativeIcons';
 
 const detailsIcons = [
   { src: heartPixel, alt: 'heart', top: '5%', right: '3%', size: 32, opacity: 0.1, animation: 'pulse' },
-  { src: coinEthereum, alt: 'eth', top: '35%', left: '2%', size: 28, opacity: 0.08, animation: 'float' },
+  { src: coinDollarGold, alt: 'usdc', top: '35%', left: '2%', size: 28, opacity: 0.08, animation: 'float' },
   { src: coinGeneric, alt: 'coin', bottom: '15%', right: '4%', size: 30, opacity: 0.08, animation: 'float' },
 ];
 

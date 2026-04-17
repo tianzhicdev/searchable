@@ -89,7 +89,7 @@ services:
       - web_network
   
   db:
-    image: postgres:17  
+    image: postgres:16
     restart: always
     env_file:
       - ./.env.secrets
@@ -110,6 +110,17 @@ services:
       - "3100:3100"
     env_file:
       # - ./api-server-flask/.secrets.env
+      - ./.env.secrets
+    networks:
+      - web_network
+
+  usdc-solana-api:
+    restart: always
+    build:
+      context: ./usdc_on_solana
+    ports:
+      - "3200:3200"
+    env_file:
       - ./.env.secrets
     networks:
       - web_network

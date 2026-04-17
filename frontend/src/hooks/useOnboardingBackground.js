@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import cloudSvgBg from '../assets/images/cloud-svg-bg.svg';
+import lightBg from '../assets/images/light-bg.jpeg';
 
-const SKY_COLOR = '#89CFF0';
+const BG_COLOR = '#b8c8e8';
 
 const useOnboardingBackground = () => {
   useEffect(() => {
@@ -12,12 +12,12 @@ const useOnboardingBackground = () => {
     const prevBodyBgRepeat = document.body.style.backgroundRepeat;
     const prevHtmlBg = document.documentElement.style.backgroundColor;
 
-    document.body.style.backgroundColor = SKY_COLOR;
-    document.body.style.backgroundImage = `url(${cloudSvgBg})`;
+    document.body.style.backgroundColor = BG_COLOR;
+    document.body.style.backgroundImage = `url(${lightBg})`;
     document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center top';
+    document.body.style.backgroundPosition = 'center center';
     document.body.style.backgroundRepeat = 'no-repeat';
-    document.documentElement.style.backgroundColor = SKY_COLOR;
+    document.documentElement.style.backgroundColor = BG_COLOR;
 
     return () => {
       document.body.style.backgroundColor = prevBodyBg;

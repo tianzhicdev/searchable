@@ -19,6 +19,7 @@ import RatingDisplay from '../../components/Rating/RatingDisplay';
 import useComponentStyles from '../../themes/componentStyles';
 import backend from '../utilities/Backend';
 import { detailPageStyles } from '../../utils/detailPageSpacing';
+import { getCryptoDepositPurchaseMessage } from '../../utils/cryptoPaymentConfig';
 
 // Create styles for downloadable details
 const useStyles = makeStyles((theme) => ({
@@ -234,7 +235,7 @@ const DownloadableSearchableDetails = () => {
     }
 
     // For deposit payments, we show a success message and let the user know to deposit
-    showAlert(`Deposit address created! Send $${totalPrice.toFixed(2)} USDT to complete your purchase.`, "info");
+    showAlert(getCryptoDepositPurchaseMessage(totalPrice), "info");
     
     // Optionally, you can store the deposit information for tracking
     console.log('Deposit created for downloadable files:', {

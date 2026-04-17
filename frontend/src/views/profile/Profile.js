@@ -23,6 +23,7 @@ import { getMediaUrl, processMediaUrls } from '../../utils/mediaUtils';
 import { SOCIAL_MEDIA_PLATFORMS, formatSocialMediaUrl } from '../../components/SocialMediaIcons';
 import { navigateBack, navigateWithStack, getBackButtonText, debugNavigationStack } from '../../utils/navigationUtils';
 import { testIdProps } from '../../utils/testIds';
+import { CRYPTO_PAYMENT_ASSET, CRYPTO_PAYMENT_NETWORK_SHORT, CRYPTO_PAYMENT_WALLET_LABEL, isValidSolanaAddress } from '../../utils/cryptoPaymentConfig';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -50,12 +51,12 @@ const Profile = () => {
   
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   
-  // Add USDT withdrawal states
-  const [usdtWithdrawDialogOpen, setUsdtWithdrawDialogOpen] = useState(false);
-  const [usdtWithdrawalAddress, setUsdtWithdrawalAddress] = useState('');
-  const [usdtWithdrawalAmount, setUsdtWithdrawalAmount] = useState('');
-  const [usdtWithdrawalLoading, setUsdtWithdrawalLoading] = useState(false);
-  const [usdtWithdrawalError, setUsdtWithdrawalError] = useState(null);
+  // Crypto withdrawal states
+  const [cryptoWithdrawDialogOpen, setCryptoWithdrawDialogOpen] = useState(false);
+  const [cryptoWithdrawalAddress, setCryptoWithdrawalAddress] = useState('');
+  const [cryptoWithdrawalAmount, setCryptoWithdrawalAmount] = useState('');
+  const [cryptoWithdrawalLoading, setCryptoWithdrawalLoading] = useState(false);
+  const [cryptoWithdrawalError, setCryptoWithdrawalError] = useState(null);
   
   // Menu state
   const [anchorEl, setAnchorEl] = useState(null);
@@ -126,11 +127,11 @@ const Profile = () => {
     }
   };
   
-  const handleWithdrawalUSDTClick = () => {
-    setUsdtWithdrawDialogOpen(true);
-    setUsdtWithdrawalAddress('');
-    setUsdtWithdrawalAmount('');
-    setUsdtWithdrawalError(null);
+  const handleWithdrawalCryptoClick = () => {
+    setCryptoWithdrawDialogOpen(true);
+    setCryptoWithdrawalAddress('');
+    setCryptoWithdrawalAmount('');
+    setCryptoWithdrawalError(null);
   };
   
   const handleCloseSuccessMessage = () => {
@@ -150,71 +151,76 @@ const Profile = () => {
     setAnchorEl(null);
   };
   
-  const handleCloseUsdtWithdrawDialog = () => {
-    setUsdtWithdrawDialogOpen(false);
+  const handleCloseCryptoWithdrawDialog = () => {
+    setCryptoWithdrawDialogOpen(false);
   };
-  
-  const handleUsdtAddressChange = (e) => {
-    setUsdtWithdrawalAddress(e.target.value);
+
+  const handleCryptoAddressChange = (e) => {
+    setCryptoWithdrawalAddress(e.target.value);
   };
-  
-  const handleUsdtAmountChange = (e) => {
+
+  const handleCryptoAmountChange = (e) => {
     // Only allow numeric input with at most 2 decimal places
     const value = e.target.value;
     if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
-      setUsdtWithdrawalAmount(value);
+      setCryptoWithdrawalAmount(value);
     }
   };
   
-  const handleSubmitUsdtWithdrawal = async () => {
+  const handleSubmitCryptoWithdrawal = async () => {
     // Validate inputs
-    if (!usdtWithdrawalAddress || usdtWithdrawalAddress.trim() === '') {
-      setUsdtWithdrawalError('Please enter a valid withdrawal address');
+    if (!cryptoWithdrawalAddress || cryptoWithdrawalAddress.trim() === '') {
+      setCryptoWithdrawalError(`Please enter a valid ${CRYPTO_PAYMENT_WALLET_LABEL}`);
       return;
     }
-    
-    if (!usdtWithdrawalAmount || parseFloat(usdtWithdrawalAmount) <= 0) {
-      setUsdtWithdrawalError('Please enter a valid amount greater than 0');
+
+    if (!isValidSolanaAddress(cryptoWithdrawalAddress)) {
+      setCryptoWithdrawalError(`Please enter a valid ${CRYPTO_PAYMENT_WALLET_LABEL}`);
       return;
     }
-    
-    if (parseFloat(usdtWithdrawalAmount) > balance.usd) {
-      setUsdtWithdrawalError(`Insufficient funds. Available balance: $${balance.usd} USD`);
+
+    if (!cryptoWithdrawalAmount || parseFloat(cryptoWithdrawalAmount) <= 0) {
+      setCryptoWithdrawalError('Please enter a valid amount greater than 0');
       return;
     }
-    
-    setUsdtWithdrawalLoading(true);
-    setUsdtWithdrawalError(null);
-    
+
+    if (parseFloat(cryptoWithdrawalAmount) > balance.usd) {
+      setCryptoWithdrawalError(`Insufficient funds. Available balance: $${balance.usd} USD`);
+      return;
+    }
+
+    setCryptoWithdrawalLoading(true);
+    setCryptoWithdrawalError(null);
+
     try {
       const response = await backend.post(
         'v1/withdrawal-usd',
-        { 
-          address: usdtWithdrawalAddress.trim(),
-          amount: parseFloat(usdtWithdrawalAmount)
+        {
+          address: cryptoWithdrawalAddress.trim(),
+          amount: parseFloat(cryptoWithdrawalAmount)
         }
       );
-      
-      console.log('USDT Withdrawal response:', response.data);
+
+      console.log('Crypto withdrawal response:', response.data);
       setWithdrawalSuccess(true);
-      setUsdtWithdrawDialogOpen(false);
-      
+      setCryptoWithdrawDialogOpen(false);
+
       // Refresh balance after successful withdrawal
       fetchBalance();
-      
+
     } catch (err) {
-      console.error('Error processing USDT withdrawal:', err);
-      
+      console.error('Error processing crypto withdrawal:', err);
+
       // Handle error response
-      if (err.response?.status === 400 && 
+      if (err.response?.status === 400 &&
           err.response?.data?.error === "Insufficient funds") {
         const errorMsg = `Insufficient funds. Available balance: $${balance.usd} USD`;
-        setUsdtWithdrawalError(errorMsg);
+        setCryptoWithdrawalError(errorMsg);
       } else {
-        setUsdtWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
+        setCryptoWithdrawalError(err.response?.data?.message || 'Failed to process withdrawal. Please try again.');
       }
     } finally {
-      setUsdtWithdrawalLoading(false);
+      setCryptoWithdrawalLoading(false);
     }
   };
   
@@ -268,9 +274,9 @@ const Profile = () => {
             {balance.usd > 0 && !loading && (
               <MenuItem onClick={() => {
                 handleMenuClose();
-                handleWithdrawalUSDTClick();
+                handleWithdrawalCryptoClick();
               }}>
-                Withdraw USDT
+                Withdraw {CRYPTO_PAYMENT_ASSET}
               </MenuItem>
             )}
             <MenuItem onClick={() => {
@@ -372,7 +378,7 @@ const Profile = () => {
                 </Typography>
                 
                 <Typography variant="body1"  className={classes.userText}>
-                  ${balance.usd} USDT
+                  ${balance.usd} {CRYPTO_PAYMENT_ASSET}
                 </Typography>
               </Box>
             )}
@@ -427,25 +433,25 @@ const Profile = () => {
         <UserInvoices />
       </Grid>
       
-      {/* USDT Withdrawal Dialog */}
-      <Dialog open={usdtWithdrawDialogOpen} onClose={handleCloseUsdtWithdrawDialog} maxWidth="sm" fullWidth className={styles.dialog}>
-        <DialogTitle>Withdraw USDT</DialogTitle>
+      {/* Crypto Withdrawal Dialog */}
+      <Dialog open={cryptoWithdrawDialogOpen} onClose={handleCloseCryptoWithdrawDialog} maxWidth="sm" fullWidth className={styles.dialog}>
+        <DialogTitle>Withdraw {CRYPTO_PAYMENT_ASSET}</DialogTitle>
         <DialogContent className={styles.dialogContent}>
           <TextField
-            id="usdt-address"
+            id="crypto-address"
             type="text"
-            value={usdtWithdrawalAddress}
-            onChange={handleUsdtAddressChange}
-            placeholder="Enter Ethereum wallet address to receive USDT"
+            value={cryptoWithdrawalAddress}
+            onChange={handleCryptoAddressChange}
+            placeholder={`Enter ${CRYPTO_PAYMENT_WALLET_LABEL} to receive ${CRYPTO_PAYMENT_ASSET}`}
             variant="outlined"
             fullWidth
             margin="normal"
           />
           <TextField
-            id="usdt-amount"
+            id="crypto-amount"
             type="text"
-            value={usdtWithdrawalAmount}
-            onChange={handleUsdtAmountChange}
+            value={cryptoWithdrawalAmount}
+            onChange={handleCryptoAmountChange}
             placeholder="Enter amount to withdraw"
             variant="outlined"
             fullWidth
@@ -454,9 +460,9 @@ const Profile = () => {
               startAdornment: <Typography  style={{ marginRight: 8 }}>$</Typography>,
             }}
           />
-          {usdtWithdrawalError && (
+          {cryptoWithdrawalError && (
             <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
-              {usdtWithdrawalError}
+              {cryptoWithdrawalError}
             </Typography>
           )}
           <Typography variant="body2" style={{ marginTop: 16 }}>
@@ -464,17 +470,17 @@ const Profile = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUsdtWithdrawDialog} className={styles.button}>
+          <Button onClick={handleCloseCryptoWithdrawDialog} className={styles.button}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmitUsdtWithdrawal} 
+          <Button
+            onClick={handleSubmitCryptoWithdrawal}
             variant="contained"
             color="primary"
-            disabled={usdtWithdrawalLoading}
+            disabled={cryptoWithdrawalLoading}
             className={styles.button}
           >
-            {usdtWithdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
+            {cryptoWithdrawalLoading ? <CircularProgress size={24} /> : 'Withdraw'}
           </Button>
         </DialogActions>
       </Dialog>

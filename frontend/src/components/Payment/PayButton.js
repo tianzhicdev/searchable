@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Button,
   Menu,
@@ -11,15 +10,16 @@ import {
 } from '@material-ui/core';
 import { ExpandMore as ExpandMoreIcon } from '@material-ui/icons';
 import useComponentStyles from '../../themes/componentStyles';
-import { walletCircuit, coinEthereum } from '../../assets/images/icons';
+import { walletCircuit, coinDollarGold } from '../../assets/images/icons';
 import DepositComponent from '../Deposit/DepositComponent';
 import RefillBalanceDialog from './RefillBalanceDialog';
 import BalancePaymentDialog from './BalancePaymentDialog';
 import { testIds } from '../../utils/testIds';
+import { CRYPTO_PAYMENT_ASSET, CRYPTO_PAYMENT_LABEL } from '../../utils/cryptoPaymentConfig';
 
 /**
  * PayButton Component
- * Provides three payment options: Credit Card (Stripe), USDT Deposit, and Balance
+ * Provides three payment options: Credit Card (Stripe), crypto deposit, and Balance
  * Used across all searchable details pages
  */
 const PayButton = ({
@@ -37,7 +37,6 @@ const PayButton = ({
   size = "medium"
 }) => {
   const classes = useComponentStyles();
-  const history = useHistory();
   
   // Menu states
   const [anchorEl, setAnchorEl] = useState(null);
@@ -186,7 +185,7 @@ const PayButton = ({
           open={depositDialogOpen}
           onClose={() => setDepositDialogOpen(false)}
           onDepositCreated={handleDepositCreated}
-          title="Pay with USDT Deposit"
+          title={`Pay with ${CRYPTO_PAYMENT_ASSET} Deposit`}
           showInstructions={true}
         />
       </>
@@ -234,7 +233,7 @@ const PayButton = ({
             onClick={() => setRefillDialogOpen(true)}
             disabled={processing}
             size={size}
-            startIcon={processing ? <CircularProgress size={20} /> : <img src={coinEthereum} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
+            startIcon={processing ? <CircularProgress size={20} /> : <img src={coinDollarGold} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />}
             data-testid={testIds.button.nav('refill-balance')}
           >
             <Typography variant="body2" className={classes.staticText}>
@@ -256,7 +255,7 @@ const PayButton = ({
           open={depositDialogOpen}
           onClose={() => setDepositDialogOpen(false)}
           onDepositCreated={handleDepositCreated}
-          title="Pay with USDT Deposit"
+          title={`Pay with ${CRYPTO_PAYMENT_ASSET} Deposit`}
           showInstructions={true}
         />
       </>
@@ -330,14 +329,14 @@ const PayButton = ({
           </Box>
         </MenuItem>
         
-        <MenuItem onClick={handleDepositClick} data-testid={testIds.nav.item('payment-usdt')}>
-          <img src={coinEthereum} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+        <MenuItem onClick={handleDepositClick} data-testid={testIds.nav.item('payment-usdc')}>
+          <img src={coinDollarGold} alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
           <Box ml={1}>
             <Typography variant="body2" className={classes.staticText}>
-              USDT Deposit
+              {CRYPTO_PAYMENT_ASSET} Deposit
             </Typography>
             <Typography variant="caption" className={classes.userText}>
-              Pay with USDT cryptocurrency
+              Pay with {CRYPTO_PAYMENT_LABEL}
             </Typography>
           </Box>
         </MenuItem>
@@ -369,7 +368,7 @@ const PayButton = ({
         open={depositDialogOpen}
         onClose={() => setDepositDialogOpen(false)}
         onDepositCreated={handleDepositCreated}
-        title="Pay with USDT Deposit"
+        title={`Pay with ${CRYPTO_PAYMENT_ASSET} Deposit`}
         showInstructions={true}
       />
     </>

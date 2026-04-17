@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS withdrawal (
     amount DECIMAL(20,8) NOT NULL,
     fee DECIMAL(20,8) NOT NULL DEFAULT 0,
     currency TEXT NOT NULL CHECK (currency = 'usd'),
-    type TEXT NOT NULL CHECK (type = 'bank_transfer'),
+    type TEXT NOT NULL CHECK (type IN ('bank_transfer', 'usdt', 'usdc_solana')),
     external_id TEXT, -- Transaction ID
     status TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'failed', 'delayed', 'error')) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -137,6 +137,14 @@ DROP CONSTRAINT IF EXISTS withdrawal_status_check;
 ALTER TABLE withdrawal 
 ADD CONSTRAINT withdrawal_status_check 
 CHECK (status IN ('pending', 'complete', 'failed', 'delayed', 'error'));
+
+-- Migration: allow multiple crypto withdrawal rails while preserving legacy rows
+ALTER TABLE withdrawal
+DROP CONSTRAINT IF EXISTS withdrawal_type_check;
+
+ALTER TABLE withdrawal
+ADD CONSTRAINT withdrawal_type_check
+CHECK (type IN ('bank_transfer', 'usdt', 'usdc_solana'));
 
 -- Invoice notes table for communication between buyer and seller
 CREATE TABLE IF NOT EXISTS invoice_note (

@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme) => ({
 
 const PriceDisplay = ({
   amount,
-  currency = 'USDT',
+  currency = 'USD',
   showIcon = false,
   variant = 'body1',
   className,

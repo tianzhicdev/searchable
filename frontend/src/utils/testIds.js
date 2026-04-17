@@ -194,7 +194,7 @@ export const commonTestIds = {
   
   // Payment
   PAY_BUTTON_STRIPE: 'button-pay-stripe',
-  PAY_BUTTON_USDT: 'button-pay-usdt', 
+  PAY_BUTTON_USDC: 'button-pay-usdc',
   PAY_BUTTON_BALANCE: 'button-pay-balance',
   
   // Search

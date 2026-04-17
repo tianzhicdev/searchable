@@ -21,11 +21,15 @@ import {
   profileUser,
   floppyDisk,
   coinDollarGold,
-  coinEthereum,
   walletCircuit,
   padlock,
   characterBlue
 } from '../../assets/images/icons';
+import {
+  CRYPTO_PAYMENT_ASSET,
+  CRYPTO_PAYMENT_REFILL_ROUTE,
+  CRYPTO_PAYMENT_WITHDRAW_ROUTE,
+} from '../../utils/cryptoPaymentConfig';
 
 // Icons
 import SearchIcon from '@material-ui/icons/Search';
@@ -199,14 +203,14 @@ const FloatingBottomBar = () => {
       onClick: () => handleNavigation('/credit-card-refill')
     },
     {
-      icon: renderMenuIcon(coinEthereum),
-      label: 'Refill with USDT',
-      onClick: () => handleNavigation('/refill-usdt')
+      icon: renderMenuIcon(coinDollarGold),
+      label: `Refill with ${CRYPTO_PAYMENT_ASSET}`,
+      onClick: () => handleNavigation(CRYPTO_PAYMENT_REFILL_ROUTE)
     },
     {
       icon: renderMenuIcon(walletCircuit),
-      label: 'Withdraw USDT',
-      onClick: () => handleNavigation('/withdrawal-usdt')
+      label: `Withdraw ${CRYPTO_PAYMENT_ASSET}`,
+      onClick: () => handleNavigation(CRYPTO_PAYMENT_WITHDRAW_ROUTE)
     },
     { divider: true },
     {

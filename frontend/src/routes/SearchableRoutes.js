@@ -30,14 +30,21 @@ import ThemeGalleryCartoon from '../views/theme-gallery-cartoon';
 import ThemeGalleryCategories from '../views/theme-gallery-categories';
 import ThemeQuickTest from '../views/theme-quick-test';
 import RefillUSDT from '../views/payments/RefillUSDT';
+import {
+    CRYPTO_PAYMENT_LEGACY_REFILL_ROUTE,
+    CRYPTO_PAYMENT_LEGACY_WITHDRAW_ROUTE,
+    CRYPTO_PAYMENT_REFILL_ROUTE,
+    CRYPTO_PAYMENT_WITHDRAW_ROUTE,
+} from '../utils/cryptoPaymentConfig';
 
 //-----------------------|| AUTH ROUTING ||-----------------------//
 
 const SearchableRoutes = () => {
     const location = useLocation();
+    const protectedPaths = ['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish-allinone/:id', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', CRYPTO_PAYMENT_REFILL_ROUTE, CRYPTO_PAYMENT_LEGACY_REFILL_ROUTE, CRYPTO_PAYMENT_WITHDRAW_ROUTE, CRYPTO_PAYMENT_LEGACY_WITHDRAW_ROUTE, '/edit-profile', '/change-password', '/edit-account', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test'];
 
     return (
-        <Route path={['/search', '/searchable-item/:id', '/offline-item/:id', '/direct-item/:id', '/allinone-item/:id', '/profile/:identifier', '/publish-searchables', '/publish-offline-searchables', '/publish-direct-searchables', '/publish-allinone', '/publish-allinone/:id', '/publish/ai-content', '/dashboard', '/my-purchases', '/my-downloads', '/credit-card-refill', '/refill-usdt', '/withdrawal-usdt', '/edit-profile', '/change-password', '/edit-account', '/theme-test', '/cyberpunk-demo', '/theme-selector', '/theme-gallery', '/spacing-demo', '/spacing-test', '/text-spacing-demo', '/theme-info', '/theme-gallery-cartoon', '/theme-gallery-categories', '/theme-quick-test']}>
+        <Route path={protectedPaths}>
             <Switch location={location} key={location.pathname}>
                 {/* Protected routes that require authentication */}
                 <AuthGuard>
@@ -57,8 +64,8 @@ const SearchableRoutes = () => {
                     <Route exact path="/my-purchases" component={PurchaseRatings} />
                     <Route exact path="/my-downloads" component={MyDownloads} />
                     <Route exact path="/credit-card-refill" component={CreditCardRefill} />
-                    <Route exact path="/refill-usdt" component={RefillUSDT} />
-                    <Route exact path="/withdrawal-usdt" component={WithdrawalUSDT} />
+                    <Route exact path={[CRYPTO_PAYMENT_REFILL_ROUTE, CRYPTO_PAYMENT_LEGACY_REFILL_ROUTE]} component={RefillUSDT} />
+                    <Route exact path={[CRYPTO_PAYMENT_WITHDRAW_ROUTE, CRYPTO_PAYMENT_LEGACY_WITHDRAW_ROUTE]} component={WithdrawalUSDT} />
                     <Route exact path="/edit-profile" component={EditProfile} />
                     <Route exact path="/change-password" component={ChangePassword} />
                     <Route exact path="/edit-account" component={EditAccount} />

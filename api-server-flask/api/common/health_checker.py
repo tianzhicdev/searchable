@@ -23,10 +23,11 @@ EXPECTED_SERVICE_PATTERNS = [
     'file_server', # Matches: file_server
     'db',          # Matches: db, searchable-db-1, searchable_db_1
     'usdt-api',    # Matches: usdt-api, searchable-usdt-api-1, searchable_usdt-api_1
+    'usdc-solana-api', # Matches: usdc-solana-api, searchable-usdc-solana-api-1
     'background',  # Matches: background, searchable-background-1
     'metrics',     # Matches: metrics, metrics_service
     'grafana'      # Matches: grafana, grafana_service
-]  # Total: 8 services (frontend not included - it's a build container)
+]  # Total: 9 services (frontend not included - it's a build container)
 
 # Thresholds
 DISK_WARNING_PERCENT = 85
@@ -220,6 +221,7 @@ def check_all_services() -> Dict[str, Any]:
     services = {
         'file_server': 'http://file_server:5006/health',
         'usdt_api': 'http://usdt-api:3100/health',
+        'usdc_solana_api': 'http://usdc-solana-api:3200/health',
         'metrics': 'http://metrics:5007/health',
     }
 

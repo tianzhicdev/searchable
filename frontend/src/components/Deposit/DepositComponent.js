@@ -19,6 +19,14 @@ import backend from '../../views/utilities/Backend';
 import { useHistory } from 'react-router-dom';
 import { componentSpacing } from '../../utils/spacing';
 import { testIdProps } from '../../utils/testIds';
+import {
+  CRYPTO_PAYMENT_ASSET,
+  CRYPTO_PAYMENT_LABEL,
+  CRYPTO_PAYMENT_NETWORK,
+  CRYPTO_PAYMENT_RAIL,
+  CRYPTO_PAYMENT_TOKEN_ACCOUNT_LABEL,
+  CRYPTO_PAYMENT_WALLET_LABEL,
+} from '../../utils/cryptoPaymentConfig';
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: componentSpacing.dialog(theme),
@@ -34,14 +42,14 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 /**
- * Reusable USDT Deposit Component
+ * Reusable crypto deposit component
  * Can be used in Dashboard, PayButton, or anywhere deposits are needed
  */
 const DepositComponent = ({
   open,
   onClose,
   onDepositCreated,
-  title = "Create USDT Deposit",
+  title = `Create ${CRYPTO_PAYMENT_ASSET} Deposit`,
   showInstructions = true
 }) => {
   const classes = useComponentStyles();
@@ -53,6 +61,7 @@ const DepositComponent = ({
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositError, setDepositError] = useState(null);
   const [depositAddress, setDepositAddress] = useState('');
+  const [depositTokenAccount, setDepositTokenAccount] = useState('');
   const [depositExpiresAt, setDepositExpiresAt] = useState(null);
   const [depositId, setDepositId] = useState(null);
   const [depositSuccess, setDepositSuccess] = useState(false);
@@ -63,6 +72,7 @@ const DepositComponent = ({
     if (open) {
       setDepositError(null);
       setDepositAddress('');
+      setDepositTokenAccount('');
       setDepositExpiresAt(null);
       setDepositId(null);
       setDepositSuccess(false);
@@ -75,12 +85,12 @@ const DepositComponent = ({
     
     try {
       const response = await backend.post('v1/deposit/create', { 
-        type: 'usdt'
-        // No amount needed for USDT deposits - user sends whatever they want
+        type: CRYPTO_PAYMENT_RAIL
       });
       
       console.log('Deposit response:', response.data);
       setDepositAddress(response.data.address);
+      setDepositTokenAccount(response.data.token_account || '');
       setDepositExpiresAt(response.data.expires_at);
       setDepositId(response.data.deposit_id);
       setDepositSuccess(true);
@@ -89,6 +99,7 @@ const DepositComponent = ({
       if (onDepositCreated) {
         onDepositCreated({
           address: response.data.address,
+          tokenAccount: response.data.token_account,
           expiresAt: response.data.expires_at,
           depositId: response.data.deposit_id
         });
@@ -96,7 +107,7 @@ const DepositComponent = ({
       
     } catch (err) {
       console.error('Error creating deposit:', err);
-      setDepositError(err.response?.data?.message || 'Failed to create deposit. Please try again.');
+      setDepositError(err.response?.data?.error || err.response?.data?.msg || 'Failed to create deposit. Please try again.');
     } finally {
       setDepositLoading(false);
     }
@@ -109,6 +120,7 @@ const DepositComponent = ({
 
   const handleClose = () => {
     setDepositAddress('');
+    setDepositTokenAccount('');
     setDepositExpiresAt(null);
     setDepositId(null);
     onClose();
@@ -124,16 +136,16 @@ const DepositComponent = ({
               {showInstructions && (
                 <>
                   <Typography variant="body1" gutterBottom>
-                    Click "Create Deposit" to generate a unique Ethereum address for your USDT deposit.
+                    Create a unique {CRYPTO_PAYMENT_LABEL} deposit address for your balance refill.
                   </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    • Send any amount of USDT to the generated address
+                    • Send any amount of {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK}
                   </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    • Deposits expire after 1 hour
+                    • Most wallets accept the Solana wallet address below
                   </Typography>
                   <Typography variant="body2" className={classes.staticText}>
-                    • Funds will be credited once confirmed on blockchain
+                    • If needed, use the associated token account shown after creation
                   </Typography>
                 </>
               )}
@@ -146,7 +158,7 @@ const DepositComponent = ({
           ) : (
             <>
               <Typography variant="h6" gutterBottom className={classes.staticText}>
-                Send USDT to this Ethereum address:
+                Send {CRYPTO_PAYMENT_ASSET} to this {CRYPTO_PAYMENT_WALLET_LABEL}:
               </Typography>
               
               {/* QR Code */}
@@ -175,6 +187,17 @@ const DepositComponent = ({
                   {depositAddress}
                 </Typography>
               </Box>
+
+              {depositTokenAccount && (
+                <Box textAlign="center" p={2} mb={2} onClick={() => handleCopyAddress(depositTokenAccount)}>
+                  <Typography variant="caption" color="textSecondary" display="block">
+                    {CRYPTO_PAYMENT_TOKEN_ACCOUNT_LABEL}
+                  </Typography>
+                  <Typography variant="body2" className={classes.userText}>
+                    {depositTokenAccount}
+                  </Typography>
+                </Box>
+              )}
               
               <Button
                 onClick={() => handleCopyAddress(depositAddress)}
@@ -203,10 +226,10 @@ const DepositComponent = ({
               {/* Instructions */}
               <Box mt={2}>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  • Send only USDT on Ethereum network
+                  • Send native {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK} only
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  • Deposit will be credited once confirmed
+                  • The QR code uses your wallet address, not the token account
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   • Expires: {depositExpiresAt && new Date(depositExpiresAt).toLocaleString()}
@@ -242,7 +265,7 @@ const DepositComponent = ({
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setDepositSuccess(false)} severity="info">
-          Deposit address created! Send USDT to the displayed address.
+          Deposit address created. Send {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK} to the displayed address.
         </Alert>
       </Snackbar>
 

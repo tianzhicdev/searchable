@@ -24,9 +24,9 @@ const Landing = () => {
   
   const bulletPoints = [
     "Lowest fees on the planet - 1%",
-    "Paid in USDT, NO-KYC",
-    "We convert buyers' USD to USDT for you",
-    "Fastest Withdrawals - Instantly to your Ethereum wallet",
+    "Paid in USDC, NO-KYC",
+    "We convert buyers' USD to USDC for you",
+    "Fastest Withdrawals - Instantly to your Solana wallet",
   ];
 
   const handleJoinNow = () => {

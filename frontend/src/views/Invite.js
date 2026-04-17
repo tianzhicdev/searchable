@@ -92,7 +92,7 @@ const Invite = () => {
                     {inviteCode}
                   </Typography>
                   <Typography variant="body2" style={{ marginBottom: '16px' }}>
-                    use this invite code to get 5 USDT bonus when signing up
+                    use this invite code to get 5 USDC bonus when signing up
                   </Typography>
                   
                   <Typography variant="body2" className={classes.staticText}>

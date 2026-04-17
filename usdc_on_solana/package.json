@@ -1,0 +1,17 @@
+{
+  "name": "usdc-solana-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "A REST API service for Solana USDC operations using Express.js and @solana/web3.js.",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2"
+  }
+}

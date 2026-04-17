@@ -20,10 +20,18 @@ import { navigateBack } from '../../utils/navigationUtils';
 import PageHeaderButton from '../../components/Navigation/PageHeaderButton';
 import { testIdProps } from '../../utils/testIds';
 import DecorativeIcons from '../../components/DecorativeIcons';
-import { coinDollar, coinEthereum, coinGeneric } from '../../assets/images/icons';
+import { coinDollar, coinDollarGold, coinGeneric } from '../../assets/images/icons';
+import {
+  CRYPTO_PAYMENT_ASSET,
+  CRYPTO_PAYMENT_LABEL,
+  CRYPTO_PAYMENT_NETWORK,
+  CRYPTO_PAYMENT_TOKEN_ACCOUNT_LABEL,
+  CRYPTO_PAYMENT_WALLET_LABEL,
+  CRYPTO_PAYMENT_RAIL,
+} from '../../utils/cryptoPaymentConfig';
 
 const refillIcons = [
-  { src: coinEthereum, alt: 'eth', top: '8%', right: '3%', size: 34, opacity: 0.1, animation: 'float' },
+  { src: coinDollarGold, alt: 'usdc', top: '8%', right: '3%', size: 34, opacity: 0.1, animation: 'float' },
   { src: coinDollar, alt: 'dollar', bottom: '12%', left: '4%', size: 30, opacity: 0.08, animation: 'pulse' },
   { src: coinGeneric, alt: 'coin', top: '45%', left: '2%', size: 28, opacity: 0.08, animation: 'float' },
 ];
@@ -64,8 +72,8 @@ const RefillUSDT = () => {
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositError, setDepositError] = useState(null);
   const [depositAddress, setDepositAddress] = useState('');
+  const [depositTokenAccount, setDepositTokenAccount] = useState('');
   const [depositExpiresAt, setDepositExpiresAt] = useState(null);
-  const [depositId, setDepositId] = useState(null);
   const [depositSuccess, setDepositSuccess] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState(false);
 
@@ -75,18 +83,18 @@ const RefillUSDT = () => {
     
     try {
       const response = await backend.post('v1/deposit/create', { 
-        type: 'usdt'
+        type: CRYPTO_PAYMENT_RAIL
       });
       
       console.log('Deposit response:', response.data);
       setDepositAddress(response.data.address);
+      setDepositTokenAccount(response.data.token_account || '');
       setDepositExpiresAt(response.data.expires_at);
-      setDepositId(response.data.deposit_id);
       setDepositSuccess(true);
       
     } catch (err) {
       console.error('Error creating deposit:', err);
-      setDepositError(err.response?.data?.message || 'Failed to create deposit. Please try again.');
+      setDepositError(err.response?.data?.error || err.response?.data?.msg || 'Failed to create deposit. Please try again.');
     } finally {
       setDepositLoading(false);
     }
@@ -102,7 +110,7 @@ const RefillUSDT = () => {
   };
 
   return (
-    <Grid container sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }} {...testIdProps('page', 'refill-usdt', 'container')}>
+    <Grid container sx={{ ...componentSpacing.pageContainer(theme), position: 'relative' }} {...testIdProps('page', 'refill-usdc', 'container')}>
       <DecorativeIcons icons={refillIcons} />
       <Grid item xs={12} sx={componentSpacing.pageHeader(theme)} {...testIdProps('section', 'refill', 'header')}>
         <PageHeaderButton
@@ -111,25 +119,25 @@ const RefillUSDT = () => {
       </Grid>
       
       <Grid item xs={12} md={6} {...testIdProps('section', 'refill', 'content')}>
-        <Paper className={classes.paperNoBorder} {...testIdProps('card', 'refill-usdt', 'form')}>
+        <Paper className={classes.paperNoBorder} {...testIdProps('card', 'refill-usdc', 'form')}>
           <Typography variant="h4" gutterBottom {...testIdProps('text', 'refill', 'title')}>
-            Refill Balance with USDT
+            Refill Balance with {CRYPTO_PAYMENT_ASSET}
           </Typography>
           
           {!depositAddress ? (
             <>
               <Box mb={3} {...testIdProps('section', 'refill', 'instructions')}>
                 <Typography variant="body1" gutterBottom {...testIdProps('text', 'refill', 'description')}>
-                  Click "Create Deposit" to generate a unique Ethereum address for your USDT deposit.
+                  Create a unique {CRYPTO_PAYMENT_LABEL} deposit address for your balance refill.
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom {...testIdProps('text', 'refill', 'instruction-1')}>
-                  • Send any amount of USDT to the generated address
+                  • Send any amount of {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK}
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom {...testIdProps('text', 'refill', 'instruction-2')}>
-                  • Deposits expire after 1 hour
+                  • Most wallets accept the Solana wallet address shown below
                 </Typography>
                 <Typography variant="body2" color="textSecondary" {...testIdProps('text', 'refill', 'instruction-3')}>
-                  • Funds will be credited once confirmed on blockchain
+                  • If your sender requires a token account, use the associated token account we provide
                 </Typography>
               </Box>
 
@@ -155,7 +163,7 @@ const RefillUSDT = () => {
           ) : (
             <>
               <Typography variant="h6" gutterBottom {...testIdProps('text', 'deposit', 'title')}>
-                Send USDT to this Ethereum address:
+                Send {CRYPTO_PAYMENT_ASSET} to this {CRYPTO_PAYMENT_WALLET_LABEL}:
               </Typography>
               
               {/* QR Code */}
@@ -181,6 +189,17 @@ const RefillUSDT = () => {
                   {depositAddress}
                 </Typography>
               </Box>
+
+              {depositTokenAccount && (
+                <Box className={styles.addressBox} mb={3} onClick={() => handleCopyAddress(depositTokenAccount)}>
+                  <Typography variant="caption" display="block" align="center" color="textSecondary">
+                    {CRYPTO_PAYMENT_TOKEN_ACCOUNT_LABEL}
+                  </Typography>
+                  <Typography variant="body2" align="center">
+                    {depositTokenAccount}
+                  </Typography>
+                </Box>
+              )}
               
               <Grid container spacing={2} {...testIdProps('section', 'deposit', 'actions')}>
                 <Grid item xs={12} sm={6}>
@@ -209,10 +228,10 @@ const RefillUSDT = () => {
               {/* Instructions */}
               <Box mt={3}>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  • Send only USDT on Ethereum network
+                  • Send native {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK} only
                 </Typography>
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  • Deposit will be credited once confirmed
+                  • The QR code encodes your wallet address, not the token account
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   • Expires: {depositExpiresAt && new Date(depositExpiresAt).toLocaleString()}
@@ -223,8 +242,8 @@ const RefillUSDT = () => {
                 <Button
                   onClick={() => {
                     setDepositAddress('');
+                    setDepositTokenAccount('');
                     setDepositExpiresAt(null);
-                    setDepositId(null);
                   }}
                   variant="outlined"
                   fullWidth
@@ -245,7 +264,7 @@ const RefillUSDT = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={() => setDepositSuccess(false)} severity="info">
-          Deposit address created! Send USDT to the displayed address.
+          Deposit address created. Send {CRYPTO_PAYMENT_ASSET} on {CRYPTO_PAYMENT_NETWORK} to the displayed address.
         </Alert>
       </Snackbar>
 

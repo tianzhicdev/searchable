@@ -213,7 +213,7 @@ const MockDashboard = () => {
       ) : (
         <div>
           <p>Balance:</p>
-          <p>${balance} USDT</p>
+          <p>${balance} USDC</p>
         </div>
       )}
       <div data-testid="ai-content-status">AI Content Status</div>
@@ -245,7 +245,7 @@ describe('Dashboard Page - Working Tests', () => {
     
     // Wait for balance to load
     await waitFor(() => {
-      expect(screen.getByText('$100 USDT')).toBeInTheDocument();
+      expect(screen.getByText('$100 USDC')).toBeInTheDocument();
     });
   });
 
