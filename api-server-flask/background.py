@@ -609,7 +609,10 @@ def check_deposit_confirmations():
                             """, params=(Json(metadata), deposit_id))
                         continue
 
-                    deposit_address = metadata.get('eth_address') or metadata.get('wallet_address') or external_id
+                    if rail == 'usdc_solana':
+                        deposit_address = metadata.get('token_account') or metadata.get('wallet_address') or external_id
+                    else:
+                        deposit_address = metadata.get('eth_address') or metadata.get('wallet_address') or external_id
                     if not deposit_address:
                         logger.error(f"Deposit {deposit_id} missing deposit address in metadata")
                         continue
