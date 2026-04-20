@@ -34,6 +34,8 @@ DISK_WARNING_PERCENT = 85
 DISK_CRITICAL_PERCENT = 90
 ETH_WARNING_THRESHOLD = "0.1"  # ETH
 ETH_CRITICAL_THRESHOLD = "0.05"  # ETH
+SOL_WARNING_THRESHOLD = 0.1  # SOL
+SOL_CRITICAL_THRESHOLD = 0.05  # SOL
 HEARTBEAT_WARNING_SECONDS = 300  # 5 minutes
 HEARTBEAT_CRITICAL_SECONDS = 600  # 10 minutes
 
@@ -305,18 +307,64 @@ def check_wallet_balance(address: str, label: str) -> Dict[str, Any]:
         }
 
 
+def check_solana_wallet_balance() -> Dict[str, Any]:
+    """Check SOL and USDC balance for the Solana master wallet"""
+    try:
+        response = requests.get(
+            'http://usdc-solana-api:3200/master-wallet',
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            return {
+                'address': 'unknown',
+                'label': 'Solana Master Wallet',
+                'status': 'unknown',
+                'error': f'Failed to fetch balance (HTTP {response.status_code})'
+            }
+
+        data = response.json()
+
+        sol_balance = float(data.get('solBalanceSol', 0))
+        usdc_balance = float(data.get('usdcBalanceUi', 0))
+        address = data.get('address', 'unknown')
+
+        # Determine SOL status based on thresholds
+        sol_status = 'critical' if sol_balance < SOL_CRITICAL_THRESHOLD else \
+                     'warning' if sol_balance < SOL_WARNING_THRESHOLD else 'healthy'
+
+        return {
+            'address': address,
+            'label': 'Solana Master Wallet',
+            'status': sol_status,
+            'sol_balance': f'{sol_balance:.4f}',
+            'usdc_balance': f'{usdc_balance:.2f}'
+        }
+    except Exception as e:
+        logger.error(f"Solana wallet balance check failed: {e}")
+        return {
+            'address': 'unknown',
+            'label': 'Solana Master Wallet',
+            'status': 'unknown',
+            'error': str(e)
+        }
+
+
 def check_wallets() -> Dict[str, Any]:
     """Check monitored wallet balance (0x80b4a2ebeceF714dF8E08692A9D2B3ADFb8Ec516)"""
     try:
-        # Only check the single monitored wallet
+        # Check ETH/USDT wallet
         monitored_wallet = check_wallet_balance(MONITORED_WALLET, 'Production Wallet')
 
+        # Check Solana wallet
+        solana_wallet = check_solana_wallet_balance()
+
         # Wallet monitoring is informational only - don't fail health checks on low balance
-        # Users can click through to Etherscan to see real balance
         return {
             'status': 'healthy',  # Always healthy - informational only
             'wallet': monitored_wallet,
-            'note': 'Wallet monitoring is informational - click address to view on Etherscan'
+            'solana_wallet': solana_wallet,
+            'note': 'Wallet monitoring is informational - click address to view on explorer'
         }
     except Exception as e:
         logger.error(f"Wallet check failed: {e}")
@@ -330,7 +378,13 @@ def check_wallets() -> Dict[str, Any]:
                 'eth_balance': 'unknown',
                 'usdt_balance': 'unknown'
             },
-            'note': 'Click address to view on Etherscan'
+            'solana_wallet': {
+                'address': 'unknown',
+                'label': 'Solana Master Wallet',
+                'status': 'unknown',
+                'error': str(e)
+            },
+            'note': 'Click address to view on explorer'
         }
 
 

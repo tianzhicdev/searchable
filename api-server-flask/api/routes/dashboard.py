@@ -564,6 +564,41 @@ DASHBOARD_HTML_TEMPLATE = """
                 `;
             }
 
+            // Solana Wallet Balance
+            if (data.checks && data.checks.wallets && data.checks.wallets.solana_wallet) {
+                const solWallet = data.checks.wallets.solana_wallet;
+                const solscanUrl = solWallet.address && solWallet.address !== 'unknown'
+                    ? `https://solscan.io/account/${solWallet.address}` : '#';
+                html += `
+                    <div class="section">
+                        <div class="section-title">
+                            ◎ Solana Wallet Balance
+                            <span class="status-badge ${getStatusClass(solWallet.status)}">${solWallet.status || 'unknown'}</span>
+                        </div>
+                        <div class="grid">
+                            <div class="card">
+                                <div class="card-title">${solWallet.label || 'Solana Master Wallet'}</div>
+                                <div class="wallet-address">
+                                    <a href="${solscanUrl}" target="_blank" rel="noopener noreferrer">
+                                        ${solWallet.address || 'Unknown'}
+                                    </a>
+                                </div>
+                                <div class="card-value">
+                                    <span class="status-badge ${getStatusClass(solWallet.status)}">
+                                        ${solWallet.status || 'unknown'}
+                                    </span>
+                                </div>
+                                <div class="card-subtitle">
+                                    SOL: ${solWallet.sol_balance || '0'}<br>
+                                    USDC: ${solWallet.usdc_balance || '0'}<br>
+                                    <small style="color: #64748b;">Click address to view on Solscan</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             // Background Service
             if (data.checks && data.checks.background_jobs) {
                 const bgJobs = data.checks.background_jobs;
