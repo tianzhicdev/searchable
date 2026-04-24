@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const bs58 = require('bs58');
+const bs58 = require('bs58').default || require('bs58');
 const {
   Connection,
   Keypair,
